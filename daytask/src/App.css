@@ -26,19 +26,25 @@
   --pri-low: #6BAF6B;
 
   /* Kanban columns */
-  --col-todo-bg: #F1EFE8;   --col-todo-badge: #D3D1C7;
-  --col-doing-bg: #E6F1FB;  --col-doing-badge: #B5D4F4;
-  --col-review-bg: #FAEEDA; --col-review-badge: #FAC775;
-  --col-done-bg: #EAF3DE;   --col-done-badge: #C0DD97;
+  --col-todo-bg: #F1EFE8;   --col-todo-badge: #D3D1C7;   --col-todo-title: #444441;
+  --col-doing-bg: #E6F1FB;  --col-doing-badge: #B5D4F4;  --col-doing-title: #0C447C;
+  --col-review-bg: #FAEEDA; --col-review-badge: #FAC775;  --col-review-title: #633806;
+  --col-done-bg: #EAF3DE;   --col-done-badge: #C0DD97;   --col-done-title: #27500A;
 }
 
 [data-theme='dark'] {
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #242424;
+  --bg-primary: #252525;   /* content, cards — slightly lighter */
+  --bg-secondary: #1a1a1a; /* sidebar, kanban columns — darkest */
   --text-primary: #f0eeeb;
   --text-secondary: #888888;
-  --border-1: #2e2e2e;
-  --border-2: #3a3a3a;
+  --border-1: #333333;
+  --border-2: #444444;
+
+  /* Kanban columns — dark tints, no bright headers */
+  --col-todo-bg: #232220;   --col-todo-badge: #3a3733;   --col-todo-title: #a8a5a0;
+  --col-doing-bg: #1e2535;  --col-doing-badge: #1e3556;  --col-doing-title: #7ab0e0;
+  --col-review-bg: #2d2318; --col-review-badge: #503412;  --col-review-title: #d4904a;
+  --col-done-bg: #1e2718;   --col-done-badge: #263718;   --col-done-title: #80b85a;
 }
 
 /* ── Reset ── */
