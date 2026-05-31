@@ -1,0 +1,17 @@
+# Node
+daytask/node_modules/
+daytask/dist/
+
+# Rust build artifacts (very large)
+daytask/src-tauri/target/
+
+# Tauri signing key (sensitive)
+*.key
+*.key.pub
+
+# Claude Code internal
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
