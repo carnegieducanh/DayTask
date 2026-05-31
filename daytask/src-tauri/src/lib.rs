@@ -39,6 +39,18 @@ pub fn run() {
             );",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "create_goal_checklist_items",
+            sql: "CREATE TABLE IF NOT EXISTS goal_checklist_items (
+                id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                goal_id  INTEGER NOT NULL,
+                text     TEXT NOT NULL,
+                is_done  INTEGER NOT NULL DEFAULT 0,
+                position INTEGER NOT NULL DEFAULT 0
+            );",
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

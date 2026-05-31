@@ -68,6 +68,14 @@ export interface GoalUpdate {
   position?: number;
 }
 
+export interface GoalChecklistItem {
+  id: number;
+  goal_id: number;
+  text: string;
+  is_done: number;
+  position: number;
+}
+
 export interface DayActivity {
   date: string;
   count: number;

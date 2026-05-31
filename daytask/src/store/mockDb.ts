@@ -1,6 +1,6 @@
 // In-memory mock database used when running in browser (no Tauri/SQLite)
 import { format, subDays } from 'date-fns';
-import type { Task, Goal, DayActivity } from '../types';
+import type { Task, Goal, DayActivity, GoalChecklistItem } from '../types';
 
 export const isTauri = () =>
   typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -57,6 +57,32 @@ export const mockGoals: Goal[] = [
   { id: 12, title: 'Setup môi trường làm việc', description: 'Màn hình, bàn phím cơ, microphone', category: 'work', priority: 'low', year: 2026, quarter: 'Q1', status: 'done', progress: 100, position: 2, created_at: today },
 ];
 
+// ---------- seed checklist items ----------
+
+let _nextChecklistId = 1;
+
+export const mockChecklist: GoalChecklistItem[] = [
+  // Goal 5 — Tăng cân 70kg (doing, 3/5 done)
+  { id: _nextChecklistId++, goal_id: 5, text: 'Đăng ký gym', is_done: 1, position: 0 },
+  { id: _nextChecklistId++, goal_id: 5, text: 'Lập chế độ ăn', is_done: 1, position: 1 },
+  { id: _nextChecklistId++, goal_id: 5, text: 'Tập 4 buổi/tuần đủ 1 tháng', is_done: 1, position: 2 },
+  { id: _nextChecklistId++, goal_id: 5, text: 'Đạt 65kg', is_done: 0, position: 3 },
+  { id: _nextChecklistId++, goal_id: 5, text: 'Đạt 70kg', is_done: 0, position: 4 },
+  // Goal 8 — Đọc 12 cuốn sách (review, 9/12 done)
+  { id: _nextChecklistId++, goal_id: 8, text: 'Atomic Habits', is_done: 1, position: 0 },
+  { id: _nextChecklistId++, goal_id: 8, text: 'Deep Work', is_done: 1, position: 1 },
+  { id: _nextChecklistId++, goal_id: 8, text: 'The 4-Hour Workweek', is_done: 1, position: 2 },
+  { id: _nextChecklistId++, goal_id: 8, text: 'Thinking, Fast and Slow', is_done: 1, position: 3 },
+  { id: _nextChecklistId++, goal_id: 8, text: 'Man\'s Search for Meaning', is_done: 1, position: 4 },
+  { id: _nextChecklistId++, goal_id: 8, text: 'The Power of Now', is_done: 1, position: 5 },
+  { id: _nextChecklistId++, goal_id: 8, text: 'Ikigai', is_done: 1, position: 6 },
+  { id: _nextChecklistId++, goal_id: 8, text: 'Sapiens', is_done: 1, position: 7 },
+  { id: _nextChecklistId++, goal_id: 8, text: 'The Alchemist', is_done: 1, position: 8 },
+  { id: _nextChecklistId++, goal_id: 8, text: '4000 Weeks', is_done: 0, position: 9 },
+  { id: _nextChecklistId++, goal_id: 8, text: 'Psychology of Money', is_done: 0, position: 10 },
+  { id: _nextChecklistId++, goal_id: 8, text: 'Essentialism', is_done: 0, position: 11 },
+];
+
 // ---------- in-memory ops ----------
 
 export function dbGetTasks(date: string): Task[] {
@@ -104,6 +130,37 @@ export function dbUpdateGoal(id: number, updates: Partial<Goal>): void {
 export function dbDeleteGoal(id: number): void {
   const idx = mockGoals.findIndex((g) => g.id === id);
   if (idx !== -1) mockGoals.splice(idx, 1);
+}
+
+export function dbGetChecklistItems(goalId: number): GoalChecklistItem[] {
+  return mockChecklist.filter((i) => i.goal_id === goalId).sort((a, b) => a.position - b.position);
+}
+
+export function dbGetAllChecklistItems(): GoalChecklistItem[] {
+  return mockChecklist;
+}
+
+export function dbAddChecklistItem(goalId: number, text: string): GoalChecklistItem {
+  const maxPos = mockChecklist.filter((i) => i.goal_id === goalId).reduce((m, i) => Math.max(m, i.position), -1);
+  const item: GoalChecklistItem = { id: _nextChecklistId++, goal_id: goalId, text, is_done: 0, position: maxPos + 1 };
+  mockChecklist.push(item);
+  return item;
+}
+
+export function dbToggleChecklistItem(id: number): void {
+  const item = mockChecklist.find((i) => i.id === id);
+  if (item) item.is_done = item.is_done ? 0 : 1;
+}
+
+export function dbDeleteChecklistItem(id: number): void {
+  const idx = mockChecklist.findIndex((i) => i.id === id);
+  if (idx !== -1) mockChecklist.splice(idx, 1);
+}
+
+export function dbDeleteChecklistItemsByGoal(goalId: number): void {
+  for (let i = mockChecklist.length - 1; i >= 0; i--) {
+    if (mockChecklist[i].goal_id === goalId) mockChecklist.splice(i, 1);
+  }
 }
 
 export function dbGetHeatmap(year: number): DayActivity[] {

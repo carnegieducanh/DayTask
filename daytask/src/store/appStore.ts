@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { format } from 'date-fns';
-import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme } from '../types';
+import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, GoalChecklistItem } from '../types';
 import {
   isTauri,
   dbGetTasks, dbAddTask, dbUpdateTask, dbDeleteTask,
   dbGetGoals, dbAddGoal, dbUpdateGoal, dbDeleteGoal,
+  dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
   dbGetHeatmap, dbGetStreak,
 } from './mockDb';
 
@@ -79,6 +80,7 @@ interface AppState {
   theme: Theme;
   tasks: Task[];
   goals: Goal[];
+  checklistItems: Record<number, GoalChecklistItem[]>;
   heatmap: DayActivity[];
   selectedDate: string;
   selectedYear: number;
@@ -109,6 +111,10 @@ interface AppState {
   moveGoal: (id: number, status: Goal['status'], position: number) => Promise<void>;
   deleteGoal: (id: number) => Promise<void>;
 
+  addChecklistItem: (goalId: number, text: string) => Promise<void>;
+  toggleChecklistItem: (itemId: number, goalId: number) => Promise<void>;
+  deleteChecklistItem: (itemId: number, goalId: number) => Promise<void>;
+
   loadHeatmap: (year: number) => Promise<void>;
   getStreak: () => Promise<number>;
   seedIfEmpty: () => Promise<void>;
@@ -119,6 +125,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   theme: (localStorage.getItem('theme') as Theme) ?? 'light',
   tasks: [],
   goals: [],
+  checklistItems: {},
   heatmap: [],
   selectedDate: format(new Date(), 'yyyy-MM-dd'),
   selectedYear: new Date().getFullYear(),
@@ -223,13 +230,30 @@ export const useAppStore = create<AppState>((set, get) => ({
   // --- Goals ---
 
   loadGoals: async (year) => {
-    if (!isTauri()) { set({ goals: dbGetGoals(year) }); return; }
+    if (!isTauri()) {
+      const allItems = dbGetAllChecklistItems();
+      const byGoal: Record<number, GoalChecklistItem[]> = {};
+      for (const item of allItems) {
+        if (!byGoal[item.goal_id]) byGoal[item.goal_id] = [];
+        byGoal[item.goal_id].push(item);
+      }
+      set({ goals: dbGetGoals(year), checklistItems: byGoal });
+      return;
+    }
     const db = await getDb();
     const goals = await db.select<Goal[]>(
       'SELECT * FROM goals WHERE year = $1 ORDER BY status ASC, position ASC',
       [year]
     );
-    set({ goals });
+    const allItems = await db.select<GoalChecklistItem[]>(
+      'SELECT * FROM goal_checklist_items ORDER BY goal_id, position ASC'
+    );
+    const byGoal: Record<number, GoalChecklistItem[]> = {};
+    for (const item of allItems) {
+      if (!byGoal[item.goal_id]) byGoal[item.goal_id] = [];
+      byGoal[item.goal_id].push(item);
+    }
+    set({ goals, checklistItems: byGoal });
   },
 
   addGoal: async (goal) => {
@@ -270,13 +294,73 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   deleteGoal: async (id) => {
     if (!isTauri()) {
+      dbDeleteChecklistItemsByGoal(id);
       dbDeleteGoal(id);
-      set({ goals: get().goals.filter((g) => g.id !== id) });
+      const { [id]: _, ...rest } = get().checklistItems;
+      set({ goals: get().goals.filter((g) => g.id !== id), checklistItems: rest });
       return;
     }
     const db = await getDb();
+    await db.execute('DELETE FROM goal_checklist_items WHERE goal_id = $1', [id]);
     await db.execute('DELETE FROM goals WHERE id = $1', [id]);
-    set({ goals: get().goals.filter((g) => g.id !== id) });
+    const { [id]: _, ...rest } = get().checklistItems;
+    set({ goals: get().goals.filter((g) => g.id !== id), checklistItems: rest });
+  },
+
+  addChecklistItem: async (goalId, text) => {
+    if (!isTauri()) {
+      const item = dbAddChecklistItem(goalId, text);
+      const prev = get().checklistItems[goalId] ?? [];
+      set({ checklistItems: { ...get().checklistItems, [goalId]: [...prev, item] } });
+      return;
+    }
+    const db = await getDb();
+    const prev = get().checklistItems[goalId] ?? [];
+    const position = prev.length;
+    await db.execute(
+      'INSERT INTO goal_checklist_items (goal_id, text, is_done, position) VALUES ($1, $2, 0, $3)',
+      [goalId, text, position]
+    );
+    const items = await db.select<GoalChecklistItem[]>(
+      'SELECT * FROM goal_checklist_items WHERE goal_id = $1 ORDER BY position ASC',
+      [goalId]
+    );
+    set({ checklistItems: { ...get().checklistItems, [goalId]: items } });
+  },
+
+  toggleChecklistItem: async (itemId, goalId) => {
+    if (!isTauri()) {
+      dbToggleChecklistItem(itemId);
+      const items = (get().checklistItems[goalId] ?? []).map((i) =>
+        i.id === itemId ? { ...i, is_done: i.is_done ? 0 : 1 } : i
+      );
+      set({ checklistItems: { ...get().checklistItems, [goalId]: items } });
+      return;
+    }
+    const db = await getDb();
+    const item = (get().checklistItems[goalId] ?? []).find((i) => i.id === itemId);
+    if (!item) return;
+    await db.execute(
+      'UPDATE goal_checklist_items SET is_done = $1 WHERE id = $2',
+      [item.is_done ? 0 : 1, itemId]
+    );
+    const items = (get().checklistItems[goalId] ?? []).map((i) =>
+      i.id === itemId ? { ...i, is_done: i.is_done ? 0 : 1 } : i
+    );
+    set({ checklistItems: { ...get().checklistItems, [goalId]: items } });
+  },
+
+  deleteChecklistItem: async (itemId, goalId) => {
+    if (!isTauri()) {
+      dbDeleteChecklistItem(itemId);
+      const items = (get().checklistItems[goalId] ?? []).filter((i) => i.id !== itemId);
+      set({ checklistItems: { ...get().checklistItems, [goalId]: items } });
+      return;
+    }
+    const db = await getDb();
+    await db.execute('DELETE FROM goal_checklist_items WHERE id = $1', [itemId]);
+    const items = (get().checklistItems[goalId] ?? []).filter((i) => i.id !== itemId);
+    set({ checklistItems: { ...get().checklistItems, [goalId]: items } });
   },
 
   seedIfEmpty: async () => {

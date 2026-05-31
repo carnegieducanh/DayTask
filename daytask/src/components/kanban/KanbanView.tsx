@@ -22,7 +22,7 @@ const STATUSES: GoalStatus[] = ['todo', 'doing', 'review', 'done'];
 
 const STATUS_CONFIG: Record<GoalStatus, { label: string; dot: string }> = {
   todo:   { label: 'Chưa bắt đầu',  dot: '#888780' },
-  doing:  { label: 'Đang thực hiện', dot: '#185FA5' },
+  doing:  { label: 'Đang thực hiện', dot: '#125680' },
   review: { label: 'Đang review',    dot: '#EF9F27' },
   done:   { label: 'Hoàn thành',     dot: '#639922' },
 };

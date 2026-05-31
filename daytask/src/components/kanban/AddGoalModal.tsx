@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { IconX, IconPlus, IconCheck } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import type { Goal, Category, Priority, Quarter, GoalStatus } from '../../types';
 
@@ -30,14 +31,16 @@ interface Props {
 }
 
 export default function AddGoalModal({ editGoal, defaultStatus = 'todo', onClose }: Props) {
-  const { selectedYear, addGoal, updateGoal } = useAppStore();
+  const { selectedYear, addGoal, updateGoal, checklistItems, addChecklistItem, toggleChecklistItem, deleteChecklistItem } = useAppStore();
 
   const [title,    setTitle]    = useState('');
   const [desc,     setDesc]     = useState('');
   const [category, setCategory] = useState<Category>('work');
   const [priority, setPriority] = useState<Priority>('mid');
   const [quarter,  setQuarter]  = useState<Quarter>('Q1');
-  const [progress, setProgress] = useState(0);
+
+  const [newItemText, setNewItemText] = useState('');
+  const addInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (editGoal) {
@@ -46,7 +49,6 @@ export default function AddGoalModal({ editGoal, defaultStatus = 'todo', onClose
       setCategory(editGoal.category);
       setPriority(editGoal.priority);
       setQuarter(editGoal.quarter);
-      setProgress(editGoal.progress);
     }
   }, [editGoal]);
 
@@ -58,7 +60,7 @@ export default function AddGoalModal({ editGoal, defaultStatus = 'todo', onClose
       await updateGoal(editGoal.id, {
         title: title.trim(),
         description: desc.trim() || undefined,
-        category, priority, quarter, progress,
+        category, priority, quarter,
       });
     } else {
       await addGoal({
@@ -72,10 +74,27 @@ export default function AddGoalModal({ editGoal, defaultStatus = 'todo', onClose
     onClose();
   }
 
+  async function handleAddItem() {
+    if (!editGoal || !newItemText.trim()) return;
+    await addChecklistItem(editGoal.id, newItemText.trim());
+    setNewItemText('');
+    addInputRef.current?.focus();
+  }
+
+  function handleAddKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddItem();
+    }
+  }
+
+  const items = editGoal ? (checklistItems[editGoal.id] ?? []) : [];
+  const doneCount = items.filter((i) => i.is_done).length;
+
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <div className="modal-title">{editGoal ? 'Sửa mục tiêu' : 'Thêm mục tiêu'}</div>
+      <div className="modal modal-goal-detail">
+        <div className="modal-title">{editGoal ? 'Chi tiết mục tiêu' : 'Thêm mục tiêu'}</div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -122,15 +141,68 @@ export default function AddGoalModal({ editGoal, defaultStatus = 'todo', onClose
             </select>
           </div>
 
+          {/* Checklist section — chỉ hiện khi đang edit goal đã có */}
           {editGoal && (
-            <div className="form-group">
-              <label className="form-label">Tiến độ: {progress}%</label>
-              <input
-                type="range" min={0} max={100} step={5}
-                value={progress}
-                onChange={(e) => setProgress(Number(e.target.value))}
-                style={{ width: '100%', accentColor: 'var(--primary)' }}
-              />
+            <div className="checklist-section">
+              <div className="checklist-header">
+                <span className="checklist-title">Việc cần làm</span>
+                {items.length > 0 && (
+                  <span className="checklist-count">{doneCount}/{items.length}</span>
+                )}
+              </div>
+
+              {items.length > 0 && (
+                <div className="checklist-progress-bar">
+                  <div
+                    className="checklist-progress-fill"
+                    style={{ width: `${Math.round((doneCount / items.length) * 100)}%` }}
+                  />
+                </div>
+              )}
+
+              <div className="checklist-items">
+                {items.map((item) => (
+                  <div key={item.id} className={`checklist-item${item.is_done ? ' checklist-item-done' : ''}`}>
+                    <button
+                      type="button"
+                      className={`checklist-checkbox${item.is_done ? ' checked' : ''}`}
+                      onClick={() => toggleChecklistItem(item.id, editGoal.id)}
+                      title={item.is_done ? 'Đánh dấu chưa xong' : 'Đánh dấu hoàn thành'}
+                    >
+                      {item.is_done && <IconCheck size={11} strokeWidth={3} />}
+                    </button>
+                    <span className="checklist-item-text">{item.text}</span>
+                    <button
+                      type="button"
+                      className="checklist-item-delete"
+                      onClick={() => deleteChecklistItem(item.id, editGoal.id)}
+                      title="Xóa"
+                    >
+                      <IconX size={11} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="checklist-add-row">
+                <input
+                  ref={addInputRef}
+                  className="checklist-add-input"
+                  value={newItemText}
+                  onChange={(e) => setNewItemText(e.target.value)}
+                  onKeyDown={handleAddKeyDown}
+                  placeholder="Thêm việc cần làm..."
+                />
+                <button
+                  type="button"
+                  className="checklist-add-btn"
+                  onClick={handleAddItem}
+                  disabled={!newItemText.trim()}
+                  title="Thêm"
+                >
+                  <IconPlus size={14} />
+                </button>
+              </div>
             </div>
           )}
 

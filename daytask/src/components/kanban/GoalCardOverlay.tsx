@@ -1,4 +1,5 @@
 import { IconGripVertical, IconCalendarEvent } from '@tabler/icons-react';
+import { useAppStore } from '../../store/appStore';
 import type { Goal, GoalStatus } from '../../types';
 
 const CAT_LABEL: Record<string, string> = {
@@ -11,7 +12,7 @@ const QUARTER_LABEL: Record<string, string> = {
 
 const PROGRESS_COLOR: Record<GoalStatus, string> = {
   todo:   '#888780',
-  doing:  '#185FA5',
+  doing:  '#125680',
   review: '#EF9F27',
   done:   '#639922',
 };
@@ -21,7 +22,12 @@ interface Props {
 }
 
 export default function GoalCardOverlay({ goal }: Props) {
+  const { checklistItems } = useAppStore();
   const progressColor = PROGRESS_COLOR[goal.status];
+  const items = checklistItems[goal.id] ?? [];
+  const totalItems = items.length;
+  const doneItems = items.filter((i) => i.is_done).length;
+  const pct = totalItems === 0 ? 0 : Math.round((doneItems / totalItems) * 100);
 
   return (
     <div className="goal-card goal-card-drag-overlay">
@@ -34,9 +40,16 @@ export default function GoalCardOverlay({ goal }: Props) {
           {goal.description && (
             <div className="goal-desc">{goal.description}</div>
           )}
-          <div className="goal-progress-wrap">
-            <div className="goal-progress-fill" style={{ width: `${goal.progress}%`, background: progressColor }} />
-          </div>
+          {totalItems > 0 && (
+            <div className="goal-checklist-progress">
+              <div className="goal-progress-wrap" style={{ flex: 1 }}>
+                <div className="goal-progress-fill" style={{ width: `${pct}%`, background: progressColor }} />
+              </div>
+              <span className="goal-progress-xy" style={{ color: progressColor }}>
+                {doneItems}/{totalItems}
+              </span>
+            </div>
+          )}
           <div className="goal-meta">
             <span className={`tag tag-${goal.category}`}>{CAT_LABEL[goal.category]}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -53,13 +66,6 @@ export default function GoalCardOverlay({ goal }: Props) {
           </div>
         </div>
       </div>
-      <input
-        type="range"
-        min={0} max={100} step={5}
-        value={goal.progress}
-        readOnly
-        style={{ width: '100%', accentColor: progressColor, marginTop: 4 }}
-      />
     </div>
   );
 }

@@ -1,8 +1,8 @@
 /* ── CSS Variables ── */
 :root {
   --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --primary: #185FA5;
-  --primary-dark: #0C447C;
+  --primary: #125680;
+  --primary-dark: #0a3d5e;
 
   --bg-primary: #ffffff;
   --bg-secondary: #f8f7f5;
@@ -593,9 +593,10 @@ input, textarea, select { font-family: inherit; }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  cursor: default;
+  cursor: grab;
   transition: border-color 0.1s;
 }
+.goal-card:active { cursor: grabbing; }
 
 .goal-card:hover { border-color: var(--border-2); }
 
@@ -794,7 +795,7 @@ input, textarea, select { font-family: inherit; }
   background: var(--border-1);
   border-radius: 99px;
   overflow: hidden;
-  margin: 4px 0;
+  flex: 1;
 }
 
 .goal-progress-fill {
@@ -802,6 +803,179 @@ input, textarea, select { font-family: inherit; }
   border-radius: 99px;
   transition: width 0.3s ease;
 }
+
+.goal-checklist-progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 5px 0 2px;
+}
+
+.goal-progress-xy {
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Checklist in modal ── */
+.modal-goal-detail {
+  width: 440px;
+  max-width: 92vw;
+}
+
+.checklist-section {
+  margin: 8px 0 4px;
+  border-top: 1px solid var(--border-1);
+  padding-top: 12px;
+}
+
+.checklist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.checklist-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.checklist-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--border-1);
+  border-radius: 99px;
+  padding: 1px 7px;
+}
+
+.checklist-progress-bar {
+  height: 4px;
+  background: var(--border-1);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.checklist-progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 99px;
+  transition: width 0.25s ease;
+}
+
+.checklist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px;
+  border-radius: var(--radius-sm);
+  transition: background 0.1s;
+}
+
+.checklist-item:hover { background: var(--bg-secondary); }
+
+.checklist-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1.5px solid var(--border-2);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s;
+  color: #fff;
+}
+
+.checklist-checkbox.checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.checklist-item-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.checklist-item-done .checklist-item-text {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+.checklist-item-delete {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 3px;
+  transition: opacity 0.1s, color 0.1s;
+}
+
+.checklist-item:hover .checklist-item-delete { opacity: 1; }
+.checklist-item-delete:hover { color: var(--danger); }
+
+.checklist-add-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.checklist-add-input {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 5px 8px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.checklist-add-input:focus { border-color: var(--primary); }
+.checklist-add-input::placeholder { color: var(--text-secondary); }
+
+.checklist-add-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.checklist-add-btn:disabled { opacity: 0.35; cursor: default; }
+.checklist-add-btn:not(:disabled):hover { opacity: 0.85; }
 
 /* ── Reminder Popup ── */
 .reminder-popup {
