@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -8,7 +8,7 @@ import {
   useSensors,
   closestCorners,
 } from '@dnd-kit/core';
-import { IconChevronLeft, IconChevronRight, IconFilter, IconSearch, IconPlus } from '@tabler/icons-react';
+import { IconGripHorizontal } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import KanbanColumn from './KanbanColumn';
 import AddGoalModal from './AddGoalModal';
@@ -24,7 +24,7 @@ const STATUS_CONFIG: Record<GoalStatus, { label: string; dot: string }> = {
 };
 
 export default function KanbanView() {
-  const { goals, selectedYear, setSelectedYear, moveGoal } = useAppStore();
+  const { goals, moveGoal, openAddGoalModal, setOpenAddGoalModal } = useAppStore();
   const [showModal, setShowModal]         = useState(false);
   const [editGoal, setEditGoal]           = useState<Goal | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<GoalStatus>('todo');
@@ -34,6 +34,16 @@ export default function KanbanView() {
   const total   = goals.length;
   const done    = goals.filter((g) => g.status === 'done').length;
   const yearPct = total === 0 ? 0 : Math.round((done / total) * 100);
+
+  // Watch for add trigger from top nav
+  useEffect(() => {
+    if (openAddGoalModal) {
+      setEditGoal(null);
+      setDefaultStatus('todo');
+      setShowModal(true);
+      setOpenAddGoalModal(false);
+    }
+  }, [openAddGoalModal, setOpenAddGoalModal]);
 
   function openAdd(status: GoalStatus) {
     setEditGoal(null);
@@ -77,30 +87,6 @@ export default function KanbanView() {
 
   return (
     <>
-      {/* Topbar */}
-      <div className="view-topbar">
-        <div>
-          <div className="view-title">Kế hoạch năm</div>
-          <div className="view-subtitle">{done}/{total} mục tiêu hoàn thành</div>
-        </div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <div className="year-pill">
-            <button className="icon-btn" style={{ border: 'none' }} onClick={() => setSelectedYear(selectedYear - 1)}>
-              <IconChevronLeft size={14} />
-            </button>
-            <span style={{ fontSize: 13, fontWeight: 500, minWidth: 36, textAlign: 'center' }}>{selectedYear}</span>
-            <button className="icon-btn" style={{ border: 'none' }} onClick={() => setSelectedYear(selectedYear + 1)}>
-              <IconChevronRight size={14} />
-            </button>
-          </div>
-          <button className="icon-btn" title="Lọc"><IconFilter size={16} /></button>
-          <button className="icon-btn" title="Tìm kiếm"><IconSearch size={16} /></button>
-          <button className="icon-btn" title="Thêm mục tiêu" onClick={() => openAdd('todo')}>
-            <IconPlus size={16} />
-          </button>
-        </div>
-      </div>
-
       {/* Stats bar */}
       <div className="kanban-stats-bar">
         {STATUSES.map((s) => (
@@ -117,6 +103,12 @@ export default function KanbanView() {
           </div>
           <span className="kanban-prog-pct">{yearPct}%</span>
         </div>
+      </div>
+
+      {/* Drag hint */}
+      <div className="kanban-drag-hint">
+        <IconGripHorizontal size={13} />
+        Kéo thả task giữa các cột để cập nhật trạng thái
       </div>
 
       {/* Kanban board */}

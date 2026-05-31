@@ -45,7 +45,7 @@ export default function TaskCard({ task, onEdit }: Props) {
         onClick={() => toggleTask(task.id)}
         title={task.is_done ? 'Đánh dấu chưa xong' : 'Đánh dấu xong'}
       >
-        {task.is_done && <IconCheck size={11} />}
+        {task.is_done ? <IconCheck size={20} strokeWidth={2.5} /> : null}
       </button>
 
       <div className="task-body">

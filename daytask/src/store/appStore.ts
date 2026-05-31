@@ -86,6 +86,7 @@ interface AppState {
 
   reminderPopup: Task | null;
   snoozedUntil: Record<number, number>;
+  openAddGoalModal: boolean;
 
   setActiveTab: (tab: Tab) => void;
   toggleTheme: () => void;
@@ -94,6 +95,7 @@ interface AppState {
   setReminderPopup: (task: Task | null) => void;
   snoozeReminder: (taskId: number, minutes: number) => void;
   dismissReminder: () => void;
+  setOpenAddGoalModal: (val: boolean) => void;
 
   loadTasks: (date: string) => Promise<void>;
   addTask: (task: NewTask) => Promise<void>;
@@ -124,6 +126,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   reminderPopup: null,
   snoozedUntil: {},
+  openAddGoalModal: false,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -154,6 +157,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   dismissReminder: () => set({ reminderPopup: null }),
+  setOpenAddGoalModal: (val) => set({ openAddGoalModal: val }),
 
   // --- Tasks ---
 
