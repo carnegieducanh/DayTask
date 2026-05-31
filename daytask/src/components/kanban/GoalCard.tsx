@@ -14,7 +14,7 @@ const QUARTER_LABEL: Record<string, string> = {
 
 const PROGRESS_COLOR: Record<GoalStatus, string> = {
   todo:   '#888780',
-  doing:  '#125680',
+  doing:  '#3B9FE8',
   review: '#EF9F27',
   done:   '#639922',
 };

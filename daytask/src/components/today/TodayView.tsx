@@ -111,6 +111,12 @@ export default function TodayView() {
           </div>
         </div>
 
+        {/* Add task */}
+        <div className="add-task-row" onClick={openAdd}>
+          <IconPlus size={16} />
+          Thêm task mới...
+        </div>
+
         {/* Chưa hoàn thành */}
         {pending.length > 0 && (
           <div>
@@ -130,12 +136,6 @@ export default function TodayView() {
             </div>
           </div>
         )}
-
-        {/* Add task */}
-        <div className="add-task-row" onClick={openAdd}>
-          <IconPlus size={16} />
-          Thêm task mới...
-        </div>
 
         {/* Empty state */}
         {total === 0 && (

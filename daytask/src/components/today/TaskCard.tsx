@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { IconCheck, IconBell, IconBellOff, IconX } from '@tabler/icons-react';
+import { IconCheck, IconBell, IconBellOff, IconTrash } from '@tabler/icons-react';
 import type { Task } from '../../types';
 import { useAppStore } from '../../store/appStore';
 
@@ -45,7 +45,7 @@ export default function TaskCard({ task, onEdit }: Props) {
         onClick={() => toggleTask(task.id)}
         title={task.is_done ? 'Đánh dấu chưa xong' : 'Đánh dấu xong'}
       >
-        {task.is_done ? <IconCheck size={20} strokeWidth={2.5} /> : null}
+        <IconCheck size={22} strokeWidth={2.5} />
       </button>
 
       <div className="task-body">
@@ -88,19 +88,21 @@ export default function TaskCard({ task, onEdit }: Props) {
         </div>
       </div>
 
-      {task.reminder ? (
-        <IconBell size={15} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-      ) : (
-        <IconBellOff size={15} style={{ color: 'var(--text-secondary)', flexShrink: 0, opacity: 0.4 }} />
-      )}
+      <span className="task-bell-btn">
+        {task.reminder ? (
+          <IconBell size={20} style={{ color: '#60a5fa', flexShrink: 0 }} />
+        ) : (
+          <IconBellOff size={20} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
+        )}
+      </span>
 
       <button
-        className="icon-btn"
-        style={{ width: 26, height: 26, fontSize: 14, flexShrink: 0 }}
+        className="icon-btn task-delete-btn"
+        style={{ width: 30, height: 30, fontSize: 14, flexShrink: 0 }}
         onClick={() => deleteTask(task.id)}
         title="Xóa"
       >
-        <IconX size={13} />
+        <IconTrash size={18} />
       </button>
     </div>
   );
