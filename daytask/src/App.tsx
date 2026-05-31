@@ -8,16 +8,30 @@ import ReminderPopup from './components/ReminderPopup';
 import { useReminder } from './hooks/useReminder';
 import './App.css';
 
+async function checkForUpdates() {
+  try {
+    const { check } = await import('@tauri-apps/plugin-updater');
+    const update = await check();
+    if (update) {
+      console.log(`Update available: ${update.version}`);
+      await update.downloadAndInstall();
+    }
+  } catch {
+    // Silently ignore — running in browser or no network
+  }
+}
+
 function App() {
   useReminder();
-  const { activeTab, theme, selectedDate, selectedYear, loadTasks, loadGoals } = useAppStore();
+  const { activeTab, theme, selectedDate, selectedYear, loadTasks, loadGoals, seedIfEmpty } = useAppStore();
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
   useEffect(() => {
-    loadTasks(selectedDate);
+    seedIfEmpty().then(() => loadTasks(selectedDate));
+    checkForUpdates();
   }, []);
 
   useEffect(() => {

@@ -3,7 +3,7 @@ import { startOfYear, endOfYear, eachDayOfInterval, getDay, format, isToday } fr
 import { vi } from 'date-fns/locale';
 import type { DayActivity } from '../../types';
 
-const LEVEL_COLORS = ['#F1EFE8', '#B5D4F4', '#378ADD', '#185FA5', '#0C447C'];
+const LEVEL_COLORS = ['var(--bg-secondary)', '#B5D4F4', '#378ADD', '#185FA5', '#0C447C'];
 
 function getLevel(count: number): number {
   if (count === 0) return 0;
