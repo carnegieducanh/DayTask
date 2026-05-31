@@ -116,7 +116,6 @@ export default function KanbanView() {
       <div className="kanban-stats-bar">
         {STATUSES.map((s) => (
           <div key={s} className="kanban-stat-item">
-            <span className="kanban-stat-dot" style={{ background: STATUS_CONFIG[s].dot }} />
             {STATUS_CONFIG[s].label}
             <span className="kanban-stat-num">{goals.filter((g) => g.status === s).length}</span>
           </div>

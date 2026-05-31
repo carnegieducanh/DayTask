@@ -79,12 +79,6 @@ export default function TaskCard({ task, onEdit }: Props) {
           <span className={`tag tag-${task.category}`}>
             {CAT_LABEL[task.category]}
           </span>
-          <span className="priority-dot" style={{
-            background: task.priority === 'high' ? 'var(--pri-high)'
-              : task.priority === 'mid' ? 'var(--pri-mid)'
-              : 'var(--pri-low)',
-            width: 6, height: 6, borderRadius: '50%', display: 'inline-block', flexShrink: 0,
-          }} />
         </div>
       </div>
 

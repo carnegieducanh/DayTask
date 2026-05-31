@@ -73,17 +73,10 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
           {/* Footer */}
           <div className="goal-meta">
             <span className={`tag tag-${goal.category}`}>{CAT_LABEL[goal.category]}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span className="goal-quarter">
-                <IconCalendarEvent size={10} style={{ verticalAlign: 'middle', marginRight: 2 }} />
-                {QUARTER_LABEL[goal.quarter]}
-              </span>
-              <span className="priority-dot" style={{
-                background: goal.priority === 'high' ? 'var(--pri-high)'
-                  : goal.priority === 'mid' ? 'var(--pri-mid)'
-                  : 'var(--pri-low)',
-              }} />
-            </div>
+            <span className="goal-quarter">
+              <IconCalendarEvent size={10} style={{ verticalAlign: 'middle', marginRight: 2 }} />
+              {QUARTER_LABEL[goal.quarter]}
+            </span>
           </div>
         </div>
 
