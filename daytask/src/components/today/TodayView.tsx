@@ -92,7 +92,7 @@ export default function TodayView() {
             <div className="stat-label">Hoàn thành</div>
             <div className="stat-value">
               {done.length}
-              <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 400 }}>/{total}</span>
+              <span style={{ fontSize: 20, color: 'var(--text-secondary)', fontWeight: 400 }}>/{total}</span>
             </div>
             <div className="progress-bar-wrap" style={{ marginTop: 8 }}>
               <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
