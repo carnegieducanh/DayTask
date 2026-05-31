@@ -20,7 +20,9 @@
       "Read(//c/Users/huydu/AppData/Local/Temp/**)",
       "Bash(taskkill /F /IM node.exe /FI \"WINDOWTITLE eq npm run dev\")",
       "Bash(npm uninstall *)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Bash(gh auth *)",
+      "PowerShell(gh auth status 2>&1)"
     ],
     "additionalDirectories": [
       "c:\\Users\\huydu\\.claude\\projects\\c--Users-huydu-Desktop-daily-task\\memory"

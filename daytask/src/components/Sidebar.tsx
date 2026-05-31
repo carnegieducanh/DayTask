@@ -3,9 +3,12 @@ import {
   IconSun,
   IconCalendarStats,
   IconChartDots,
-  IconMoon,
-  IconSunFilled,
 } from '@tabler/icons-react';
+
+const THEME_LABEL: Record<string, string> = {
+  light: '☽  Dark mode',
+  dark:  '☼  Light mode',
+};
 import { useAppStore } from '../store/appStore';
 import type { Tab } from '../types';
 
@@ -46,10 +49,8 @@ export default function Sidebar() {
 
       <div className="sidebar-footer">
         <button className="nav-item" onClick={toggleTheme} style={{ width: '100%' }}>
-          <span className="nav-icon">
-            {theme === 'light' ? <IconMoon size={16} /> : <IconSunFilled size={16} />}
-          </span>
-          {theme === 'light' ? 'Chế độ tối' : 'Chế độ sáng'}
+          <span className="nav-icon">◐</span>
+          {THEME_LABEL[theme]}
         </button>
       </div>
     </nav>
