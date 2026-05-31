@@ -1,7 +1,4 @@
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { IconGripVertical, IconX, IconCalendarEvent } from '@tabler/icons-react';
-import { useAppStore } from '../../store/appStore';
+import { IconGripVertical, IconCalendarEvent } from '@tabler/icons-react';
 import type { Goal, GoalStatus } from '../../types';
 
 const CAT_LABEL: Record<string, string> = {
@@ -21,50 +18,25 @@ const PROGRESS_COLOR: Record<GoalStatus, string> = {
 
 interface Props {
   goal: Goal;
-  onEdit: (goal: Goal) => void;
-  status: GoalStatus;
 }
 
-export default function GoalCard({ goal, onEdit, status }: Props) {
-  const { deleteGoal, updateGoal } = useAppStore();
-
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: goal.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: !isDragging && status === 'done' ? 0.75 : undefined,
-  };
-
-  const progressColor = PROGRESS_COLOR[status];
+export default function GoalCardOverlay({ goal }: Props) {
+  const progressColor = PROGRESS_COLOR[goal.status];
 
   return (
-    <div ref={setNodeRef} style={style} className={`goal-card${isDragging ? ' goal-card-ghost' : ''}`}>
+    <div className="goal-card goal-card-drag-overlay">
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
-        {/* Drag handle */}
-        <div
-          className="goal-drag-handle"
-          {...listeners}
-          {...attributes}
-          title="Kéo để di chuyển"
-        >
+        <div className="goal-drag-handle" style={{ cursor: 'grabbing' }}>
           <IconGripVertical size={14} />
         </div>
-
-        {/* Card content */}
-        <div className="goal-card-body" style={{ flex: 1 }} onClick={() => onEdit(goal)}>
+        <div className="goal-card-body" style={{ flex: 1 }}>
           <div className="goal-title">{goal.title}</div>
           {goal.description && (
             <div className="goal-desc">{goal.description}</div>
           )}
-
-          {/* Progress bar */}
           <div className="goal-progress-wrap">
             <div className="goal-progress-fill" style={{ width: `${goal.progress}%`, background: progressColor }} />
           </div>
-
-          {/* Footer */}
           <div className="goal-meta">
             <span className={`tag tag-${goal.category}`}>{CAT_LABEL[goal.category]}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -80,28 +52,13 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
             </div>
           </div>
         </div>
-
-        <button
-          className="icon-btn"
-          style={{ width: 22, height: 22, fontSize: 12, flexShrink: 0 }}
-          onClick={(e) => { e.stopPropagation(); deleteGoal(goal.id); }}
-          title="Xóa"
-        >
-          <IconX size={12} />
-        </button>
       </div>
-
-      {/* Progress slider */}
       <input
         type="range"
-        min={0}
-        max={100}
-        step={5}
+        min={0} max={100} step={5}
         value={goal.progress}
-        onChange={(e) => updateGoal(goal.id, { progress: Number(e.target.value) })}
-        onClick={(e) => e.stopPropagation()}
+        readOnly
         style={{ width: '100%', accentColor: progressColor, marginTop: 4 }}
-        title={`Tiến độ: ${goal.progress}%`}
       />
     </div>
   );
