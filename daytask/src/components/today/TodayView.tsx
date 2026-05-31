@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { IconSearch, IconPlus, IconDownload, IconSun } from '@tabler/icons-react';
@@ -20,6 +20,7 @@ export default function TodayView() {
   const [editTask, setEditTask]           = useState<Task | null>(null);
   const [streak, setStreak]               = useState(0);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const demoPopupShown = useRef(false);
 
   useEffect(() => {
     getStreak().then(setStreak);
@@ -29,14 +30,14 @@ export default function TodayView() {
     loadHeatmap(new Date().getFullYear());
   }, []);
 
-  // Demo: show reminder popup on load (browser only, once)
+  // Demo: show reminder popup once on browser (not Tauri)
   useEffect(() => {
-    if (isTauri()) return;
+    if (isTauri() || demoPopupShown.current || tasks.length === 0) return;
     const first = tasks.find((t) => !t.is_done && t.reminder);
-    if (first) {
-      const timer = setTimeout(() => setReminderPopup(first), 1200);
-      return () => clearTimeout(timer);
-    }
+    if (!first) return;
+    demoPopupShown.current = true;
+    const timer = setTimeout(() => setReminderPopup(first), 1200);
+    return () => clearTimeout(timer);
   }, [tasks]);
 
   const pending   = tasks.filter((t) => !t.is_done);
