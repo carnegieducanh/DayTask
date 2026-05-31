@@ -53,6 +53,7 @@
 body {
   font-family: var(--font);
   font-size: 15px;
+  font-weight: 500;
   background: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.5;
@@ -205,7 +206,7 @@ input, textarea, select { font-family: inherit; }
 
 .view-title {
   font-size: 20px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -315,7 +316,7 @@ input, textarea, select { font-family: inherit; }
 
 .modal-title {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 16px;
   color: var(--text-primary);
 }
@@ -583,7 +584,7 @@ input, textarea, select { font-family: inherit; }
 
 .kanban-col-title {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -669,7 +670,7 @@ input, textarea, select { font-family: inherit; }
 
 .goal-title {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 2px;
 }
