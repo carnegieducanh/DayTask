@@ -5,6 +5,7 @@ import TodayView from './components/today/TodayView';
 import KanbanView from './components/kanban/KanbanView';
 import HeatmapView from './components/heatmap/HeatmapView';
 import ReminderPopup from './components/ReminderPopup';
+import SettingsModal from './components/SettingsModal';
 import { useReminder } from './hooks/useReminder';
 import './App.css';
 
@@ -23,11 +24,15 @@ async function checkForUpdates() {
 
 function App() {
   useReminder();
-  const { activeTab, theme, selectedDate, selectedYear, loadTasks, loadGoals, seedIfEmpty } = useAppStore();
+  const { activeTab, theme, uiScale, selectedDate, selectedYear, loadTasks, loadGoals, seedIfEmpty } = useAppStore();
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    (document.documentElement.style as any).zoom = String(uiScale);
+  }, [uiScale]);
 
   useEffect(() => {
     seedIfEmpty().then(() => loadTasks(selectedDate));
@@ -46,6 +51,7 @@ function App() {
         {activeTab === 'kanban' && <KanbanView />}
         {activeTab === 'heatmap' && <HeatmapView />}
         <ReminderPopup />
+        <SettingsModal />
       </div>
     </div>
   );

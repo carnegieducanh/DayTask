@@ -8,6 +8,7 @@ import {
   IconFilter,
   IconSearch,
   IconPlus,
+  IconSettings,
 } from '@tabler/icons-react';
 import { useAppStore } from '../store/appStore';
 import type { Tab } from '../types';
@@ -26,7 +27,7 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 export default function Sidebar() {
   const {
     activeTab, tasks, setActiveTab, theme, toggleTheme,
-    selectedYear, setSelectedYear, setOpenAddGoalModal,
+    selectedYear, setSelectedYear, setOpenAddGoalModal, setOpenSettingsModal,
   } = useAppStore();
 
   const pendingCount = tasks.filter((t) => !t.is_done).length;
@@ -94,6 +95,13 @@ export default function Sidebar() {
             </button>
           </>
         )}
+        <button
+          className="icon-btn"
+          title="Cài đặt"
+          onClick={() => setOpenSettingsModal(true)}
+        >
+          <IconSettings size={16} />
+        </button>
         <button className="nav-item" onClick={toggleTheme}>
           <span className="nav-icon">◐</span>
           {THEME_LABEL[theme]}

@@ -89,9 +89,13 @@ interface AppState {
   reminderPopup: Task | null;
   snoozedUntil: Record<number, number>;
   openAddGoalModal: boolean;
+  uiScale: number;
+  openSettingsModal: boolean;
 
   setActiveTab: (tab: Tab) => void;
   toggleTheme: () => void;
+  setUiScale: (scale: number) => void;
+  setOpenSettingsModal: (val: boolean) => void;
   setSelectedDate: (date: string) => void;
   setSelectedYear: (year: number) => void;
   setReminderPopup: (task: Task | null) => void;
@@ -134,8 +138,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   reminderPopup: null,
   snoozedUntil: {},
   openAddGoalModal: false,
+  uiScale: parseFloat(localStorage.getItem('uiScale') ?? '1.1'),
+  openSettingsModal: false,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
+
+  setUiScale: (scale) => {
+    localStorage.setItem('uiScale', String(scale));
+    set({ uiScale: scale });
+  },
+
+  setOpenSettingsModal: (val) => set({ openSettingsModal: val }),
 
   toggleTheme: () => {
     const next: Theme = get().theme === 'light' ? 'dark' : 'light';

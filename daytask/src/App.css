@@ -33,18 +33,18 @@
 }
 
 [data-theme='dark'] {
-  --bg-primary: #252525;   /* content, cards — slightly lighter */
-  --bg-secondary: #1a1a1a; /* sidebar, kanban columns — darkest */
+  --bg-primary: #252525;   /* content, cards */
+  --bg-secondary: #1a1a1a; /* sidebar, kanban columns */
   --text-primary: #f0eeeb;
   --text-secondary: #888888;
   --border-1: #333333;
   --border-2: #444444;
 
-  /* Kanban columns — dark tints, no bright headers */
-  --col-todo-bg: #232220;   --col-todo-badge: #3a3733;   --col-todo-title: #a8a5a0;
-  --col-doing-bg: #1e2535;  --col-doing-badge: #1e3556;  --col-doing-title: #7ab0e0;
-  --col-review-bg: #2d2318; --col-review-badge: #503412;  --col-review-title: #d4904a;
-  --col-done-bg: #1e2718;   --col-done-badge: #263718;   --col-done-title: #80b85a;
+  /* Kanban columns — all neutral dark, no color tinting */
+  --col-todo-bg: #1a1a1a;   --col-todo-badge: #2e2e2e;   --col-todo-title: #a0a09a;
+  --col-doing-bg: #1a1a1a;  --col-doing-badge: #2e2e2e;  --col-doing-title: #7ab0e0;
+  --col-review-bg: #1a1a1a; --col-review-badge: #2e2e2e;  --col-review-title: #d4904a;
+  --col-done-bg: #1a1a1a;   --col-done-badge: #2e2e2e;   --col-done-title: #80b85a;
 }
 
 /* ── Reset ── */
@@ -584,6 +584,12 @@ input, textarea, select { font-family: inherit; }
   padding: 20px 8px;
 }
 
+/* Dark mode card override — more contrast vs column */
+[data-theme='dark'] .goal-card {
+  background: #2c2c2c;
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
 /* ── Goal Card ── */
 .goal-card {
   background: var(--bg-primary);
@@ -1116,4 +1122,100 @@ input, textarea, select { font-family: inherit; }
   width: 10px;
   height: 10px;
   border-radius: 2px;
+}
+
+/* ── Settings Modal ── */
+.modal-settings {
+  width: 360px;
+}
+
+.settings-section {
+  margin-top: 8px;
+}
+
+.settings-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.settings-scale-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.settings-scale-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  border: 1.5px solid var(--border-1);
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  color: var(--text-primary);
+}
+
+.settings-scale-btn:hover {
+  border-color: var(--border-2);
+  background: var(--bg-secondary);
+}
+
+.settings-scale-btn.active {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.settings-scale-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.settings-scale-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.settings-scale-btn.active .settings-scale-label {
+  color: var(--primary);
+}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: #555555;
 }
