@@ -973,6 +973,7 @@ select {
     0 8px 24px rgba(0, 0, 0, 0.18),
     0 2px 8px rgba(0, 0, 0, 0.1);
   transform: rotate(4deg) !important;
+  opacity: 0.82;
   cursor: grabbing !important;
 }
 [data-theme="dark"] .goal-card-drag-overlay {
