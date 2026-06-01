@@ -128,20 +128,37 @@ function App() {
   }
 
   function handleDragEnd(event: DragEndEvent) {
+    const savedLiveGoals = liveGoals;
     setKanbanDragActiveId(null);
     setDragOverlayWidth(null);
     setLiveGoals(null);
     const { active, over } = event;
-    if (!over || over.id === active.id) return;
+    if (!over) return;
 
     const activeId = Number(active.id);
-    const overId = over.id;
 
+    // liveGoals inserts the active card into the destination column's SortableContext,
+    // so collision detection sometimes picks the card's own droppable (over.id === active.id).
+    // Read the destination from savedLiveGoals instead of bailing out.
+    if (over.id === active.id) {
+      if (!savedLiveGoals) return;
+      const liveGoal = savedLiveGoals.find((g) => g.id === activeId);
+      if (!liveGoal) return;
+      const srcGoal = goals.find((g) => g.id === activeId);
+      if (!srcGoal || liveGoal.status === srcGoal.status) return;
+      const destGoals = savedLiveGoals
+        .filter((g) => g.status === liveGoal.status)
+        .sort((a, b) => a.position - b.position);
+      const newIndex = destGoals.findIndex((g) => g.id === activeId);
+      reorderGoal(activeId, liveGoal.status, newIndex >= 0 ? newIndex : destGoals.length);
+      return;
+    }
+
+    const overId = over.id;
     let newStatus: GoalStatus;
     let newIndex: number;
 
     if (STATUSES.includes(overId as GoalStatus)) {
-      // Thả vào vùng trống của cột → xuống cuối cột đó
       newStatus = overId as GoalStatus;
       newIndex = goals.filter((g) => g.status === newStatus && g.id !== activeId).length;
     } else {
@@ -153,7 +170,6 @@ function App() {
         .sort((a, b) => a.position - b.position)
         .map((g) => g.id);
       const overIndex = targetIds.indexOf(Number(overId));
-      // Chèn trước/sau card đích tuỳ con trỏ nằm trên hay dưới tâm card đó
       const activeRect = active.rect.current.translated;
       const overRect = over.rect;
       const insertAfter =

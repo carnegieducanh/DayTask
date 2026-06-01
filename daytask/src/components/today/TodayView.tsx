@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { IconSearch, IconPlus, IconDownload, IconSun, IconBellRinging, IconX } from '@tabler/icons-react';
+import { IconSearch, IconPlus, IconDownload, IconSun } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import { isTauri } from '../../store/mockDb';
 import TaskCard from './TaskCard';
@@ -14,22 +14,12 @@ const CAT_LABELS: Record<string, string> = {
   work: 'Công việc', personal: 'Cá nhân', health: 'Sức khỏe', learn: 'Học tập',
 };
 
-function getReminderLabel(reminder: string): string {
-  const [h, m] = reminder.split(':').map(Number);
-  const now = new Date();
-  const target = new Date(); target.setHours(h, m, 0, 0);
-  const diff = Math.round((target.getTime() - now.getTime()) / 60000);
-  if (diff > 0) return `Còn ${diff} phút — ${reminder} hôm nay`;
-  if (diff === 0) return `Đến giờ — ${reminder} hôm nay`;
-  return `${reminder} hôm nay`;
-}
 
 export default function TodayView() {
   const {
     tasks, selectedDate, setSelectedDate,
     heatmap, loadHeatmap,
     getStreak, setReminderPopup,
-    reminderPopup, snoozeReminder, dismissReminder, setActiveTab,
   } = useAppStore();
 
   const [showModal, setShowModal]         = useState(false);
@@ -177,32 +167,6 @@ export default function TodayView() {
 
           {/* ── Right column ── */}
           <div className="today-right">
-
-            {/* Reminder widget */}
-            {reminderPopup && (
-              <div className="today-right-section">
-                <div className="section-label" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <IconBellRinging size={13} />
-                  Nhắc nhở
-                </div>
-                <div className="today-reminder-widget">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-                    <div className="today-reminder-title">{reminderPopup.title}</div>
-                    <button className="icon-btn" style={{ width: 20, height: 20, border: 'none', flexShrink: 0 }} onClick={dismissReminder}>
-                      <IconX size={12} />
-                    </button>
-                  </div>
-                  {reminderPopup.reminder && (
-                    <div className="today-reminder-time">{getReminderLabel(reminderPopup.reminder)}</div>
-                  )}
-                  <div className="today-reminder-actions">
-                    <button className="popup-btn" onClick={dismissReminder}>Bỏ qua</button>
-                    <button className="popup-btn" onClick={() => snoozeReminder(reminderPopup.id, 10)}>+10 phút</button>
-                    <button className="popup-btn primary" onClick={() => { setActiveTab('today'); dismissReminder(); }}>Xem</button>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Heatmap */}
             <div className="today-right-section">
