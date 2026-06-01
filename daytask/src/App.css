@@ -1992,6 +1992,120 @@ select {
     0 0 0 3.5px rgba(0, 0, 0, 0.35);
 }
 
+/* ── Time Picker Dropdown ── */
+.time-dropdown {
+  position: relative;
+}
+
+.time-dropdown-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 0.5px solid var(--border-2);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-family: var(--font);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.1s;
+}
+
+.time-dropdown-trigger:hover,
+.time-dropdown-trigger.open {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.time-dropdown-icon {
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.time-dropdown-icon.muted {
+  color: var(--text-secondary);
+}
+
+.time-dropdown-value {
+  flex: 1;
+}
+
+.time-dropdown-value.placeholder {
+  color: var(--text-secondary);
+}
+
+.time-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border-2);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+  z-index: 300;
+  overflow: hidden;
+}
+
+.time-dropdown-list {
+  max-height: 196px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.time-dropdown-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.time-dropdown-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.time-dropdown-list::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 2px;
+}
+
+.time-option {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 7px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.96rem;
+  font-family: var(--font);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.08s;
+}
+
+.time-option:hover {
+  background: var(--bg-secondary);
+}
+
+.time-option.selected {
+  color: var(--primary);
+  font-weight: 600;
+  background: var(--bg-secondary);
+}
+
+.time-option-icon {
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+
+.time-option-divider {
+  height: 0.5px;
+  background: var(--border-1);
+  margin: 4px 0;
+}
+
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
   background: #555555;
 }

@@ -3,7 +3,18 @@ import {
   IconChevronDown,
   IconDotsVertical,
   IconCheck,
+  IconBell,
+  IconBellOff,
 } from "@tabler/icons-react";
+
+const TIME_OPTIONS: string[] = [];
+for (let h = 0; h < 24; h++) {
+  for (let m = 0; m < 60; m += 15) {
+    TIME_OPTIONS.push(
+      `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
+    );
+  }
+}
 import { useAppStore } from "../../store/appStore";
 import type { Task, Category, Priority } from "../../types";
 
@@ -68,7 +79,10 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   const [reminder, setReminder] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);
+  const [reminderOpen, setReminderOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const reminderRef = useRef<HTMLDivElement>(null);
+  const reminderListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (editTask) {
@@ -89,10 +103,24 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
         setDropdownOpen(false);
         setColorPickerFor(null);
       }
+      if (
+        reminderRef.current &&
+        !reminderRef.current.contains(e.target as Node)
+      ) {
+        setReminderOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!reminderOpen || !reminderListRef.current) return;
+    const selected = reminderListRef.current.querySelector(
+      ".time-option.selected",
+    ) as HTMLElement | null;
+    if (selected) selected.scrollIntoView({ block: "center" });
+  }, [reminderOpen]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -266,12 +294,59 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
 
           <div className="form-group">
             <label className="form-label">Giờ nhắc nhở</label>
-            <input
-              className="form-input"
-              type="time"
-              value={reminder}
-              onChange={(e) => setReminder(e.target.value)}
-            />
+            <div className="time-dropdown" ref={reminderRef}>
+              <button
+                type="button"
+                className={`time-dropdown-trigger${reminderOpen ? " open" : ""}`}
+                onClick={() => setReminderOpen((v) => !v)}
+              >
+                {reminder ? (
+                  <IconBell size={14} className="time-dropdown-icon" />
+                ) : (
+                  <IconBellOff size={14} className="time-dropdown-icon muted" />
+                )}
+                <span
+                  className={`time-dropdown-value${!reminder ? " placeholder" : ""}`}
+                >
+                  {reminder || "Không nhắc nhở"}
+                </span>
+                <IconChevronDown
+                  size={13}
+                  className={`cat-dropdown-chevron${reminderOpen ? " open" : ""}`}
+                />
+              </button>
+              {reminderOpen && (
+                <div className="time-dropdown-panel">
+                  <div className="time-dropdown-list" ref={reminderListRef}>
+                    <button
+                      type="button"
+                      className={`time-option${!reminder ? " selected" : ""}`}
+                      onClick={() => {
+                        setReminder("");
+                        setReminderOpen(false);
+                      }}
+                    >
+                      <IconBellOff size={13} className="time-option-icon" />
+                      Không nhắc nhở
+                    </button>
+                    <div className="time-option-divider" />
+                    {TIME_OPTIONS.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        className={`time-option${reminder === t ? " selected" : ""}`}
+                        onClick={() => {
+                          setReminder(t);
+                          setReminderOpen(false);
+                        }}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="form-actions">
