@@ -174,12 +174,6 @@ export default function TodayView() {
               <MiniCalendar />
             </div>
 
-            {/* Heatmap */}
-            <div className="today-right-section">
-              <div className="section-label">Hoạt động 3 tháng qua</div>
-              <MiniHeatmap data={heatmap} />
-            </div>
-
             {/* Schedule */}
             {reminderTasks.length > 0 && (
               <div className="today-right-section">
@@ -197,6 +191,12 @@ export default function TodayView() {
                 </div>
               </div>
             )}
+
+            {/* Heatmap */}
+            <div className="today-right-section">
+              <div className="section-label">Hoạt động 3 tháng qua</div>
+              <MiniHeatmap data={heatmap} />
+            </div>
 
           </div>
         </div>
