@@ -4,11 +4,11 @@ import { useAppStore } from '../../store/appStore';
 import type { Goal, Category, Priority, Quarter, GoalStatus } from '../../types';
 
 const COLOR_PALETTE: string[] = [
-  '#F28B82', '#F6C8D4', '#E879AA', '#C77DDB', '#FDBA74',
-  '#EF4444', '#E0667E', '#EC4899', '#9B59D0', '#9E2626',
-  '#F59E0B', '#FBBF24', '#FEF08A', '#DDD6FE', '#A8C5A0',
-  '#0F7956', '#16A34A', '#86EFAC', '#7DD3FC', '#C4B5FD',
-  '#292524', '#78716C', '#4338CA', '#7C3AED', '#6B21A8',
+  '#F28B82', '#FAAFA8', '#E879AA', '#CE93D8', '#B39DDB',
+  '#D50000', '#E67C73', '#EC4899', '#8E24AA', '#9E2626',
+  '#F4511E', '#F6BF26', '#FEF08A', '#DDD6FE', '#A8C5A0',
+  '#0B8043', '#33B679', '#86EFAC', '#039BE5', '#7986CB',
+  '#292524', '#78716C', '#3F51B5', '#7C3AED', '#6B21A8',
 ];
 
 const CATEGORIES: { value: Category; label: string }[] = [
