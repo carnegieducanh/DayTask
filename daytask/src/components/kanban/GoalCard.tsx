@@ -82,7 +82,7 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
 
         <button
           className="icon-btn"
-          style={{ width: 22, height: 22, fontSize: 12, flexShrink: 0 }}
+          style={{ width: 22, height: 22, fontSize: 13, flexShrink: 0 }}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); deleteGoal(goal.id); }}
           title="Xóa"

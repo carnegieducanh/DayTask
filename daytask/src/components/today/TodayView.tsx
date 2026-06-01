@@ -76,12 +76,12 @@ export default function TodayView() {
           {showDatePicker && (
             <input type="date" className="form-input" value={selectedDate}
               onChange={(e) => { setSelectedDate(e.target.value); setShowDatePicker(false); }}
-              style={{ width: 130, padding: '5px 8px', fontSize: 12 }}
+              style={{ width: 130, padding: '5px 8px', fontSize: 13 }}
               autoFocus onBlur={() => setShowDatePicker(false)}
             />
           )}
           {selectedDate !== format(new Date(), 'yyyy-MM-dd') && !showDatePicker && (
-            <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12 }}
+            <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 13 }}
               onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}>
               Hôm nay
             </button>

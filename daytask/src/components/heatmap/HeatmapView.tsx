@@ -23,7 +23,7 @@ export default function HeatmapView() {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button className="icon-btn" onClick={() => setSelectedYear(selectedYear - 1)}>←</button>
-          <span style={{ fontSize: 14, fontWeight: 500, minWidth: 40, textAlign: 'center' }}>
+          <span style={{ fontSize: 15, fontWeight: 500, minWidth: 40, textAlign: 'center' }}>
             {selectedYear}
           </span>
           <button className="icon-btn" onClick={() => setSelectedYear(selectedYear + 1)}>→</button>

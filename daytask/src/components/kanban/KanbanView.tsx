@@ -56,7 +56,7 @@ export default function KanbanView() {
           </div>
         ))}
         <div className="kanban-progress-wrap">
-          <span style={{ fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Tiến độ năm</span>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Tiến độ năm</span>
           <div className="kanban-prog-track">
             <div className="kanban-prog-fill" style={{ width: `${yearPct}%` }} />
           </div>

@@ -16,7 +16,7 @@ export default function ReminderPopup() {
   return (
     <div className="reminder-popup">
       <div className="reminder-popup-header">
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--primary)', fontSize: 12, fontWeight: 500 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--primary)', fontSize: 13, fontWeight: 500 }}>
           <IconBellRinging size={14} />
           Nhắc nhở
         </span>

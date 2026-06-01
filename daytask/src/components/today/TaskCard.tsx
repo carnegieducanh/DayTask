@@ -92,7 +92,7 @@ export default function TaskCard({ task, onEdit }: Props) {
 
       <button
         className="icon-btn task-delete-btn"
-        style={{ width: 30, height: 30, fontSize: 14, flexShrink: 0 }}
+        style={{ width: 30, height: 30, fontSize: 15, flexShrink: 0 }}
         onClick={() => deleteTask(task.id)}
         title="Xóa"
       >

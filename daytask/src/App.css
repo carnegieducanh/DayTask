@@ -57,10 +57,10 @@ html, body, #root {
   overflow: hidden;
 }
 
-/* Base font-size: 14px. JS đặt html { font-size: 14px * uiScale } để scale.
+/* Base font-size: 15px. JS đặt html { font-size: 15px * uiScale } để scale.
    Tất cả font-size trong CSS dùng rem (relative to html). */
 html {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 body {
@@ -419,12 +419,12 @@ input, textarea, select { font-family: inherit; }
 }
 
 .daily-greeting-main {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: 'Lora', Georgia, serif;
   font-weight: 300;
   font-size: 40px;
   line-height: 60px;
   color: var(--greeting-color);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .daily-greeting-sub {
