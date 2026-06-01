@@ -7,6 +7,7 @@ import { isTauri } from '../../store/mockDb';
 import TaskCard from './TaskCard';
 import AddTaskModal from './AddTaskModal';
 import MiniHeatmap from './MiniHeatmap';
+import DailyGreeting from './DailyGreeting';
 import type { Task } from '../../types';
 
 export default function TodayView() {
@@ -60,12 +61,18 @@ export default function TodayView() {
   return (
     <>
       {/* Topbar */}
-      <div className="view-topbar">
-        <div style={{ cursor: 'pointer' }} onClick={() => setShowDatePicker((v) => !v)}>
+      <div className="view-topbar today-topbar">
+        <div className="today-topbar-side" style={{ cursor: 'pointer' }} onClick={() => setShowDatePicker((v) => !v)}>
           <div className="view-title">Hôm nay</div>
           <div className="view-subtitle" style={{ textTransform: 'capitalize' }}>{dateLabel}</div>
         </div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+
+        <DailyGreeting
+          pendingCount={pending.length}
+          isToday={selectedDate === format(new Date(), 'yyyy-MM-dd')}
+        />
+
+        <div className="today-topbar-side today-topbar-actions">
           {showDatePicker && (
             <input type="date" className="form-input" value={selectedDate}
               onChange={(e) => { setSelectedDate(e.target.value); setShowDatePicker(false); }}
