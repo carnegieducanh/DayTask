@@ -8,7 +8,7 @@ param(
 
 $bundleDir = "src-tauri\target\release\bundle"
 $nsisDir   = "$bundleDir\nsis"
-$exeName   = "DayTask_${Version}_x64-setup.exe"
+$exeName   = "Atomic_${Version}_x64-setup.exe"
 $sigFile   = "$nsisDir\${exeName}.sig"
 $exeFile   = "$nsisDir\$exeName"
 
@@ -21,7 +21,7 @@ $sig = Get-Content $sigFile -Raw
 
 $latestJson = @{
     version = "v$Version"
-    notes   = "DayTask v$Version"
+    notes   = "Atomic v$Version"
     pub_date = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
     platforms = @{
         "windows-x86_64" = @{

@@ -62,8 +62,8 @@ const MESSAGES: Record<Period, { fixed: string; random: string[] }> = {
 
 function pickMessage(period: Period): string {
   const today = format(new Date(), 'yyyy-MM-dd');
-  const sessionKey = `daytask_greeting_session_${period}`;
-  const localKey = `daytask_greeting_${today}_${period}`;
+  const sessionKey = `atomic_greeting_session_${period}`;
+  const localKey = `atomic_greeting_${today}_${period}`;
 
   // Same session + same period → show same message (no flicker on tab switch)
   const sessionMsg = sessionStorage.getItem(sessionKey);

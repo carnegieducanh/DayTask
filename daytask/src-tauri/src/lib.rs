@@ -79,7 +79,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(
             tauri_plugin_sql::Builder::default()
-                .add_migrations("sqlite:daytask.db", migrations)
+                .add_migrations("sqlite:atomic.db", migrations)
                 .build(),
         )
         .setup(|app| {

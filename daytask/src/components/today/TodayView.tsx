@@ -63,7 +63,7 @@ export default function TodayView() {
 
   function exportData() {
     const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), date: selectedDate, tasks }, null, 2)], { type: 'application/json' });
-    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `daytask-${selectedDate}.json` });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `atomic-${selectedDate}.json` });
     a.click(); URL.revokeObjectURL(a.href);
   }
 

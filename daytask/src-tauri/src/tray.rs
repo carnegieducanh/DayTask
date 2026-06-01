@@ -6,14 +6,14 @@ use tauri::{
 
 pub fn setup_tray(app: &App) -> tauri::Result<()> {
     let show_item = MenuItem::with_id(app, "show", "Hiện cửa sổ", true, None::<&str>)?;
-    let quit_item = MenuItem::with_id(app, "quit", "Thoát DayTask", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", "Thoát Atomic", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
 
     TrayIconBuilder::new()
         .icon(app.default_window_icon().unwrap().clone())
         .menu(&menu)
         .show_menu_on_left_click(false)
-        .tooltip("DayTask")
+        .tooltip("Atomic")
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => {
                 if let Some(w) = app.get_webview_window("main") {

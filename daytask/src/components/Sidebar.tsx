@@ -40,7 +40,7 @@ export default function Sidebar() {
       <div className="sidebar-header">
         <div className="app-logo">
           <IconChecklist size={20} color={theme === 'dark' ? '#7ab0e0' : '#125680'} />
-          DayTask
+          Atomic
         </div>
       </div>
 
