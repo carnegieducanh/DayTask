@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { startOfYear, endOfYear, eachDayOfInterval, getDay, format, isToday } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { useAppStore } from '../../store/appStore';
 import type { DayActivity } from '../../types';
-
-const LEVEL_COLORS = ['var(--bg-secondary)', '#B5D4F4', '#378ADD', '#125680', '#0a3d5e'];
 
 function getLevel(count: number): number {
   if (count === 0) return 0;
@@ -22,6 +21,8 @@ interface Props {
 }
 
 export default function HeatmapGrid({ year, data }: Props) {
+  const { theme } = useAppStore();
+  const LEVEL_COLORS = ['var(--bg-secondary)', '#B5D4F4', '#378ADD', theme === 'dark' ? '#7ab0e0' : '#125680', '#0a3d5e'];
   const activityMap = useMemo(() => {
     const m: Record<string, number> = {};
     data.forEach((d) => { m[d.date] = d.count; });

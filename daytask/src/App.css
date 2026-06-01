@@ -53,6 +53,7 @@
   --border-1: #333333;
   --border-2: #444444;
   --greeting-color: rgb(195, 194, 183);
+  --primary: #7ab0e0;
 
   /* Kanban columns — all neutral dark, no color tinting */
   --col-todo-bg: #1a1a1a;

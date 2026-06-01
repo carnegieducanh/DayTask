@@ -10,19 +10,18 @@ const QUARTER_LABEL: Record<string, string> = {
   Q1: 'Q1', Q2: 'Q2', Q3: 'Q3', Q4: 'Q4', full: 'Cả năm',
 };
 
-const PROGRESS_COLOR: Record<GoalStatus, string> = {
-  todo:   '#888780',
-  doing:  '#125680',
-  review: '#EF9F27',
-  done:   '#639922',
-};
-
 interface Props {
   goal: Goal;
 }
 
 export default function GoalCardOverlay({ goal }: Props) {
-  const { checklistItems } = useAppStore();
+  const { checklistItems, theme } = useAppStore();
+  const PROGRESS_COLOR: Record<GoalStatus, string> = {
+    todo:   '#888780',
+    doing:  theme === 'dark' ? '#7ab0e0' : '#125680',
+    review: '#EF9F27',
+    done:   '#639922',
+  };
   const progressColor = PROGRESS_COLOR[goal.status];
   const items = checklistItems[goal.id] ?? [];
   const totalItems = items.length;

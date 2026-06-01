@@ -37,7 +37,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="sidebar-header">
         <div className="app-logo">
-          <IconChecklist size={20} color="#125680" />
+          <IconChecklist size={20} color={theme === 'dark' ? '#7ab0e0' : '#125680'} />
           DayTask
         </div>
       </div>

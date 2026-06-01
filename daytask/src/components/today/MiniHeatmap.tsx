@@ -1,15 +1,16 @@
 import { useMemo } from 'react';
 import { format, subDays, addDays } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { useAppStore } from '../../store/appStore';
 import type { DayActivity } from '../../types';
-
-const COLORS = ['var(--border-1)', '#B5D4F4', '#378ADD', '#125680', '#0a3d5e'];
 const MONTHS = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
 const DAYS   = ['CN','T2','T3','T4','T5','T6','T7'];
 
 function level(n: number) { return n===0?0:n<=2?1:n<=4?2:n<=6?3:4; }
 
 export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
+  const { theme } = useAppStore();
+  const COLORS = ['var(--border-1)', '#B5D4F4', '#378ADD', theme === 'dark' ? '#7ab0e0' : '#125680', '#0a3d5e'];
   const map = useMemo(
     () => Object.fromEntries(data.map((d) => [d.date, d.count])),
     [data]
