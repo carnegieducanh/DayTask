@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { IconSearch, IconPlus, IconDownload, IconSun } from '@tabler/icons-react';
+import { IconSearch, IconPlus, IconDownload, IconSun, IconBellRinging, IconX } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import { isTauri } from '../../store/mockDb';
 import TaskCard from './TaskCard';
@@ -10,11 +10,26 @@ import MiniHeatmap from './MiniHeatmap';
 import DailyGreeting from './DailyGreeting';
 import type { Task } from '../../types';
 
+const CAT_LABELS: Record<string, string> = {
+  work: 'Công việc', personal: 'Cá nhân', health: 'Sức khỏe', learn: 'Học tập',
+};
+
+function getReminderLabel(reminder: string): string {
+  const [h, m] = reminder.split(':').map(Number);
+  const now = new Date();
+  const target = new Date(); target.setHours(h, m, 0, 0);
+  const diff = Math.round((target.getTime() - now.getTime()) / 60000);
+  if (diff > 0) return `Còn ${diff} phút — ${reminder} hôm nay`;
+  if (diff === 0) return `Đến giờ — ${reminder} hôm nay`;
+  return `${reminder} hôm nay`;
+}
+
 export default function TodayView() {
   const {
     tasks, selectedDate, setSelectedDate,
     heatmap, loadHeatmap,
     getStreak, setReminderPopup,
+    reminderPopup, snoozeReminder, dismissReminder, setActiveTab,
   } = useAppStore();
 
   const [showModal, setShowModal]         = useState(false);
@@ -46,6 +61,10 @@ export default function TodayView() {
   const total     = tasks.length;
   const pct       = total === 0 ? 0 : Math.round((done.length / total) * 100);
   const reminders = pending.filter((t) => t.reminder).length;
+
+  const reminderTasks = tasks
+    .filter((t) => t.reminder)
+    .sort((a, b) => (a.reminder || '').localeCompare(b.reminder || ''));
 
   const dateLabel = format(new Date(selectedDate + 'T00:00:00'), "EEEE, d MMMM yyyy", { locale: vi });
 
@@ -92,72 +111,125 @@ export default function TodayView() {
         </div>
       </div>
 
-      <div className="view-content">
+      <div className="view-content today-content">
+        <div className="today-layout">
 
-        {/* Stat cards */}
-        <div className="stats-row">
-          <div className="stat-card">
-            <div className="stat-label">Hoàn thành</div>
-            <div className="stat-value">
-              {done.length}
-              <span style={{ fontSize: 20, color: 'var(--text-secondary)', fontWeight: 400 }}>/{total}</span>
+          {/* ── Left column ── */}
+          <div className="today-main">
+            {/* Stat cards */}
+            <div className="stats-row">
+              <div className="stat-card">
+                <div className="stat-label">Hoàn thành</div>
+                <div className="stat-value">
+                  {done.length}
+                  <span style={{ fontSize: 20, color: 'var(--text-secondary)', fontWeight: 400 }}>/{total}</span>
+                </div>
+                <div className="progress-bar-wrap" style={{ marginTop: 8 }}>
+                  <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Streak</div>
+                <div className="stat-value">🔥 {streak}</div>
+                <div className="stat-sub">ngày liên tiếp</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Nhắc nhở</div>
+                <div className="stat-value">{reminders}</div>
+                <div className="stat-sub">còn lại hôm nay</div>
+              </div>
             </div>
-            <div className="progress-bar-wrap" style={{ marginTop: 8 }}>
-              <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+
+            {/* Add task */}
+            <div className="add-task-row" onClick={openAdd}>
+              <IconPlus size={16} />
+              Thêm task mới...
             </div>
+
+            {/* Chưa hoàn thành */}
+            {pending.length > 0 && (
+              <div>
+                <div className="section-label">Chưa hoàn thành <span style={{ fontWeight: 400 }}>· {pending.length} task</span></div>
+                <div className="task-list">
+                  {pending.map((t) => <TaskCard key={t.id} task={t} onEdit={openEdit} />)}
+                </div>
+              </div>
+            )}
+
+            {/* Đã hoàn thành */}
+            {done.length > 0 && (
+              <div>
+                <div className="section-label">Đã hoàn thành <span style={{ fontWeight: 400 }}>· {done.length} task</span></div>
+                <div className="task-list">
+                  {done.map((t) => <TaskCard key={t.id} task={t} onEdit={openEdit} />)}
+                </div>
+              </div>
+            )}
+
+            {/* Empty state */}
+            {total === 0 && (
+              <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px 0' }}>
+                <IconSun size={32} style={{ marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
+                <div>Ngày mới, bắt đầu thêm task đầu tiên!</div>
+              </div>
+            )}
           </div>
-          <div className="stat-card">
-            <div className="stat-label">Streak</div>
-            <div className="stat-value">🔥 {streak}</div>
-            <div className="stat-sub">ngày liên tiếp</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Nhắc nhở</div>
-            <div className="stat-value">{reminders}</div>
-            <div className="stat-sub">còn lại hôm nay</div>
+
+          {/* ── Right column ── */}
+          <div className="today-right">
+
+            {/* Reminder widget */}
+            {reminderPopup && (
+              <div className="today-right-section">
+                <div className="section-label" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <IconBellRinging size={13} />
+                  Nhắc nhở
+                </div>
+                <div className="today-reminder-widget">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+                    <div className="today-reminder-title">{reminderPopup.title}</div>
+                    <button className="icon-btn" style={{ width: 20, height: 20, border: 'none', flexShrink: 0 }} onClick={dismissReminder}>
+                      <IconX size={12} />
+                    </button>
+                  </div>
+                  {reminderPopup.reminder && (
+                    <div className="today-reminder-time">{getReminderLabel(reminderPopup.reminder)}</div>
+                  )}
+                  <div className="today-reminder-actions">
+                    <button className="popup-btn" onClick={dismissReminder}>Bỏ qua</button>
+                    <button className="popup-btn" onClick={() => snoozeReminder(reminderPopup.id, 10)}>+10 phút</button>
+                    <button className="popup-btn primary" onClick={() => { setActiveTab('today'); dismissReminder(); }}>Xem</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Heatmap */}
+            <div className="today-right-section">
+              <div className="section-label">Hoạt động 3 tháng qua</div>
+              <MiniHeatmap data={heatmap} />
+            </div>
+
+            {/* Schedule */}
+            {reminderTasks.length > 0 && (
+              <div className="today-right-section">
+                <div className="section-label">Lịch nhắc hôm nay</div>
+                <div className="today-schedule">
+                  {reminderTasks.map((t) => (
+                    <div key={t.id} className={`today-schedule-item${t.is_done ? ' done' : ''}`}>
+                      <div className="today-schedule-time">{t.reminder}</div>
+                      <div className="today-schedule-body">
+                        <div className="today-schedule-title">{t.title}</div>
+                        <div className="today-schedule-cat">{CAT_LABELS[t.category] ?? t.category}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
-
-        {/* Add task */}
-        <div className="add-task-row" onClick={openAdd}>
-          <IconPlus size={16} />
-          Thêm task mới...
-        </div>
-
-        {/* Chưa hoàn thành */}
-        {pending.length > 0 && (
-          <div>
-            <div className="section-label">Chưa hoàn thành · {pending.length}</div>
-            <div className="task-list">
-              {pending.map((t) => <TaskCard key={t.id} task={t} onEdit={openEdit} />)}
-            </div>
-          </div>
-        )}
-
-        {/* Đã hoàn thành */}
-        {done.length > 0 && (
-          <div>
-            <div className="section-label">Đã hoàn thành · {done.length}</div>
-            <div className="task-list">
-              {done.map((t) => <TaskCard key={t.id} task={t} onEdit={openEdit} />)}
-            </div>
-          </div>
-        )}
-
-        {/* Empty state */}
-        {total === 0 && (
-          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px 0' }}>
-            <IconSun size={32} style={{ marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
-            <div>Ngày mới, bắt đầu thêm task đầu tiên!</div>
-          </div>
-        )}
-
-        {/* Mini heatmap */}
-        <div>
-          <div className="section-label">Hoạt động 3 tháng qua</div>
-          <MiniHeatmap data={heatmap} />
-        </div>
-
       </div>
 
       {showModal && (
