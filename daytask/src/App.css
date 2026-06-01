@@ -46,8 +46,8 @@
 }
 
 [data-theme="dark"] {
-  --bg-primary: #252525; /* content, cards */
-  --bg-secondary: #1a1a1a; /* sidebar, kanban columns */
+  --bg-primary: #1a1a1a; /* content, cards */
+  --bg-secondary: #131314; /* sidebar, kanban columns */
   --text-primary: #f0eeeb;
   --text-secondary: #888888;
   --border-1: #333333;
@@ -825,13 +825,13 @@ select {
   padding: 5px 20px;
   font-size: 0.86rem;
   color: var(--text-secondary);
-  border-bottom: 0.5px solid var(--border-1);
+  /* border-bottom: 0.5px solid var(--border-1); */
   flex-shrink: 0;
 }
 
 .kanban-drag-hint svg {
-  width: 1em;
-  height: 1em;
+  width: 1.5em;
+  height: 1.5em;
 }
 
 /* Kanban board: columns không scale layout, dùng px cố định.
