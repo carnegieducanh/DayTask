@@ -91,6 +91,7 @@ interface AppState {
   openAddGoalModal: boolean;
   uiScale: number;
   openSettingsModal: boolean;
+  kanbanDragActiveId: number | null;
 
   setActiveTab: (tab: Tab) => void;
   toggleTheme: () => void;
@@ -102,6 +103,7 @@ interface AppState {
   snoozeReminder: (taskId: number, minutes: number) => void;
   dismissReminder: () => void;
   setOpenAddGoalModal: (val: boolean) => void;
+  setKanbanDragActiveId: (id: number | null) => void;
 
   loadTasks: (date: string) => Promise<void>;
   addTask: (task: NewTask) => Promise<void>;
@@ -112,7 +114,7 @@ interface AppState {
   loadGoals: (year: number) => Promise<void>;
   addGoal: (goal: NewGoal) => Promise<void>;
   updateGoal: (id: number, updates: GoalUpdate) => Promise<void>;
-  moveGoal: (id: number, status: Goal['status'], position: number) => Promise<void>;
+  reorderGoal: (activeId: number, newStatus: Goal['status'], newIndex: number) => Promise<void>;
   deleteGoal: (id: number) => Promise<void>;
 
   addChecklistItem: (goalId: number, text: string) => Promise<void>;
@@ -140,6 +142,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   openAddGoalModal: false,
   uiScale: parseFloat(localStorage.getItem('uiScale') ?? '1.1'),
   openSettingsModal: false,
+  kanbanDragActiveId: null,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -178,6 +181,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   dismissReminder: () => set({ reminderPopup: null }),
   setOpenAddGoalModal: (val) => set({ openAddGoalModal: val }),
+  setKanbanDragActiveId: (id) => set({ kanbanDragActiveId: id }),
 
   // --- Tasks ---
 
@@ -301,8 +305,57 @@ export const useAppStore = create<AppState>((set, get) => ({
     await get().loadGoals(get().selectedYear);
   },
 
-  moveGoal: async (id, status, position) => {
-    await get().updateGoal(id, { status, position });
+  // Kéo thả Kanban: chèn card vào newIndex của cột đích rồi ĐÁNH SỐ LẠI
+  // position 0..n cho cả cột đích (và cột nguồn nếu đổi cột). Trước đây chỉ gán
+  // position = position của card đích nên 2 card trùng số → thứ tự nhảy lung tung.
+  reorderGoal: async (activeId, newStatus, newIndex) => {
+    const goals = get().goals;
+    const active = goals.find((g) => g.id === activeId);
+    if (!active) return;
+    const oldStatus = active.status;
+
+    // Thứ tự id cột đích (loại card đang kéo), rồi chèn vào newIndex đã clamp
+    const targetIds = goals
+      .filter((g) => g.status === newStatus && g.id !== activeId)
+      .sort((a, b) => a.position - b.position)
+      .map((g) => g.id);
+    const idx = Math.max(0, Math.min(newIndex, targetIds.length));
+    targetIds.splice(idx, 0, activeId);
+
+    const updates: { id: number; status: Goal['status']; position: number }[] =
+      targetIds.map((id, i) => ({ id, status: newStatus, position: i }));
+
+    // Đổi cột → đánh số lại cột nguồn cho liền mạch
+    if (oldStatus !== newStatus) {
+      goals
+        .filter((g) => g.status === oldStatus && g.id !== activeId)
+        .sort((a, b) => a.position - b.position)
+        .forEach((g, i) => updates.push({ id: g.id, status: oldStatus, position: i }));
+    }
+
+    // Optimistic update — tránh giật/nhảy, không cần reload từ DB
+    const byId = new Map(updates.map((u) => [u.id, u]));
+    set({
+      goals: goals.map((g) =>
+        byId.has(g.id)
+          ? { ...g, status: byId.get(g.id)!.status, position: byId.get(g.id)!.position }
+          : g
+      ),
+    });
+
+    // Lưu xuống DB
+    if (!isTauri()) {
+      for (const u of updates) dbUpdateGoal(u.id, { status: u.status, position: u.position });
+      return;
+    }
+    const db = await getDb();
+    for (const u of updates) {
+      await db.execute('UPDATE goals SET status = $1, position = $2 WHERE id = $3', [
+        u.status,
+        u.position,
+        u.id,
+      ]);
+    }
   },
 
   deleteGoal: async (id) => {

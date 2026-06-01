@@ -1,20 +1,7 @@
 import { useState, useEffect } from 'react';
-import {
-  DndContext,
-  DragEndEvent,
-  DragOverEvent,
-  DragStartEvent,
-  DragOverlay,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  closestCenter,
-  defaultDropAnimationSideEffects,
-} from '@dnd-kit/core';
 import { IconGripHorizontal } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import KanbanColumn from './KanbanColumn';
-import GoalCardOverlay from './GoalCardOverlay';
 import AddGoalModal from './AddGoalModal';
 import type { Goal, GoalStatus } from '../../types';
 
@@ -28,13 +15,10 @@ const STATUS_CONFIG: Record<GoalStatus, { label: string; dot: string }> = {
 };
 
 export default function KanbanView() {
-  const { goals, moveGoal, openAddGoalModal, setOpenAddGoalModal } = useAppStore();
+  const { goals, openAddGoalModal, setOpenAddGoalModal } = useAppStore();
   const [showModal, setShowModal]         = useState(false);
   const [editGoal, setEditGoal]           = useState<Goal | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<GoalStatus>('todo');
-  const [activeGoalId, setActiveGoalId]   = useState<number | null>(null);
-
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const total   = goals.length;
   const done    = goals.filter((g) => g.status === 'done').length;
@@ -61,55 +45,6 @@ export default function KanbanView() {
     setShowModal(true);
   }
 
-  function handleDragStart(event: DragStartEvent) {
-    setActiveGoalId(Number(event.active.id));
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    setActiveGoalId(null);
-    const { active, over } = event;
-    if (!over) return;
-    const goalId = Number(active.id);
-    const overId = over.id;
-    if (STATUSES.includes(overId as GoalStatus)) {
-      const newStatus = overId as GoalStatus;
-      const colGoals  = goals.filter((g) => g.status === newStatus);
-      moveGoal(goalId, newStatus, colGoals.length);
-      return;
-    }
-    const overGoal = goals.find((g) => g.id === Number(overId));
-    if (!overGoal) return;
-    moveGoal(goalId, overGoal.status, overGoal.position);
-  }
-
-  function handleDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-    if (!over) return;
-    const goalId = Number(active.id);
-    const overId = over.id;
-
-    // Hovering over a column directly (empty area)
-    if (STATUSES.includes(overId as GoalStatus)) {
-      const dragGoal = goals.find((g) => g.id === goalId);
-      if (dragGoal && dragGoal.status !== overId) {
-        moveGoal(goalId, overId as GoalStatus, 999);
-      }
-      return;
-    }
-
-    // Hovering over a card in another column
-    const overGoal  = goals.find((g) => g.id === Number(overId));
-    const dragGoal  = goals.find((g) => g.id === goalId);
-    if (!overGoal || !dragGoal) return;
-    if (dragGoal.status !== overGoal.status) {
-      moveGoal(goalId, overGoal.status, overGoal.position);
-    }
-  }
-
-  const overlayGoal = activeGoalId
-    ? (goals.find((g) => g.id === activeGoalId) ?? null)
-    : null;
-
   return (
     <>
       {/* Stats bar */}
@@ -135,36 +70,17 @@ export default function KanbanView() {
         Kéo thả task giữa các cột để cập nhật trạng thái
       </div>
 
-      {/* Kanban board */}
+      {/* Kanban board — DndContext + DragOverlay sống ở App.tsx (ngoài scale wrapper) */}
       <div className="kanban-board">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onDragOver={handleDragOver}
-        >
-          {STATUSES.map((status) => (
-            <KanbanColumn
-              key={status}
-              status={status}
-              goals={goals.filter((g) => g.status === status).sort((a, b) => a.position - b.position)}
-              onEdit={openEdit}
-              onAddGoal={openAdd}
-            />
-          ))}
-          <DragOverlay
-            dropAnimation={{
-              duration: 200,
-              easing: 'ease',
-              sideEffects: defaultDropAnimationSideEffects({
-                styles: { active: { opacity: '0.4' } },
-              }),
-            }}
-          >
-            {overlayGoal ? <GoalCardOverlay goal={overlayGoal} /> : null}
-          </DragOverlay>
-        </DndContext>
+        {STATUSES.map((status) => (
+          <KanbanColumn
+            key={status}
+            status={status}
+            goals={goals.filter((g) => g.status === status).sort((a, b) => a.position - b.position)}
+            onEdit={openEdit}
+            onAddGoal={openAdd}
+          />
+        ))}
       </div>
 
       {showModal && (

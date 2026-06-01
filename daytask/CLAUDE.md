@@ -26,7 +26,7 @@ npm run tauri build
 #   nsis/DayTask_0.1.0_x64-setup.exe
 ```
 
-## Trạng thái build (tính đến 2026-05-31)
+## Trạng thái build (tính đến 2026-06-01)
 
 | Bước | Mô tả | Trạng thái |
 |------|-------|-----------|
@@ -42,6 +42,7 @@ npm run tauri build
 | 10 | Auto-update (tauri-plugin-updater) | ⏳ GitHub repo đã có, chưa config updater |
 | 11 | Build .msi / .exe | ✅ Xong — v0.1.0 build thành công |
 | 12 | UI overhaul theo mockup + tính năng mới | ✅ Xong (session 2026-05-31) |
+| 13 | Fix drag-drop lệch khi zoom != 100% | ✅ Fix đúng (session 2026-06-01b) — dùng NATIVE webview zoom, bỏ hết transform:scale(). Cần verify runtime |
 
 ## Tính năng đã có (sau session 2026-05-31)
 - **Tabler Icons** (`@tabler/icons-react`): toàn bộ UI dùng SVG icon, không còn emoji/text symbol
@@ -112,8 +113,154 @@ daytask/
 │       └── heatmap/HeatmapView.tsx + HeatmapGrid.tsx
 ```
 
+## Bug drag-drop — FIX ĐÚNG (2026-06-01b): NATIVE WEBVIEW ZOOM
+
+### Root cause thật sự (đã sai ở các lần trước)
+
+Mọi fix trước thất bại vì cùng dùng `transform: scale()` để scale UI. `transform: scale()` gây **2 bug** cho @dnd-kit, không thể fix triệt để:
+1. **Card phình to:** DragOverlay lấy `getBoundingClientRect()` của card gốc (đã scale → 264px) làm width wrapper, rồi code lại bọc thêm `scale(1.1)` → 264×1.1 ≈ 290px. Double-scale.
+2. **Drop sai vị trí:** @dnd-kit tính delta kéo + transform sắp xếp bằng viewport px THÔ, rồi áp ngược vào element nằm TRONG `scale(1.1)` → translate 264px thành 290px visual. Collision detection lệch theo đúng hệ số scale. **Bug cố hữu của transform:scale — không sửa được khi draggable nằm trong scaled ancestor.**
+
+### Giải pháp đúng: native webview zoom (KHÔNG transform:scale)
+
+Tauri v2 zoom toàn webview ở tầng browser (`getCurrentWebview().setZoom(uiScale)`), giống Ctrl-+. Zoom xảy ra DƯỚI tầng toạ độ DOM → `getBoundingClientRect`/`clientX` đều nhất quán → @dnd-kit chạy đúng 100%, không cần xử lý đặc biệt.
+
+**Đã implement (2026-06-01b):**
+- `App.tsx`: bỏ scale wrapper + bỏ `scale()` quanh DragOverlay content. Thêm `useEffect([uiScale])` gọi `getCurrentWebview().setZoom(uiScale)` (Tauri) / `document.documentElement.style.zoom` (browser fallback).
+- `capabilities/default.json`: thêm `core:webview:allow-set-webview-zoom`.
+- DndContext vẫn bọc toàn app (cho tiện), nhưng giờ KHÔNG còn ancestor transform nào.
+- Typecheck PASS. **CẦN restart `npm run tauri dev`** (đổi capabilities) rồi kéo thử ở uiScale 1.1/1.25.
+
+### (Lịch sử cũ) Root cause xác nhận (đọc source @dnd-kit v6.3.1)
+
+`DragOverlay` trong @dnd-kit **KHÔNG dùng React portal**. Nó render INLINE trong React tree, bên trong `DndContext`. Nó dùng:
+```
+position: fixed; top: rect.top; left: rect.left; transform: translate(delta_x, delta_y)
+```
+
+Vì `DragOverlay` nằm TRONG scale wrapper (`transform: scale(1.1)`), `position: fixed` bị positioned relative to wrapper (không phải viewport). Kết quả:
+- `top: 110px` CSS → hiển thị ở viewport `110 × 1.1 = 121px` → lệch 10%
+- `translate(100px)` CSS → di chuyển viewport `100 × 1.1 = 110px` → drift
+
+### Lịch sử các fix đã thử — TẤT CẢ ĐỀU THẤT BẠI
+
+| Session | Fix thử | Kết quả |
+|---------|---------|---------|
+| 2026-05-31 | `measuring` + `modifier` /uiScale trên `DndContext` | THẤT BẠI (lý do chưa rõ) |
+| 2026-06-01 (sáng) | `transform: scale()` wrapper thay `zoom` + scale DragOverlay content | THẤT BẠI: vị trí vẫn sai, card phình to x1.21 |
+| 2026-06-01 (tối) | Revert scale trên DragOverlay content | Đã revert — card không phình nữa, nhưng vị trí vẫn sai |
+
+**Trạng thái hiện tại (sau session 2026-06-01 tối):**
+- `App.tsx`: dùng `transform: scale(uiScale)` wrapper (KHÔNG dùng `document.documentElement.style.zoom`)
+- `App.css`: `.app-shell { height: 100% }` + `html, body, #root { height: 100%; overflow: hidden }`
+- `KanbanView.tsx`: DragOverlay render bình thường (không có extra scale)
+- **Vấn đề còn lại:** DragOverlay vẫn lệch vì nằm trong scale wrapper
+
+### ✅ ĐÃ IMPLEMENT (session 2026-06-01) — Đưa DndContext ra NGOÀI scale wrapper
+
+Đã làm xong theo đúng plan dưới đây. Tóm tắt thay đổi:
+- `appStore.ts`: thêm `kanbanDragActiveId: number | null` + `setKanbanDragActiveId`
+- `App.tsx`: `DndContext` (sensors, `closestCenter`, handlers `handleDragStart/End/Over`, dùng `moveGoal`) bọc cả scale wrapper. `DragOverlay` render NGOÀI scale wrapper, content bọc `transform: scale(uiScale)` để khớp kích thước card gốc.
+- `KanbanView.tsx`: bỏ hết `DndContext`/`DragOverlay`/sensors/drag handlers — chỉ còn render stats bar, drag hint, columns, modal. Giữ `openAdd`/`openEdit` (modal state local).
+- Typecheck (`tsc --noEmit`) PASS. **Chưa verify runtime** (`npm run tauri dev` để kéo thử ở uiScale 1.1).
+
+### Fix đúng duy nhất — Đưa DndContext ra NGOÀI scale wrapper
+
+**Lý do:** Nếu `DndContext` (và `DragOverlay` bên trong nó) nằm NGOÀI `transform: scale(uiScale)` wrapper:
+- DragOverlay render trong context KHÔNG có transform → CSS px = viewport px
+- BCR của cards trong wrapper = viewport px (BCR luôn tính transform)  
+- `clientX/Y` = viewport px
+- → Tất cả cùng coordinate space → không có mismatch → DragOverlay vị trí đúng ✓
+
+**Cách implement:**
+
+**Bước 1 — Thêm drag state vào Zustand store (`appStore.ts`):**
+```typescript
+// Thêm vào state:
+kanbanDragActiveId: number | null;
+// Thêm action:
+setKanbanDragActiveId: (id: number | null) => set({ kanbanDragActiveId: id });
+```
+
+**Bước 2 — Tái cấu trúc `KanbanView.tsx`:**
+- XÓA `DndContext` và `DragOverlay` khỏi KanbanView
+- KanbanView chỉ render columns, stats bar, drag hint, modal
+- Export handlers: `handleDragStart`, `handleDragEnd`, `handleDragOver`, `sensors`
+  hoặc đặt chúng trong store/context
+
+**Bước 3 — Sửa `App.tsx` — đưa `DndContext` ra ngoài scale wrapper:**
+```tsx
+// App.tsx — structure mới:
+function App() {
+  const { uiScale, goals, moveGoal, kanbanDragActiveId, setKanbanDragActiveId } = useAppStore();
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  
+  const overlayGoal = kanbanDragActiveId
+    ? (goals.find((g) => g.id === kanbanDragActiveId) ?? null)
+    : null;
+
+  function handleDragStart(event: DragStartEvent) {
+    setKanbanDragActiveId(Number(event.active.id));
+  }
+  function handleDragEnd(event: DragEndEvent) { /* ... move logic ... */ }
+  function handleDragOver(event: DragOverEvent) { /* ... */ }
+
+  return (
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
+      {/* Scale wrapper — DndContext là parent, NGOÀI wrapper này */}
+      <div style={{ transform: `scale(${uiScale})`, transformOrigin: 'top left',
+                    width: `calc(100vw / ${uiScale})`, height: `calc(100vh / ${uiScale})` }}>
+        <div className="app-shell">
+          ...tabs...
+        </div>
+      </div>
+      {/* DragOverlay nằm NGOÀI scale wrapper — CSS px = viewport px → không lệch */}
+      <DragOverlay dropAnimation={...}>
+        {overlayGoal ? (
+          <div style={{ transform: `scale(${uiScale})`, transformOrigin: 'top left' }}>
+            <GoalCardOverlay goal={overlayGoal} />
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+```
+
+**Bước 4 — Sửa `KanbanView.tsx`:**
+```tsx
+// KanbanView chỉ còn render UI, không có DndContext/DragOverlay
+export default function KanbanView() {
+  return (
+    <>
+      <div className="kanban-stats-bar">...</div>
+      <div className="kanban-drag-hint">...</div>
+      <div className="kanban-board">
+        {STATUSES.map((status) => (
+          <KanbanColumn key={status} status={status} ... />
+        ))}
+        {/* KHÔNG có DndContext hay DragOverlay ở đây */}
+      </div>
+      {showModal && <AddGoalModal />}
+    </>
+  );
+}
+```
+
+**Lưu ý quan trọng khi implement:**
+- `DndContext` cần `import` ở `App.tsx` cùng với `DragStartEvent`, `DragEndEvent`, `DragOverEvent`
+- `sensors` (`useSensors`, `useSensor`, `PointerSensor`) cần move lên `App.tsx`
+- Move logic `handleDragEnd` (gọi `moveGoal`) và `handleDragOver` lên `App.tsx`
+- `DragOverlay` trong `App.tsx` cần `GoalCardOverlay` và `defaultDropAnimationSideEffects`
+- `DndContext` ở App.tsx được mount lúc nào cũng được (không ảnh hưởng tab Today/Heatmap)
+- Sau fix: DragOverlay nằm ngoài scale wrapper → thêm `transform: scale(uiScale)` vào content để khớp kích thước card gốc (lần này đúng vì context không bị double-scale)
+
+**uiScale default là `1.1`** — xem `appStore.ts`.
+
+---
+
 ## Lưu ý quan trọng
-- **Icons:** Dùng `@tauri-apps/icons-react` — KHÔNG dùng webfont hay emoji. Import từng icon: `import { IconSun } from '@tauri-apps/icons-react'`
+- **Icons:** Dùng `@tabler/icons-react` — KHÔNG dùng webfont hay emoji. Import từng icon: `import { IconSun } from '@tabler/icons-react'`
 - **Capabilities:** Dùng `sql:allow-execute`, `sql:allow-select`, `sql:allow-load` — KHÔNG dùng `sql:default`
 - **PATH issue:** Bash terminal không thấy `cargo`. Luôn dùng PowerShell
 - **Capabilities thay đổi** → cần restart `npm run tauri dev`
