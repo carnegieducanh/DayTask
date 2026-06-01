@@ -48,6 +48,7 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
       ref={setNodeRef}
       style={style}
       className={`goal-card${isDragging ? ' goal-card-ghost' : ''}`}
+      data-card-id={goal.id}
       {...listeners}
       {...attributes}
     >

@@ -25,6 +25,7 @@ import './App.css';
 
 const STATUSES: GoalStatus[] = ['todo', 'doing', 'review', 'done'];
 
+
 async function checkForUpdates() {
   try {
     const { check } = await import('@tauri-apps/plugin-updater');
@@ -128,58 +129,79 @@ function App() {
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    const savedLiveGoals = liveGoals;
     setKanbanDragActiveId(null);
     setDragOverlayWidth(null);
     setLiveGoals(null);
     const { active, over } = event;
-    if (!over) return;
-
     const activeId = Number(active.id);
 
-    // liveGoals inserts the active card into the destination column's SortableContext,
-    // so collision detection sometimes picks the card's own droppable (over.id === active.id).
-    // Read the destination from savedLiveGoals instead of bailing out.
-    if (over.id === active.id) {
-      if (!savedLiveGoals) return;
-      const liveGoal = savedLiveGoals.find((g) => g.id === activeId);
-      if (!liveGoal) return;
-      const srcGoal = goals.find((g) => g.id === activeId);
-      if (!srcGoal || liveGoal.status === srcGoal.status) return;
-      const destGoals = savedLiveGoals
-        .filter((g) => g.status === liveGoal.status)
-        .sort((a, b) => a.position - b.position);
-      const newIndex = destGoals.findIndex((g) => g.id === activeId);
-      reorderGoal(activeId, liveGoal.status, newIndex >= 0 ? newIndex : destGoals.length);
+    // Normal path: dnd-kit gave a clear, non-self target
+    if (over && over.id !== active.id) {
+      const overId = over.id;
+      let newStatus: GoalStatus;
+      let newIndex: number;
+
+      if (STATUSES.includes(overId as GoalStatus)) {
+        newStatus = overId as GoalStatus;
+        newIndex = goals.filter((g) => g.status === newStatus && g.id !== activeId).length;
+      } else {
+        const overGoal = goals.find((g) => g.id === Number(overId));
+        if (!overGoal) return;
+        newStatus = overGoal.status;
+        const targetIds = goals
+          .filter((g) => g.status === newStatus && g.id !== activeId)
+          .sort((a, b) => a.position - b.position)
+          .map((g) => g.id);
+        const overIndex = targetIds.indexOf(Number(overId));
+        const activeRect = active.rect.current.translated;
+        const insertAfter =
+          activeRect
+            ? activeRect.top + activeRect.height / 2 > over.rect.top + over.rect.height / 2
+            : false;
+        newIndex = (overIndex < 0 ? targetIds.length : overIndex) + (insertAfter ? 1 : 0);
+      }
+      reorderGoal(activeId, newStatus, newIndex);
       return;
     }
 
-    const overId = over.id;
-    let newStatus: GoalStatus;
-    let newIndex: number;
+    // Fast-drag fallback: over is null or collision picked the active card itself.
+    // Use the overlay's final screen position to determine target column and index.
+    const overlayRect = active.rect.current.translated;
+    if (!overlayRect) return;
 
-    if (STATUSES.includes(overId as GoalStatus)) {
-      newStatus = overId as GoalStatus;
-      newIndex = goals.filter((g) => g.status === newStatus && g.id !== activeId).length;
-    } else {
-      const overGoal = goals.find((g) => g.id === Number(overId));
-      if (!overGoal) return;
-      newStatus = overGoal.status;
-      const targetIds = goals
-        .filter((g) => g.status === newStatus && g.id !== activeId)
-        .sort((a, b) => a.position - b.position)
-        .map((g) => g.id);
-      const overIndex = targetIds.indexOf(Number(overId));
-      const activeRect = active.rect.current.translated;
-      const overRect = over.rect;
-      const insertAfter =
-        activeRect && overRect
-          ? activeRect.top + activeRect.height / 2 > overRect.top + overRect.height / 2
-          : false;
-      newIndex = (overIndex < 0 ? targetIds.length : overIndex) + (insertAfter ? 1 : 0);
+    const cx = overlayRect.left + overlayRect.width / 2;
+    const cy = overlayRect.top + overlayRect.height / 2;
+
+    // Find the nearest column by horizontal distance
+    let targetStatus: GoalStatus | null = null;
+    let minDist = Infinity;
+    for (const status of STATUSES) {
+      const colEl = document.querySelector<HTMLElement>(`[data-kanban-col="${status}"]`);
+      if (!colEl) continue;
+      const r = colEl.getBoundingClientRect();
+      const dist = Math.abs(cx - (r.left + r.width / 2));
+      if (dist < minDist) { minDist = dist; targetStatus = status; }
+    }
+    if (!targetStatus) return;
+
+    const colEl = document.querySelector<HTMLElement>(`[data-kanban-col="${targetStatus}"]`);
+    if (!colEl) return;
+
+    // Find insert index by comparing overlay center Y to each card's midpoint
+    const cardEls = colEl.querySelectorAll<HTMLElement>('[data-card-id]');
+    const colGoals = goals
+      .filter((g) => g.status === targetStatus && g.id !== activeId)
+      .sort((a, b) => a.position - b.position);
+    let newIndex = colGoals.length;
+    let validIdx = 0;
+    for (const cardEl of cardEls) {
+      if (Number(cardEl.getAttribute('data-card-id')) === activeId) continue;
+      const r = cardEl.getBoundingClientRect();
+      if (cy < r.top + r.height / 2) { newIndex = validIdx; break; }
+      validIdx++;
     }
 
-    reorderGoal(activeId, newStatus, newIndex);
+    reorderGoal(activeId, targetStatus, newIndex);
   }
 
   const overlayGoal = kanbanDragActiveId

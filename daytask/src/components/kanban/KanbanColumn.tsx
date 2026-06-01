@@ -79,7 +79,7 @@ export default function KanbanColumn({ status, goals, onEdit, onAddGoal }: Props
       </div>
 
       <SortableContext items={goals.map((g) => g.id)} strategy={verticalListSortingStrategy}>
-        <div ref={setNodeRef} className="kanban-col-body">
+        <div ref={setNodeRef} className="kanban-col-body" data-kanban-col={status}>
           {goals.map((g) => (
             <GoalCard key={g.id} goal={g} onEdit={onEdit} status={status} />
           ))}
