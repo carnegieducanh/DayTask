@@ -43,7 +43,7 @@ function App() {
   useReminder();
   const {
     activeTab, theme, uiScale, selectedDate, selectedYear,
-    loadTasks, loadGoals, seedIfEmpty,
+    loadTasks, loadGoals, seedIfEmpty, loadCategoryColors,
     goals, reorderGoal, kanbanDragActiveId, setKanbanDragActiveId,
   } = useAppStore();
 
@@ -65,6 +65,7 @@ function App() {
 
   useEffect(() => {
     seedIfEmpty().then(() => loadTasks(selectedDate));
+    loadCategoryColors();
     checkForUpdates();
   }, []);
 

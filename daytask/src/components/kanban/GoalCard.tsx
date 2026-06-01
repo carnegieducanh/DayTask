@@ -1,22 +1,29 @@
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { IconX, IconCalendarEvent } from '@tabler/icons-react';
-import { useAppStore } from '../../store/appStore';
-import type { Goal, GoalStatus } from '../../types';
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { IconX, IconCalendarEvent } from "@tabler/icons-react";
+import { useAppStore } from "../../store/appStore";
+import type { Goal, GoalStatus } from "../../types";
 
 const CAT_LABEL: Record<string, string> = {
-  work: 'Công việc', personal: 'Cá nhân', health: 'Sức khỏe', learn: 'Học tập',
+  work: "Công việc",
+  personal: "Cá nhân",
+  health: "Sức khỏe",
+  learn: "Học tập",
 };
 
 const QUARTER_LABEL: Record<string, string> = {
-  Q1: 'Q1', Q2: 'Q2', Q3: 'Q3', Q4: 'Q4', full: 'Cả năm',
+  Q1: "Q1",
+  Q2: "Q2",
+  Q3: "Q3",
+  Q4: "Q4",
+  full: "Cả năm",
 };
 
 const PROGRESS_COLOR: Record<GoalStatus, string> = {
-  todo:   '#888780',
-  doing:  '#3B9FE8',
-  review: '#EF9F27',
-  done:   '#639922',
+  todo: "#888780",
+  doing: "#3B9FE8",
+  review: "#EF9F27",
+  done: "#639922",
 };
 
 interface Props {
@@ -25,19 +32,33 @@ interface Props {
   status: GoalStatus;
 }
 
-export default function GoalCard({ goal, onEdit, status }: Props) {
-  const { deleteGoal, checklistItems } = useAppStore();
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: goal.id });
+export default function GoalCard({ goal, onEdit, status }: Props) {
+  const { deleteGoal, checklistItems, categoryColors } = useAppStore();
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: goal.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: !isDragging && status === 'done' ? 0.75 : undefined,
+    opacity: !isDragging && status === "done" ? 0.75 : undefined,
   };
 
   const progressColor = PROGRESS_COLOR[status];
+  const cardBg = hexToRgba(categoryColors[goal.category], 0.75);
   const items = checklistItems[goal.id] ?? [];
   const totalItems = items.length;
   const doneItems = items.filter((i) => i.is_done).length;
@@ -46,14 +67,18 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className={`goal-card${isDragging ? ' goal-card-ghost' : ''}`}
+      style={{ ...style, backgroundColor: cardBg }}
+      className={`goal-card goal-card--colored${isDragging ? " goal-card-ghost" : ""}`}
       data-card-id={goal.id}
       {...listeners}
       {...attributes}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
-        <div className="goal-card-body" style={{ flex: 1 }} onClick={() => onEdit(goal)}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 4 }}>
+        <div
+          className="goal-card-body"
+          style={{ flex: 1 }}
+          onClick={() => onEdit(goal)}
+        >
           <div className="goal-title">{goal.title}</div>
           {goal.description && (
             <div className="goal-desc">{goal.description}</div>
@@ -63,9 +88,15 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
           {totalItems > 0 && (
             <div className="goal-checklist-progress">
               <div className="goal-progress-wrap" style={{ flex: 1 }}>
-                <div className="goal-progress-fill" style={{ width: `${pct}%`, background: progressColor }} />
+                <div
+                  className="goal-progress-fill"
+                  style={{ width: `${pct}%`, background: progressColor }}
+                />
               </div>
-              <span className="goal-progress-xy" style={{ color: progressColor }}>
+              <span
+                className="goal-progress-xy"
+                style={{ color: progressColor }}
+              >
                 {doneItems}/{totalItems}
               </span>
             </div>
@@ -73,9 +104,14 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
 
           {/* Footer */}
           <div className="goal-meta">
-            <span className={`tag tag-${goal.category}`}>{CAT_LABEL[goal.category]}</span>
+            <span className={`tag tag-${goal.category}`}>
+              {CAT_LABEL[goal.category]}
+            </span>
             <span className="goal-quarter">
-              <IconCalendarEvent size={10} style={{ verticalAlign: 'middle', marginRight: 2 }} />
+              <IconCalendarEvent
+                size={10}
+                style={{ verticalAlign: "middle", marginRight: 2 }}
+              />
               {QUARTER_LABEL[goal.quarter]}
             </span>
           </div>
@@ -85,7 +121,10 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
           className="icon-btn"
           style={{ width: 22, height: 22, fontSize: 13, flexShrink: 0 }}
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.stopPropagation(); deleteGoal(goal.id); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            deleteGoal(goal.id);
+          }}
           title="Xóa"
         >
           <IconX size={12} />

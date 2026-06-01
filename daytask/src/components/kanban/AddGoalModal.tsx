@@ -3,6 +3,14 @@ import { IconX, IconPlus, IconCheck } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import type { Goal, Category, Priority, Quarter, GoalStatus } from '../../types';
 
+const COLOR_PALETTE: string[] = [
+  '#F28B82', '#F6C8D4', '#E879AA', '#C77DDB', '#FDBA74',
+  '#EF4444', '#E0667E', '#EC4899', '#9B59D0', '#9E2626',
+  '#F59E0B', '#FBBF24', '#FEF08A', '#DDD6FE', '#A8C5A0',
+  '#0F7956', '#16A34A', '#86EFAC', '#7DD3FC', '#C4B5FD',
+  '#292524', '#78716C', '#4338CA', '#7C3AED', '#6B21A8',
+];
+
 const CATEGORIES: { value: Category; label: string }[] = [
   { value: 'work',     label: 'Công việc' },
   { value: 'personal', label: 'Cá nhân' },
@@ -31,7 +39,7 @@ interface Props {
 }
 
 export default function AddGoalModal({ editGoal, defaultStatus = 'todo', onClose }: Props) {
-  const { selectedYear, addGoal, updateGoal, checklistItems, addChecklistItem, toggleChecklistItem, deleteChecklistItem } = useAppStore();
+  const { selectedYear, addGoal, updateGoal, checklistItems, addChecklistItem, toggleChecklistItem, deleteChecklistItem, categoryColors, updateCategoryColor } = useAppStore();
 
   const [title,    setTitle]    = useState('');
   const [desc,     setDesc]     = useState('');
@@ -125,6 +133,20 @@ export default function AddGoalModal({ editGoal, defaultStatus = 'todo', onClose
               <select className="form-input" value={category} onChange={(e) => setCategory(e.target.value as Category)}>
                 {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
+              <div className="cat-color-picker">
+                {COLOR_PALETTE.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`color-swatch${categoryColors[category] === color ? ' color-swatch-active' : ''}`}
+                    style={{ background: color }}
+                    onClick={() => updateCategoryColor(category, color)}
+                    title={color}
+                  >
+                    {categoryColors[category] === color && <IconCheck size={10} strokeWidth={3} color="#fff" />}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="form-group">
               <label className="form-label">Ưu tiên</label>

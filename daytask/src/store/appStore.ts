@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { format } from 'date-fns';
-import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, GoalChecklistItem } from '../types';
+import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, GoalChecklistItem, Category, CategoryColors } from '../types';
 import {
   isTauri,
   dbGetTasks, dbAddTask, dbUpdateTask, dbDeleteTask,
@@ -8,6 +8,13 @@ import {
   dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
   dbGetHeatmap, dbGetStreak,
 } from './mockDb';
+
+const DEFAULT_CATEGORY_COLORS: CategoryColors = {
+  work:     '#7DD3FC',
+  personal: '#86EFAC',
+  health:   '#FDBA74',
+  learn:    '#C4B5FD',
+};
 
 let _db: import('@tauri-apps/plugin-sql').default | null = null;
 
@@ -92,6 +99,7 @@ interface AppState {
   uiScale: number;
   openSettingsModal: boolean;
   kanbanDragActiveId: number | null;
+  categoryColors: CategoryColors;
 
   setActiveTab: (tab: Tab) => void;
   toggleTheme: () => void;
@@ -110,6 +118,9 @@ interface AppState {
   updateTask: (id: number, updates: TaskUpdate) => Promise<void>;
   toggleTask: (id: number) => Promise<void>;
   deleteTask: (id: number) => Promise<void>;
+
+  loadCategoryColors: () => Promise<void>;
+  updateCategoryColor: (category: Category, color: string) => Promise<void>;
 
   loadGoals: (year: number) => Promise<void>;
   addGoal: (goal: NewGoal) => Promise<void>;
@@ -143,6 +154,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   uiScale: parseFloat(localStorage.getItem('uiScale') ?? '1.1'),
   openSettingsModal: false,
   kanbanDragActiveId: null,
+  categoryColors: { ...DEFAULT_CATEGORY_COLORS },
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -242,6 +254,41 @@ export const useAppStore = create<AppState>((set, get) => ({
     const db = await getDb();
     await db.execute('DELETE FROM tasks WHERE id = $1', [id]);
     set({ tasks: get().tasks.filter((t) => t.id !== id) });
+  },
+
+  // --- Category Colors ---
+
+  loadCategoryColors: async () => {
+    if (!isTauri()) {
+      const stored = localStorage.getItem('categoryColors');
+      if (stored) {
+        try { set({ categoryColors: JSON.parse(stored) }); } catch {}
+      }
+      return;
+    }
+    const db = await getDb();
+    const rows = await db.select<{ category: string; color: string }[]>(
+      'SELECT category, color FROM category_colors'
+    );
+    const colors: CategoryColors = { ...DEFAULT_CATEGORY_COLORS };
+    for (const row of rows) {
+      colors[row.category as Category] = row.color;
+    }
+    set({ categoryColors: colors });
+  },
+
+  updateCategoryColor: async (category, color) => {
+    const newColors = { ...get().categoryColors, [category]: color };
+    set({ categoryColors: newColors });
+    if (!isTauri()) {
+      localStorage.setItem('categoryColors', JSON.stringify(newColors));
+      return;
+    }
+    const db = await getDb();
+    await db.execute(
+      'INSERT OR REPLACE INTO category_colors (category, color) VALUES ($1, $2)',
+      [category, color]
+    );
   },
 
   // --- Goals ---

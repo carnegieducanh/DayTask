@@ -51,6 +51,20 @@ pub fn run() {
             );",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 4,
+            description: "create_category_colors",
+            sql: "CREATE TABLE IF NOT EXISTS category_colors (
+                category TEXT PRIMARY KEY,
+                color    TEXT NOT NULL
+            );
+            INSERT OR IGNORE INTO category_colors (category, color) VALUES
+                ('work',     '#7DD3FC'),
+                ('personal', '#86EFAC'),
+                ('health',   '#FDBA74'),
+                ('learn',    '#C4B5FD');",
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()
