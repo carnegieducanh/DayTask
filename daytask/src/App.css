@@ -852,6 +852,7 @@ select {
 /* ── Add task row ── */
 .add-task-row {
   display: flex;
+  align-self: flex-start;
   align-items: center;
   gap: 8px;
   padding: 9px 12px;

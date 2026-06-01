@@ -26,7 +26,6 @@ export default function TodayView() {
   const [showModal, setShowModal]         = useState(false);
   const [editTask, setEditTask]           = useState<Task | null>(null);
   const [streak, setStreak]               = useState(0);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const demoPopupShown = useRef(false);
 
   useEffect(() => {
@@ -72,7 +71,7 @@ export default function TodayView() {
     <>
       {/* Topbar */}
       <div className="view-topbar today-topbar">
-        <div className="today-topbar-side" style={{ cursor: 'pointer' }} onClick={() => setShowDatePicker((v) => !v)}>
+        <div className="today-topbar-side">
           <div className="view-title">Hôm nay</div>
           <div className="view-subtitle" style={{ textTransform: 'capitalize' }}>{dateLabel}</div>
         </div>
@@ -83,14 +82,7 @@ export default function TodayView() {
         />
 
         <div className="today-topbar-side today-topbar-actions">
-          {showDatePicker && (
-            <input type="date" className="form-input" value={selectedDate}
-              onChange={(e) => { setSelectedDate(e.target.value); setShowDatePicker(false); }}
-              style={{ width: 130, padding: '5px 8px', fontSize: 13 }}
-              autoFocus onBlur={() => setShowDatePicker(false)}
-            />
-          )}
-          {selectedDate !== format(new Date(), 'yyyy-MM-dd') && !showDatePicker && (
+          {selectedDate !== format(new Date(), 'yyyy-MM-dd') && (
             <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 13 }}
               onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}>
               Hôm nay
