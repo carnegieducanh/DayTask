@@ -7,6 +7,7 @@ import { isTauri } from '../../store/mockDb';
 import TaskCard from './TaskCard';
 import AddTaskModal from './AddTaskModal';
 import MiniHeatmap from './MiniHeatmap';
+import MiniCalendar from './MiniCalendar';
 import DailyGreeting from './DailyGreeting';
 import type { Task } from '../../types';
 
@@ -167,6 +168,11 @@ export default function TodayView() {
 
           {/* ── Right column ── */}
           <div className="today-right">
+
+            {/* Mini Calendar */}
+            <div className="today-right-section">
+              <MiniCalendar />
+            </div>
 
             {/* Heatmap */}
             <div className="today-right-section">

@@ -1,27 +1,50 @@
-import { useState, useEffect, useRef } from 'react';
-import { IconChevronDown, IconDotsVertical, IconCheck } from '@tabler/icons-react';
-import { useAppStore } from '../../store/appStore';
-import type { Task, Category, Priority } from '../../types';
+import { useState, useEffect, useRef } from "react";
+import {
+  IconChevronDown,
+  IconDotsVertical,
+  IconCheck,
+} from "@tabler/icons-react";
+import { useAppStore } from "../../store/appStore";
+import type { Task, Category, Priority } from "../../types";
 
 const COLOR_PALETTE: string[] = [
-  '#F28B82', '#FAAFA8', '#E879AA', '#CE93D8', '#B39DDB',
-  '#D50000', '#E67C73', '#EC4899', '#8E24AA', '#9E2626',
-  '#F4511E', '#F6BF26', '#FEF08A', '#DDD6FE', '#A8C5A0',
-  '#0B8043', '#33B679', '#86EFAC', '#039BE5', '#7986CB',
-  '#292524', '#78716C', '#3F51B5', '#7C3AED', '#6B21A8',
+  "#C05476",
+  "#E3683E",
+  "#D8BE5E",
+  "#489160",
+  "#6E72C3",
+  "#A75ABA",
+  "#D85675",
+  "#DD7835",
+  "#BCC256",
+  "#429A8E",
+  "#828BC2",
+  "#957367",
+  "#DA5234",
+  "#E0963C",
+  "#82AA57",
+  "#4B99D2",
+  "#AE9CCE",
+  "#7C7C7C",
+  "#D38179",
+  "#E4B751",
+  "#54AD7F",
+  "#6489DF",
+  "#A277AF",
+  "#A3978B",
 ];
 
 const CATEGORIES: { value: Category; label: string }[] = [
-  { value: 'work',     label: 'Công việc' },
-  { value: 'personal', label: 'Cá nhân' },
-  { value: 'health',   label: 'Sức khỏe' },
-  { value: 'learn',    label: 'Học tập' },
+  { value: "work", label: "Công việc" },
+  { value: "personal", label: "Cá nhân" },
+  { value: "health", label: "Sức khỏe" },
+  { value: "learn", label: "Học tập" },
 ];
 
 const PRIORITIES: { value: Priority; label: string }[] = [
-  { value: 'high', label: 'Cao' },
-  { value: 'mid',  label: 'Trung bình' },
-  { value: 'low',  label: 'Thấp' },
+  { value: "high", label: "Cao" },
+  { value: "mid", label: "Trung bình" },
+  { value: "low", label: "Thấp" },
 ];
 
 interface Props {
@@ -30,13 +53,19 @@ interface Props {
 }
 
 export default function AddTaskModal({ editTask, onClose }: Props) {
-  const { selectedDate, addTask, updateTask, categoryColors, updateCategoryColor } = useAppStore();
+  const {
+    selectedDate,
+    addTask,
+    updateTask,
+    categoryColors,
+    updateCategoryColor,
+  } = useAppStore();
 
-  const [title, setTitle]         = useState('');
-  const [description, setDesc]    = useState('');
-  const [category, setCategory]   = useState<Category>('work');
-  const [priority, setPriority]   = useState<Priority>('mid');
-  const [reminder, setReminder]   = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDesc] = useState("");
+  const [category, setCategory] = useState<Category>("work");
+  const [priority, setPriority] = useState<Priority>("mid");
+  const [reminder, setReminder] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -44,22 +73,25 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   useEffect(() => {
     if (editTask) {
       setTitle(editTask.title);
-      setDesc(editTask.description ?? '');
+      setDesc(editTask.description ?? "");
       setCategory(editTask.category);
       setPriority(editTask.priority);
-      setReminder(editTask.reminder ?? '');
+      setReminder(editTask.reminder ?? "");
     }
   }, [editTask]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false);
         setColorPickerFor(null);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -88,9 +120,14 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   }
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal-overlay"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="modal">
-        <div className="modal-title">{editTask ? 'Sửa task' : 'Thêm task mới'}</div>
+        <div className="modal-title">
+          {editTask ? "Sửa task" : "Thêm task mới"}
+        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -112,7 +149,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
               onChange={(e) => setDesc(e.target.value)}
               placeholder="Mô tả thêm (tùy chọn)..."
               rows={2}
-              style={{ resize: 'vertical' }}
+              style={{ resize: "vertical" }}
             />
           </div>
 
@@ -123,43 +160,69 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
                 <button
                   type="button"
                   className="cat-dropdown-trigger"
-                  onClick={() => { setDropdownOpen(v => !v); setColorPickerFor(null); }}
+                  onClick={() => {
+                    setDropdownOpen((v) => !v);
+                    setColorPickerFor(null);
+                  }}
                 >
-                  <span className="cat-color-dot" style={{ background: categoryColors[category] }} />
-                  <span className="cat-dropdown-label">{CATEGORIES.find(c => c.value === category)?.label}</span>
-                  <IconChevronDown size={13} className={`cat-dropdown-chevron${dropdownOpen ? ' open' : ''}`} />
+                  <span
+                    className="cat-color-dot"
+                    style={{ background: categoryColors[category] }}
+                  />
+                  <span className="cat-dropdown-label">
+                    {CATEGORIES.find((c) => c.value === category)?.label}
+                  </span>
+                  <IconChevronDown
+                    size={13}
+                    className={`cat-dropdown-chevron${dropdownOpen ? " open" : ""}`}
+                  />
                 </button>
                 {dropdownOpen && (
                   <div className="cat-dropdown-panel">
                     {CATEGORIES.map((cat) => (
-                      <div key={cat.value} className={`cat-dropdown-item${category === cat.value ? ' selected' : ''}`}>
+                      <div
+                        key={cat.value}
+                        className={`cat-dropdown-item${category === cat.value ? " selected" : ""}`}
+                      >
                         <button
                           type="button"
                           className="cat-dropdown-item-btn"
-                          onClick={() => { setCategory(cat.value); setDropdownOpen(false); setColorPickerFor(null); }}
+                          onClick={() => {
+                            setCategory(cat.value);
+                            setDropdownOpen(false);
+                            setColorPickerFor(null);
+                          }}
                         >
-                          <span className="cat-color-dot" style={{ background: categoryColors[cat.value] }} />
+                          <span
+                            className="cat-color-dot"
+                            style={{ background: categoryColors[cat.value] }}
+                          />
                           <span>{cat.label}</span>
                         </button>
                         <button
                           type="button"
-                          className={`cat-item-dots${colorPickerFor === cat.value ? ' active' : ''}`}
+                          className={`cat-item-dots${colorPickerFor === cat.value ? " active" : ""}`}
                           onMouseDown={(e) => e.stopPropagation()}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setColorPickerFor(prev => prev === cat.value ? null : cat.value);
+                            setColorPickerFor((prev) =>
+                              prev === cat.value ? null : cat.value,
+                            );
                           }}
                           title="Đổi màu"
                         >
                           <IconDotsVertical size={13} />
                         </button>
                         {colorPickerFor === cat.value && (
-                          <div className="cat-color-popup" onMouseDown={(e) => e.stopPropagation()}>
+                          <div
+                            className="cat-color-popup"
+                            onMouseDown={(e) => e.stopPropagation()}
+                          >
                             {COLOR_PALETTE.map((color) => (
                               <button
                                 key={color}
                                 type="button"
-                                className={`color-swatch${categoryColors[cat.value] === color ? ' color-swatch-active' : ''}`}
+                                className={`color-swatch${categoryColors[cat.value] === color ? " color-swatch-active" : ""}`}
                                 style={{ background: color }}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -167,7 +230,13 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
                                 }}
                                 title={color}
                               >
-                                {categoryColors[cat.value] === color && <IconCheck size={10} strokeWidth={3} color="#fff" />}
+                                {categoryColors[cat.value] === color && (
+                                  <IconCheck
+                                    size={10}
+                                    strokeWidth={3}
+                                    color="#fff"
+                                  />
+                                )}
                               </button>
                             ))}
                           </div>
@@ -181,8 +250,16 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
 
             <div className="form-group">
               <label className="form-label">Ưu tiên</label>
-              <select className="form-input" value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
-                {PRIORITIES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+              <select
+                className="form-input"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as Priority)}
+              >
+                {PRIORITIES.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -202,7 +279,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
               Hủy
             </button>
             <button type="submit" className="btn btn-primary">
-              {editTask ? 'Lưu thay đổi' : 'Thêm task'}
+              {editTask ? "Lưu thay đổi" : "Thêm task"}
             </button>
           </div>
         </form>

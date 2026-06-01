@@ -1949,14 +1949,14 @@ select {
   padding: 10px;
   z-index: 300;
   display: grid;
-  grid-template-columns: repeat(5, 20px);
+  grid-template-columns: repeat(6, 20px);
   gap: 5px;
 }
 
 /* ── Category color picker ── */
 .cat-color-picker {
   display: grid;
-  grid-template-columns: repeat(5, 20px);
+  grid-template-columns: repeat(6, 20px);
   gap: 5px;
   margin-top: 7px;
 }
@@ -1993,4 +1993,105 @@ select {
 
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
   background: #555555;
+}
+
+/* ── Mini Calendar (Today sidebar) ── */
+.mini-calendar {
+  width: 100%;
+}
+
+.mini-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.mini-cal-month {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  flex: 1;
+}
+
+.mini-cal-nav {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.1s, color 0.1s;
+  flex-shrink: 0;
+}
+
+.mini-cal-nav:hover {
+  background: var(--border-1);
+  color: var(--text-primary);
+}
+
+.mini-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px 0;
+  justify-items: center;
+}
+
+.mini-cal-dow {
+  font-size: 0.71rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 2px 0 5px;
+  letter-spacing: 0.02em;
+}
+
+.mini-cal-day {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  font-size: 0.79rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-family: inherit;
+  transition: background 0.1s, color 0.1s;
+  line-height: 1;
+}
+
+.mini-cal-day:hover:not(.selected) {
+  background: var(--border-1);
+}
+
+.mini-cal-day.today {
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.mini-cal-day.selected {
+  background: #125680;
+  color: #fff;
+  font-weight: 600;
+}
+
+.mini-cal-day.other-month {
+  color: var(--text-secondary);
+  opacity: 0.45;
+}
+
+.mini-cal-day.other-month.today {
+  opacity: 1;
 }

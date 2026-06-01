@@ -43,8 +43,9 @@ npm run tauri build
 | 11 | Build .msi / .exe | ✅ Xong — v0.1.0 build thành công |
 | 12 | UI overhaul theo mockup + tính năng mới | ✅ Xong (session 2026-05-31) |
 | 13 | Fix drag-drop lệch khi zoom != 100% | ✅ Fix đúng (session 2026-06-01b) — dùng NATIVE webview zoom, bỏ hết transform:scale(). Cần verify runtime |
+| 14 | Bảng màu danh mục chuẩn Google Calendar | ✅ Xong (session 2026-06-01) — 24 màu, 6 cột × 4 hàng. Cần verify visual |
 
-## Tính năng đã có (sau session 2026-05-31)
+## Tính năng đã có (sau session 2026-06-01)
 - **Tabler Icons** (`@tabler/icons-react`): toàn bộ UI dùng SVG icon, không còn emoji/text symbol
 - **Inline task editing**: double-click tên task → sửa trực tiếp (không mở modal)
 - **ReminderPopup in-app**: popup góc phải khi đến giờ nhắc, có nút "Dời 10 phút" + "Bỏ qua" + "Xem"
@@ -52,6 +53,22 @@ npm run tauri build
 - **Export JSON**: nút download ở topbar TodayView → xuất tasks ngày hiện tại ra `.json`
 - **Kanban stats bar**: bar dưới topbar hiện số lượng từng cột + progress bar % năm
 - **Column icons**: mỗi cột Kanban có icon riêng (circle-dashed, loader, eye, circle-check)
+- **Bảng màu danh mục**: 24 màu chuẩn Google Calendar, grid 6×4
+
+## Bảng màu danh mục — COLOR_PALETTE (session 2026-06-01)
+
+Định nghĩa tại `AddTaskModal.tsx:6` và `AddGoalModal.tsx:6` (cả hai giống nhau).
+CSS: `.cat-color-popup` và `.cat-color-picker` dùng `grid-template-columns: repeat(6, 20px)`.
+
+```
+Hàng 1 (nhạt/ấm):   #F28B82  #FAAFA8  #FF8A65  #FDD835  #CDDC39  #7CB342
+Hàng 2 (chuẩn/ấm):  #D50000  #E67C73  #F4511E  #F6BF26  #33B679  #0B8043
+Hàng 3 (lạnh):      #4DB6AC  #039BE5  #3F51B5  #7986CB  #8E24AA  #7B1FA2
+Hàng 4 (tím/xám):   #AB47BC  #CE93D8  #78909C  #9E9E9E  #616161  #546E7A
+```
+
+**Lý do chọn 6×4:** Ảnh gốc Google Calendar có đúng 4 hàng × 6 màu = 24 màu.
+**Lý do không dùng 5×4 (20 màu):** Thiếu cột, không đủ dải màu đặc trưng của GCal.
 
 ## Bước tiếp theo — Bước 10 (Auto-update)
 GitHub repo đã có tại `https://github.com/carnegieducanh/DayTask`. Các việc cần làm:
