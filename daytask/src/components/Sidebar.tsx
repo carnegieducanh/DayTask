@@ -21,9 +21,9 @@ const THEME_LABEL: Record<string, string> = {
 
 const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'today',    label: 'Hôm nay',      icon: <IconSun size={16} /> },
+  { id: 'calendar', label: 'Lịch',          icon: <IconCalendar size={16} /> },
   { id: 'kanban',   label: 'Kế hoạch năm', icon: <IconCalendarStats size={16} /> },
   { id: 'heatmap',  label: 'Heatmap',       icon: <IconChartDots size={16} /> },
-  { id: 'calendar', label: 'Lịch',          icon: <IconCalendar size={16} /> },
 ];
 
 export default function Sidebar() {

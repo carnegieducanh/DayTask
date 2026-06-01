@@ -65,6 +65,12 @@ pub fn run() {
                 ('learn',    '#C4B5FD');",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 5,
+            description: "add_repeat_daily_to_tasks",
+            sql: "ALTER TABLE tasks ADD COLUMN repeat_daily INTEGER NOT NULL DEFAULT 0;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

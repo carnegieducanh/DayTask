@@ -13,11 +13,11 @@ const today = format(new Date(), 'yyyy-MM-dd');
 // ---------- seed tasks ----------
 
 export const mockTasks: Task[] = [
-  { id: 1, title: 'Họp team sprint planning', description: 'Discuss sprint goals and assign tickets', category: 'work', priority: 'high', reminder: '14:00', date: today, is_done: 0, created_at: today },
-  { id: 2, title: 'Đọc sách 30 phút', description: 'Atomic Habits — chương 7', category: 'personal', priority: 'mid', reminder: '21:00', date: today, is_done: 0, created_at: today },
-  { id: 3, title: 'Tập thể dục buổi sáng', description: 'Chạy bộ 5km + stretch', category: 'health', priority: 'mid', reminder: '07:00', date: today, is_done: 1, created_at: today },
-  { id: 4, title: 'Review code pull request', description: 'PR #42 — refactor auth module', category: 'work', priority: 'high', reminder: '09:30', date: today, is_done: 1, created_at: today },
-  { id: 5, title: 'Gửi báo cáo tuần', description: 'Tổng kết KPI tuần, gửi cho manager', category: 'work', priority: 'mid', reminder: '11:00', date: today, is_done: 1, created_at: today },
+  { id: 1, title: 'Họp team sprint planning', description: 'Discuss sprint goals and assign tickets', category: 'work', priority: 'high', reminder: '14:00', date: today, is_done: 0, repeat_daily: 0, created_at: today },
+  { id: 2, title: 'Đọc sách 30 phút', description: 'Atomic Habits — chương 7', category: 'personal', priority: 'mid', reminder: '21:00', date: today, is_done: 0, repeat_daily: 0, created_at: today },
+  { id: 3, title: 'Tập thể dục buổi sáng', description: 'Chạy bộ 5km + stretch', category: 'health', priority: 'mid', reminder: '07:00', date: today, is_done: 1, repeat_daily: 0, created_at: today },
+  { id: 4, title: 'Review code pull request', description: 'PR #42 — refactor auth module', category: 'work', priority: 'high', reminder: '09:30', date: today, is_done: 1, repeat_daily: 0, created_at: today },
+  { id: 5, title: 'Gửi báo cáo tuần', description: 'Tổng kết KPI tuần, gửi cho manager', category: 'work', priority: 'mid', reminder: '11:00', date: today, is_done: 1, repeat_daily: 0, created_at: today },
 ];
 
 // heatmap: past 90 days with varying activity
@@ -35,6 +35,7 @@ for (let i = 1; i <= 90; i++) {
       reminder: null,
       date: dateStr,
       is_done: 1,
+      repeat_daily: 0,
       created_at: dateStr,
     });
   }
@@ -86,6 +87,16 @@ export const mockChecklist: GoalChecklistItem[] = [
 // ---------- in-memory ops ----------
 
 export function dbGetTasks(date: string): Task[] {
+  // Roll undone recurring tasks from past dates (if no copy already exists for date)
+  const todayRepeatTitles = new Set(
+    mockTasks.filter((t) => t.repeat_daily === 1 && t.is_done === 0 && t.date === date).map((t) => t.title)
+  );
+  for (const task of mockTasks) {
+    if (task.repeat_daily === 1 && task.is_done === 0 && task.date < date && !todayRepeatTitles.has(task.title)) {
+      task.date = date;
+      todayRepeatTitles.add(task.title);
+    }
+  }
   return mockTasks
     .filter((t) => t.date === date)
     .sort((a, b) => a.is_done - b.is_done || a.id - b.id);

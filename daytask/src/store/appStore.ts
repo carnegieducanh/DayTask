@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, GoalChecklistItem, Category, CategoryColors } from '../types';
 import {
   isTauri,
+  mockTasks,
   dbGetTasks, dbAddTask, dbUpdateTask, dbDeleteTask,
   dbGetGoals, dbAddGoal, dbUpdateGoal, dbDeleteGoal,
   dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
@@ -203,6 +204,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   loadTasks: async (date) => {
     if (!isTauri()) { set({ tasks: dbGetTasks(date) }); return; }
     const db = await getDb();
+    // Roll undone recurring tasks from past dates (skip if a copy for today already exists with same title)
+    await db.execute(
+      `UPDATE tasks SET date = $1
+       WHERE repeat_daily = 1 AND is_done = 0 AND date < $1
+       AND title NOT IN (SELECT title FROM tasks WHERE repeat_daily = 1 AND date = $1 AND is_done = 0)`,
+      [date]
+    );
     const tasks = await db.select<Task[]>(
       'SELECT * FROM tasks WHERE date = $1 ORDER BY is_done ASC, created_at ASC',
       [date]
@@ -225,15 +233,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   addTask: async (task) => {
     if (!isTauri()) {
-      dbAddTask({ title: task.title, description: task.description ?? null, category: task.category, priority: task.priority, reminder: task.reminder ?? null, date: task.date, is_done: 0 });
+      dbAddTask({ title: task.title, description: task.description ?? null, category: task.category, priority: task.priority, reminder: task.reminder ?? null, date: task.date, is_done: 0, repeat_daily: task.repeat_daily ?? 0 });
       set({ tasks: dbGetTasks(get().selectedDate) });
       return;
     }
     const db = await getDb();
     await db.execute(
-      `INSERT INTO tasks (title, description, category, priority, reminder, date)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [task.title, task.description ?? null, task.category, task.priority, task.reminder ?? null, task.date]
+      `INSERT INTO tasks (title, description, category, priority, reminder, date, repeat_daily)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [task.title, task.description ?? null, task.category, task.priority, task.reminder ?? null, task.date, task.repeat_daily ?? 0]
     );
     await get().loadTasks(get().selectedDate);
   },
@@ -258,7 +266,43 @@ export const useAppStore = create<AppState>((set, get) => ({
   toggleTask: async (id) => {
     const task = get().tasks.find((t) => t.id === id);
     if (!task) return;
-    await get().updateTask(id, { is_done: task.is_done ? 0 : 1 });
+    const newDone = task.is_done ? 0 : 1;
+
+    if (!isTauri()) {
+      dbUpdateTask(id, { is_done: newDone });
+      // Tạo bản copy cho ngày mai khi đánh dấu done một recurring task
+      if (newDone === 1 && task.repeat_daily === 1) {
+        const nextDate = new Date(task.date + 'T00:00:00');
+        nextDate.setDate(nextDate.getDate() + 1);
+        const nextDateStr = format(nextDate, 'yyyy-MM-dd');
+        const alreadyExists = mockTasks.some(
+          (t) => t.repeat_daily === 1 && t.is_done === 0 && t.date === nextDateStr && t.title === task.title
+        );
+        if (!alreadyExists) {
+          dbAddTask({ title: task.title, description: task.description, category: task.category, priority: task.priority, reminder: task.reminder, date: nextDateStr, is_done: 0, repeat_daily: 1 });
+        }
+      }
+      set({ tasks: dbGetTasks(get().selectedDate) });
+      return;
+    }
+
+    const db = await getDb();
+    await db.execute('UPDATE tasks SET is_done = $1 WHERE id = $2', [newDone, id]);
+    // Tạo bản copy cho ngày mai khi đánh dấu done một recurring task
+    if (newDone === 1 && task.repeat_daily === 1) {
+      const nextDate = new Date(task.date + 'T00:00:00');
+      nextDate.setDate(nextDate.getDate() + 1);
+      const nextDateStr = format(nextDate, 'yyyy-MM-dd');
+      await db.execute(
+        `INSERT INTO tasks (title, description, category, priority, reminder, date, repeat_daily)
+         SELECT $1, $2, $3, $4, $5, $6, 1
+         WHERE NOT EXISTS (
+           SELECT 1 FROM tasks WHERE repeat_daily = 1 AND is_done = 0 AND date = $6 AND title = $1
+         )`,
+        [task.title, task.description, task.category, task.priority, task.reminder, nextDateStr]
+      );
+    }
+    await get().loadTasks(get().selectedDate);
   },
 
   deleteTask: async (id) => {

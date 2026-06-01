@@ -77,6 +77,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   const [category, setCategory] = useState<Category>("work");
   const [priority, setPriority] = useState<Priority>("mid");
   const [reminder, setReminder] = useState("");
+  const [repeatDaily, setRepeatDaily] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);
   const [reminderOpen, setReminderOpen] = useState(false);
@@ -91,6 +92,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
       setCategory(editTask.category);
       setPriority(editTask.priority);
       setReminder(editTask.reminder ?? "");
+      setRepeatDaily(editTask.repeat_daily === 1);
     }
   }, [editTask]);
 
@@ -133,6 +135,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
         category,
         priority,
         reminder: reminder || undefined,
+        repeat_daily: repeatDaily ? 1 : 0,
       });
     } else {
       await addTask({
@@ -142,6 +145,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
         priority,
         reminder: reminder || undefined,
         date: selectedDate,
+        repeat_daily: repeatDaily ? 1 : 0,
       });
     }
     onClose();
@@ -346,6 +350,21 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <div className="repeat-row">
+              <div>
+                <div className="form-label" style={{ marginBottom: 2 }}>Lặp lại hàng ngày</div>
+                <div className="repeat-hint">Task tự động xuất hiện mỗi ngày</div>
+              </div>
+              <button
+                type="button"
+                className={`toggle-switch${repeatDaily ? " on" : ""}`}
+                onClick={() => setRepeatDaily((v) => !v)}
+                aria-pressed={repeatDaily}
+              />
             </div>
           </div>
 

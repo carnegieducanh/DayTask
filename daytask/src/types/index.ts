@@ -12,6 +12,7 @@ export interface Task {
   reminder: string | null;
   date: string;
   is_done: number;
+  repeat_daily: number;
   created_at: string;
 }
 
@@ -22,6 +23,7 @@ export interface NewTask {
   priority: Priority;
   reminder?: string;
   date: string;
+  repeat_daily?: number;
 }
 
 export interface TaskUpdate {
@@ -31,6 +33,7 @@ export interface TaskUpdate {
   priority?: Priority;
   reminder?: string;
   is_done?: number;
+  repeat_daily?: number;
 }
 
 export interface Goal {
