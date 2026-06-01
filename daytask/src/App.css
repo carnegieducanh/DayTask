@@ -678,9 +678,7 @@ select {
 .task-list {
   display: flex;
   flex-direction: column;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
-  overflow: hidden;
+  gap: 3px;
 }
 
 .task-item {
@@ -688,6 +686,7 @@ select {
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
+  border-radius: var(--radius-md);
   transition: background 0.1s;
 }
 
@@ -789,6 +788,65 @@ select {
 .task-time {
   font-size: 0.86rem;
   color: var(--text-secondary);
+}
+
+/* ── Bell icon default colors (CSS-driven, not inline) ── */
+.task-bell-active {
+  color: #60a5fa;
+}
+.task-bell-inactive {
+  color: var(--text-secondary);
+}
+
+/* ── Colored task cards (category background) ── */
+.task-item--colored {
+  transition:
+    background 0.1s,
+    box-shadow 0.1s;
+}
+.task-item--colored:hover {
+  box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.07);
+}
+.task-item--colored .task-name {
+  color: rgba(0, 0, 0, 0.88);
+}
+.task-item--colored .task-time {
+  color: rgba(0, 0, 0, 0.65);
+}
+.task-item--colored .task-bell-active,
+.task-item--colored .task-bell-inactive,
+.task-item--colored .task-delete-btn {
+  color: rgba(0, 0, 0, 0.6);
+}
+.task-item--colored.done .task-name {
+  color: rgba(0, 0, 0, 0.45);
+}
+/* On hover: background pill + stronger color for icon visibility */
+.task-item--colored:hover .task-bell-btn,
+.task-item--colored:hover .task-delete-btn {
+  background: rgba(0, 0, 0, 0.14);
+  border-radius: 7px;
+}
+.task-item--colored:hover .task-bell-active,
+.task-item--colored:hover .task-bell-inactive,
+.task-item--colored:hover .task-delete-btn {
+  color: rgba(0, 0, 0, 0.82);
+}
+/* Checkbox on colored cards: dark instead of blue */
+.task-item--colored .task-check {
+  border-color: rgba(0, 0, 0, 0.3);
+}
+.task-item--colored .task-check:not(.checked):hover {
+  border-color: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.55);
+}
+.task-item--colored .task-check.checked {
+  color: rgba(0, 0, 0, 0.65);
+}
+.task-item--colored .task-check.checked:hover {
+  border-color: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 /* ── Add task row ── */
@@ -943,7 +1001,9 @@ select {
   flex-shrink: 0;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s, background 0.15s;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
 }
 .goal-card--colored .goal-card-delete {
   color: rgba(0, 0, 0, 0.72);
@@ -1055,6 +1115,11 @@ select {
 .goal-card--colored .goal-quarter {
   color: rgba(0, 0, 0, 0.72);
   background: rgba(0, 0, 0, 0.12);
+}
+.goal-card--colored:hover {
+  box-shadow:
+    inset 0 0 0 999px rgba(0, 0, 0, 0.07),
+    0 2px 8px rgba(0, 0, 0, 0.07);
 }
 
 .goal-card-actions {
@@ -1802,7 +1867,7 @@ select {
   background: var(--bg-primary);
   border: 0.5px solid var(--border-2);
   border-radius: var(--radius-md);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.14);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
   z-index: 200;
   overflow: visible;
 }
@@ -1848,7 +1913,10 @@ select {
   display: flex;
   align-items: center;
   opacity: 0;
-  transition: opacity 0.12s, color 0.1s, background 0.1s;
+  transition:
+    opacity 0.12s,
+    color 0.1s,
+    background 0.1s;
 }
 
 .cat-dropdown-item:hover .cat-item-dots,
@@ -1866,7 +1934,7 @@ select {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.14);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
   pointer-events: none;
 }
 
@@ -1877,7 +1945,7 @@ select {
   background: var(--bg-primary);
   border: 0.5px solid var(--border-2);
   border-radius: var(--radius-md);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
   padding: 10px;
   z-index: 300;
   display: grid;
@@ -1903,17 +1971,24 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.12s, box-shadow 0.12s;
-  box-shadow: inset 0 0 0 1.5px rgba(0,0,0,0.10);
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.1);
 }
 
 .color-swatch:hover {
   transform: scale(1.2);
-  box-shadow: inset 0 0 0 1.5px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.18);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(0, 0, 0, 0.18),
+    0 2px 6px rgba(0, 0, 0, 0.18);
 }
 
 .color-swatch-active {
-  box-shadow: inset 0 0 0 2px rgba(0,0,0,0.25), 0 0 0 2px rgba(255,255,255,0.8), 0 0 0 3.5px rgba(0,0,0,0.35);
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.25),
+    0 0 0 2px rgba(255, 255, 255, 0.8),
+    0 0 0 3.5px rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {

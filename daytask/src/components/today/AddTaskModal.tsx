@@ -1,6 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { IconChevronDown, IconDotsVertical, IconCheck } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import type { Task, Category, Priority } from '../../types';
+
+const COLOR_PALETTE: string[] = [
+  '#F28B82', '#FAAFA8', '#E879AA', '#CE93D8', '#B39DDB',
+  '#D50000', '#E67C73', '#EC4899', '#8E24AA', '#9E2626',
+  '#F4511E', '#F6BF26', '#FEF08A', '#DDD6FE', '#A8C5A0',
+  '#0B8043', '#33B679', '#86EFAC', '#039BE5', '#7986CB',
+  '#292524', '#78716C', '#3F51B5', '#7C3AED', '#6B21A8',
+];
 
 const CATEGORIES: { value: Category; label: string }[] = [
   { value: 'work',     label: 'Công việc' },
@@ -21,13 +30,16 @@ interface Props {
 }
 
 export default function AddTaskModal({ editTask, onClose }: Props) {
-  const { selectedDate, addTask, updateTask } = useAppStore();
+  const { selectedDate, addTask, updateTask, categoryColors, updateCategoryColor } = useAppStore();
 
   const [title, setTitle]         = useState('');
   const [description, setDesc]    = useState('');
   const [category, setCategory]   = useState<Category>('work');
   const [priority, setPriority]   = useState<Priority>('mid');
   const [reminder, setReminder]   = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (editTask) {
@@ -38,6 +50,17 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
       setReminder(editTask.reminder ?? '');
     }
   }, [editTask]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+        setColorPickerFor(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -96,27 +119,70 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Danh mục</label>
-              <select
-                className="form-input"
-                value={category}
-                onChange={(e) => setCategory(e.target.value as Category)}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
+              <div className="cat-dropdown" ref={dropdownRef}>
+                <button
+                  type="button"
+                  className="cat-dropdown-trigger"
+                  onClick={() => { setDropdownOpen(v => !v); setColorPickerFor(null); }}
+                >
+                  <span className="cat-color-dot" style={{ background: categoryColors[category] }} />
+                  <span className="cat-dropdown-label">{CATEGORIES.find(c => c.value === category)?.label}</span>
+                  <IconChevronDown size={13} className={`cat-dropdown-chevron${dropdownOpen ? ' open' : ''}`} />
+                </button>
+                {dropdownOpen && (
+                  <div className="cat-dropdown-panel">
+                    {CATEGORIES.map((cat) => (
+                      <div key={cat.value} className={`cat-dropdown-item${category === cat.value ? ' selected' : ''}`}>
+                        <button
+                          type="button"
+                          className="cat-dropdown-item-btn"
+                          onClick={() => { setCategory(cat.value); setDropdownOpen(false); setColorPickerFor(null); }}
+                        >
+                          <span className="cat-color-dot" style={{ background: categoryColors[cat.value] }} />
+                          <span>{cat.label}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`cat-item-dots${colorPickerFor === cat.value ? ' active' : ''}`}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setColorPickerFor(prev => prev === cat.value ? null : cat.value);
+                          }}
+                          title="Đổi màu"
+                        >
+                          <IconDotsVertical size={13} />
+                        </button>
+                        {colorPickerFor === cat.value && (
+                          <div className="cat-color-popup" onMouseDown={(e) => e.stopPropagation()}>
+                            {COLOR_PALETTE.map((color) => (
+                              <button
+                                key={color}
+                                type="button"
+                                className={`color-swatch${categoryColors[cat.value] === color ? ' color-swatch-active' : ''}`}
+                                style={{ background: color }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateCategoryColor(cat.value, color);
+                                }}
+                                title={color}
+                              >
+                                {categoryColors[cat.value] === color && <IconCheck size={10} strokeWidth={3} color="#fff" />}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="form-group">
               <label className="form-label">Ưu tiên</label>
-              <select
-                className="form-input"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as Priority)}
-              >
-                {PRIORITIES.map((p) => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
-                ))}
+              <select className="form-input" value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
+                {PRIORITIES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
             </div>
           </div>
