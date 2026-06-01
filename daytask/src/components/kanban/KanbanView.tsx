@@ -5,6 +5,10 @@ import KanbanColumn from './KanbanColumn';
 import AddGoalModal from './AddGoalModal';
 import type { Goal, GoalStatus } from '../../types';
 
+interface Props {
+  liveGoals?: Goal[] | null;
+}
+
 const STATUSES: GoalStatus[] = ['todo', 'doing', 'review', 'done'];
 
 const STATUS_CONFIG: Record<GoalStatus, { label: string; dot: string }> = {
@@ -14,8 +18,9 @@ const STATUS_CONFIG: Record<GoalStatus, { label: string; dot: string }> = {
   done:   { label: 'Hoàn thành',     dot: '#639922' },
 };
 
-export default function KanbanView() {
+export default function KanbanView({ liveGoals }: Props) {
   const { goals, openAddGoalModal, setOpenAddGoalModal } = useAppStore();
+  const displayGoals = liveGoals ?? goals;
   const [showModal, setShowModal]         = useState(false);
   const [editGoal, setEditGoal]           = useState<Goal | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<GoalStatus>('todo');
@@ -76,7 +81,7 @@ export default function KanbanView() {
           <KanbanColumn
             key={status}
             status={status}
-            goals={goals.filter((g) => g.status === status).sort((a, b) => a.position - b.position)}
+            goals={displayGoals.filter((g) => g.status === status).sort((a, b) => a.position - b.position)}
             onEdit={openEdit}
             onAddGoal={openAdd}
           />

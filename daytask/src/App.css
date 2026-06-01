@@ -1032,6 +1032,9 @@ select {
   background: var(--border-1);
   padding: 2px 7px;
   border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .goal-card-actions {
@@ -1431,12 +1434,14 @@ select {
 .reminder-popup-actions {
   display: flex;
   gap: 5px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .popup-btn {
-  font-size: 0.86rem;
-  padding: 5px 11px;
+  flex: 1;
+  font-size: 0.82rem;
+  padding: 5px 6px;
+  white-space: nowrap;
   border-radius: var(--radius-md);
   border: 0.5px solid var(--border-1);
   background: transparent;

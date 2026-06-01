@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   DndContext,
   DragEndEvent,
+  DragOverEvent,
   DragStartEvent,
   DragOverlay,
   PointerSensor,
@@ -19,7 +20,7 @@ import HeatmapView from './components/heatmap/HeatmapView';
 import ReminderPopup from './components/ReminderPopup';
 import SettingsModal from './components/SettingsModal';
 import { useReminder } from './hooks/useReminder';
-import type { GoalStatus } from './types';
+import type { Goal, GoalStatus } from './types';
 import './App.css';
 
 const STATUSES: GoalStatus[] = ['todo', 'doing', 'review', 'done'];
@@ -47,6 +48,8 @@ function App() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [dragOverlayWidth, setDragOverlayWidth] = useState<number | null>(null);
+  // Visual-only goals list during drag: moves active card to destination column for sort animation
+  const [liveGoals, setLiveGoals] = useState<Goal[] | null>(null);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -71,11 +74,63 @@ function App() {
   function handleDragStart(event: DragStartEvent) {
     setKanbanDragActiveId(Number(event.active.id));
     setDragOverlayWidth(event.active.rect.current.initial?.width ?? null);
+    setLiveGoals(null);
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over || over.id === active.id) return;
+
+    const activeId = Number(active.id);
+    const activeGoal = goals.find((g) => g.id === activeId);
+    if (!activeGoal) return;
+
+    // Determine which column the cursor is over
+    let destStatus: GoalStatus;
+    if (STATUSES.includes(over.id as GoalStatus)) {
+      destStatus = over.id as GoalStatus;
+    } else {
+      const overGoal = goals.find((g) => g.id === Number(over.id));
+      if (!overGoal) return;
+      destStatus = overGoal.status;
+    }
+
+    if (destStatus === activeGoal.status) {
+      // Hovering back over original column — reset to let native sort handle it
+      setLiveGoals(null);
+      return;
+    }
+
+    // Build live goals: remove active from source, insert into destination
+    const withoutActive = goals.filter((g) => g.id !== activeId);
+    const destGoals = withoutActive
+      .filter((g) => g.status === destStatus)
+      .sort((a, b) => a.position - b.position);
+
+    let insertIndex: number;
+    if (STATUSES.includes(over.id as GoalStatus)) {
+      insertIndex = destGoals.length;
+    } else {
+      const overIndex = destGoals.findIndex((g) => g.id === Number(over.id));
+      const isBelowOverItem =
+        active.rect.current.translated &&
+        active.rect.current.translated.top > over.rect.top + over.rect.height / 2;
+      insertIndex = overIndex >= 0 ? overIndex + (isBelowOverItem ? 1 : 0) : destGoals.length;
+    }
+
+    const movedGoal = { ...activeGoal, status: destStatus };
+    setLiveGoals([
+      ...withoutActive.filter((g) => g.status !== destStatus),
+      ...destGoals.slice(0, insertIndex),
+      movedGoal,
+      ...destGoals.slice(insertIndex),
+    ]);
   }
 
   function handleDragEnd(event: DragEndEvent) {
     setKanbanDragActiveId(null);
     setDragOverlayWidth(null);
+    setLiveGoals(null);
     const { active, over } = event;
     if (!over || over.id === active.id) return;
 
@@ -120,6 +175,7 @@ function App() {
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       {/* Không còn scale wrapper — UI scale dùng native webview zoom (xem useEffect).
@@ -128,7 +184,7 @@ function App() {
         <Sidebar />
         <div className="main-wrap" style={{ position: 'relative' }}>
           {activeTab === 'today' && <TodayView />}
-          {activeTab === 'kanban' && <KanbanView />}
+          {activeTab === 'kanban' && <KanbanView liveGoals={liveGoals} />}
           {activeTab === 'heatmap' && <HeatmapView />}
           <ReminderPopup />
           <SettingsModal />
