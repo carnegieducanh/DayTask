@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 import {
   isPermissionGranted,
   requestPermission,
   sendNotification,
-} from '@tauri-apps/plugin-notification';
-import { format } from 'date-fns';
-import { useAppStore } from '../store/appStore';
+} from "@tauri-apps/plugin-notification";
+import { format } from "date-fns";
+import { useAppStore } from "../store/appStore";
 
 export function useReminder() {
   const { loadTasks, setReminderPopup } = useAppStore();
@@ -17,7 +17,7 @@ export function useReminder() {
       let granted = await isPermissionGranted();
       if (!granted) {
         const result = await requestPermission();
-        granted = result === 'granted';
+        granted = result === "granted";
       }
       permGranted.current = granted;
     }
@@ -28,8 +28,8 @@ export function useReminder() {
     let intervalId: ReturnType<typeof setInterval> | null = null;
 
     async function check() {
-      const now   = format(new Date(), 'HH:mm');
-      const today = format(new Date(), 'yyyy-MM-dd');
+      const now = format(new Date(), "HH:mm");
+      const today = format(new Date(), "yyyy-MM-dd");
       const nowMs = Date.now();
 
       await loadTasks(today);
@@ -58,7 +58,7 @@ export function useReminder() {
       due.forEach((t) => {
         const snoozeTs = snoozedUntil[t.id];
         firedRef.current.add(
-          snoozeTs ? `${t.id}-snooze-${snoozeTs}` : `${t.id}-${now}`
+          snoozeTs ? `${t.id}-snooze-${snoozeTs}` : `${t.id}-${now}`,
         );
       });
 
@@ -77,7 +77,7 @@ export function useReminder() {
 
       due.forEach((t) => {
         if (permGranted.current) {
-          sendNotification({ title: 'DayTask — Nhắc nhở', body: t.title });
+          sendNotification({ title: "atomic_task — Nhắc nhở", body: t.title });
         }
         setReminderPopup(t);
       });

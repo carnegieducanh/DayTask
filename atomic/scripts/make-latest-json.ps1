@@ -26,7 +26,7 @@ $latestJson = @{
     platforms = @{
         "windows-x86_64" = @{
             signature = $sig.Trim()
-            url       = "https://github.com/carnegieducanh/DayTask/releases/download/v${Version}/${exeName}"
+            url       = "https://github.com/carnegieducanh/atomic_task/releases/download/v${Version}/${exeName}"
         }
     }
 } | ConvertTo-Json -Depth 5

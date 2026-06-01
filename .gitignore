@@ -1,9 +1,9 @@
 # Node
-daytask/node_modules/
-daytask/dist/
+atomic_task/node_modules/
+atomic_task/dist/
 
 # Rust build artifacts (very large)
-daytask/src-tauri/target/
+atomic_task/src-tauri/target/
 
 # Tauri signing key (sensitive)
 *.key

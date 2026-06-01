@@ -38,7 +38,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/carnegieducanh/DayTask/releases/latest/download/latest.json"
+        "https://github.com/carnegieducanh/atomic_task/releases/latest/download/latest.json"
       ],
       "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdDOUE0RDA5QjU5QjhBN0QKUldSOWlwdTFDVTJhZlBOMm92Q0t6ci9kaDZncXBCQm5ZeUdxMmh5bFhzN29VdFlRUUUvWXJZeE4K"
