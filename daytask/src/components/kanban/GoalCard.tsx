@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { IconX, IconCalendarEvent } from "@tabler/icons-react";
+import { IconTrash, IconCalendarEvent } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import type { Goal, GoalStatus } from "../../types";
 
@@ -54,7 +54,7 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: !isDragging && status === "done" ? 0.75 : undefined,
+    opacity: undefined,
   };
 
   const progressColor = PROGRESS_COLOR[status];
@@ -118,8 +118,7 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
         </div>
 
         <button
-          className="icon-btn"
-          style={{ width: 22, height: 22, fontSize: 13, flexShrink: 0 }}
+          className="icon-btn goal-card-delete"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
@@ -127,7 +126,7 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
           }}
           title="Xóa"
         >
-          <IconX size={12} />
+          <IconTrash size={14} />
         </button>
       </div>
     </div>

@@ -937,12 +937,18 @@ select {
 }
 
 /* Delete button hidden until hover */
-.goal-card .icon-btn {
+.goal-card .goal-card-delete {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, background 0.15s;
 }
-.goal-card:hover .icon-btn {
+.goal-card--colored .goal-card-delete {
+  color: rgba(0, 0, 0, 0.72);
+}
+.goal-card:hover .goal-card-delete {
   opacity: 1;
   pointer-events: auto;
 }

@@ -191,7 +191,7 @@ export default function AddGoalModal({ editGoal, defaultStatus = 'todo', onClose
                       onClick={() => toggleChecklistItem(item.id, editGoal.id)}
                       title={item.is_done ? 'Đánh dấu chưa xong' : 'Đánh dấu hoàn thành'}
                     >
-                      {item.is_done && <IconCheck size={11} strokeWidth={3} />}
+                      {!!item.is_done && <IconCheck size={11} strokeWidth={3} />}
                     </button>
                     <span className="checklist-item-text">{item.text}</span>
                     <button
