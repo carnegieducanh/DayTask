@@ -55,9 +55,15 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* Base font-size: 14px. JS đặt html { font-size: 14px * uiScale } để scale.
+   Tất cả font-size trong CSS dùng rem (relative to html). */
+html {
+  font-size: 14px;
+}
+
 body {
   font-family: var(--font);
-  font-size: 15px;
+  font-size: 1rem;
   font-weight: 500;
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -114,7 +120,7 @@ input, textarea, select { font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
+  font-size: 1.07rem;
   font-weight: 500;
   color: var(--text-primary);
   white-space: nowrap;
@@ -150,7 +156,7 @@ input, textarea, select { font-family: inherit; }
   border-radius: var(--radius-md);
   cursor: pointer;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 0.93rem;
   background: transparent;
   border: none;
   width: auto;
@@ -172,7 +178,7 @@ input, textarea, select { font-family: inherit; }
 }
 
 .nav-icon {
-  font-size: 16px;
+  font-size: 1.14rem; /* 16px at base scale, scales with uiScale */
   width: 18px;
   display: flex;
   align-items: center;
@@ -181,11 +187,14 @@ input, textarea, select { font-family: inherit; }
   line-height: 1;
 }
 
+/* Nav icon SVGs: 1em relative to nav-icon's font-size = 1.14rem → 16px default */
+.nav-icon svg { width: 1em; height: 1em; }
+
 .nav-badge {
   margin-left: 2px;
   background: var(--primary);
   color: #fff;
-  font-size: 11px;
+  font-size: 0.79rem;
   padding: 1px 5px;
   border-radius: 10px;
   font-weight: 500;
@@ -209,14 +218,17 @@ input, textarea, select { font-family: inherit; }
   flex-shrink: 0;
 }
 
+/* Icons in topbar scale with font context */
+.view-topbar svg { width: 1em; height: 1em; }
+
 .view-title {
-  font-size: 20px;
+  font-size: 1.43rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .view-subtitle {
-  font-size: 13px;
+  font-size: 0.93rem;
   color: var(--text-secondary);
   margin-top: 2px;
 }
@@ -241,9 +253,11 @@ input, textarea, select { font-family: inherit; }
   justify-content: center;
   cursor: pointer;
   color: var(--text-secondary);
-  font-size: 16px;
+  font-size: 1.14rem; /* 16px at base, scales icons inside */
   transition: background 0.1s;
 }
+
+.icon-btn svg { width: 1em; height: 1em; }
 
 .icon-btn:hover {
   background: var(--border-1);
@@ -267,7 +281,7 @@ input, textarea, select { font-family: inherit; }
 
 /* ── Section Label ── */
 .section-label {
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 500;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -277,7 +291,7 @@ input, textarea, select { font-family: inherit; }
 
 /* ── Category Tag ── */
 .tag {
-  font-size: 11px;
+  font-size: 0.79rem;
   padding: 2px 8px;
   border-radius: 99px;
   font-weight: 500;
@@ -320,7 +334,7 @@ input, textarea, select { font-family: inherit; }
 }
 
 .modal-title {
-  font-size: 18px;
+  font-size: 1.29rem;
   font-weight: 700;
   margin-bottom: 16px;
   color: var(--text-primary);
@@ -332,7 +346,7 @@ input, textarea, select { font-family: inherit; }
 
 .form-label {
   display: block;
-  font-size: 13px;
+  font-size: 0.93rem;
   color: var(--text-secondary);
   margin-bottom: 5px;
   font-weight: 500;
@@ -343,7 +357,7 @@ input, textarea, select { font-family: inherit; }
   padding: 8px 10px;
   border: 0.5px solid var(--border-2);
   border-radius: var(--radius-md);
-  font-size: 14px;
+  font-size: 1rem;
   background: var(--bg-primary);
   color: var(--text-primary);
   outline: none;
@@ -369,7 +383,7 @@ input, textarea, select { font-family: inherit; }
 .btn {
   padding: 8px 18px;
   border-radius: var(--radius-md);
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 500;
   border: none;
   cursor: pointer;
@@ -403,7 +417,7 @@ input, textarea, select { font-family: inherit; }
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 0.86rem;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -411,14 +425,14 @@ input, textarea, select { font-family: inherit; }
 }
 
 .stat-value {
-  font-size: 34px;
+  font-size: 2.43rem;
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.1;
 }
 
 .stat-sub {
-  font-size: 12px;
+  font-size: 0.86rem;
   color: var(--text-secondary);
   margin-top: 2px;
 }
@@ -445,6 +459,9 @@ input, textarea, select { font-family: inherit; }
 }
 
 .task-item.done { opacity: 0.55; }
+
+/* Icons in task items scale with font-size */
+.task-item svg { width: 1em; height: 1em; }
 
 .task-delete-btn,
 .task-bell-btn {
@@ -499,7 +516,7 @@ input, textarea, select { font-family: inherit; }
 .task-body { flex: 1; min-width: 0; }
 
 .task-name {
-  font-size: 14px;
+  font-size: 1rem;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -520,7 +537,7 @@ input, textarea, select { font-family: inherit; }
 }
 
 .task-time {
-  font-size: 12px;
+  font-size: 0.86rem;
   color: var(--text-secondary);
 }
 
@@ -533,10 +550,12 @@ input, textarea, select { font-family: inherit; }
   border: 0.5px dashed var(--border-2);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 1rem;
   cursor: pointer;
   transition: border-color 0.1s, color 0.1s;
 }
+
+.add-task-row svg { width: 1em; height: 1em; }
 
 .add-task-row:hover {
   border-color: var(--primary);
@@ -549,17 +568,21 @@ input, textarea, select { font-family: inherit; }
   align-items: center;
   gap: 6px;
   padding: 5px 20px;
-  font-size: 12px;
+  font-size: 0.86rem;
   color: var(--text-secondary);
   border-bottom: 0.5px solid var(--border-1);
   flex-shrink: 0;
 }
 
+.kanban-drag-hint svg { width: 1em; height: 1em; }
+
+/* Kanban board: columns không scale layout, dùng px cố định.
+   DragOverlay sẽ đo BCR chính xác vì không có zoom factor trong hệ tọa độ. */
 .kanban-board {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(240px, 1fr));
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
   gap: 12px;
   padding: 16px 20px;
   overflow-x: auto;
@@ -583,18 +606,21 @@ input, textarea, select { font-family: inherit; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
+  padding: 0.71em 1em;
   flex-shrink: 0;
 }
 
+/* Icons in column header scale with header font-size */
+.kanban-col-header svg { width: 1em; height: 1em; }
+
 .kanban-col-title {
-  font-size: 13px;
+  font-size: 0.93rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .kanban-col-badge {
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 500;
   padding: 2px 8px;
   border-radius: 99px;
@@ -613,7 +639,7 @@ input, textarea, select { font-family: inherit; }
 
 
 .kanban-empty {
-  font-size: 13px;
+  font-size: 0.93rem;
   color: var(--text-secondary);
   text-align: center;
   padding: 20px 8px;
@@ -630,16 +656,23 @@ input, textarea, select { font-family: inherit; }
   background: var(--bg-primary);
   border: 0.5px solid var(--border-1);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
+  padding: 0.71em 0.86em;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.43em;
   cursor: grab;
   transition: border-color 0.1s;
 }
 .goal-card:active { cursor: grabbing; }
 
 .goal-card:hover { border-color: var(--border-2); }
+
+/* Icons inside goal cards scale with card font-size */
+.goal-card svg,
+.goal-card-drag-overlay svg {
+  width: 1em;
+  height: 1em;
+}
 
 /* Ghost placeholder at original position while dragging */
 .goal-card-ghost {
@@ -659,7 +692,7 @@ input, textarea, select { font-family: inherit; }
 
 .goal-drag-handle {
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 0.86rem;
   letter-spacing: 1px;
   cursor: grab;
   align-self: flex-start;
@@ -674,14 +707,14 @@ input, textarea, select { font-family: inherit; }
 .goal-card-body { cursor: pointer; }
 
 .goal-title {
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 2px;
 }
 
 .goal-desc {
-  font-size: 12px;
+  font-size: 0.86rem;
   color: var(--text-secondary);
   line-height: 1.4;
   margin-bottom: 4px;
@@ -695,7 +728,7 @@ input, textarea, select { font-family: inherit; }
 }
 
 .goal-quarter {
-  font-size: 11px;
+  font-size: 0.79rem;
   color: var(--text-secondary);
   background: var(--border-1);
   padding: 2px 7px;
@@ -714,7 +747,7 @@ input, textarea, select { font-family: inherit; }
   border: none;
   border-bottom: 1.5px solid var(--primary);
   background: transparent;
-  font-size: 14px;
+  font-size: 1rem;
   color: var(--text-primary);
   outline: none;
   padding: 0 0 1px;
@@ -757,7 +790,7 @@ input, textarea, select { font-family: inherit; }
   padding: 7px 12px 7px 0;
   margin-right: 12px;
   border-right: 0.5px solid var(--border-1);
-  font-size: 13px;
+  font-size: 0.93rem;
   color: var(--text-secondary);
   white-space: nowrap;
 }
@@ -801,7 +834,7 @@ input, textarea, select { font-family: inherit; }
 }
 
 .kanban-prog-pct {
-  font-size: 13px;
+  font-size: 0.93rem;
   font-weight: 500;
   color: #3B9FE8;
   min-width: 32px;
@@ -819,11 +852,13 @@ input, textarea, select { font-family: inherit; }
   border-top: 0.5px dashed var(--border-2);
   background: transparent;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 0.93rem;
   cursor: pointer;
   transition: color 0.1s, background 0.1s;
   flex-shrink: 0;
 }
+
+.kanban-add-btn svg { width: 1em; height: 1em; }
 
 .kanban-add-btn:hover {
   color: var(--primary);
@@ -853,7 +888,7 @@ input, textarea, select { font-family: inherit; }
 }
 
 .goal-progress-xy {
-  font-size: 10px;
+  font-size: 0.71rem;
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
@@ -879,7 +914,7 @@ input, textarea, select { font-family: inherit; }
 }
 
 .checklist-title {
-  font-size: 12px;
+  font-size: 0.86rem;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -887,7 +922,7 @@ input, textarea, select { font-family: inherit; }
 }
 
 .checklist-count {
-  font-size: 11px;
+  font-size: 0.79rem;
   font-weight: 600;
   color: var(--text-secondary);
   background: var(--border-1);
@@ -953,7 +988,7 @@ input, textarea, select { font-family: inherit; }
 
 .checklist-item-text {
   flex: 1;
-  font-size: 13px;
+  font-size: 0.93rem;
   color: var(--text-primary);
   line-height: 1.4;
 }
@@ -991,7 +1026,7 @@ input, textarea, select { font-family: inherit; }
   border: 1px solid var(--border-1);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 0.93rem;
   padding: 5px 8px;
   outline: none;
   transition: border-color 0.15s;
@@ -1045,15 +1080,17 @@ input, textarea, select { font-family: inherit; }
   margin-bottom: 6px;
 }
 
+.reminder-popup svg { width: 1em; height: 1em; }
+
 .reminder-popup-title {
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: 500;
   color: var(--text-primary);
   margin-bottom: 2px;
 }
 
 .reminder-popup-time {
-  font-size: 12px;
+  font-size: 0.86rem;
   color: var(--text-secondary);
   margin-bottom: 10px;
 }
@@ -1065,7 +1102,7 @@ input, textarea, select { font-family: inherit; }
 }
 
 .popup-btn {
-  font-size: 12px;
+  font-size: 0.86rem;
   padding: 5px 11px;
   border-radius: var(--radius-md);
   border: 0.5px solid var(--border-1);
@@ -1098,7 +1135,7 @@ input, textarea, select { font-family: inherit; }
 .heatmap-months {
   position: relative;
   height: 16px;
-  font-size: 11px;
+  font-size: 0.79rem;
   color: var(--text-secondary);
 }
 
@@ -1116,7 +1153,7 @@ input, textarea, select { font-family: inherit; }
 }
 
 .heatmap-days span {
-  font-size: 10px;
+  font-size: 0.71rem;
   color: var(--text-secondary);
   height: 12px;
   line-height: 12px;
@@ -1148,7 +1185,7 @@ input, textarea, select { font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 0.79rem;
   color: var(--text-secondary);
   margin-top: 4px;
 }
@@ -1172,13 +1209,15 @@ input, textarea, select { font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 0.93rem;
   font-weight: 500;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 10px;
 }
+
+.settings-section-label svg { width: 1em; height: 1em; }
 
 .settings-scale-grid {
   display: grid;
@@ -1211,12 +1250,12 @@ input, textarea, select { font-family: inherit; }
 }
 
 .settings-scale-label {
-  font-size: 13px;
+  font-size: 0.93rem;
   font-weight: 500;
 }
 
 .settings-scale-desc {
-  font-size: 11px;
+  font-size: 0.79rem;
   color: var(--text-secondary);
 }
 

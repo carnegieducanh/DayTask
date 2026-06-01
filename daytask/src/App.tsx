@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -11,7 +11,6 @@ import {
   defaultDropAnimationSideEffects,
 } from '@dnd-kit/core';
 import { useAppStore } from './store/appStore';
-import { isTauri } from './store/mockDb';
 import Sidebar from './components/Sidebar';
 import TodayView from './components/today/TodayView';
 import KanbanView from './components/kanban/KanbanView';
@@ -47,23 +46,17 @@ function App() {
   } = useAppStore();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const [dragOverlayWidth, setDragOverlayWidth] = useState<number | null>(null);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // UI scale via native webview zoom (Tauri) — happens below the DOM coordinate
-  // layer, so getBoundingClientRect/clientX stay consistent and @dnd-kit works
-  // correctly. Browser fallback uses CSS zoom (npm run dev). KHÔNG dùng
-  // transform: scale() — nó làm @dnd-kit lệch toạ độ khi kéo thả.
+  // Dùng root font-size để scale UI. Tất cả giá trị font/icon/padding dùng rem/em
+  // sẽ tự scale theo. Layout px (column width, sidebar...) giữ nguyên.
+  // Cách này không ảnh hưởng hệ tọa độ DOM, nên @dnd-kit đo BCR chính xác.
   useEffect(() => {
-    if (isTauri()) {
-      import('@tauri-apps/api/webview')
-        .then(({ getCurrentWebview }) => getCurrentWebview().setZoom(uiScale))
-        .catch(() => { document.documentElement.style.zoom = String(uiScale); });
-    } else {
-      document.documentElement.style.zoom = String(uiScale);
-    }
+    document.documentElement.style.fontSize = `${14 * uiScale}px`;
   }, [uiScale]);
 
   useEffect(() => {
@@ -77,10 +70,12 @@ function App() {
 
   function handleDragStart(event: DragStartEvent) {
     setKanbanDragActiveId(Number(event.active.id));
+    setDragOverlayWidth(event.active.rect.current.initial?.width ?? null);
   }
 
   function handleDragEnd(event: DragEndEvent) {
     setKanbanDragActiveId(null);
+    setDragOverlayWidth(null);
     const { active, over } = event;
     if (!over || over.id === active.id) return;
 
@@ -151,7 +146,11 @@ function App() {
           }),
         }}
       >
-        {overlayGoal ? <GoalCardOverlay goal={overlayGoal} /> : null}
+        {overlayGoal ? (
+          <div style={{ width: dragOverlayWidth ?? undefined }}>
+            <GoalCardOverlay goal={overlayGoal} />
+          </div>
+        ) : null}
       </DragOverlay>
     </DndContext>
   );
