@@ -6,7 +6,7 @@ import {
   dbGetTasks, dbAddTask, dbUpdateTask, dbDeleteTask,
   dbGetGoals, dbAddGoal, dbUpdateGoal, dbDeleteGoal,
   dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
-  dbGetHeatmap, dbGetStreak,
+  dbGetHeatmap, dbGetStreak, dbGetCalendarTasks,
 } from './mockDb';
 
 const DEFAULT_CATEGORY_COLORS: CategoryColors = {
@@ -86,6 +86,7 @@ interface AppState {
   activeTab: Tab;
   theme: Theme;
   tasks: Task[];
+  calendarTasks: Task[];
   goals: Goal[];
   checklistItems: Record<number, GoalChecklistItem[]>;
   heatmap: DayActivity[];
@@ -114,6 +115,7 @@ interface AppState {
   setKanbanDragActiveId: (id: number | null) => void;
 
   loadTasks: (date: string) => Promise<void>;
+  loadCalendarTasks: (startDate: string, endDate: string) => Promise<void>;
   addTask: (task: NewTask) => Promise<void>;
   updateTask: (id: number, updates: TaskUpdate) => Promise<void>;
   toggleTask: (id: number) => Promise<void>;
@@ -141,6 +143,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeTab: 'today',
   theme: (localStorage.getItem('theme') as Theme) ?? 'light',
   tasks: [],
+  calendarTasks: [],
   goals: [],
   checklistItems: {},
   heatmap: [],
@@ -205,6 +208,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       [date]
     );
     set({ tasks });
+  },
+
+  loadCalendarTasks: async (startDate, endDate) => {
+    if (!isTauri()) {
+      set({ calendarTasks: dbGetCalendarTasks(startDate, endDate) });
+      return;
+    }
+    const db = await getDb();
+    const tasks = await db.select<Task[]>(
+      'SELECT * FROM tasks WHERE is_done = 1 AND date >= $1 AND date <= $2 ORDER BY date ASC',
+      [startDate, endDate]
+    );
+    set({ calendarTasks: tasks });
   },
 
   addTask: async (task) => {

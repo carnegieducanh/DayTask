@@ -27,8 +27,6 @@ export default function MiniCalendar() {
     const firstDay = new Date(year, month, 1);
     // Convert Sunday=0 to Monday=0 offset
     const offset = (getDay(firstDay) + 6) % 7;
-    const daysInMonth = getDaysInMonth(viewDate);
-
     const allCells: Date[] = [];
     const gridStart = new Date(year, month, 1 - offset);
     for (let i = 0; i < 42; i++) {

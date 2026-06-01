@@ -17,6 +17,7 @@ import TodayView from './components/today/TodayView';
 import KanbanView from './components/kanban/KanbanView';
 import GoalCardOverlay from './components/kanban/GoalCardOverlay';
 import HeatmapView from './components/heatmap/HeatmapView';
+import CalendarView from './components/calendar/CalendarView';
 import ReminderPopup from './components/ReminderPopup';
 import SettingsModal from './components/SettingsModal';
 import { useReminder } from './hooks/useReminder';
@@ -225,6 +226,7 @@ function App() {
           {activeTab === 'today' && <TodayView />}
           {activeTab === 'kanban' && <KanbanView liveGoals={liveGoals} />}
           {activeTab === 'heatmap' && <HeatmapView />}
+          {activeTab === 'calendar' && <CalendarView />}
           <ReminderPopup />
           <SettingsModal />
         </div>

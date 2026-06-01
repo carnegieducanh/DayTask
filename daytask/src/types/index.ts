@@ -81,6 +81,6 @@ export interface DayActivity {
   count: number;
 }
 
-export type Tab = 'today' | 'kanban' | 'heatmap';
+export type Tab = 'today' | 'kanban' | 'heatmap' | 'calendar';
 export type Theme = 'light' | 'dark';
 export type CategoryColors = Record<Category, string>;
