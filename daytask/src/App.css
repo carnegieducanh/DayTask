@@ -1755,6 +1755,136 @@ select {
   background: #3a3a3a;
 }
 
+/* ── Custom category dropdown ── */
+.cat-dropdown {
+  position: relative;
+}
+
+.cat-dropdown-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 0.5px solid var(--border-2);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.1s;
+}
+
+.cat-dropdown-trigger:hover {
+  border-color: var(--primary);
+}
+
+.cat-dropdown-label {
+  flex: 1;
+}
+
+.cat-dropdown-chevron {
+  flex-shrink: 0;
+  opacity: 0.45;
+  transition: transform 0.15s;
+}
+
+.cat-dropdown-chevron.open {
+  transform: rotate(180deg);
+}
+
+.cat-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border-2);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.14);
+  z-index: 200;
+  overflow: visible;
+}
+
+.cat-dropdown-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cat-dropdown-item + .cat-dropdown-item {
+  border-top: 0.5px solid var(--border-1);
+}
+
+.cat-dropdown-item-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.cat-dropdown-item-btn:hover,
+.cat-dropdown-item.selected .cat-dropdown-item-btn {
+  background: var(--bg-hover);
+}
+
+.cat-item-dots {
+  flex-shrink: 0;
+  align-self: stretch;
+  padding: 0 7px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.1s, background 0.1s;
+}
+
+.cat-dropdown-item:hover .cat-item-dots,
+.cat-item-dots.active {
+  opacity: 1;
+}
+
+.cat-item-dots:hover,
+.cat-item-dots.active {
+  color: var(--text-primary);
+}
+
+.cat-color-dot {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.14);
+  pointer-events: none;
+}
+
+.cat-color-popup {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 0;
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border-2);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  padding: 10px;
+  z-index: 300;
+  display: grid;
+  grid-template-columns: repeat(5, 20px);
+  gap: 5px;
+}
+
 /* ── Category color picker ── */
 .cat-color-picker {
   display: grid;

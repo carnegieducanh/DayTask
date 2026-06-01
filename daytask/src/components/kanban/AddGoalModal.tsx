@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { IconX, IconPlus, IconCheck } from '@tabler/icons-react';
+import { IconX, IconPlus, IconCheck, IconDotsVertical, IconChevronDown } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import type { Goal, Category, Priority, Quarter, GoalStatus } from '../../types';
 
@@ -47,6 +47,9 @@ export default function AddGoalModal({ editGoal, defaultStatus = 'todo', onClose
   const [priority, setPriority] = useState<Priority>('mid');
   const [quarter,  setQuarter]  = useState<Quarter>('Q1');
 
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [newItemText, setNewItemText] = useState('');
   const addInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,6 +62,17 @@ export default function AddGoalModal({ editGoal, defaultStatus = 'todo', onClose
       setQuarter(editGoal.quarter);
     }
   }, [editGoal]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+        setColorPickerFor(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -130,22 +144,63 @@ export default function AddGoalModal({ editGoal, defaultStatus = 'todo', onClose
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Danh mục</label>
-              <select className="form-input" value={category} onChange={(e) => setCategory(e.target.value as Category)}>
-                {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
-              <div className="cat-color-picker">
-                {COLOR_PALETTE.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`color-swatch${categoryColors[category] === color ? ' color-swatch-active' : ''}`}
-                    style={{ background: color }}
-                    onClick={() => updateCategoryColor(category, color)}
-                    title={color}
-                  >
-                    {categoryColors[category] === color && <IconCheck size={10} strokeWidth={3} color="#fff" />}
-                  </button>
-                ))}
+              <div className="cat-dropdown" ref={dropdownRef}>
+                <button
+                  type="button"
+                  className="cat-dropdown-trigger"
+                  onClick={() => { setDropdownOpen(v => !v); setColorPickerFor(null); }}
+                >
+                  <span className="cat-color-dot" style={{ background: categoryColors[category] }} />
+                  <span className="cat-dropdown-label">{CATEGORIES.find(c => c.value === category)?.label}</span>
+                  <IconChevronDown size={13} className={`cat-dropdown-chevron${dropdownOpen ? ' open' : ''}`} />
+                </button>
+                {dropdownOpen && (
+                  <div className="cat-dropdown-panel">
+                    {CATEGORIES.map((cat) => (
+                      <div key={cat.value} className={`cat-dropdown-item${category === cat.value ? ' selected' : ''}`}>
+                        <button
+                          type="button"
+                          className="cat-dropdown-item-btn"
+                          onClick={() => { setCategory(cat.value); setDropdownOpen(false); setColorPickerFor(null); }}
+                        >
+                          <span className="cat-color-dot" style={{ background: categoryColors[cat.value] }} />
+                          <span>{cat.label}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`cat-item-dots${colorPickerFor === cat.value ? ' active' : ''}`}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setColorPickerFor(prev => prev === cat.value ? null : cat.value);
+                          }}
+                          title="Đổi màu"
+                        >
+                          <IconDotsVertical size={13} />
+                        </button>
+                        {colorPickerFor === cat.value && (
+                          <div className="cat-color-popup" onMouseDown={(e) => e.stopPropagation()}>
+                            {COLOR_PALETTE.map((color) => (
+                              <button
+                                key={color}
+                                type="button"
+                                className={`color-swatch${categoryColors[cat.value] === color ? ' color-swatch-active' : ''}`}
+                                style={{ background: color }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateCategoryColor(cat.value, color);
+                                }}
+                                title={color}
+                              >
+                                {categoryColors[cat.value] === color && <IconCheck size={10} strokeWidth={3} color="#fff" />}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="form-group">
