@@ -235,7 +235,7 @@ select {
 
 .nav-badge {
   margin-left: 2px;
-  background: var(--primary);
+  background: #125680;
   color: #fff;
   font-size: 0.79rem;
   padding: 1px 5px;
