@@ -769,6 +769,18 @@ select {
   flex-shrink: 0;
 }
 
+.task-delete-btn {
+  border: none;
+}
+
+.task-delete-btn:hover {
+  border: 0.5px solid var(--border-1);
+}
+
+.task-item--colored .task-delete-btn:hover {
+  border: 0.5px solid rgba(0, 0, 0, 0.2);
+}
+
 .task-item:hover .task-delete-btn,
 .task-item:hover .task-bell-btn {
   opacity: 1;

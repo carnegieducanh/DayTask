@@ -18,9 +18,9 @@ export default function SettingsModal() {
     { label: t.settings.extraLarge, value: 1.25, desc: '125%' },
   ];
 
-  const LANGUAGE_OPTIONS: { value: Language; label: string; flag: string }[] = [
-    { value: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
-    { value: 'en', label: 'English',    flag: '🇬🇧' },
+  const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
+    { value: 'vi', label: 'Tiếng Việt' },
+    { value: 'en', label: 'English'    },
   ];
 
   if (!openSettingsModal) return null;
@@ -76,8 +76,7 @@ export default function SettingsModal() {
                 className={`settings-lang-btn${language === opt.value ? ' active' : ''}`}
                 onClick={() => setLanguage(opt.value)}
               >
-                <span className="settings-lang-flag">{opt.flag}</span>
-                <span className="settings-lang-label">{opt.label}</span>
+                {opt.label}
               </button>
             ))}
           </div>

@@ -26,6 +26,7 @@ export default function TaskCard({ task, onEdit }: Props) {
 
   function startEdit(e: React.MouseEvent) {
     e.stopPropagation();
+    e.preventDefault();
     setEditTitle(task.title);
     setIsEditing(true);
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -45,10 +46,10 @@ export default function TaskCard({ task, onEdit }: Props) {
   }
 
   return (
-    <div className={`task-item task-item--colored${task.is_done ? ' done' : ''}`} style={{ backgroundColor: cardBg }}>
+    <div className={`task-item task-item--colored${task.is_done ? ' done' : ''}`} style={{ backgroundColor: cardBg, cursor: 'pointer' }} onClick={() => !isEditing && onEdit(task)}>
       <button
         className={`task-check${task.is_done ? ' checked' : ''}`}
-        onClick={() => toggleTask(task.id)}
+        onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
         title={task.is_done ? t.taskCard.markUndone : t.taskCard.markDone}
       >
         <IconCheck size={22} strokeWidth={2.5} />
@@ -69,8 +70,6 @@ export default function TaskCard({ task, onEdit }: Props) {
           <div
             className="task-name"
             onDoubleClick={startEdit}
-            onClick={() => onEdit(task)}
-            style={{ cursor: 'pointer' }}
             title={t.taskCard.clickHint}
           >
             {task.title}
@@ -99,7 +98,7 @@ export default function TaskCard({ task, onEdit }: Props) {
       <button
         className="icon-btn task-delete-btn"
         style={{ width: 32, height: 32, fontSize: 15, flexShrink: 0 }}
-        onClick={() => softDeleteTask(task.id)}
+        onClick={(e) => { e.stopPropagation(); softDeleteTask(task.id); }}
         title={t.taskCard.delete}
       >
         <IconTrash size={20} />
