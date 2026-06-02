@@ -166,7 +166,9 @@ Thêm key mới: sửa `vi.ts` trước (là source of truth cho TypeScript type
 
 **Source:** SVG trong `src/assets/atomic_icon_final.html` (tag `<svg id="daytask-icon">`).
 **Design:** Nền `#1C1C1E`, bo góc `rx=14`. 3 ellipse orbit + nucleus + 2 electrons, màu `#DA7756`.
-**Tham số:** stroke-width=5.5, nucleus r=10, electron r=6.5, ellipse rx=36 ry=13.
+**Tham số:** stroke-width=7, nucleus r=11, electron r=7.5, ellipse rx=43 ry=16, electrons cx=±42.
+**viewBox:** `"0 6 100 88"` — tight crop để fill canvas ~97% width, ~93% height.
+**ICO format:** PNG-in-ICO (không phải BMP-in-ICO) để giữ nguyên alpha channel. 6 sizes: 16,32,48,64,128,256px.
 
 **Cách regenerate icon khi cần thay đổi:**
 ```powershell
