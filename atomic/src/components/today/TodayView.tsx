@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
 import { IconPlus, IconSun } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
+import { useT } from '../../i18n';
 import { isTauri } from '../../store/mockDb';
 import TaskCard from './TaskCard';
 import AddTaskModal from './AddTaskModal';
@@ -11,15 +12,12 @@ import MiniCalendar from './MiniCalendar';
 import DailyGreeting from './DailyGreeting';
 import type { Task } from '../../types';
 
-const CAT_LABELS: Record<string, string> = {
-  work: 'Công việc', personal: 'Cá nhân', health: 'Sức khỏe', learn: 'Học tập',
-};
-
-
 export default function TodayView() {
+  const t = useT();
   const {
     tasks, selectedDate, setSelectedDate,
     heatmap, loadHeatmap,
+    language,
     getStreak, setReminderPopup,
   } = useAppStore();
 
@@ -39,34 +37,45 @@ export default function TodayView() {
   // Demo: show reminder popup once on browser (not Tauri)
   useEffect(() => {
     if (isTauri() || demoPopupShown.current || tasks.length === 0) return;
-    const first = tasks.find((t) => !t.is_done && t.reminder);
+    const first = tasks.find((task) => !task.is_done && task.reminder);
     if (!first) return;
     demoPopupShown.current = true;
     const timer = setTimeout(() => setReminderPopup(first), 1200);
     return () => clearTimeout(timer);
   }, [tasks]);
 
-  const pending   = tasks.filter((t) => !t.is_done);
-  const done      = tasks.filter((t) => t.is_done);
+  const pending   = tasks.filter((task) => !task.is_done);
+  const done      = tasks.filter((task) => task.is_done);
   const total     = tasks.length;
   const pct       = total === 0 ? 0 : Math.round((done.length / total) * 100);
-  const reminders = pending.filter((t) => t.reminder).length;
+  const reminders = pending.filter((task) => task.reminder).length;
 
   const reminderTasks = tasks
-    .filter((t) => t.reminder)
+    .filter((task) => task.reminder)
     .sort((a, b) => (a.reminder || '').localeCompare(b.reminder || ''));
 
-  const dateLabel = format(new Date(selectedDate + 'T00:00:00'), "EEEE, d MMMM yyyy", { locale: vi });
+  const dateLabel = format(
+    new Date(selectedDate + 'T00:00:00'),
+    "EEEE, d MMMM yyyy",
+    language === 'vi' ? { locale: viLocale } : undefined,
+  );
 
-  function openAdd()        { setEditTask(null); setShowModal(true); }
-  function openEdit(t: Task) { setEditTask(t);   setShowModal(true); }
+  const CAT_LABELS: Record<string, string> = {
+    work: t.cat.work,
+    personal: t.cat.personal,
+    health: t.cat.health,
+    learn: t.cat.learn,
+  };
+
+  function openAdd()         { setEditTask(null); setShowModal(true); }
+  function openEdit(task: Task) { setEditTask(task); setShowModal(true); }
 
   return (
     <>
       {/* Topbar */}
       <div className="view-topbar today-topbar">
         <div className="today-topbar-side">
-          <div className="view-title">Hôm nay</div>
+          <div className="view-title">{t.today.title}</div>
           <div className="view-subtitle" style={{ textTransform: 'capitalize' }}>{dateLabel}</div>
         </div>
 
@@ -79,7 +88,7 @@ export default function TodayView() {
           {selectedDate !== format(new Date(), 'yyyy-MM-dd') && (
             <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 13 }}
               onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}>
-              Hôm nay
+              {t.today.backToToday}
             </button>
           )}
         </div>
@@ -93,7 +102,7 @@ export default function TodayView() {
             {/* Stat cards */}
             <div className="stats-row">
               <div className="stat-card">
-                <div className="stat-label">Hoàn thành</div>
+                <div className="stat-label">{t.today.statDone}</div>
                 <div className="stat-value">
                   {done.length}
                   <span style={{ fontSize: 20, color: 'var(--text-secondary)', fontWeight: 400 }}>/{total}</span>
@@ -103,39 +112,43 @@ export default function TodayView() {
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-label">Streak</div>
+                <div className="stat-label">{t.today.statStreak}</div>
                 <div className="stat-value">🔥 {streak}</div>
-                <div className="stat-sub">ngày liên tiếp</div>
+                <div className="stat-sub">{t.today.streakDays}</div>
               </div>
               <div className="stat-card">
-                <div className="stat-label">Nhắc nhở</div>
+                <div className="stat-label">{t.today.statReminders}</div>
                 <div className="stat-value">{reminders}</div>
-                <div className="stat-sub">còn lại hôm nay</div>
+                <div className="stat-sub">{t.today.remindersLeft}</div>
               </div>
             </div>
 
             {/* Add task */}
             <div className="add-task-row" onClick={openAdd}>
               <IconPlus size={16} />
-              Thêm task mới...
+              {t.today.addTask}
             </div>
 
-            {/* Chưa hoàn thành */}
+            {/* Pending */}
             {pending.length > 0 && (
               <div>
-                <div className="section-label">Chưa hoàn thành <span style={{ fontWeight: 400 }}>· {pending.length} task</span></div>
+                <div className="section-label">
+                  {t.today.pending} <span style={{ fontWeight: 400 }}>· {pending.length} {t.today.taskUnit}</span>
+                </div>
                 <div className="task-list">
-                  {pending.map((t) => <TaskCard key={t.id} task={t} onEdit={openEdit} />)}
+                  {pending.map((task) => <TaskCard key={task.id} task={task} onEdit={openEdit} />)}
                 </div>
               </div>
             )}
 
-            {/* Đã hoàn thành */}
+            {/* Done */}
             {done.length > 0 && (
               <div>
-                <div className="section-label">Đã hoàn thành <span style={{ fontWeight: 400 }}>· {done.length} task</span></div>
+                <div className="section-label">
+                  {t.today.completed} <span style={{ fontWeight: 400 }}>· {done.length} {t.today.taskUnit}</span>
+                </div>
                 <div className="task-list">
-                  {done.map((t) => <TaskCard key={t.id} task={t} onEdit={openEdit} />)}
+                  {done.map((task) => <TaskCard key={task.id} task={task} onEdit={openEdit} />)}
                 </div>
               </div>
             )}
@@ -144,7 +157,7 @@ export default function TodayView() {
             {total === 0 && (
               <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px 0' }}>
                 <IconSun size={32} style={{ marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
-                <div>Ngày mới, bắt đầu thêm task đầu tiên!</div>
+                <div>{t.today.emptyState}</div>
               </div>
             )}
           </div>
@@ -160,14 +173,14 @@ export default function TodayView() {
             {/* Schedule */}
             {reminderTasks.length > 0 && (
               <div className="today-right-section">
-                <div className="section-label">Lịch nhắc hôm nay</div>
+                <div className="section-label">{t.today.todaySchedule}</div>
                 <div className="today-schedule">
-                  {reminderTasks.map((t) => (
-                    <div key={t.id} className={`today-schedule-item${t.is_done ? ' done' : ''}`}>
-                      <div className="today-schedule-time">{t.reminder}</div>
+                  {reminderTasks.map((task) => (
+                    <div key={task.id} className={`today-schedule-item${task.is_done ? ' done' : ''}`}>
+                      <div className="today-schedule-time">{task.reminder}</div>
                       <div className="today-schedule-body">
-                        <div className="today-schedule-title">{t.title}</div>
-                        <div className="today-schedule-cat">{CAT_LABELS[t.category] ?? t.category}</div>
+                        <div className="today-schedule-title">{task.title}</div>
+                        <div className="today-schedule-cat">{CAT_LABELS[task.category] ?? task.category}</div>
                       </div>
                     </div>
                   ))}
@@ -177,7 +190,7 @@ export default function TodayView() {
 
             {/* Heatmap */}
             <div className="today-right-section">
-              <div className="section-label">Hoạt động 3 tháng qua</div>
+              <div className="section-label">{t.today.activityTitle}</div>
               <MiniHeatmap data={heatmap} />
             </div>
 

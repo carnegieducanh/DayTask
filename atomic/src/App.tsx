@@ -19,6 +19,7 @@ import GoalCardOverlay from './components/kanban/GoalCardOverlay';
 import HeatmapView from './components/heatmap/HeatmapView';
 import CalendarView from './components/calendar/CalendarView';
 import ReminderPopup from './components/ReminderPopup';
+import DeleteToast from './components/DeleteToast';
 import SettingsModal from './components/SettingsModal';
 import UpdateDialog from './components/UpdateDialog';
 import { useReminder } from './hooks/useReminder';
@@ -30,8 +31,8 @@ const STATUSES: GoalStatus[] = ['todo', 'doing', 'review', 'done'];
 function App() {
   useReminder();
   const {
-    activeTab, theme, uiScale, selectedDate, selectedYear,
-    loadTasks, loadGoals, seedIfEmpty, loadCategoryColors,
+    activeTab, theme, uiScale, language, selectedDate, selectedYear,
+    loadTasks, loadGoals, loadCategoryColors,
     goals, reorderGoal, kanbanDragActiveId, setKanbanDragActiveId,
   } = useAppStore();
 
@@ -51,6 +52,10 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-lang', language);
+  }, [language]);
+
   // Dùng root font-size để scale UI. Tất cả giá trị font/icon/padding dùng rem/em
   // sẽ tự scale theo. Layout px (column width, sidebar...) giữ nguyên.
   // Cách này không ảnh hưởng hệ tọa độ DOM, nên @dnd-kit đo BCR chính xác.
@@ -59,7 +64,7 @@ function App() {
   }, [uiScale]);
 
   useEffect(() => {
-    seedIfEmpty().then(() => loadTasks(selectedDate));
+    loadTasks(selectedDate);
     loadCategoryColors();
     // Check for updates after a short delay to not block initial render
     setTimeout(async () => {
@@ -256,6 +261,7 @@ function App() {
           {activeTab === 'heatmap' && <HeatmapView />}
           {activeTab === 'calendar' && <CalendarView />}
           <ReminderPopup />
+          <DeleteToast />
           <SettingsModal />
           {updateVersion && (
             <UpdateDialog

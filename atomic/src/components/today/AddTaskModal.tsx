@@ -16,6 +16,7 @@ for (let h = 0; h < 24; h++) {
   }
 }
 import { useAppStore } from "../../store/appStore";
+import { useT } from "../../i18n";
 import type { Task, Category, Priority } from "../../types";
 
 const COLOR_PALETTE: string[] = [
@@ -45,25 +46,13 @@ const COLOR_PALETTE: string[] = [
   "#A3978B",
 ];
 
-const CATEGORIES: { value: Category; label: string }[] = [
-  { value: "work", label: "Công việc" },
-  { value: "personal", label: "Cá nhân" },
-  { value: "health", label: "Sức khỏe" },
-  { value: "learn", label: "Học tập" },
-];
-
-const PRIORITIES: { value: Priority; label: string }[] = [
-  { value: "high", label: "Cao" },
-  { value: "mid", label: "Trung bình" },
-  { value: "low", label: "Thấp" },
-];
-
 interface Props {
   editTask?: Task | null;
   onClose: () => void;
 }
 
 export default function AddTaskModal({ editTask, onClose }: Props) {
+  const t = useT();
   const {
     selectedDate,
     addTask,
@@ -71,6 +60,19 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
     categoryColors,
     updateCategoryColor,
   } = useAppStore();
+
+  const CATEGORIES: { value: Category; label: string }[] = [
+    { value: "work",     label: t.cat.work },
+    { value: "personal", label: t.cat.personal },
+    { value: "health",   label: t.cat.health },
+    { value: "learn",    label: t.cat.learn },
+  ];
+
+  const PRIORITIES: { value: Priority; label: string }[] = [
+    { value: "high", label: t.priority.high },
+    { value: "mid",  label: t.priority.mid },
+    { value: "low",  label: t.priority.low },
+  ];
 
   const [title, setTitle] = useState("");
   const [description, setDesc] = useState("");
@@ -158,28 +160,28 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
     >
       <div className="modal">
         <div className="modal-title">
-          {editTask ? "Sửa task" : "Thêm task mới"}
+          {editTask ? t.taskModal.editTitle : t.taskModal.addTitle}
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Tên task *</label>
+            <label className="form-label">{t.taskModal.taskNameLabel}</label>
             <input
               className="form-input"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Nhập tên task..."
+              placeholder={t.taskModal.taskNamePlaceholder}
               autoFocus
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Mô tả</label>
+            <label className="form-label">{t.taskModal.descLabel}</label>
             <textarea
               className="form-input"
               value={description}
               onChange={(e) => setDesc(e.target.value)}
-              placeholder="Mô tả thêm (tùy chọn)..."
+              placeholder={t.taskModal.descPlaceholder}
               rows={2}
               style={{ resize: "vertical" }}
             />
@@ -187,7 +189,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Danh mục</label>
+              <label className="form-label">{t.taskModal.categoryLabel}</label>
               <div className="cat-dropdown" ref={dropdownRef}>
                 <button
                   type="button"
@@ -241,7 +243,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
                               prev === cat.value ? null : cat.value,
                             );
                           }}
-                          title="Đổi màu"
+                          title={t.taskModal.changeColor}
                         >
                           <IconDotsVertical size={16} />
                         </button>
@@ -281,7 +283,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Ưu tiên</label>
+              <label className="form-label">{t.taskModal.priorityLabel}</label>
               <select
                 className="form-input"
                 value={priority}
@@ -297,7 +299,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Giờ nhắc nhở</label>
+            <label className="form-label">{t.taskModal.reminderLabel}</label>
             <div className="time-dropdown" ref={reminderRef}>
               <button
                 type="button"
@@ -312,7 +314,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
                 <span
                   className={`time-dropdown-value${!reminder ? " placeholder" : ""}`}
                 >
-                  {reminder || "Không nhắc nhở"}
+                  {reminder || t.taskModal.noReminder}
                 </span>
                 <IconChevronDown
                   size={13}
@@ -331,20 +333,20 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
                       }}
                     >
                       <IconBellOff size={13} className="time-option-icon" />
-                      Không nhắc nhở
+                      {t.taskModal.noReminder}
                     </button>
                     <div className="time-option-divider" />
-                    {TIME_OPTIONS.map((t) => (
+                    {TIME_OPTIONS.map((time) => (
                       <button
-                        key={t}
+                        key={time}
                         type="button"
-                        className={`time-option${reminder === t ? " selected" : ""}`}
+                        className={`time-option${reminder === time ? " selected" : ""}`}
                         onClick={() => {
-                          setReminder(t);
+                          setReminder(time);
                           setReminderOpen(false);
                         }}
                       >
-                        {t}
+                        {time}
                       </button>
                     ))}
                   </div>
@@ -356,8 +358,8 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
           <div className="form-group">
             <div className="repeat-row">
               <div>
-                <div className="form-label" style={{ marginBottom: 2 }}>Lặp lại hàng ngày</div>
-                <div className="repeat-hint">Task tự động xuất hiện mỗi ngày</div>
+                <div className="form-label" style={{ marginBottom: 2 }}>{t.taskModal.repeatLabel}</div>
+                <div className="repeat-hint">{t.taskModal.repeatHint}</div>
               </div>
               <button
                 type="button"
@@ -370,10 +372,10 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
 
           <div className="form-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose}>
-              Hủy
+              {t.taskModal.cancel}
             </button>
             <button type="submit" className="btn btn-primary">
-              {editTask ? "Lưu thay đổi" : "Thêm task"}
+              {editTask ? t.taskModal.save : t.taskModal.add}
             </button>
           </div>
         </form>

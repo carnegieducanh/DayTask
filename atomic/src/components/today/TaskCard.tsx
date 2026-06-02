@@ -2,10 +2,7 @@ import { useState, useRef } from 'react';
 import { IconCheck, IconBell, IconBellOff, IconTrash } from '@tabler/icons-react';
 import type { Task } from '../../types';
 import { useAppStore } from '../../store/appStore';
-
-const CAT_LABEL: Record<string, string> = {
-  work: 'Công việc', personal: 'Cá nhân', health: 'Sức khỏe', learn: 'Học tập',
-};
+import { useT } from '../../i18n';
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -20,7 +17,8 @@ interface Props {
 }
 
 export default function TaskCard({ task, onEdit }: Props) {
-  const { toggleTask, deleteTask, updateTask, categoryColors } = useAppStore();
+  const t = useT();
+  const { toggleTask, softDeleteTask, updateTask, categoryColors } = useAppStore();
   const cardBg = hexToRgba(categoryColors[task.category], 1);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
@@ -51,7 +49,7 @@ export default function TaskCard({ task, onEdit }: Props) {
       <button
         className={`task-check${task.is_done ? ' checked' : ''}`}
         onClick={() => toggleTask(task.id)}
-        title={task.is_done ? 'Đánh dấu chưa xong' : 'Đánh dấu xong'}
+        title={task.is_done ? t.taskCard.markUndone : t.taskCard.markDone}
       >
         <IconCheck size={22} strokeWidth={2.5} />
       </button>
@@ -73,7 +71,7 @@ export default function TaskCard({ task, onEdit }: Props) {
             onDoubleClick={startEdit}
             onClick={() => onEdit(task)}
             style={{ cursor: 'pointer' }}
-            title="Click để mở, double-click để sửa nhanh"
+            title={t.taskCard.clickHint}
           >
             {task.title}
           </div>
@@ -85,7 +83,7 @@ export default function TaskCard({ task, onEdit }: Props) {
             </span>
           )}
           <span className={`tag tag-${task.category}`}>
-            {CAT_LABEL[task.category]}
+            {t.cat[task.category]}
           </span>
         </div>
       </div>
@@ -101,8 +99,8 @@ export default function TaskCard({ task, onEdit }: Props) {
       <button
         className="icon-btn task-delete-btn"
         style={{ width: 32, height: 32, fontSize: 15, flexShrink: 0 }}
-        onClick={() => deleteTask(task.id)}
-        title="Xóa"
+        onClick={() => softDeleteTask(task.id)}
+        title={t.taskCard.delete}
       >
         <IconTrash size={20} />
       </button>

@@ -1,0 +1,153 @@
+<!--
+=============================================================
+PROMPT CHO CLAUDE CODE — PASTE VÀO TERMINAL SAU KHI MỞ FILE
+=============================================================
+
+Đọc file này và thực hiện các bước sau:
+
+1. Trích xuất SVG code của icon nguyên tử trong file này
+2. Cài dependencies nếu chưa có:
+     npm install sharp png-to-ico --save-dev
+
+3. Tạo script export-icons.mjs và chạy nó để export PNG:
+   - 16x16   → src-tauri/icons/16x16.png
+   - 32x32   → src-tauri/icons/32x32.png
+   - 64x64   → src-tauri/icons/64x64.png
+   - 128x128 → src-tauri/icons/128x128.png
+   - 256x256 → src-tauri/icons/256x256.png       ← desktop icon chính
+   - 256x256 → src-tauri/icons/icon.png
+   - 512x512 → src-tauri/icons/512x512.png       ← HiDPI / Retina
+   - 512x512 → src-tauri/icons/128x128@2x.png    ← macOS retina alias
+
+4. Tạo file src-tauri/icons/icon.ico chứa đủ 6 kích thước:
+     16 / 32 / 64 / 128 / 256 / 512 px
+   dùng thư viện png-to-ico
+
+5. THAY THẾ toàn bộ icon cũ trong src-tauri/icons/ bằng các file mới
+
+6. Kiểm tra src-tauri/tauri.conf.json:
+   - Đảm bảo trường "icon" trỏ đúng các file đã tạo
+   - Nếu thiếu 512px thì thêm vào danh sách icon
+
+7. Xoá script export-icons.mjs sau khi chạy xong
+
+SVG SOURCE (nền trong suốt, màu #DA7756):
+=============================================================
+-->
+
+<svg id="daytask-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(50,50)">
+    <!-- 3 quỹ đạo ellipse kiểu React: 0° / +60° / -60° -->
+    <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="4.5" stroke-linecap="round"/>
+    <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="4.5" stroke-linecap="round" transform="rotate(60)"/>
+    <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="4.5" stroke-linecap="round" transform="rotate(-60)"/>
+    <!-- Hạt nhân trung tâm -->
+    <circle r="8" fill="#DA7756"/>
+    <!-- 2 electron hai bên trên quỹ đạo ngang -->
+    <circle cx="-42" cy="0" r="5.5" fill="#DA7756"/>
+    <circle cx="42" cy="0" r="5.5" fill="#DA7756"/>
+  </g>
+</svg>
+
+<style>
+body{font-family:system-ui,sans-serif;background:#1a1a1a;color:#eee;padding:2rem;display:flex;flex-direction:column;align-items:center;gap:24px;}
+.preview-row{display:flex;align-items:flex-end;gap:32px;flex-wrap:wrap;justify-content:center;}
+.preview-item{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.lbl{font-size:11px;color:#888;text-align:center;}
+.lbl b{display:block;color:#ccc;font-size:12px;}
+</style>
+
+<body>
+<h2 style="font-size:16px;font-weight:500;color:#DA7756;">DayTask — Icon Preview</h2>
+<div class="preview-row">
+
+  <div class="preview-item">
+    <svg width="96" height="96" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(50,50)">
+        <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="4.5" stroke-linecap="round"/>
+        <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="4.5" stroke-linecap="round" transform="rotate(60)"/>
+        <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="4.5" stroke-linecap="round" transform="rotate(-60)"/>
+        <circle r="8" fill="#DA7756"/>
+        <circle cx="-42" cy="0" r="5.5" fill="#DA7756"/>
+        <circle cx="42" cy="0" r="5.5" fill="#DA7756"/>
+      </g>
+    </svg>
+    <div class="lbl"><b>Desktop icon</b>256 & 512 px</div>
+  </div>
+
+  <div class="preview-item">
+    <svg width="64" height="64" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(50,50)">
+        <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="4.5" stroke-linecap="round"/>
+        <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="4.5" stroke-linecap="round" transform="rotate(60)"/>
+        <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="4.5" stroke-linecap="round" transform="rotate(-60)"/>
+        <circle r="8" fill="#DA7756"/>
+        <circle cx="-42" cy="0" r="5.5" fill="#DA7756"/>
+        <circle cx="42" cy="0" r="5.5" fill="#DA7756"/>
+      </g>
+    </svg>
+    <div class="lbl"><b>Taskbar</b>64 × 64 px</div>
+  </div>
+
+  <div class="preview-item">
+    <svg width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(50,50)">
+        <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="6" stroke-linecap="round"/>
+        <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="6" stroke-linecap="round" transform="rotate(60)"/>
+        <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="6" stroke-linecap="round" transform="rotate(-60)"/>
+        <circle r="10" fill="#DA7756"/>
+        <circle cx="-42" cy="0" r="7" fill="#DA7756"/>
+        <circle cx="42" cy="0" r="7" fill="#DA7756"/>
+      </g>
+    </svg>
+    <div class="lbl"><b>Favicon</b>32 × 32 px</div>
+  </div>
+
+  <div class="preview-item">
+    <svg width="16" height="16" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(50,50)">
+        <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="9"/>
+        <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="9" transform="rotate(60)"/>
+        <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="9" transform="rotate(-60)"/>
+        <circle r="13" fill="#DA7756"/>
+        <circle cx="-42" cy="0" r="10" fill="#DA7756"/>
+        <circle cx="42" cy="0" r="10" fill="#DA7756"/>
+      </g>
+    </svg>
+    <div class="lbl"><b>Tab</b>16 × 16 px</div>
+  </div>
+
+  <div class="preview-item">
+    <div style="background:#1C1C1E;border-radius:10px;padding:10px;">
+      <svg width="24" height="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(50,50)">
+          <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="6"/>
+          <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="6" transform="rotate(60)"/>
+          <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="6" transform="rotate(-60)"/>
+          <circle r="9" fill="#DA7756"/>
+          <circle cx="-42" cy="0" r="7" fill="#DA7756"/>
+          <circle cx="42" cy="0" r="7" fill="#DA7756"/>
+        </g>
+      </svg>
+    </div>
+    <div class="lbl"><b>System tray</b>Nền tối · 24 × 24 px</div>
+  </div>
+
+  <div class="preview-item">
+    <div style="background:#F2F2F7;border-radius:10px;padding:10px;">
+      <svg width="24" height="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(50,50)">
+          <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="6"/>
+          <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="6" transform="rotate(60)"/>
+          <ellipse rx="42" ry="15" fill="none" stroke="#DA7756" stroke-width="6" transform="rotate(-60)"/>
+          <circle r="9" fill="#DA7756"/>
+          <circle cx="-42" cy="0" r="7" fill="#DA7756"/>
+          <circle cx="42" cy="0" r="7" fill="#DA7756"/>
+        </g>
+      </svg>
+    </div>
+    <div class="lbl"><b>System tray</b>Light mode · 24 × 24 px</div>
+  </div>
+
+</div>
+</body>

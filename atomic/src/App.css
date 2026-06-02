@@ -1,6 +1,13 @@
 /* ── CSS Variables ── */
 :root {
   --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+[data-lang="en"] {
+  --font: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root {
   --primary: #125680;
   --primary-dark: #0a3d5e;
 
@@ -1599,6 +1606,57 @@ select {
   opacity: 0.9;
 }
 
+/* ── Delete Toast ── */
+.delete-toast {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  z-index: 1200;
+  animation: toast-in 0.18s ease;
+  pointer-events: all;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.delete-toast-msg {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delete-toast-undo {
+  background: transparent;
+  border: 1.5px solid currentColor;
+  color: inherit;
+  border-radius: var(--radius-md);
+  padding: 3px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  opacity: 0.85;
+  transition: opacity 0.1s;
+  white-space: nowrap;
+}
+
+.delete-toast-undo:hover {
+  opacity: 1;
+}
+
 /* ── Heatmap ── */
 .heatmap-wrap {
   display: flex;
@@ -1794,6 +1852,43 @@ select {
 .settings-section-label svg {
   width: 1em;
   height: 1em;
+}
+
+.settings-lang-grid {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1.5px solid var(--border-1);
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  color: var(--text-primary);
+  font-size: 0.93rem;
+  font-weight: 500;
+}
+
+.settings-lang-btn:hover {
+  border-color: var(--border-2);
+  background: var(--bg-secondary);
+}
+
+.settings-lang-btn.active {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  color: var(--primary);
+}
+
+.settings-lang-flag {
+  font-size: 1.1rem;
 }
 
 .settings-scale-grid {

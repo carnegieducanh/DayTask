@@ -7,6 +7,7 @@ import {
   IconChevronDown,
 } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
+import { useT } from "../../i18n";
 import type {
   Goal,
   Category,
@@ -42,27 +43,6 @@ const COLOR_PALETTE: string[] = [
   "#A3978B",
 ];
 
-const CATEGORIES: { value: Category; label: string }[] = [
-  { value: "work", label: "Công việc" },
-  { value: "personal", label: "Cá nhân" },
-  { value: "health", label: "Sức khỏe" },
-  { value: "learn", label: "Học tập" },
-];
-
-const PRIORITIES: { value: Priority; label: string }[] = [
-  { value: "high", label: "Cao" },
-  { value: "mid", label: "Trung bình" },
-  { value: "low", label: "Thấp" },
-];
-
-const QUARTERS: { value: Quarter; label: string }[] = [
-  { value: "Q1", label: "Quý 1 (Jan–Mar)" },
-  { value: "Q2", label: "Quý 2 (Apr–Jun)" },
-  { value: "Q3", label: "Quý 3 (Jul–Sep)" },
-  { value: "Q4", label: "Quý 4 (Oct–Dec)" },
-  { value: "full", label: "Cả năm" },
-];
-
 interface Props {
   editGoal?: Goal | null;
   defaultStatus?: GoalStatus;
@@ -74,6 +54,7 @@ export default function AddGoalModal({
   defaultStatus = "todo",
   onClose,
 }: Props) {
+  const t = useT();
   const {
     selectedYear,
     addGoal,
@@ -85,6 +66,27 @@ export default function AddGoalModal({
     categoryColors,
     updateCategoryColor,
   } = useAppStore();
+
+  const CATEGORIES: { value: Category; label: string }[] = [
+    { value: "work",     label: t.cat.work },
+    { value: "personal", label: t.cat.personal },
+    { value: "health",   label: t.cat.health },
+    { value: "learn",    label: t.cat.learn },
+  ];
+
+  const PRIORITIES: { value: Priority; label: string }[] = [
+    { value: "high", label: t.priority.high },
+    { value: "mid",  label: t.priority.mid },
+    { value: "low",  label: t.priority.low },
+  ];
+
+  const QUARTERS: { value: Quarter; label: string }[] = [
+    { value: "Q1",   label: t.quarter.Q1 },
+    { value: "Q2",   label: t.quarter.Q2 },
+    { value: "Q3",   label: t.quarter.Q3 },
+    { value: "Q4",   label: t.quarter.Q4 },
+    { value: "full", label: t.quarter.full },
+  ];
 
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
@@ -172,23 +174,23 @@ export default function AddGoalModal({
     >
       <div className="modal modal-goal-detail">
         <div className="modal-title">
-          {editGoal ? "Chi tiết mục tiêu" : "Thêm mục tiêu"}
+          {editGoal ? t.goalModal.editTitle : t.goalModal.addTitle}
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Tên mục tiêu *</label>
+            <label className="form-label">{t.goalModal.goalNameLabel}</label>
             <input
               className="form-input"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Nhập mục tiêu..."
+              placeholder={t.goalModal.goalNamePlaceholder}
               autoFocus
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Mô tả</label>
+            <label className="form-label">{t.goalModal.descLabel}</label>
             <textarea
               className="form-input"
               value={desc}
@@ -200,7 +202,7 @@ export default function AddGoalModal({
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Danh mục</label>
+              <label className="form-label">{t.goalModal.categoryLabel}</label>
               <div className="cat-dropdown" ref={dropdownRef}>
                 <button
                   type="button"
@@ -254,7 +256,7 @@ export default function AddGoalModal({
                               prev === cat.value ? null : cat.value,
                             );
                           }}
-                          title="Đổi màu"
+                          title={t.goalModal.changeColor}
                         >
                           <IconDotsVertical size={16} />
                         </button>
@@ -293,7 +295,7 @@ export default function AddGoalModal({
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label">Ưu tiên</label>
+              <label className="form-label">{t.goalModal.priorityLabel}</label>
               <select
                 className="form-input"
                 value={priority}
@@ -309,7 +311,7 @@ export default function AddGoalModal({
           </div>
 
           <div className="form-group">
-            <label className="form-label">Deadline theo quý</label>
+            <label className="form-label">{t.goalModal.quarterLabel}</label>
             <select
               className="form-input"
               value={quarter}
@@ -327,7 +329,7 @@ export default function AddGoalModal({
           {editGoal && (
             <div className="checklist-section">
               <div className="checklist-header">
-                <span className="checklist-title">Việc cần làm</span>
+                <span className="checklist-title">{t.goalModal.checklistTitle}</span>
                 {items.length > 0 && (
                   <span className="checklist-count">
                     {doneCount}/{items.length}
@@ -356,11 +358,7 @@ export default function AddGoalModal({
                       type="button"
                       className={`checklist-checkbox${item.is_done ? " checked" : ""}`}
                       onClick={() => toggleChecklistItem(item.id, editGoal.id)}
-                      title={
-                        item.is_done
-                          ? "Đánh dấu chưa xong"
-                          : "Đánh dấu hoàn thành"
-                      }
+                      title={item.is_done ? t.goalModal.markUndone : t.goalModal.markDone}
                     >
                       {!!item.is_done && (
                         <IconCheck size={11} strokeWidth={3} />
@@ -371,7 +369,7 @@ export default function AddGoalModal({
                       type="button"
                       className="checklist-item-delete"
                       onClick={() => deleteChecklistItem(item.id, editGoal.id)}
-                      title="Xóa"
+                      title={t.goalModal.delete}
                     >
                       <IconX size={11} />
                     </button>
@@ -386,14 +384,14 @@ export default function AddGoalModal({
                   value={newItemText}
                   onChange={(e) => setNewItemText(e.target.value)}
                   onKeyDown={handleAddKeyDown}
-                  placeholder="Thêm việc cần làm..."
+                  placeholder={t.goalModal.addItemPlaceholder}
                 />
                 <button
                   type="button"
                   className="checklist-add-btn"
                   onClick={handleAddItem}
                   disabled={!newItemText.trim()}
-                  title="Thêm"
+                  title={t.goalModal.add}
                 >
                   <IconPlus size={14} />
                 </button>
@@ -403,10 +401,10 @@ export default function AddGoalModal({
 
           <div className="form-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose}>
-              Hủy
+              {t.goalModal.cancel}
             </button>
             <button type="submit" className="btn btn-primary">
-              {editGoal ? "Lưu thay đổi" : "Thêm mục tiêu"}
+              {editGoal ? t.goalModal.save : t.goalModal.add}
             </button>
           </div>
         </form>

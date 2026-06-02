@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { IconTrophy, IconCalendar, IconChartBar, IconAward } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
+import { useT } from '../../i18n';
 import HeatmapGrid from './HeatmapGrid';
 
-const MONTHS_SHORT = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
-
 export default function HeatmapView() {
+  const t = useT();
   const { heatmap, selectedYear, setSelectedYear, loadHeatmap, getStreak } = useAppStore();
   const [streak, setStreak] = useState(0);
 
@@ -56,17 +56,17 @@ export default function HeatmapView() {
 
   const avgPerDay = activeDays > 0 ? (totalDone / activeDays).toFixed(1) : '0';
 
-  const formatDay = (date: string) => {
-    const d = new Date(date + 'T00:00:00');
-    return `${d.getDate()} tháng ${d.getMonth() + 1}`;
+  const formatDay = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    return t.heatmap.dayFormat(d);
   };
 
   return (
     <>
       <div className="view-topbar">
         <div>
-          <div className="view-title">Heatmap hoạt động</div>
-          <div className="view-subtitle">{totalDone} task hoàn thành · {activeDays} ngày có hoạt động</div>
+          <div className="view-title">{t.heatmap.title}</div>
+          <div className="view-subtitle">{t.heatmap.subtitle(totalDone, activeDays)}</div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button className="icon-btn" onClick={() => setSelectedYear(selectedYear - 1)}>←</button>
@@ -81,26 +81,26 @@ export default function HeatmapView() {
         {/* Stat cards */}
         <div className="stats-row">
           <div className="stat-card">
-            <div className="stat-label">Streak hiện tại</div>
+            <div className="stat-label">{t.heatmap.currentStreak}</div>
             <div className="stat-value">{streak}</div>
-            <div className="stat-sub">ngày liên tiếp</div>
+            <div className="stat-sub">{t.heatmap.streakDays}</div>
           </div>
           <div className="stat-card">
-            <div className="stat-label">Ngày hoạt động</div>
+            <div className="stat-label">{t.heatmap.activeDays}</div>
             <div className="stat-value">{activeDays}</div>
-            <div className="stat-sub">trong năm {selectedYear}</div>
+            <div className="stat-sub">{t.heatmap.activeDaysIn(selectedYear)}</div>
           </div>
           <div className="stat-card">
-            <div className="stat-label">Task hoàn thành</div>
+            <div className="stat-label">{t.heatmap.tasksDone}</div>
             <div className="stat-value">{totalDone}</div>
-            <div className="stat-sub">tổng năm {selectedYear}</div>
+            <div className="stat-sub">{t.heatmap.totalIn(selectedYear)}</div>
           </div>
         </div>
 
         {/* Heatmap grid */}
         <div>
           <div className="section-label" style={{ marginBottom: 12 }}>
-            Hoạt động năm {selectedYear}
+            {t.heatmap.activityIn(selectedYear)}
           </div>
           <HeatmapGrid year={selectedYear} data={heatmap} />
         </div>
@@ -108,7 +108,7 @@ export default function HeatmapView() {
         {/* Monthly bar chart */}
         <div>
           <div className="section-label" style={{ marginBottom: 12 }}>
-            Task hoàn thành theo tháng
+            {t.heatmap.tasksByMonth}
           </div>
           <div className="monthly-chart">
             {monthlyTotals.map((count, i) => {
@@ -120,10 +120,10 @@ export default function HeatmapView() {
                     <div
                       className={`monthly-bar${isActive ? ' monthly-bar--active' : ''}`}
                       style={{ height: barH }}
-                      title={`${MONTHS_SHORT[i]}: ${count} task`}
+                      title={`${t.heatmap.monthsShort[i]}: ${count}`}
                     />
                   </div>
-                  <span className="monthly-bar-label">{MONTHS_SHORT[i]}</span>
+                  <span className="monthly-bar-label">{t.heatmap.monthsShort[i]}</span>
                 </div>
               );
             })}
@@ -133,15 +133,15 @@ export default function HeatmapView() {
         {/* Bottom 4 stat cards */}
         <div className="stats-row-4">
           <div className="stat-card-sm">
-            <div className="stat-card-sm-label">Streak dài nhất</div>
+            <div className="stat-card-sm-label">{t.heatmap.longestStreak}</div>
             <div className="stat-card-sm-row">
               <IconTrophy size={20} className="stat-card-sm-icon stat-icon-trophy" />
               <span className="stat-card-sm-value">{longestStreak}</span>
-              <span className="stat-card-sm-unit">ngày</span>
+              <span className="stat-card-sm-unit">{t.heatmap.dayUnit}</span>
             </div>
           </div>
           <div className="stat-card-sm">
-            <div className="stat-card-sm-label">Ngày hoạt động nhiều nhất</div>
+            <div className="stat-card-sm-label">{t.heatmap.mostActiveDay}</div>
             <div className="stat-card-sm-row">
               <IconCalendar size={20} className="stat-card-sm-icon" />
               <span className="stat-card-sm-value">
@@ -150,18 +150,18 @@ export default function HeatmapView() {
             </div>
           </div>
           <div className="stat-card-sm">
-            <div className="stat-card-sm-label">Trung bình task/ngày</div>
+            <div className="stat-card-sm-label">{t.heatmap.avgPerDay}</div>
             <div className="stat-card-sm-row">
               <IconChartBar size={20} className="stat-card-sm-icon" />
               <span className="stat-card-sm-value">{avgPerDay}</span>
             </div>
           </div>
           <div className="stat-card-sm">
-            <div className="stat-card-sm-label">Tháng tốt nhất</div>
+            <div className="stat-card-sm-label">{t.heatmap.bestMonth}</div>
             <div className="stat-card-sm-row">
               <IconAward size={20} className="stat-card-sm-icon stat-icon-award" />
               <span className="stat-card-sm-value">
-                {bestMonthIdx !== null ? `Tháng ${bestMonthIdx + 1}` : '—'}
+                {bestMonthIdx !== null ? t.heatmap.bestMonthLabel(bestMonthIdx + 1) : '—'}
               </span>
             </div>
           </div>

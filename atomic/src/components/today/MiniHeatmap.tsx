@@ -1,16 +1,17 @@
 import { useMemo } from 'react';
 import { format, subDays, addDays } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
 import { useAppStore } from '../../store/appStore';
+import { useT } from '../../i18n';
 import type { DayActivity } from '../../types';
-const MONTHS = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
-const DAYS   = ['CN','T2','T3','T4','T5','T6','T7'];
 
-function level(n: number) { return n===0?0:n<=2?1:n<=4?2:n<=6?3:4; }
+function level(n: number) { return n === 0 ? 0 : n <= 2 ? 1 : n <= 4 ? 2 : n <= 6 ? 3 : 4; }
 
 export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
-  const { theme } = useAppStore();
+  const t = useT();
+  const { theme, language } = useAppStore();
   const COLORS = ['var(--border-1)', '#B5D4F4', '#378ADD', theme === 'dark' ? '#7ab0e0' : '#125680', '#0a3d5e'];
+
   const map = useMemo(
     () => Object.fromEntries(data.map((d) => [d.date, d.count])),
     [data]
@@ -20,7 +21,7 @@ export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
   const weeks = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const anchor = subDays(today, 90);
-    const startSun = subDays(anchor, anchor.getDay()); // prev Sunday
+    const startSun = subDays(anchor, anchor.getDay());
 
     const result: (Date | null)[][] = [];
     let cur = new Date(startSun);
@@ -42,11 +43,12 @@ export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
       const d = week.find(Boolean);
       if (d) {
         const m = d.getMonth();
-        if (m !== last) { out.push({ label: MONTHS[m], col }); last = m; }
+        if (m !== last) { out.push({ label: t.heatmap.monthsShort[m], col }); last = m; }
       }
     });
     return out;
-  }, [weeks]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weeks, t]);
 
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -60,7 +62,7 @@ export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
       <div style={{ display: 'flex', gap: 4 }}>
         {/* Day-of-week labels */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: 24, flexShrink: 0 }}>
-          {DAYS.map((d, i) => (
+          {t.heatmap.weekDowShort.map((d, i) => (
             <span key={i} style={{ fontSize: 9, color: 'var(--text-secondary)', height: 12, lineHeight: '12px', textAlign: 'right', visibility: i % 2 === 0 ? 'hidden' : 'visible' }}>
               {d}
             </span>
@@ -77,11 +79,14 @@ export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
                   : (() => {
                       const ds = format(day, 'yyyy-MM-dd');
                       const n = map[ds] ?? 0;
+                      const formattedDate = language === 'vi'
+                        ? format(day, 'd MMM', { locale: viLocale })
+                        : format(day, 'MMM d');
                       return (
                         <div
                           key={di}
                           style={{ width: 12, height: 12, borderRadius: 2, background: COLORS[level(n)], flexShrink: 0, cursor: 'default' }}
-                          title={`${format(day, 'd MMM', { locale: vi })}: ${n} task`}
+                          title={t.heatmap.cellTooltip(formattedDate, n)}
                         />
                       );
                     })()
@@ -93,9 +98,9 @@ export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
 
       {/* Legend */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, fontSize: 10, color: 'var(--text-secondary)' }}>
-        <span>Ít</span>
+        <span>{t.heatmap.legendLess}</span>
         {COLORS.map((c, i) => <div key={i} style={{ width: 10, height: 10, borderRadius: 2, background: c }} />)}
-        <span>Nhiều</span>
+        <span>{t.heatmap.legendMore}</span>
       </div>
     </div>
   );

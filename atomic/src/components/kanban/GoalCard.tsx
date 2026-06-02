@@ -2,22 +2,8 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { IconTrash, IconCalendarEvent } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
+import { useT } from "../../i18n";
 import type { Goal, GoalStatus } from "../../types";
-
-const CAT_LABEL: Record<string, string> = {
-  work: "Công việc",
-  personal: "Cá nhân",
-  health: "Sức khỏe",
-  learn: "Học tập",
-};
-
-const QUARTER_LABEL: Record<string, string> = {
-  Q1: "Q1",
-  Q2: "Q2",
-  Q3: "Q3",
-  Q4: "Q4",
-  full: "Cả năm",
-};
 
 const PROGRESS_COLOR: Record<GoalStatus, string> = {
   todo: "#888780",
@@ -40,6 +26,7 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export default function GoalCard({ goal, onEdit, status }: Props) {
+  const t = useT();
   const { deleteGoal, checklistItems, categoryColors } = useAppStore();
 
   const {
@@ -84,7 +71,6 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
             <div className="goal-desc">{goal.description}</div>
           )}
 
-          {/* Checklist progress bar (only when items exist) */}
           {totalItems > 0 && (
             <div className="goal-checklist-progress">
               <div className="goal-progress-wrap" style={{ flex: 1 }}>
@@ -102,17 +88,16 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
             </div>
           )}
 
-          {/* Footer */}
           <div className="goal-meta">
             <span className={`tag tag-${goal.category}`}>
-              {CAT_LABEL[goal.category]}
+              {t.cat[goal.category]}
             </span>
             <span className="goal-quarter">
               <IconCalendarEvent
                 size={10}
                 style={{ verticalAlign: "middle", marginRight: 2 }}
               />
-              {QUARTER_LABEL[goal.quarter]}
+              {t.quarterShort[goal.quarter]}
             </span>
           </div>
         </div>
@@ -124,7 +109,7 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
             e.stopPropagation();
             deleteGoal(goal.id);
           }}
-          title="Xóa"
+          title={t.kanban.deleteGoal}
         >
           <IconTrash size={14} />
         </button>

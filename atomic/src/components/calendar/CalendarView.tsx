@@ -11,9 +11,10 @@ import {
   addWeeks,
   subWeeks,
 } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useAppStore } from '../../store/appStore';
+import { useT } from '../../i18n';
 import type { Task } from '../../types';
 import WeekView from './WeekView';
 
@@ -22,7 +23,7 @@ const localizer = dateFnsLocalizer({
   parse,
   startOfWeek: (date: Date) => startOfWeek(date, { weekStartsOn: 1 }),
   getDay,
-  locales: { vi },
+  locales: { vi: viLocale },
 });
 
 interface CalEvent {
@@ -33,17 +34,6 @@ interface CalEvent {
   allDay: true;
   resource: Task;
 }
-
-const messages = {
-  allDay: 'Cả ngày',
-  previous: '‹',
-  next: '›',
-  today: 'Hôm nay',
-  month: 'Tháng',
-  week: 'Tuần',
-  noEventsInRange: 'Không có task nào trong khoảng này.',
-  showMore: (n: number) => `+${n}`,
-};
 
 type CalViewType = 'month' | 'week';
 
@@ -69,47 +59,43 @@ function CalToolbar({
   currentDate: Date;
   setCurrentDate: (d: Date) => void;
 }) {
+  const t = useT();
+  const language = useAppStore((s) => s.language);
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
 
   const label =
     view === 'month'
-      ? format(currentDate, "'Tháng' M, yyyy")
+      ? language === 'vi'
+        ? format(currentDate, "'Tháng' M, yyyy")
+        : format(currentDate, 'MMMM yyyy')
       : `${format(weekStart, 'd/MM')} – ${format(weekEnd, 'd/MM, yyyy')}`;
-
-  function goToday() {
-    setCurrentDate(new Date());
-  }
-  function goPrev() {
-    setCurrentDate(view === 'month' ? subMonths(currentDate, 1) : subWeeks(currentDate, 1));
-  }
-  function goNext() {
-    setCurrentDate(view === 'month' ? addMonths(currentDate, 1) : addWeeks(currentDate, 1));
-  }
 
   return (
     <div className="cal-toolbar">
-      <button className="cal-toolbar-btn" onClick={goToday}>Hôm nay</button>
-      <button className="cal-toolbar-btn" onClick={goPrev}>‹</button>
-      <button className="cal-toolbar-btn" onClick={goNext}>›</button>
+      <button className="cal-toolbar-btn" onClick={() => setCurrentDate(new Date())}>{t.calendar.today}</button>
+      <button className="cal-toolbar-btn" onClick={() => setCurrentDate(view === 'month' ? subMonths(currentDate, 1) : subWeeks(currentDate, 1))}>‹</button>
+      <button className="cal-toolbar-btn" onClick={() => setCurrentDate(view === 'month' ? addMonths(currentDate, 1) : addWeeks(currentDate, 1))}>›</button>
       <span className="cal-toolbar-label">{label}</span>
       <button
         className={`cal-toolbar-btn${view === 'month' ? ' active' : ''}`}
         onClick={() => setView('month')}
       >
-        Tháng
+        {t.calendar.month}
       </button>
       <button
         className={`cal-toolbar-btn${view === 'week' ? ' active' : ''}`}
         onClick={() => setView('week')}
       >
-        Tuần
+        {t.calendar.week}
       </button>
     </div>
   );
 }
 
 export default function CalendarView() {
+  const t = useT();
+  const language = useAppStore((s) => s.language);
   const { calendarTasks, loadCalendarTasks, categoryColors, setActiveTab, setSelectedDate } =
     useAppStore();
 
@@ -124,6 +110,17 @@ export default function CalendarView() {
       setLoadedYear(year);
     }
   }, [currentDate, loadedYear, loadCalendarTasks]);
+
+  const messages = {
+    allDay: t.calendar.allDay,
+    previous: '‹',
+    next: '›',
+    today: t.calendar.today,
+    month: t.calendar.month,
+    week: t.calendar.week,
+    noEventsInRange: t.calendar.noEvents,
+    showMore: (n: number) => `+${n}`,
+  };
 
   const events: CalEvent[] = calendarTasks.map((task) => {
     const d = new Date(task.date + 'T00:00:00');
@@ -177,7 +174,7 @@ export default function CalendarView() {
           onSelectEvent={handleSelectEvent}
           onSelectSlot={handleSelectSlot}
           selectable
-          culture="vi"
+          culture={language === 'vi' ? 'vi' : undefined}
           messages={messages}
           components={{ event: MonthEvent }}
           eventPropGetter={eventPropGetter}

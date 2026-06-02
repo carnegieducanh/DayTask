@@ -8,25 +8,11 @@ import {
   IconSettings,
 } from "@tabler/icons-react";
 import { useAppStore } from "../store/appStore";
+import { useT } from "../i18n";
 import type { Tab } from "../types";
 
-const THEME_LABEL: Record<string, string> = {
-  light: "☽  Dark mode",
-  dark: "☼  Light mode",
-};
-
-const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "today", label: "Hôm nay", icon: <IconSun size={16} /> },
-  { id: "calendar", label: "Lịch", icon: <IconCalendar size={16} /> },
-  {
-    id: "kanban",
-    label: "Kế hoạch năm",
-    icon: <IconCalendarStats size={16} />,
-  },
-  { id: "heatmap", label: "Heatmap", icon: <IconChartDots size={16} /> },
-];
-
 export default function Sidebar() {
+  const t = useT();
   const {
     activeTab,
     tasks,
@@ -37,6 +23,13 @@ export default function Sidebar() {
     setSelectedYear,
     setOpenSettingsModal,
   } = useAppStore();
+
+  const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: "today",    label: t.nav.today,    icon: <IconSun size={16} /> },
+    { id: "calendar", label: t.nav.calendar, icon: <IconCalendar size={16} /> },
+    { id: "kanban",   label: t.nav.yearPlan, icon: <IconCalendarStats size={16} /> },
+    { id: "heatmap",  label: t.nav.heatmap,  icon: <IconChartDots size={16} /> },
+  ];
 
   const pendingCount = tasks.filter((t) => !t.is_done).length;
 
@@ -76,7 +69,7 @@ export default function Sidebar() {
                 className="icon-btn"
                 style={{ border: "none" }}
                 onClick={() => setSelectedYear(selectedYear - 1)}
-                title="Năm trước"
+                title={t.nav.prevYear}
               >
                 <IconChevronLeft size={14} />
               </button>
@@ -94,7 +87,7 @@ export default function Sidebar() {
                 className="icon-btn"
                 style={{ border: "none" }}
                 onClick={() => setSelectedYear(selectedYear + 1)}
-                title="Năm sau"
+                title={t.nav.nextYear}
               >
                 <IconChevronRight size={14} />
               </button>
@@ -103,14 +96,14 @@ export default function Sidebar() {
         )}
         <button
           className="icon-btn"
-          title="Cài đặt"
+          title={t.nav.settings}
           onClick={() => setOpenSettingsModal(true)}
         >
           <IconSettings size={16} />
         </button>
         <button className="nav-item" onClick={toggleTheme}>
           <span className="nav-icon">◐</span>
-          {THEME_LABEL[theme]}
+          {theme === 'light' ? t.nav.darkMode : t.nav.lightMode}
         </button>
       </div>
     </nav>

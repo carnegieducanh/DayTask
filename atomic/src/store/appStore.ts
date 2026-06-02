@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { format } from 'date-fns';
-import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, GoalChecklistItem, Category, CategoryColors } from '../types';
+import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, Language, GoalChecklistItem, Category, CategoryColors } from '../types';
 import {
   isTauri,
   mockTasks, mockGoals, mockChecklist,
@@ -102,10 +102,13 @@ interface AppState {
   openSettingsModal: boolean;
   kanbanDragActiveId: number | null;
   categoryColors: CategoryColors;
+  language: Language;
+  pendingDeleteTask: Task | null;
 
   setActiveTab: (tab: Tab) => void;
   toggleTheme: () => void;
   setUiScale: (scale: number) => void;
+  setLanguage: (lang: Language) => void;
   setOpenSettingsModal: (val: boolean) => void;
   setSelectedDate: (date: string) => void;
   setSelectedYear: (year: number) => void;
@@ -121,6 +124,9 @@ interface AppState {
   updateTask: (id: number, updates: TaskUpdate) => Promise<void>;
   toggleTask: (id: number) => Promise<void>;
   deleteTask: (id: number) => Promise<void>;
+  softDeleteTask: (id: number) => void;
+  undoDeleteTask: () => void;
+  confirmDeleteTask: (task: Task) => Promise<void>;
 
   loadCategoryColors: () => Promise<void>;
   updateCategoryColor: (category: Category, color: string) => Promise<void>;
@@ -161,12 +167,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   openSettingsModal: false,
   kanbanDragActiveId: null,
   categoryColors: { ...DEFAULT_CATEGORY_COLORS },
+  language: (localStorage.getItem('language') as Language) ?? 'vi',
+  pendingDeleteTask: null,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   setUiScale: (scale) => {
     localStorage.setItem('uiScale', String(scale));
     set({ uiScale: scale });
+  },
+
+  setLanguage: (lang) => {
+    localStorage.setItem('language', lang);
+    set({ language: lang });
   },
 
   setOpenSettingsModal: (val) => set({ openSettingsModal: val }),
@@ -316,6 +329,37 @@ export const useAppStore = create<AppState>((set, get) => ({
     const db = await getDb();
     await db.execute('DELETE FROM tasks WHERE id = $1', [id]);
     set({ tasks: get().tasks.filter((t) => t.id !== id) });
+  },
+
+  softDeleteTask: (id) => {
+    const task = get().tasks.find((t) => t.id === id);
+    if (!task) return;
+    // If there's already a pending delete, confirm it immediately before queuing new one
+    const prev = get().pendingDeleteTask;
+    if (prev) {
+      get().confirmDeleteTask(prev);
+    }
+    set({ tasks: get().tasks.filter((t) => t.id !== id), pendingDeleteTask: task });
+  },
+
+  undoDeleteTask: () => {
+    const task = get().pendingDeleteTask;
+    if (!task) return;
+    // Re-insert in original position (by created_at order)
+    const tasks = [...get().tasks, task].sort((a, b) =>
+      a.created_at && b.created_at ? a.created_at.localeCompare(b.created_at) : 0
+    );
+    set({ tasks, pendingDeleteTask: null });
+  },
+
+  confirmDeleteTask: async (task) => {
+    set({ pendingDeleteTask: null });
+    if (!isTauri()) {
+      dbDeleteTask(task.id);
+      return;
+    }
+    const db = await getDb();
+    await db.execute('DELETE FROM tasks WHERE id = $1', [task.id]);
   },
 
   // --- Category Colors ---

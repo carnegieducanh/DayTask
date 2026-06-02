@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { startOfYear, endOfYear, eachDayOfInterval, getDay, format, isToday } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { vi as viLocale } from 'date-fns/locale';
 import { useAppStore } from '../../store/appStore';
+import { useT } from '../../i18n';
 import type { DayActivity } from '../../types';
 
 function getLevel(count: number): number {
@@ -12,24 +13,22 @@ function getLevel(count: number): number {
   return 4;
 }
 
-const MONTHS = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
-const DAYS   = ['CN','T2','T3','T4','T5','T6','T7'];
-
 interface Props {
   year: number;
   data: DayActivity[];
 }
 
 export default function HeatmapGrid({ year, data }: Props) {
-  const { theme } = useAppStore();
+  const t = useT();
+  const { theme, language } = useAppStore();
   const LEVEL_COLORS = ['var(--bg-secondary)', '#B5D4F4', '#378ADD', theme === 'dark' ? '#7ab0e0' : '#125680', '#0a3d5e'];
+
   const activityMap = useMemo(() => {
     const m: Record<string, number> = {};
     data.forEach((d) => { m[d.date] = d.count; });
     return m;
   }, [data]);
 
-  // Build weeks array: each week is Sun→Sat
   const weeks = useMemo(() => {
     const start = startOfYear(new Date(year, 0, 1));
     const end   = endOfYear(new Date(year, 0, 1));
@@ -52,7 +51,6 @@ export default function HeatmapGrid({ year, data }: Props) {
     return allWeeks;
   }, [year]);
 
-  // Month label positions
   const monthLabels = useMemo(() => {
     const labels: { month: string; col: number }[] = [];
     let lastMonth = -1;
@@ -61,24 +59,21 @@ export default function HeatmapGrid({ year, data }: Props) {
       if (firstReal) {
         const m = firstReal.getMonth();
         if (m !== lastMonth) {
-          labels.push({ month: MONTHS[m], col });
+          labels.push({ month: t.heatmap.monthsShort[m], col });
           lastMonth = m;
         }
       }
     });
     return labels;
-  }, [weeks]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weeks, t]);
 
   return (
     <div className="heatmap-wrap">
       {/* Month labels */}
       <div className="heatmap-months" style={{ marginLeft: 28 }}>
         {monthLabels.map(({ month, col }) => (
-          <span
-            key={col}
-            className="heatmap-month-label"
-            style={{ left: col * 15 }}
-          >
+          <span key={col} className="heatmap-month-label" style={{ left: col * 15 }}>
             {month}
           </span>
         ))}
@@ -87,7 +82,7 @@ export default function HeatmapGrid({ year, data }: Props) {
       <div style={{ display: 'flex', gap: 4 }}>
         {/* Day-of-week labels */}
         <div className="heatmap-days">
-          {DAYS.map((d, i) => (
+          {t.heatmap.weekDowShort.map((d, i) => (
             <span key={d} style={{ visibility: i % 2 === 0 ? 'hidden' : 'visible' }}>
               {d}
             </span>
@@ -104,12 +99,15 @@ export default function HeatmapGrid({ year, data }: Props) {
                 const count   = activityMap[dateStr] ?? 0;
                 const level   = getLevel(count);
                 const todayBorder = isToday(day) ? '1.5px solid var(--primary)' : undefined;
+                const formattedDate = language === 'vi'
+                  ? format(day, 'd MMM', { locale: viLocale })
+                  : format(day, 'MMM d');
                 return (
                   <div
                     key={di}
                     className="hm-cell"
                     style={{ background: LEVEL_COLORS[level], outline: todayBorder }}
-                    title={`${format(day, 'd MMM', { locale: vi })}: ${count} task hoàn thành`}
+                    title={t.heatmap.cellTooltip(formattedDate, count)}
                   />
                 );
               })}
@@ -120,11 +118,11 @@ export default function HeatmapGrid({ year, data }: Props) {
 
       {/* Legend */}
       <div className="heatmap-legend">
-        <span>Ít</span>
+        <span>{t.heatmap.legendLess}</span>
         {LEVEL_COLORS.map((c, i) => (
           <div key={i} className="hm-legend-cell" style={{ background: c }} />
         ))}
-        <span>Nhiều</span>
+        <span>{t.heatmap.legendMore}</span>
       </div>
     </div>
   );

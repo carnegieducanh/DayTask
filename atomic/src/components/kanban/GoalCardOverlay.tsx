@@ -1,21 +1,7 @@
 import { IconGripVertical, IconCalendarEvent } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
+import { useT } from "../../i18n";
 import type { Goal, GoalStatus } from "../../types";
-
-const CAT_LABEL: Record<string, string> = {
-  work: "Công việc",
-  personal: "Cá nhân",
-  health: "Sức khỏe",
-  learn: "Học tập",
-};
-
-const QUARTER_LABEL: Record<string, string> = {
-  Q1: "Q1",
-  Q2: "Q2",
-  Q3: "Q3",
-  Q4: "Q4",
-  full: "Cả năm",
-};
 
 interface Props {
   goal: Goal;
@@ -29,6 +15,7 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export default function GoalCardOverlay({ goal }: Props) {
+  const t = useT();
   const { checklistItems, theme, categoryColors } = useAppStore();
   const PROGRESS_COLOR: Record<GoalStatus, string> = {
     todo: "#888780",
@@ -76,7 +63,7 @@ export default function GoalCardOverlay({ goal }: Props) {
           )}
           <div className="goal-meta">
             <span className={`tag tag-${goal.category}`}>
-              {CAT_LABEL[goal.category]}
+              {t.cat[goal.category]}
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <span className="goal-quarter">
@@ -84,7 +71,7 @@ export default function GoalCardOverlay({ goal }: Props) {
                   size={10}
                   style={{ verticalAlign: "middle", marginRight: 2 }}
                 />
-                {QUARTER_LABEL[goal.quarter]}
+                {t.quarterShort[goal.quarter]}
               </span>
               <span
                 className="priority-dot"
