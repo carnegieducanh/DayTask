@@ -1,4 +1,5 @@
-import { IconX, IconTextSize } from '@tabler/icons-react';
+import { useRef, useState } from 'react';
+import { IconX, IconTextSize, IconDownload, IconUpload, IconDatabaseImport } from '@tabler/icons-react';
 import { useAppStore } from '../store/appStore';
 
 const SCALE_OPTIONS: { label: string; value: number; desc: string }[] = [
@@ -9,9 +10,42 @@ const SCALE_OPTIONS: { label: string; value: number; desc: string }[] = [
 ];
 
 export default function SettingsModal() {
-  const { openSettingsModal, setOpenSettingsModal, uiScale, setUiScale } = useAppStore();
+  const { openSettingsModal, setOpenSettingsModal, uiScale, setUiScale, exportAllData, importAllData } = useAppStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [importError, setImportError] = useState('');
 
   if (!openSettingsModal) return null;
+
+  async function handleExport() {
+    await exportAllData();
+  }
+
+  function handleImportClick() {
+    setImportStatus('idle');
+    setImportError('');
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    const ok = window.confirm(
+      'Nhập dữ liệu sẽ XÓA toàn bộ dữ liệu hiện tại và thay bằng file backup.\n\nBạn có chắc muốn tiếp tục?'
+    );
+    if (!ok) return;
+
+    setImportStatus('loading');
+    try {
+      await importAllData(file);
+      setImportStatus('success');
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Lỗi không xác định');
+      setImportStatus('error');
+    }
+  }
 
   return (
     <div className="modal-overlay" onClick={() => setOpenSettingsModal(false)}>
@@ -23,6 +57,7 @@ export default function SettingsModal() {
           </button>
         </div>
 
+        {/* Cỡ chữ */}
         <div className="settings-section">
           <div className="settings-section-label">
             <IconTextSize size={14} />
@@ -41,6 +76,41 @@ export default function SettingsModal() {
             ))}
           </div>
         </div>
+
+        {/* Sao lưu & Khôi phục */}
+        <div className="settings-section">
+          <div className="settings-section-label">
+            <IconDatabaseImport size={14} />
+            Sao lưu &amp; Khôi phục
+          </div>
+          <div className="settings-backup-row">
+            <button className="btn btn-ghost settings-backup-btn" onClick={handleExport}>
+              <IconDownload size={14} />
+              Xuất toàn bộ dữ liệu
+            </button>
+            <button className="btn btn-ghost settings-backup-btn" onClick={handleImportClick} disabled={importStatus === 'loading'}>
+              <IconUpload size={14} />
+              {importStatus === 'loading' ? 'Đang nhập...' : 'Nhập từ file backup'}
+            </button>
+          </div>
+          {importStatus === 'success' && (
+            <div className="settings-backup-msg settings-backup-ok">Nhập dữ liệu thành công!</div>
+          )}
+          {importStatus === 'error' && (
+            <div className="settings-backup-msg settings-backup-err">{importError}</div>
+          )}
+          <div className="settings-backup-hint">
+            File backup bao gồm tất cả tasks, mục tiêu, checklist và màu sắc danh mục.
+          </div>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,application/json"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
       </div>
     </div>
   );

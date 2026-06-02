@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, GoalChecklistItem, Category, CategoryColors } from '../types';
 import {
   isTauri,
-  mockTasks,
+  mockTasks, mockGoals, mockChecklist,
   dbGetTasks, dbAddTask, dbUpdateTask, dbDeleteTask,
   dbGetGoals, dbAddGoal, dbUpdateGoal, dbDeleteGoal,
   dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
@@ -138,6 +138,8 @@ interface AppState {
   loadHeatmap: (year: number) => Promise<void>;
   getStreak: () => Promise<number>;
   seedIfEmpty: () => Promise<void>;
+  exportAllData: () => Promise<void>;
+  importAllData: (file: File) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -579,5 +581,105 @@ export const useAppStore = create<AppState>((set, get) => ({
       cursor = d;
     }
     return streak;
+  },
+
+  // --- Export / Import toàn bộ dữ liệu ---
+
+  exportAllData: async () => {
+    let tasks: Task[];
+    let goals: Goal[];
+    let checklistItems: GoalChecklistItem[];
+    let categoryColors: CategoryColors;
+
+    if (!isTauri()) {
+      tasks = [...mockTasks];
+      goals = [...mockGoals];
+      checklistItems = dbGetAllChecklistItems();
+      const stored = localStorage.getItem('categoryColors');
+      categoryColors = stored ? JSON.parse(stored) : { ...DEFAULT_CATEGORY_COLORS };
+    } else {
+      const db = await getDb();
+      tasks = await db.select<Task[]>('SELECT * FROM tasks ORDER BY date ASC, created_at ASC');
+      goals = await db.select<Goal[]>('SELECT * FROM goals ORDER BY year ASC, status ASC, position ASC');
+      checklistItems = await db.select<GoalChecklistItem[]>('SELECT * FROM goal_checklist_items ORDER BY goal_id, position ASC');
+      const colorRows = await db.select<{ category: string; color: string }[]>('SELECT category, color FROM category_colors');
+      categoryColors = { ...DEFAULT_CATEGORY_COLORS };
+      for (const row of colorRows) {
+        categoryColors[row.category as Category] = row.color;
+      }
+    }
+
+    const payload = { version: '1.0', exportedAt: new Date().toISOString(), tasks, goals, checklistItems, categoryColors };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `atomic-backup-${format(new Date(), 'yyyy-MM-dd')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+
+  importAllData: async (file: File) => {
+    const text = await file.text();
+    let data: { tasks?: Task[]; goals?: Goal[]; checklistItems?: GoalChecklistItem[]; categoryColors?: CategoryColors };
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error('File không hợp lệ — không thể đọc JSON');
+    }
+    if (!Array.isArray(data.tasks) || !Array.isArray(data.goals) || !Array.isArray(data.checklistItems)) {
+      throw new Error('File không hợp lệ — thiếu trường tasks / goals / checklistItems');
+    }
+
+    if (!isTauri()) {
+      mockTasks.length = 0;
+      mockGoals.length = 0;
+      mockChecklist.length = 0;
+      mockTasks.push(...data.tasks);
+      mockGoals.push(...data.goals);
+      mockChecklist.push(...data.checklistItems);
+      if (data.categoryColors) {
+        localStorage.setItem('categoryColors', JSON.stringify(data.categoryColors));
+      }
+    } else {
+      const db = await getDb();
+      await db.execute('DELETE FROM goal_checklist_items');
+      await db.execute('DELETE FROM tasks');
+      await db.execute('DELETE FROM goals');
+      await db.execute('DELETE FROM category_colors');
+
+      for (const t of data.tasks) {
+        await db.execute(
+          `INSERT INTO tasks (id, title, description, category, priority, reminder, date, is_done, repeat_daily, created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+          [t.id, t.title, t.description ?? null, t.category, t.priority, t.reminder ?? null, t.date, t.is_done, t.repeat_daily ?? 0, t.created_at]
+        );
+      }
+      for (const g of data.goals) {
+        await db.execute(
+          `INSERT INTO goals (id, title, description, category, priority, year, quarter, status, progress, position, created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+          [g.id, g.title, g.description ?? null, g.category, g.priority, g.year, g.quarter, g.status, g.progress, g.position, g.created_at]
+        );
+      }
+      for (const ci of data.checklistItems) {
+        await db.execute(
+          `INSERT INTO goal_checklist_items (id, goal_id, text, is_done, position) VALUES ($1,$2,$3,$4,$5)`,
+          [ci.id, ci.goal_id, ci.text, ci.is_done, ci.position]
+        );
+      }
+      if (data.categoryColors) {
+        for (const [cat, color] of Object.entries(data.categoryColors)) {
+          await db.execute('INSERT OR REPLACE INTO category_colors (category, color) VALUES ($1, $2)', [cat, color]);
+        }
+      }
+    }
+
+    await get().loadTasks(get().selectedDate);
+    await get().loadGoals(get().selectedYear);
+    await get().loadHeatmap(get().selectedYear);
+    await get().loadCategoryColors();
   },
 }));

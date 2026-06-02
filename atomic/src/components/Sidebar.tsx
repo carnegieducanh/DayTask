@@ -5,9 +5,6 @@ import {
   IconCalendar,
   IconChevronLeft,
   IconChevronRight,
-  IconFilter,
-  IconSearch,
-  IconPlus,
   IconSettings,
 } from "@tabler/icons-react";
 import { useAppStore } from "../store/appStore";
@@ -38,7 +35,6 @@ export default function Sidebar() {
     toggleTheme,
     selectedYear,
     setSelectedYear,
-    setOpenAddGoalModal,
     setOpenSettingsModal,
   } = useAppStore();
 
@@ -103,19 +99,6 @@ export default function Sidebar() {
                 <IconChevronRight size={14} />
               </button>
             </div>
-            <button className="icon-btn" title="Lọc">
-              <IconFilter size={16} />
-            </button>
-            <button className="icon-btn" title="Tìm kiếm">
-              <IconSearch size={16} />
-            </button>
-            <button
-              className="icon-btn"
-              title="Thêm mục tiêu"
-              onClick={() => setOpenAddGoalModal(true)}
-            >
-              <IconPlus size={16} />
-            </button>
           </>
         )}
         <button

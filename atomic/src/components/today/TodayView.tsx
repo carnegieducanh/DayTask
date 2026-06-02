@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { IconSearch, IconPlus, IconDownload, IconSun } from '@tabler/icons-react';
+import { IconPlus, IconSun } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import { isTauri } from '../../store/mockDb';
 import TaskCard from './TaskCard';
@@ -61,12 +61,6 @@ export default function TodayView() {
   function openAdd()        { setEditTask(null); setShowModal(true); }
   function openEdit(t: Task) { setEditTask(t);   setShowModal(true); }
 
-  function exportData() {
-    const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), date: selectedDate, tasks }, null, 2)], { type: 'application/json' });
-    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `atomic-${selectedDate}.json` });
-    a.click(); URL.revokeObjectURL(a.href);
-  }
-
   return (
     <>
       {/* Topbar */}
@@ -88,9 +82,6 @@ export default function TodayView() {
               Hôm nay
             </button>
           )}
-          <button className="icon-btn" title="Xuất dữ liệu" onClick={exportData}><IconDownload size={16} /></button>
-          <button className="icon-btn" title="Tìm kiếm" onClick={() => {}}><IconSearch size={16} /></button>
-          <button className="icon-btn" title="Thêm task" onClick={openAdd}><IconPlus size={16} /></button>
         </div>
       </div>
 

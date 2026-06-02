@@ -1842,6 +1842,55 @@ select {
   color: var(--primary);
 }
 
+.settings-backup-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-backup-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 0.5px solid var(--border-1);
+  border-radius: var(--radius-sm);
+}
+
+.settings-backup-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-backup-hint {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.settings-backup-msg {
+  margin-top: 8px;
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.settings-backup-ok {
+  background: color-mix(in srgb, #33B679 12%, transparent);
+  color: #0B8043;
+}
+
+.dark .settings-backup-ok {
+  color: #33B679;
+}
+
+.settings-backup-err {
+  background: color-mix(in srgb, #D50000 10%, transparent);
+  color: #D50000;
+}
+
 /* ── Scrollbars ── */
 ::-webkit-scrollbar {
   width: 5px;
