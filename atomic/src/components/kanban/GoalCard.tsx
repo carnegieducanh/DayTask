@@ -27,7 +27,7 @@ function hexToRgba(hex: string, alpha: number): string {
 
 export default function GoalCard({ goal, onEdit, status }: Props) {
   const t = useT();
-  const { deleteGoal, checklistItems, categoryColors } = useAppStore();
+  const { softDeleteGoal, checklistItems, categoryColors } = useAppStore();
 
   const {
     attributes,
@@ -107,7 +107,7 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
-            deleteGoal(goal.id);
+            softDeleteGoal(goal.id);
           }}
           title={t.kanban.deleteGoal}
         >

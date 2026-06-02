@@ -32,7 +32,7 @@ function App() {
   useReminder();
   const {
     activeTab, theme, uiScale, language, selectedDate, selectedYear,
-    loadTasks, loadGoals, loadCategoryColors,
+    loadTasks, loadGoals, loadCategoryColors, initAutostart,
     goals, reorderGoal, kanbanDragActiveId, setKanbanDragActiveId,
   } = useAppStore();
 
@@ -66,6 +66,7 @@ function App() {
   useEffect(() => {
     loadTasks(selectedDate);
     loadCategoryColors();
+    initAutostart().catch(() => {});
     // Check for updates after a short delay to not block initial render
     setTimeout(async () => {
       try {

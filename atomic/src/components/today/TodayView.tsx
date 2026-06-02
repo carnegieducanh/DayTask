@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
-import { IconPlus, IconSun } from '@tabler/icons-react';
+import { IconPlus, IconSun, IconCheck } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
 import { isTauri } from '../../store/mockDb';
@@ -19,6 +19,7 @@ export default function TodayView() {
     heatmap, loadHeatmap,
     language,
     getStreak, setReminderPopup,
+    toggleTask,
   } = useAppStore();
 
   const [showModal, setShowModal]         = useState(false);
@@ -182,6 +183,12 @@ export default function TodayView() {
                         <div className="today-schedule-title">{task.title}</div>
                         <div className="today-schedule-cat">{CAT_LABELS[task.category] ?? task.category}</div>
                       </div>
+                      <button
+                        className={`today-schedule-tick${task.is_done ? ' checked' : ''}`}
+                        onClick={() => toggleTask(task.id)}
+                      >
+                        <IconCheck size={12} strokeWidth={3} />
+                      </button>
                     </div>
                   ))}
                 </div>

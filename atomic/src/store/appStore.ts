@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { format } from 'date-fns';
+import { invoke } from '@tauri-apps/api/core';
 import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, Language, GoalChecklistItem, Category, CategoryColors } from '../types';
 import {
   isTauri,
@@ -104,6 +105,8 @@ interface AppState {
   categoryColors: CategoryColors;
   language: Language;
   pendingDeleteTask: Task | null;
+  pendingDeleteGoal: Goal | null;
+  autostart: boolean;
 
   setActiveTab: (tab: Tab) => void;
   toggleTheme: () => void;
@@ -117,6 +120,8 @@ interface AppState {
   dismissReminder: () => void;
   setOpenAddGoalModal: (val: boolean) => void;
   setKanbanDragActiveId: (id: number | null) => void;
+  initAutostart: () => Promise<void>;
+  setAutostart: (v: boolean) => Promise<void>;
 
   loadTasks: (date: string) => Promise<void>;
   loadCalendarTasks: (startDate: string, endDate: string) => Promise<void>;
@@ -136,6 +141,9 @@ interface AppState {
   updateGoal: (id: number, updates: GoalUpdate) => Promise<void>;
   reorderGoal: (activeId: number, newStatus: Goal['status'], newIndex: number) => Promise<void>;
   deleteGoal: (id: number) => Promise<void>;
+  softDeleteGoal: (id: number) => void;
+  undoDeleteGoal: () => void;
+  confirmDeleteGoal: (goal: Goal) => Promise<void>;
 
   addChecklistItem: (goalId: number, text: string) => Promise<void>;
   toggleChecklistItem: (itemId: number, goalId: number) => Promise<void>;
@@ -169,6 +177,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   categoryColors: { ...DEFAULT_CATEGORY_COLORS },
   language: (localStorage.getItem('language') as Language) ?? 'vi',
   pendingDeleteTask: null,
+  pendingDeleteGoal: null,
+  autostart: false,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -213,6 +223,29 @@ export const useAppStore = create<AppState>((set, get) => ({
   dismissReminder: () => set({ reminderPopup: null }),
   setOpenAddGoalModal: (val) => set({ openAddGoalModal: val }),
   setKanbanDragActiveId: (id) => set({ kanbanDragActiveId: id }),
+
+  initAutostart: async () => {
+    if (!isTauri()) return;
+    const firstRun = !localStorage.getItem('autostartInitialized');
+    if (firstRun) {
+      await invoke('plugin:autostart|enable');
+      localStorage.setItem('autostartInitialized', '1');
+      set({ autostart: true });
+    } else {
+      const enabled = await invoke<boolean>('plugin:autostart|is_enabled');
+      set({ autostart: enabled });
+    }
+  },
+
+  setAutostart: async (v) => {
+    set({ autostart: v });
+    if (!isTauri()) return;
+    if (v) {
+      await invoke('plugin:autostart|enable');
+    } else {
+      await invoke('plugin:autostart|disable');
+    }
+  },
 
   // --- Tasks ---
 
@@ -524,6 +557,38 @@ export const useAppStore = create<AppState>((set, get) => ({
     await db.execute('DELETE FROM goals WHERE id = $1', [id]);
     const { [id]: _, ...rest } = get().checklistItems;
     set({ goals: get().goals.filter((g) => g.id !== id), checklistItems: rest });
+  },
+
+  softDeleteGoal: (id) => {
+    const goal = get().goals.find((g) => g.id === id);
+    if (!goal) return;
+    const prev = get().pendingDeleteGoal;
+    if (prev) get().confirmDeleteGoal(prev);
+    const { [id]: _, ...restChecklist } = get().checklistItems;
+    set({
+      goals: get().goals.filter((g) => g.id !== id),
+      checklistItems: restChecklist,
+      pendingDeleteGoal: goal,
+    });
+  },
+
+  undoDeleteGoal: () => {
+    const goal = get().pendingDeleteGoal;
+    if (!goal) return;
+    const goals = [...get().goals, goal].sort((a, b) => a.position - b.position);
+    set({ goals, pendingDeleteGoal: null });
+  },
+
+  confirmDeleteGoal: async (goal) => {
+    set({ pendingDeleteGoal: null });
+    if (!isTauri()) {
+      dbDeleteChecklistItemsByGoal(goal.id);
+      dbDeleteGoal(goal.id);
+      return;
+    }
+    const db = await getDb();
+    await db.execute('DELETE FROM goal_checklist_items WHERE goal_id = $1', [goal.id]);
+    await db.execute('DELETE FROM goals WHERE id = $1', [goal.id]);
   },
 
   addChecklistItem: async (goalId, text) => {

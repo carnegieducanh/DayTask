@@ -79,7 +79,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   const [category, setCategory] = useState<Category>("work");
   const [priority, setPriority] = useState<Priority>("mid");
   const [reminder, setReminder] = useState("");
-  const [repeatDaily, setRepeatDaily] = useState(false);
+  const [repeatDaily, setRepeatDaily] = useState(!editTask);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);
   const [reminderOpen, setReminderOpen] = useState(false);

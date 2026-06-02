@@ -85,6 +85,8 @@ export const vi = {
     language: 'Ngôn ngữ',
     importConfirm: 'Nhập dữ liệu sẽ XÓA toàn bộ dữ liệu hiện tại và thay bằng file backup.\n\nBạn có chắc muốn tiếp tục?',
     unknownError: 'Lỗi không xác định',
+    autostart: 'Khởi động cùng Windows',
+    autostartDesc: 'Tự động mở app khi bật máy',
   },
   today: {
     title: 'Hôm nay',

@@ -87,6 +87,8 @@ export const en: typeof vi = {
     language: 'Language',
     importConfirm: 'Importing data will DELETE all current data and replace it with the backup file.\n\nAre you sure you want to continue?',
     unknownError: 'Unknown error',
+    autostart: 'Launch at startup',
+    autostartDesc: 'Automatically open app when Windows starts',
   },
   today: {
     title: 'Today',

@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
-import { IconX, IconTextSize, IconDownload, IconUpload, IconDatabaseImport, IconLanguage } from '@tabler/icons-react';
+import { IconX, IconTextSize, IconDownload, IconUpload, IconDatabaseImport, IconLanguage, IconPower } from '@tabler/icons-react';
 import { useAppStore } from '../store/appStore';
 import { useT } from '../i18n';
 import type { Language } from '../types';
 
 export default function SettingsModal() {
-  const { openSettingsModal, setOpenSettingsModal, uiScale, setUiScale, language, setLanguage, exportAllData, importAllData } = useAppStore();
+  const { openSettingsModal, setOpenSettingsModal, uiScale, setUiScale, language, setLanguage, exportAllData, importAllData, autostart, setAutostart } = useAppStore();
   const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -99,6 +99,24 @@ export default function SettingsModal() {
                 <span className="settings-scale-desc">{opt.desc}</span>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Autostart */}
+        <div className="settings-section">
+          <div className="settings-autostart-row">
+            <div>
+              <div className="settings-section-label" style={{ marginBottom: 0 }}>
+                <IconPower size={14} />
+                {t.settings.autostart}
+              </div>
+              <div className="settings-autostart-desc">{t.settings.autostartDesc}</div>
+            </div>
+            <button
+              className={`settings-toggle${autostart ? ' active' : ''}`}
+              onClick={() => setAutostart(!autostart)}
+              aria-label={t.settings.autostart}
+            />
           </div>
         </div>
 
