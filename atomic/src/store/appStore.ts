@@ -178,7 +178,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   language: (localStorage.getItem('language') as Language) ?? 'vi',
   pendingDeleteTask: null,
   pendingDeleteGoal: null,
-  autostart: false,
+  autostart: true,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
