@@ -21,7 +21,7 @@ interface Props {
 
 export default function TaskCard({ task, onEdit }: Props) {
   const { toggleTask, deleteTask, updateTask, categoryColors } = useAppStore();
-  const cardBg = hexToRgba(categoryColors[task.category], 0.75);
+  const cardBg = hexToRgba(categoryColors[task.category], 1);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const inputRef = useRef<HTMLInputElement>(null);

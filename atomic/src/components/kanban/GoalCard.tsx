@@ -58,7 +58,7 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
   };
 
   const progressColor = PROGRESS_COLOR[status];
-  const cardBg = hexToRgba(categoryColors[goal.category], 0.75);
+  const cardBg = hexToRgba(categoryColors[goal.category], 1);
   const items = checklistItems[goal.id] ?? [];
   const totalItems = items.length;
   const doneItems = items.filter((i) => i.is_done).length;

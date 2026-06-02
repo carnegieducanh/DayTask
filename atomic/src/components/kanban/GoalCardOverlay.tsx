@@ -42,7 +42,7 @@ export default function GoalCardOverlay({ goal }: Props) {
   const doneItems = items.filter((i) => i.is_done).length;
   const pct = totalItems === 0 ? 0 : Math.round((doneItems / totalItems) * 100);
 
-  const cardBg = hexToRgba(categoryColors[goal.category], 0.75);
+  const cardBg = hexToRgba(categoryColors[goal.category], 1);
 
   return (
     <div
