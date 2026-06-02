@@ -1,0 +1,250 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+.app{font-family:var(--font-sans);font-size:13px;background:#1a1a1a;border:0.5px solid #2a2a2a;border-radius:var(--border-radius-lg);overflow:hidden;color:#e0e0e0;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:0.5px solid #2a2a2a;}
+.logo{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:500;color:#e0e0e0;}
+.tabs{display:flex;gap:1px;}
+.tab{padding:5px 11px;border-radius:var(--border-radius-md);font-size:12px;color:#888;cursor:pointer;display:flex;align-items:center;gap:4px;}
+.tab i{font-size:13px;}
+.tab.active{background:#2a2a2a;color:#e0e0e0;font-weight:500;}
+.topbar-right{display:flex;align-items:center;gap:6px;}
+.iBtn{width:28px;height:28px;border:0.5px solid #2a2a2a;border-radius:var(--border-radius-md);display:flex;align-items:center;justify-content:center;color:#888;font-size:15px;cursor:pointer;}
+.theme-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;border:0.5px solid #2a2a2a;border-radius:var(--border-radius-md);font-size:12px;color:#888;cursor:pointer;}
+
+.cal-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:0.5px solid #2a2a2a;}
+.today-btn{padding:4px 10px;border:0.5px solid #2a2a2a;border-radius:var(--border-radius-md);font-size:12px;color:#888;cursor:pointer;background:transparent;}
+.nav-arr{width:26px;height:26px;border:0.5px solid #2a2a2a;border-radius:var(--border-radius-md);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#888;font-size:13px;}
+.cal-nav{display:flex;align-items:center;gap:6px;}
+.cal-title{font-size:13px;font-weight:500;color:#e0e0e0;}
+.view-toggle{display:flex;border:0.5px solid #2a2a2a;border-radius:var(--border-radius-md);overflow:hidden;}
+.vtab{padding:4px 12px;font-size:12px;color:#888;cursor:pointer;background:transparent;}
+.vtab.active{background:#185FA5;color:#fff;}
+
+.cal-wrap{display:flex;flex-direction:column;}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:0.5px solid #2a2a2a;}
+.day-col{border-right:0.5px solid #2a2a2a;display:flex;flex-direction:column;}
+.day-col:last-child{border-right:none;}
+
+.day-head{padding:8px 10px 6px;border-bottom:0.5px solid #2a2a2a;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.day-name{font-size:10px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:0.5px;}
+.day-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:#e0e0e0;}
+.day-num.today{background:#185FA5;color:#fff;}
+
+.tasks-area{min-height:220px;padding:6px 6px 0;}
+
+.task-card{border-radius:5px;padding:5px 7px;margin-bottom:4px;border-left:2px solid transparent;}
+.task-card.work{background:#0C2240;border-left-color:#185FA5;border-radius:0 5px 5px 0;}
+.task-card.personal{background:#063526;border-left-color:#1D9E75;border-radius:0 5px 5px 0;}
+.task-card.health{background:#2E1F00;border-left-color:#EF9F27;border-radius:0 5px 5px 0;}
+.task-card.learn{background:#1A1640;border-left-color:#7F77DD;border-radius:0 5px 5px 0;}
+.tc-name{font-size:11px;font-weight:500;color:#e0e0e0;line-height:1.3;}
+.tc-sub{font-size:10px;color:#555;margin-top:1px;line-height:1.3;}
+.tc-foot{display:flex;align-items:center;justify-content:space-between;margin-top:3px;}
+.tc-tag{font-size:9px;padding:1px 5px;border-radius:99px;font-weight:500;}
+.tag-work{background:#0C447C;color:#85B7EB;}
+.tag-personal{background:#085041;color:#5DCAA5;}
+.tag-health{background:#633806;color:#EF9F27;}
+.tag-learn{background:#3C3489;color:#AFA9EC;}
+.tc-time{font-size:10px;color:#555;}
+
+.stats-row{display:grid;grid-template-columns:repeat(7,1fr);border-top:0.5px solid #333;}
+.day-stats{border-right:0.5px solid #2a2a2a;padding:8px 8px;background:#141414;height:100px;display:flex;flex-direction:column;justify-content:space-between;}
+.day-stats:last-child{border-right:none;}
+
+.stat-top{display:flex;align-items:center;justify-content:space-between;}
+.stat-label{font-size:10px;color:#555;display:flex;align-items:center;gap:3px;}
+.stat-label i{font-size:11px;}
+.stat-val{font-size:11px;font-weight:500;color:#e0e0e0;}
+
+.stat-bar-wrap{height:3px;background:#2a2a2a;border-radius:99px;overflow:hidden;display:flex;gap:1px;}
+.seg{height:100%;border-radius:99px;}
+
+.stat-cats{display:flex;flex-direction:column;gap:2px;}
+.stat-cat{display:flex;align-items:center;justify-content:space-between;}
+.stat-cat-left{display:flex;align-items:center;gap:4px;}
+.sdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.sname{font-size:10px;color:#555;}
+.sval{font-size:10px;font-weight:500;color:#ccc;}
+.no-task{font-size:10px;color:#444;text-align:center;margin-top:auto;margin-bottom:auto;}
+</style>
+
+<h2 class="sr-only">Calendar dark mode với thanh thống kê cố định chiều cao bên dưới</h2>
+
+<div class="app">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="logo">
+        <svg width="18" height="18" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g transform="translate(55,55)">
+            <ellipse rx="46" ry="17" fill="none" stroke="#DA7756" stroke-width="8"/>
+            <ellipse rx="46" ry="17" fill="none" stroke="#DA7756" stroke-width="8" transform="rotate(60)"/>
+            <ellipse rx="46" ry="17" fill="none" stroke="#DA7756" stroke-width="8" transform="rotate(-60)"/>
+            <circle r="12" fill="#DA7756"/>
+            <circle cx="-46" cy="0" r="9" fill="#DA7756"/>
+            <circle cx="46" cy="0" r="9" fill="#DA7756"/>
+          </g>
+        </svg>
+        Atomic
+      </div>
+      <div class="tabs">
+        <div class="tab"><i class="ti ti-sun" aria-hidden="true"></i>Today</div>
+        <div class="tab active"><i class="ti ti-calendar" aria-hidden="true"></i>Calendar</div>
+        <div class="tab"><i class="ti ti-calendar-stats" aria-hidden="true"></i>Year Plan</div>
+        <div class="tab"><i class="ti ti-chart-dots" aria-hidden="true"></i>Heatmap</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="iBtn"><i class="ti ti-settings" aria-hidden="true"></i></div>
+      <div class="theme-btn"><i class="ti ti-sun" aria-hidden="true"></i>Light</div>
+    </div>
+  </div>
+
+  <div class="cal-bar">
+    <div class="cal-nav">
+      <button class="today-btn">Today</button>
+      <div class="nav-arr"><i class="ti ti-chevron-left" aria-hidden="true"></i></div>
+      <div class="nav-arr"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+    </div>
+    <div class="cal-title">1/06 – 7/06, 2026</div>
+    <div class="view-toggle">
+      <div class="vtab">Month</div>
+      <div class="vtab active">Week</div>
+    </div>
+  </div>
+
+  <div class="cal-wrap">
+    <div class="cal-grid">
+
+      <div class="day-col">
+        <div class="day-head"><div class="day-name">MON</div><div class="day-num">1</div></div>
+        <div class="tasks-area">
+          <div class="task-card work"><div class="tc-name">Task 1</div><div class="tc-foot"><span class="tc-tag tag-work">Work</span><span class="tc-time">5h 45m</span></div></div>
+          <div class="task-card work"><div class="tc-name">Task 2</div><div class="tc-foot"><span class="tc-tag tag-work">Work</span><span class="tc-time">30m</span></div></div>
+        </div>
+      </div>
+
+      <div class="day-col">
+        <div class="day-head"><div class="day-name">TUE</div><div class="day-num today">2</div></div>
+        <div class="tasks-area">
+          <div class="task-card personal"><div class="tc-name">Đọc sách 30 phút</div><div class="tc-sub">Atomic Habits — chương 7</div><div class="tc-foot"><span class="tc-tag tag-personal">Personal</span><span class="tc-time">30m</span></div></div>
+          <div class="task-card health"><div class="tc-name">Tập thể dục buổi sáng</div><div class="tc-sub">Chạy bộ 5km + stretch</div><div class="tc-foot"><span class="tc-tag tag-health">Health</span><span class="tc-time">45m</span></div></div>
+          <div class="task-card work"><div class="tc-name">Review code pull request</div><div class="tc-sub">PR #42 — refactor auth</div><div class="tc-foot"><span class="tc-tag tag-work">Work</span><span class="tc-time">15m</span></div></div>
+          <div class="task-card work"><div class="tc-name">Gửi báo cáo tuần</div><div class="tc-foot"><span class="tc-tag tag-work">Work</span><span class="tc-time">20m</span></div></div>
+        </div>
+      </div>
+
+      <div class="day-col">
+        <div class="day-head"><div class="day-name">WED</div><div class="day-num">3</div></div>
+        <div class="tasks-area">
+          <div class="task-card learn"><div class="tc-name">Học Python — bài 12</div><div class="tc-sub">List comprehension</div><div class="tc-foot"><span class="tc-tag tag-learn">Learn</span><span class="tc-time">1h 30m</span></div></div>
+          <div class="task-card work"><div class="tc-name">Meeting Q3 planning</div><div class="tc-foot"><span class="tc-tag tag-work">Work</span><span class="tc-time">1h</span></div></div>
+        </div>
+      </div>
+
+      <div class="day-col">
+        <div class="day-head"><div class="day-name">THU</div><div class="day-num">4</div></div>
+        <div class="tasks-area">
+          <div class="task-card health"><div class="tc-name">Gym buổi chiều</div><div class="tc-foot"><span class="tc-tag tag-health">Health</span><span class="tc-time">1h</span></div></div>
+          <div class="task-card work"><div class="tc-name">Viết tài liệu API</div><div class="tc-sub">Swagger + Postman</div><div class="tc-foot"><span class="tc-tag tag-work">Work</span><span class="tc-time">2h</span></div></div>
+        </div>
+      </div>
+
+      <div class="day-col">
+        <div class="day-head"><div class="day-name">FRI</div><div class="day-num">5</div></div>
+        <div class="tasks-area">
+          <div class="task-card personal"><div class="tc-name">Gọi điện gia đình</div><div class="tc-foot"><span class="tc-tag tag-personal">Personal</span><span class="tc-time">45m</span></div></div>
+          <div class="task-card work"><div class="tc-name">Deploy release v1.2</div><div class="tc-foot"><span class="tc-tag tag-work">Work</span><span class="tc-time">30m</span></div></div>
+          <div class="task-card learn"><div class="tc-name">Đọc blog kỹ thuật</div><div class="tc-foot"><span class="tc-tag tag-learn">Learn</span><span class="tc-time">20m</span></div></div>
+        </div>
+      </div>
+
+      <div class="day-col">
+        <div class="day-head"><div class="day-name">SAT</div><div class="day-num">6</div></div>
+        <div class="tasks-area">
+          <div class="task-card health"><div class="tc-name">Đạp xe buổi sáng</div><div class="tc-foot"><span class="tc-tag tag-health">Health</span><span class="tc-time">1h 30m</span></div></div>
+          <div class="task-card personal"><div class="tc-name">Nấu ăn cuối tuần</div><div class="tc-foot"><span class="tc-tag tag-personal">Personal</span><span class="tc-time">1h</span></div></div>
+        </div>
+      </div>
+
+      <div class="day-col">
+        <div class="day-head"><div class="day-name">SUN</div><div class="day-num">7</div></div>
+        <div class="tasks-area"></div>
+      </div>
+
+    </div>
+
+    <div class="stats-row">
+      <div class="day-stats">
+        <div class="stat-top"><span class="stat-label"><i class="ti ti-clock" aria-hidden="true"></i>Tổng</span><span class="stat-val">6h 15m</span></div>
+        <div class="stat-bar-wrap"><div class="seg" style="width:100%;background:#185FA5;"></div></div>
+        <div class="stat-cats">
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#185FA5;"></span><span class="sname">Work</span></div><span class="sval">6h 15m</span></div>
+        </div>
+      </div>
+      <div class="day-stats">
+        <div class="stat-top"><span class="stat-label"><i class="ti ti-clock" aria-hidden="true"></i>Tổng</span><span class="stat-val">1h 50m</span></div>
+        <div class="stat-bar-wrap">
+          <div class="seg" style="width:30%;background:#185FA5;"></div>
+          <div class="seg" style="width:41%;background:#EF9F27;"></div>
+          <div class="seg" style="width:27%;background:#1D9E75;"></div>
+        </div>
+        <div class="stat-cats">
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#185FA5;"></span><span class="sname">Work</span></div><span class="sval">35m</span></div>
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#EF9F27;"></span><span class="sname">Health</span></div><span class="sval">45m</span></div>
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#1D9E75;"></span><span class="sname">Personal</span></div><span class="sval">30m</span></div>
+        </div>
+      </div>
+      <div class="day-stats">
+        <div class="stat-top"><span class="stat-label"><i class="ti ti-clock" aria-hidden="true"></i>Tổng</span><span class="stat-val">2h 30m</span></div>
+        <div class="stat-bar-wrap">
+          <div class="seg" style="width:40%;background:#185FA5;"></div>
+          <div class="seg" style="width:60%;background:#7F77DD;"></div>
+        </div>
+        <div class="stat-cats">
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#185FA5;"></span><span class="sname">Work</span></div><span class="sval">1h</span></div>
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#7F77DD;"></span><span class="sname">Learn</span></div><span class="sval">1h 30m</span></div>
+        </div>
+      </div>
+      <div class="day-stats">
+        <div class="stat-top"><span class="stat-label"><i class="ti ti-clock" aria-hidden="true"></i>Tổng</span><span class="stat-val">3h</span></div>
+        <div class="stat-bar-wrap">
+          <div class="seg" style="width:67%;background:#185FA5;"></div>
+          <div class="seg" style="width:33%;background:#EF9F27;"></div>
+        </div>
+        <div class="stat-cats">
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#185FA5;"></span><span class="sname">Work</span></div><span class="sval">2h</span></div>
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#EF9F27;"></span><span class="sname">Health</span></div><span class="sval">1h</span></div>
+        </div>
+      </div>
+      <div class="day-stats">
+        <div class="stat-top"><span class="stat-label"><i class="ti ti-clock" aria-hidden="true"></i>Tổng</span><span class="stat-val">1h 35m</span></div>
+        <div class="stat-bar-wrap">
+          <div class="seg" style="width:32%;background:#185FA5;"></div>
+          <div class="seg" style="width:47%;background:#1D9E75;"></div>
+          <div class="seg" style="width:21%;background:#7F77DD;"></div>
+        </div>
+        <div class="stat-cats">
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#185FA5;"></span><span class="sname">Work</span></div><span class="sval">30m</span></div>
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#1D9E75;"></span><span class="sname">Personal</span></div><span class="sval">45m</span></div>
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#7F77DD;"></span><span class="sname">Learn</span></div><span class="sval">20m</span></div>
+        </div>
+      </div>
+      <div class="day-stats">
+        <div class="stat-top"><span class="stat-label"><i class="ti ti-clock" aria-hidden="true"></i>Tổng</span><span class="stat-val">2h 30m</span></div>
+        <div class="stat-bar-wrap">
+          <div class="seg" style="width:60%;background:#EF9F27;"></div>
+          <div class="seg" style="width:40%;background:#1D9E75;"></div>
+        </div>
+        <div class="stat-cats">
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#EF9F27;"></span><span class="sname">Health</span></div><span class="sval">1h 30m</span></div>
+          <div class="stat-cat"><div class="stat-cat-left"><span class="sdot" style="background:#1D9E75;"></span><span class="sname">Personal</span></div><span class="sval">1h</span></div>
+        </div>
+      </div>
+      <div class="day-stats" style="display:flex;align-items:center;justify-content:center;">
+        <span class="no-task">Không có task</span>
+      </div>
+    </div>
+  </div>
+</div>

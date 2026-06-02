@@ -17,6 +17,8 @@ export const en: typeof vi = {
     personal: 'Personal',
     health: 'Health',
     learn: 'Learning',
+    creative: 'Creative',
+    mindfulness: 'Mindfulness',
   },
   priority: {
     high: 'High',
@@ -42,9 +44,9 @@ export const en: typeof vi = {
     descLabel: 'Description',
     descPlaceholder: 'Additional description (optional)...',
     categoryLabel: 'Category',
-    priorityLabel: 'Priority',
-    reminderLabel: 'Reminder Time',
-    noReminder: 'No reminder',
+    startTimeLabel: 'Start',
+    endTimeLabel: 'End',
+    noTime: 'No time set',
     repeatLabel: 'Repeat Daily',
     repeatHint: 'Task automatically appears every day',
     cancel: 'Cancel',
@@ -95,14 +97,15 @@ export const en: typeof vi = {
     statDone: 'Done',
     statStreak: 'Streak',
     streakDays: 'days in a row',
-    statReminders: 'Reminders',
-    remindersLeft: 'remaining today',
+    statScheduled: 'Scheduled',
+    scheduledToday: 'tasks today',
     addTask: 'Add new task...',
     pending: 'Pending',
     completed: 'Completed',
     taskUnit: 'task',
     emptyState: 'New day — start adding your first task!',
     todaySchedule: "Today's Schedule",
+
     activityTitle: 'Activity (last 3 months)',
     backToToday: 'Today',
   },
@@ -111,6 +114,9 @@ export const en: typeof vi = {
     markUndone: 'Mark as not done',
     clickHint: 'Click to open, double-click to edit',
     delete: 'Delete',
+    setTime: 'Set start / end time',
+    timePlaceholder: '–:–',
+    timeEndBeforeStart: 'End time must be after start time',
   },
   kanban: {
     status: {
@@ -167,6 +173,8 @@ export const en: typeof vi = {
       return `${names[m - 1]} ${y}`;
     },
     weekDowShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    statsTotal: 'Total',
+    noTasks: 'No tasks',
   },
   update: {
     title: 'New update available',

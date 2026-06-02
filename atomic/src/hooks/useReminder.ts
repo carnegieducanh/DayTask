@@ -34,7 +34,7 @@ export function useReminder() {
 
       await loadTasks(today);
 
-      const { tasks: latestTasks, snoozedUntil } = useAppStore.getState();
+      const { tasks: latestTasks, taskTimeEntries, snoozedUntil } = useAppStore.getState();
 
       const due = latestTasks.filter((t) => {
         if (t.is_done || t.date !== today) return false;
@@ -42,27 +42,26 @@ export function useReminder() {
         const snoozeTs = snoozedUntil[t.id];
 
         if (snoozeTs) {
-          // Snoozed path: kiểm tra theo timestamp, không theo reminder string
           if (nowMs < snoozeTs) return false;
           return !firedRef.current.has(`${t.id}-snooze-${snoozeTs}`);
         }
 
-        // Normal path: match đúng phút của reminder
-        if (!t.reminder || t.reminder !== now) return false;
-        return !firedRef.current.has(`${t.id}-${now}`);
+        const entry = taskTimeEntries.find((e) => e.task_id === t.id && e.date === today);
+        if (!entry) return false;
+        if (entry.start_time !== now) return false;
+        return !firedRef.current.has(`${t.id}-${today}-${entry.start_time}`);
       });
 
       if (due.length === 0) return;
 
-      // Đánh dấu fired trước khi show (tránh race nếu check() chạy đồng thời)
       due.forEach((t) => {
         const snoozeTs = snoozedUntil[t.id];
+        const entry = taskTimeEntries.find((e) => e.task_id === t.id && e.date === today);
         firedRef.current.add(
-          snoozeTs ? `${t.id}-snooze-${snoozeTs}` : `${t.id}-${now}`,
+          snoozeTs ? `${t.id}-snooze-${snoozeTs}` : `${t.id}-${today}-${entry?.start_time}`,
         );
       });
 
-      // Xóa các snooze đã hết hạn khỏi store để không bị trigger lại vô hạn
       const expiredIds = due
         .filter((t) => snoozedUntil[t.id] && nowMs >= snoozedUntil[t.id])
         .map((t) => t.id);

@@ -4,11 +4,12 @@ import { useT } from '../i18n';
 
 export default function ReminderPopup() {
   const t = useT();
-  const { reminderPopup, dismissReminder, snoozeReminder, setActiveTab } = useAppStore();
+  const { reminderPopup, taskTimeEntries, dismissReminder, snoozeReminder, setActiveTab } = useAppStore();
 
   if (!reminderPopup) return null;
 
   const task = reminderPopup;
+  const entry = taskTimeEntries.find((e) => e.task_id === task.id && e.date === task.date);
 
   function handleView() {
     setActiveTab('today');
@@ -33,9 +34,9 @@ export default function ReminderPopup() {
       </div>
 
       <div className="reminder-popup-title">{task.title}</div>
-      {task.reminder && (
+      {entry && (
         <div className="reminder-popup-time">
-          {task.reminder} {t.reminder.today}
+          {entry.start_time} → {entry.end_time}
         </div>
       )}
 

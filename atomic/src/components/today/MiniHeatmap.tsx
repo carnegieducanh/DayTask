@@ -17,18 +17,20 @@ export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
     [data]
   );
 
-  // Last 91 days, aligned to Sunday
+  // Last 3 calendar months (current + 2 previous), aligned to Sunday
   const weeks = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    const anchor = subDays(today, 90);
+    const anchor = new Date(today.getFullYear(), today.getMonth() - 2, 1);
     const startSun = subDays(anchor, anchor.getDay());
+
+    const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0); // last day of current month
 
     const result: (Date | null)[][] = [];
     let cur = new Date(startSun);
-    while (cur <= today) {
+    while (cur <= endDate) {
       const week: (Date | null)[] = [];
       for (let i = 0; i < 7; i++) {
-        week.push(cur <= today ? new Date(cur) : null);
+        week.push(cur <= endDate ? new Date(cur) : null);
         cur = addDays(cur, 1);
       }
       result.push(week);
@@ -40,10 +42,14 @@ export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
     const out: { label: string; col: number }[] = [];
     let last = -1;
     weeks.forEach((week, col) => {
-      const d = week.find(Boolean);
-      if (d) {
+      for (const d of week) {
+        if (!d) continue;
         const m = d.getMonth();
-        if (m !== last) { out.push({ label: t.heatmap.monthsShort[m], col }); last = m; }
+        if ((d.getDate() === 1 || last === -1) && m !== last) {
+          out.push({ label: t.heatmap.monthsShort[m], col });
+          last = m;
+          break;
+        }
       }
     });
     return out;

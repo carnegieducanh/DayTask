@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { format } from 'date-fns';
 import { invoke } from '@tauri-apps/api/core';
-import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, Language, GoalChecklistItem, Category, CategoryColors } from '../types';
+import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, Language, GoalChecklistItem, Category, CategoryColors, TaskTimeEntry } from '../types';
 import {
   isTauri,
   mockTasks, mockGoals, mockChecklist,
@@ -9,13 +9,16 @@ import {
   dbGetGoals, dbAddGoal, dbUpdateGoal, dbDeleteGoal,
   dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
   dbGetHeatmap, dbGetStreak, dbGetCalendarTasks,
+  dbGetTimeEntries, dbGetCalendarTimeEntries, dbSaveTimeEntry, dbDeleteTimeEntry,
 } from './mockDb';
 
 const DEFAULT_CATEGORY_COLORS: CategoryColors = {
-  work:     '#7DD3FC',
-  personal: '#86EFAC',
-  health:   '#FDBA74',
-  learn:    '#C4B5FD',
+  work:         '#7DD3FC',
+  personal:     '#86EFAC',
+  health:       '#FDBA74',
+  learn:        '#C4B5FD',
+  creative:     '#F9A8D4',
+  mindfulness:  '#6EE7B7',
 };
 
 let _db: import('@tauri-apps/plugin-sql').default | null = null;
@@ -30,18 +33,36 @@ async function getDb(): Promise<import('@tauri-apps/plugin-sql').default> {
 
 async function seedMockData(db: import('@tauri-apps/plugin-sql').default, today: string) {
   // Tasks hôm nay
-  const tasks: Array<[string, string | null, string, string, string | null, string, number]> = [
-    ['Họp team sprint planning', 'Discuss sprint goals and assign tickets', 'work', 'high', '14:00', today, 0],
-    ['Đọc sách 30 phút', 'Atomic Habits — chương 7', 'personal', 'mid', '21:00', today, 0],
-    ['Tập thể dục buổi sáng', 'Chạy bộ 5km + stretch', 'health', 'mid', '07:00', today, 1],
-    ['Review code pull request', 'PR #42 — refactor auth module', 'work', 'high', '09:30', today, 1],
-    ['Gửi báo cáo tuần', 'Tổng kết KPI tuần, gửi cho manager', 'work', 'mid', '11:00', today, 1],
+  const tasks: Array<[string, string | null, string, string, number]> = [
+    ['Họp team sprint planning', 'Discuss sprint goals and assign tickets', 'work', today, 0],
+    ['Đọc sách 30 phút', 'Atomic Habits — chương 7', 'personal', today, 0],
+    ['Tập thể dục buổi sáng', 'Chạy bộ 5km + stretch', 'health', today, 1],
+    ['Review code pull request', 'PR #42 — refactor auth module', 'work', today, 1],
+    ['Gửi báo cáo tuần', 'Tổng kết KPI tuần, gửi cho manager', 'work', today, 1],
   ];
   for (const t of tasks) {
     await db.execute(
-      `INSERT INTO tasks (title, description, category, priority, reminder, date, is_done) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      `INSERT INTO tasks (title, description, category, date, is_done) VALUES ($1,$2,$3,$4,$5)`,
       t
     );
+  }
+  // Seed time entries cho 2 task đầu
+  const rows = await db.select<{ id: number; title: string }[]>(
+    `SELECT id, title FROM tasks WHERE date = $1 ORDER BY created_at ASC LIMIT 5`,
+    [today]
+  );
+  const timeMap: Record<string, [string, string]> = {
+    'Họp team sprint planning': ['14:00', '15:30'],
+    'Đọc sách 30 phút': ['21:00', '21:30'],
+  };
+  for (const row of rows) {
+    const times = timeMap[row.title];
+    if (times) {
+      await db.execute(
+        `INSERT INTO task_time_entries (task_id, date, start_time, end_time) VALUES ($1, $2, $3, $4)`,
+        [row.id, today, times[0], times[1]]
+      );
+    }
   }
 
   // Heatmap: tasks hoàn thành 90 ngày qua
@@ -54,8 +75,8 @@ async function seedMockData(db: import('@tauri-apps/plugin-sql').default, today:
     const count = heatPattern[(i - 1) % heatPattern.length];
     for (let j = 0; j < count; j++) {
       await db.execute(
-        `INSERT INTO tasks (title, category, priority, date, is_done) VALUES ($1,$2,$3,$4,1)`,
-        [`Task ${j + 1}`, 'work', 'mid', dateStr]
+        `INSERT INTO tasks (title, category, date, is_done) VALUES ($1,$2,$3,1)`,
+        [`Task ${j + 1}`, 'work', dateStr]
       );
     }
   }
@@ -89,6 +110,8 @@ interface AppState {
   theme: Theme;
   tasks: Task[];
   calendarTasks: Task[];
+  taskTimeEntries: TaskTimeEntry[];
+  calendarTimeEntries: TaskTimeEntry[];
   goals: Goal[];
   checklistItems: Record<number, GoalChecklistItem[]>;
   heatmap: DayActivity[];
@@ -125,7 +148,10 @@ interface AppState {
 
   loadTasks: (date: string) => Promise<void>;
   loadCalendarTasks: (startDate: string, endDate: string) => Promise<void>;
-  addTask: (task: NewTask) => Promise<void>;
+  loadTimeEntries: (date: string) => Promise<void>;
+  saveTimeEntry: (taskId: number, date: string, startTime: string, endTime: string) => Promise<void>;
+  deleteTimeEntry: (taskId: number, date: string) => Promise<void>;
+  addTask: (task: NewTask, timeEntry?: { startTime: string; endTime: string }) => Promise<void>;
   updateTask: (id: number, updates: TaskUpdate) => Promise<void>;
   toggleTask: (id: number) => Promise<void>;
   deleteTask: (id: number) => Promise<void>;
@@ -161,6 +187,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   theme: (localStorage.getItem('theme') as Theme) ?? 'light',
   tasks: [],
   calendarTasks: [],
+  taskTimeEntries: [],
+  calendarTimeEntries: [],
   goals: [],
   checklistItems: {},
   heatmap: [],
@@ -250,7 +278,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   // --- Tasks ---
 
   loadTasks: async (date) => {
-    if (!isTauri()) { set({ tasks: dbGetTasks(date) }); return; }
+    if (!isTauri()) {
+      set({ tasks: dbGetTasks(date), taskTimeEntries: dbGetTimeEntries(date) });
+      return;
+    }
     const db = await getDb();
     // Roll undone recurring tasks from past dates (skip if a copy for today already exists with same title)
     await db.execute(
@@ -260,37 +291,111 @@ export const useAppStore = create<AppState>((set, get) => ({
       [date]
     );
     const tasks = await db.select<Task[]>(
-      'SELECT * FROM tasks WHERE date = $1 ORDER BY is_done ASC, created_at ASC',
+      'SELECT id, title, description, category, date, is_done, repeat_daily, created_at FROM tasks WHERE date = $1 ORDER BY is_done ASC, created_at ASC',
       [date]
     );
-    set({ tasks });
+    const taskTimeEntries = await db.select<TaskTimeEntry[]>(
+      'SELECT * FROM task_time_entries WHERE date = $1',
+      [date]
+    );
+    set({ tasks, taskTimeEntries });
   },
 
   loadCalendarTasks: async (startDate, endDate) => {
     if (!isTauri()) {
-      set({ calendarTasks: dbGetCalendarTasks(startDate, endDate) });
+      set({
+        calendarTasks: dbGetCalendarTasks(startDate, endDate),
+        calendarTimeEntries: dbGetCalendarTimeEntries(startDate, endDate),
+      });
       return;
     }
     const db = await getDb();
     const tasks = await db.select<Task[]>(
-      'SELECT * FROM tasks WHERE is_done = 1 AND date >= $1 AND date <= $2 ORDER BY date ASC',
+      'SELECT id, title, description, category, date, is_done, repeat_daily, created_at FROM tasks WHERE is_done = 1 AND date >= $1 AND date <= $2 ORDER BY date ASC',
       [startDate, endDate]
     );
-    set({ calendarTasks: tasks });
+    const calendarTimeEntries = await db.select<TaskTimeEntry[]>(
+      'SELECT * FROM task_time_entries WHERE date >= $1 AND date <= $2',
+      [startDate, endDate]
+    );
+    set({ calendarTasks: tasks, calendarTimeEntries });
   },
 
-  addTask: async (task) => {
+  loadTimeEntries: async (date) => {
     if (!isTauri()) {
-      dbAddTask({ title: task.title, description: task.description ?? null, category: task.category, priority: task.priority, reminder: task.reminder ?? null, date: task.date, is_done: 0, repeat_daily: task.repeat_daily ?? 0 });
-      set({ tasks: dbGetTasks(get().selectedDate) });
+      set({ taskTimeEntries: dbGetTimeEntries(date) });
+      return;
+    }
+    const db = await getDb();
+    const taskTimeEntries = await db.select<TaskTimeEntry[]>(
+      'SELECT * FROM task_time_entries WHERE date = $1',
+      [date]
+    );
+    set({ taskTimeEntries });
+  },
+
+  saveTimeEntry: async (taskId, date, startTime, endTime) => {
+    const newEntry: TaskTimeEntry = { task_id: taskId, date, start_time: startTime, end_time: endTime };
+    const updatedCalendarEntries = [
+      ...get().calendarTimeEntries.filter((e) => !(e.task_id === taskId && e.date === date)),
+      newEntry,
+    ];
+    if (!isTauri()) {
+      dbSaveTimeEntry(taskId, date, startTime, endTime);
+      set({ taskTimeEntries: dbGetTimeEntries(date), calendarTimeEntries: updatedCalendarEntries });
       return;
     }
     const db = await getDb();
     await db.execute(
-      `INSERT INTO tasks (title, description, category, priority, reminder, date, repeat_daily)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [task.title, task.description ?? null, task.category, task.priority, task.reminder ?? null, task.date, task.repeat_daily ?? 0]
+      'INSERT OR REPLACE INTO task_time_entries (task_id, date, start_time, end_time) VALUES ($1, $2, $3, $4)',
+      [taskId, date, startTime, endTime]
     );
+    const taskTimeEntries = await db.select<TaskTimeEntry[]>(
+      'SELECT * FROM task_time_entries WHERE date = $1',
+      [date]
+    );
+    set({ taskTimeEntries, calendarTimeEntries: updatedCalendarEntries });
+  },
+
+  deleteTimeEntry: async (taskId, date) => {
+    const updatedCalendarEntries = get().calendarTimeEntries.filter(
+      (e) => !(e.task_id === taskId && e.date === date)
+    );
+    if (!isTauri()) {
+      dbDeleteTimeEntry(taskId, date);
+      set({ taskTimeEntries: dbGetTimeEntries(date), calendarTimeEntries: updatedCalendarEntries });
+      return;
+    }
+    const db = await getDb();
+    await db.execute(
+      'DELETE FROM task_time_entries WHERE task_id = $1 AND date = $2',
+      [taskId, date]
+    );
+    const taskTimeEntries = await db.select<TaskTimeEntry[]>(
+      'SELECT * FROM task_time_entries WHERE date = $1',
+      [date]
+    );
+    set({ taskTimeEntries, calendarTimeEntries: updatedCalendarEntries });
+  },
+
+  addTask: async (task, timeEntry) => {
+    if (!isTauri()) {
+      const newTask = dbAddTask({ title: task.title, description: task.description ?? null, category: task.category, date: task.date, is_done: 0, repeat_daily: task.repeat_daily ?? 0 });
+      if (timeEntry) dbSaveTimeEntry(newTask.id, task.date, timeEntry.startTime, timeEntry.endTime);
+      set({ tasks: dbGetTasks(get().selectedDate), taskTimeEntries: dbGetTimeEntries(get().selectedDate) });
+      return;
+    }
+    const db = await getDb();
+    const result = await db.execute(
+      `INSERT INTO tasks (title, description, category, date, repeat_daily) VALUES ($1, $2, $3, $4, $5)`,
+      [task.title, task.description ?? null, task.category, task.date, task.repeat_daily ?? 0]
+    );
+    if (timeEntry && result.lastInsertId) {
+      await db.execute(
+        'INSERT OR REPLACE INTO task_time_entries (task_id, date, start_time, end_time) VALUES ($1, $2, $3, $4)',
+        [result.lastInsertId, task.date, timeEntry.startTime, timeEntry.endTime]
+      );
+    }
     await get().loadTasks(get().selectedDate);
   },
 
@@ -327,7 +432,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           (t) => t.repeat_daily === 1 && t.is_done === 0 && t.date === nextDateStr && t.title === task.title
         );
         if (!alreadyExists) {
-          dbAddTask({ title: task.title, description: task.description, category: task.category, priority: task.priority, reminder: task.reminder, date: nextDateStr, is_done: 0, repeat_daily: 1 });
+          dbAddTask({ title: task.title, description: task.description, category: task.category, date: nextDateStr, is_done: 0, repeat_daily: 1 });
         }
       }
       set({ tasks: dbGetTasks(get().selectedDate) });
@@ -342,12 +447,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       nextDate.setDate(nextDate.getDate() + 1);
       const nextDateStr = format(nextDate, 'yyyy-MM-dd');
       await db.execute(
-        `INSERT INTO tasks (title, description, category, priority, reminder, date, repeat_daily)
-         SELECT $1, $2, $3, $4, $5, $6, 1
+        `INSERT INTO tasks (title, description, category, date, repeat_daily)
+         SELECT $1, $2, $3, $4, 1
          WHERE NOT EXISTS (
-           SELECT 1 FROM tasks WHERE repeat_daily = 1 AND is_done = 0 AND date = $6 AND title = $1
+           SELECT 1 FROM tasks WHERE repeat_daily = 1 AND is_done = 0 AND date = $4 AND title = $1
          )`,
-        [task.title, task.description, task.category, task.priority, task.reminder, nextDateStr]
+        [task.title, task.description, task.category, nextDateStr]
       );
     }
     await get().loadTasks(get().selectedDate);
@@ -761,9 +866,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       for (const t of data.tasks) {
         await db.execute(
-          `INSERT INTO tasks (id, title, description, category, priority, reminder, date, is_done, repeat_daily, created_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-          [t.id, t.title, t.description ?? null, t.category, t.priority, t.reminder ?? null, t.date, t.is_done, t.repeat_daily ?? 0, t.created_at]
+          `INSERT INTO tasks (id, title, description, category, date, is_done, repeat_daily, created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [t.id, t.title, t.description ?? null, t.category, t.date, t.is_done, t.repeat_daily ?? 0, t.created_at]
         );
       }
       for (const g of data.goals) {

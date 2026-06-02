@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { IconCheck, IconBell, IconBellOff, IconTrash } from '@tabler/icons-react';
+import { IconCheck, IconClock, IconTrash } from '@tabler/icons-react';
 import type { Task } from '../../types';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
@@ -18,11 +18,19 @@ interface Props {
 
 export default function TaskCard({ task, onEdit }: Props) {
   const t = useT();
-  const { toggleTask, softDeleteTask, updateTask, categoryColors } = useAppStore();
+  const { toggleTask, softDeleteTask, updateTask, categoryColors, taskTimeEntries, saveTimeEntry, deleteTimeEntry } = useAppStore();
   const cardBg = hexToRgba(categoryColors[task.category], 1);
+
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [isEditingTime, setIsEditingTime] = useState(false);
+  const timeEntry = taskTimeEntries.find((e) => e.task_id === task.id && e.date === task.date);
+  const [editStart, setEditStart] = useState(timeEntry?.start_time ?? '');
+  const [editEnd, setEditEnd] = useState(timeEntry?.end_time ?? '');
+  const [timeError, setTimeError] = useState('');
+  const startInputRef = useRef<HTMLInputElement>(null);
 
   function startEdit(e: React.MouseEvent) {
     e.stopPropagation();
@@ -45,8 +53,55 @@ export default function TaskCard({ task, onEdit }: Props) {
     if (e.key === 'Escape') { setEditTitle(task.title); setIsEditing(false); }
   }
 
+  function openTimeEdit(e: React.MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
+    setEditStart(timeEntry?.start_time ?? '');
+    setEditEnd(timeEntry?.end_time ?? '');
+    setTimeError('');
+    setIsEditingTime(true);
+    setTimeout(() => startInputRef.current?.focus(), 0);
+  }
+
+  async function commitTime() {
+    const s = editStart.trim();
+    const en = editEnd.trim();
+
+    if (!s && !en) {
+      if (timeEntry) await deleteTimeEntry(task.id, task.date);
+      setIsEditingTime(false);
+      return;
+    }
+    if ((s && !en) || (!s && en)) {
+      setTimeError(t.taskCard.timeEndBeforeStart.replace('kết thúc phải sau', 'cần điền cả').replace('End time must be after', 'Fill in both'));
+      return;
+    }
+    const [sh, sm] = s.split(':').map(Number);
+    const [eh, em] = en.split(':').map(Number);
+    if (eh * 60 + em <= sh * 60 + sm) {
+      setTimeError(t.taskCard.timeEndBeforeStart);
+      return;
+    }
+    await saveTimeEntry(task.id, task.date, s, en);
+    setIsEditingTime(false);
+    setTimeError('');
+  }
+
+  function handleTimeKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') commitTime();
+    if (e.key === 'Escape') setIsEditingTime(false);
+  }
+
+  const displayTime = timeEntry
+    ? `${timeEntry.start_time} → ${timeEntry.end_time}`
+    : `${t.taskCard.timePlaceholder} → ${t.taskCard.timePlaceholder}`;
+
   return (
-    <div className={`task-item task-item--colored${task.is_done ? ' done' : ''}`} style={{ backgroundColor: cardBg, cursor: 'pointer' }} onClick={() => !isEditing && onEdit(task)}>
+    <div
+      className={`task-item task-item--colored${task.is_done ? ' done' : ''}`}
+      style={{ backgroundColor: cardBg, cursor: 'pointer' }}
+      onClick={() => !isEditing && !isEditingTime && onEdit(task)}
+    >
       <button
         className={`task-check${task.is_done ? ' checked' : ''}`}
         onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
@@ -65,6 +120,7 @@ export default function TaskCard({ task, onEdit }: Props) {
             onBlur={commitEdit}
             onKeyDown={handleKeyDown}
             onClick={(e) => e.stopPropagation()}
+            spellCheck={false}
           />
         ) : (
           <div
@@ -75,10 +131,37 @@ export default function TaskCard({ task, onEdit }: Props) {
             {task.title}
           </div>
         )}
+
         <div className="task-meta">
-          {task.reminder && (
-            <span className="task-time">
-              <IconBell size={11} style={{ verticalAlign: 'middle' }} /> {task.reminder}
+          {isEditingTime ? (
+            <div className="task-time-edit" onClick={(e) => e.stopPropagation()}>
+              <input
+                ref={startInputRef}
+                type="time"
+                className="task-time-input"
+                value={editStart}
+                onChange={(e) => { setEditStart(e.target.value); setTimeError(''); }}
+                onKeyDown={handleTimeKeyDown}
+              />
+              <span className="task-time-sep">→</span>
+              <input
+                type="time"
+                className="task-time-input"
+                value={editEnd}
+                onChange={(e) => { setEditEnd(e.target.value); setTimeError(''); }}
+                onBlur={commitTime}
+                onKeyDown={handleTimeKeyDown}
+              />
+              {timeError && <span className="task-time-error">{timeError}</span>}
+            </div>
+          ) : (
+            <span
+              className={`task-time-display${timeEntry ? ' has-time' : ''}`}
+              onClick={openTimeEdit}
+              title={t.taskCard.setTime}
+            >
+              <IconClock size={11} style={{ verticalAlign: 'middle', marginRight: 2 }} />
+              {displayTime}
             </span>
           )}
           <span className={`tag tag-${task.category}`}>
@@ -86,14 +169,6 @@ export default function TaskCard({ task, onEdit }: Props) {
           </span>
         </div>
       </div>
-
-      <span className="task-bell-btn">
-        {task.reminder ? (
-          <IconBell size={22} className="task-bell-active" />
-        ) : (
-          <IconBellOff size={22} className="task-bell-inactive" />
-        )}
-      </span>
 
       <button
         className="icon-btn task-delete-btn"

@@ -20,6 +20,7 @@ export default function TodayView() {
     language,
     getStreak, setReminderPopup,
     toggleTask,
+    taskTimeEntries,
   } = useAppStore();
 
   const [showModal, setShowModal]         = useState(false);
@@ -38,22 +39,27 @@ export default function TodayView() {
   // Demo: show reminder popup once on browser (not Tauri)
   useEffect(() => {
     if (isTauri() || demoPopupShown.current || tasks.length === 0) return;
-    const first = tasks.find((task) => !task.is_done && task.reminder);
+    const taskIds = new Set(taskTimeEntries.map((e) => e.task_id));
+    const first = tasks.find((task) => !task.is_done && taskIds.has(task.id));
     if (!first) return;
     demoPopupShown.current = true;
     const timer = setTimeout(() => setReminderPopup(first), 1200);
     return () => clearTimeout(timer);
-  }, [tasks]);
+  }, [tasks, taskTimeEntries]);
 
   const pending   = tasks.filter((task) => !task.is_done);
   const done      = tasks.filter((task) => task.is_done);
   const total     = tasks.length;
   const pct       = total === 0 ? 0 : Math.round((done.length / total) * 100);
-  const reminders = pending.filter((task) => task.reminder).length;
+  const scheduled = taskTimeEntries.length;
 
-  const reminderTasks = tasks
-    .filter((task) => task.reminder)
-    .sort((a, b) => (a.reminder || '').localeCompare(b.reminder || ''));
+  const scheduledTasks = tasks
+    .filter((task) => taskTimeEntries.some((e) => e.task_id === task.id))
+    .sort((a, b) => {
+      const ea = taskTimeEntries.find((e) => e.task_id === a.id);
+      const eb = taskTimeEntries.find((e) => e.task_id === b.id);
+      return (ea?.start_time ?? '').localeCompare(eb?.start_time ?? '');
+    });
 
   const dateLabel = format(
     new Date(selectedDate + 'T00:00:00'),
@@ -118,9 +124,9 @@ export default function TodayView() {
                 <div className="stat-sub">{t.today.streakDays}</div>
               </div>
               <div className="stat-card">
-                <div className="stat-label">{t.today.statReminders}</div>
-                <div className="stat-value">{reminders}</div>
-                <div className="stat-sub">{t.today.remindersLeft}</div>
+                <div className="stat-label">{t.today.statScheduled}</div>
+                <div className="stat-value">{scheduled}</div>
+                <div className="stat-sub">{t.today.scheduledToday}</div>
               </div>
             </div>
 
@@ -172,25 +178,31 @@ export default function TodayView() {
             </div>
 
             {/* Schedule */}
-            {reminderTasks.length > 0 && (
+            {scheduledTasks.length > 0 && (
               <div className="today-right-section">
                 <div className="section-label">{t.today.todaySchedule}</div>
                 <div className="today-schedule">
-                  {reminderTasks.map((task) => (
-                    <div key={task.id} className={`today-schedule-item${task.is_done ? ' done' : ''}`}>
-                      <div className="today-schedule-time">{task.reminder}</div>
-                      <div className="today-schedule-body">
-                        <div className="today-schedule-title">{task.title}</div>
-                        <div className="today-schedule-cat">{CAT_LABELS[task.category] ?? task.category}</div>
+                  {scheduledTasks.map((task) => {
+                    const entry = taskTimeEntries.find((e) => e.task_id === task.id);
+                    return (
+                      <div key={task.id} className={`today-schedule-item${task.is_done ? ' done' : ''}`}>
+                        <div className="today-schedule-time">
+                          <div>{entry?.start_time}</div>
+                          <div style={{ opacity: 0.6, fontSize: '0.85em' }}>{entry?.end_time}</div>
+                        </div>
+                        <div className="today-schedule-body">
+                          <div className="today-schedule-title">{task.title}</div>
+                          <div className="today-schedule-cat">{CAT_LABELS[task.category] ?? task.category}</div>
+                        </div>
+                        <button
+                          className={`today-schedule-tick${task.is_done ? ' checked' : ''}`}
+                          onClick={() => toggleTask(task.id)}
+                        >
+                          <IconCheck size={12} strokeWidth={3} />
+                        </button>
                       </div>
-                      <button
-                        className={`today-schedule-tick${task.is_done ? ' checked' : ''}`}
-                        onClick={() => toggleTask(task.id)}
-                      >
-                        <IconCheck size={12} strokeWidth={3} />
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

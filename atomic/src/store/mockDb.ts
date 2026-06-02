@@ -1,6 +1,6 @@
 // In-memory mock database used when running in browser (no Tauri/SQLite)
 import { format, subDays } from 'date-fns';
-import type { Task, Goal, DayActivity, GoalChecklistItem } from '../types';
+import type { Task, Goal, DayActivity, GoalChecklistItem, TaskTimeEntry } from '../types';
 
 export const isTauri = () =>
   typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -13,12 +13,33 @@ const today = format(new Date(), 'yyyy-MM-dd');
 // ---------- seed tasks ----------
 
 export const mockTasks: Task[] = [
-  { id: 1, title: 'Họp team sprint planning', description: 'Discuss sprint goals and assign tickets', category: 'work', priority: 'high', reminder: '14:00', date: today, is_done: 0, repeat_daily: 0, created_at: today },
-  { id: 2, title: 'Đọc sách 30 phút', description: 'Atomic Habits — chương 7', category: 'personal', priority: 'mid', reminder: '21:00', date: today, is_done: 0, repeat_daily: 0, created_at: today },
-  { id: 3, title: 'Tập thể dục buổi sáng', description: 'Chạy bộ 5km + stretch', category: 'health', priority: 'mid', reminder: '07:00', date: today, is_done: 1, repeat_daily: 0, created_at: today },
-  { id: 4, title: 'Review code pull request', description: 'PR #42 — refactor auth module', category: 'work', priority: 'high', reminder: '09:30', date: today, is_done: 1, repeat_daily: 0, created_at: today },
-  { id: 5, title: 'Gửi báo cáo tuần', description: 'Tổng kết KPI tuần, gửi cho manager', category: 'work', priority: 'mid', reminder: '11:00', date: today, is_done: 1, repeat_daily: 0, created_at: today },
+  { id: 1, title: 'Họp team sprint planning', description: 'Discuss sprint goals and assign tickets', category: 'work', date: today, is_done: 0, repeat_daily: 0, created_at: today },
+  { id: 2, title: 'Đọc sách 30 phút', description: 'Atomic Habits — chương 7', category: 'personal', date: today, is_done: 0, repeat_daily: 0, created_at: today },
+  { id: 3, title: 'Tập thể dục buổi sáng', description: 'Chạy bộ 5km + stretch', category: 'health', date: today, is_done: 1, repeat_daily: 0, created_at: today },
+  { id: 4, title: 'Review code pull request', description: 'PR #42 — refactor auth module', category: 'work', date: today, is_done: 1, repeat_daily: 0, created_at: today },
+  { id: 5, title: 'Gửi báo cáo tuần', description: 'Tổng kết KPI tuần, gửi cho manager', category: 'work', date: today, is_done: 1, repeat_daily: 0, created_at: today },
 ];
+
+const MOCK_TIME_ENTRIES_KEY = 'mock_time_entries';
+
+function loadMockTimeEntries(): TaskTimeEntry[] {
+  try {
+    const stored = localStorage.getItem(MOCK_TIME_ENTRIES_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return [
+    { task_id: 1, date: today, start_time: '14:00', end_time: '15:30' },
+    { task_id: 2, date: today, start_time: '21:00', end_time: '21:30' },
+  ];
+}
+
+function persistTimeEntries(): void {
+  try {
+    localStorage.setItem(MOCK_TIME_ENTRIES_KEY, JSON.stringify(mockTimeEntries));
+  } catch {}
+}
+
+export const mockTimeEntries: TaskTimeEntry[] = loadMockTimeEntries();
 
 // heatmap: past 90 days with varying activity
 const heatPattern = [2,0,3,1,4,2,0,1,3,2,4,1,0,3,2,1,4,2,3,0,1,2,4,3,1,0,2,3,1,4,2,0,3,2,4,1,3,0,2,1,4,3,2,0,1,3,2,4,2,0,3,1,4,2,1,3,4,2,0,3,1,2,4,3,0,2,1,3,4,1,2,0,3,1,4,2,0,3,1,2,4,3,0,1,2,3,4,2,1,0];
@@ -31,8 +52,6 @@ for (let i = 1; i <= 90; i++) {
       title: `Task ${j + 1}`,
       description: null,
       category: 'work',
-      priority: 'mid',
-      reminder: null,
       date: dateStr,
       is_done: 1,
       repeat_daily: 0,
@@ -188,6 +207,31 @@ export function dbGetHeatmap(year: number): DayActivity[] {
     }
   }
   return Array.from(map.entries()).map(([date, count]) => ({ date, count }));
+}
+
+export function dbGetTimeEntries(date: string): TaskTimeEntry[] {
+  return mockTimeEntries.filter((e) => e.date === date);
+}
+
+export function dbGetCalendarTimeEntries(startDate: string, endDate: string): TaskTimeEntry[] {
+  return mockTimeEntries.filter((e) => e.date >= startDate && e.date <= endDate);
+}
+
+export function dbSaveTimeEntry(taskId: number, date: string, startTime: string, endTime: string): void {
+  const idx = mockTimeEntries.findIndex((e) => e.task_id === taskId && e.date === date);
+  if (idx !== -1) {
+    mockTimeEntries[idx].start_time = startTime;
+    mockTimeEntries[idx].end_time = endTime;
+  } else {
+    mockTimeEntries.push({ task_id: taskId, date, start_time: startTime, end_time: endTime });
+  }
+  persistTimeEntries();
+}
+
+export function dbDeleteTimeEntry(taskId: number, date: string): void {
+  const idx = mockTimeEntries.findIndex((e) => e.task_id === taskId && e.date === date);
+  if (idx !== -1) mockTimeEntries.splice(idx, 1);
+  persistTimeEntries();
 }
 
 export function dbGetStreak(): number {

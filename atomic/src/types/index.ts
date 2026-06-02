@@ -1,4 +1,4 @@
-export type Category = 'work' | 'personal' | 'health' | 'learn';
+export type Category = 'work' | 'personal' | 'health' | 'learn' | 'creative' | 'mindfulness';
 export type Priority = 'high' | 'mid' | 'low';
 export type GoalStatus = 'todo' | 'doing' | 'review' | 'done';
 export type Quarter = 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'full';
@@ -8,8 +8,6 @@ export interface Task {
   title: string;
   description: string | null;
   category: Category;
-  priority: Priority;
-  reminder: string | null;
   date: string;
   is_done: number;
   repeat_daily: number;
@@ -20,8 +18,6 @@ export interface NewTask {
   title: string;
   description?: string;
   category: Category;
-  priority: Priority;
-  reminder?: string;
   date: string;
   repeat_daily?: number;
 }
@@ -30,10 +26,15 @@ export interface TaskUpdate {
   title?: string;
   description?: string;
   category?: Category;
-  priority?: Priority;
-  reminder?: string;
   is_done?: number;
   repeat_daily?: number;
+}
+
+export interface TaskTimeEntry {
+  task_id: number;
+  date: string;
+  start_time: string;
+  end_time: string;
 }
 
 export interface Goal {

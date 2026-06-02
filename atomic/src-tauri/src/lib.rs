@@ -1,5 +1,6 @@
 mod tray;
 
+use tauri::Manager;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -71,11 +72,29 @@ pub fn run() {
             sql: "ALTER TABLE tasks ADD COLUMN repeat_daily INTEGER NOT NULL DEFAULT 0;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 6,
+            description: "create_task_time_entries",
+            sql: "CREATE TABLE IF NOT EXISTS task_time_entries (
+                task_id    INTEGER NOT NULL,
+                date       TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time   TEXT NOT NULL,
+                PRIMARY KEY (task_id, date)
+            );",
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(w) = app.get_webview_window("main") {
+                let _ = w.show();
+                let _ = w.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_autostart::Builder::new().build())
+        .plugin(tauri_plugin_autostart::Builder::new().args(vec!["--autolaunch"]).build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(
@@ -85,6 +104,12 @@ pub fn run() {
         )
         .setup(|app| {
             tray::setup_tray(app)?;
+            let is_autolaunch = std::env::args().any(|a| a == "--autolaunch");
+            if !is_autolaunch {
+                if let Some(w) = app.get_webview_window("main") {
+                    let _ = w.show();
+                }
+            }
             Ok(())
         })
         .on_window_event(|window, event| {

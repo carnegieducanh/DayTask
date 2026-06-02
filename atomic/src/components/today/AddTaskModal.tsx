@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import type React from "react";
 import {
   IconChevronDown,
   IconDotsVertical,
   IconCheck,
-  IconBell,
-  IconBellOff,
+  IconClock,
+  IconClockOff,
 } from "@tabler/icons-react";
 
 const TIME_OPTIONS: string[] = [];
@@ -17,7 +18,95 @@ for (let h = 0; h < 24; h++) {
 }
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
-import type { Task, Category, Priority } from "../../types";
+import type { Task, Category } from "../../types";
+
+function TimeDropdown({
+  label,
+  value,
+  open,
+  setOpen,
+  onChange,
+  dropRef,
+  listRef,
+}: {
+  label: string;
+  value: string;
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  onChange: (v: string) => void;
+  dropRef: React.RefObject<HTMLDivElement | null>;
+  listRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const t = useT();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({});
+
+  function handleClick() {
+    if (!open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPanelStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        right: 'auto',
+      });
+    }
+    setOpen(!open);
+  }
+
+  return (
+    <div className="form-group" style={{ flex: 1 }}>
+      <label className="form-label">{label}</label>
+      <div className="time-dropdown" ref={dropRef}>
+        <button
+          ref={triggerRef}
+          type="button"
+          className={`time-dropdown-trigger${open ? " open" : ""}`}
+          onClick={handleClick}
+        >
+          {value ? (
+            <IconClock size={14} className="time-dropdown-icon" />
+          ) : (
+            <IconClockOff size={14} className="time-dropdown-icon muted" />
+          )}
+          <span className={`time-dropdown-value${!value ? " placeholder" : ""}`}>
+            {value || t.taskModal.noTime}
+          </span>
+          <IconChevronDown
+            size={13}
+            className={`cat-dropdown-chevron${open ? " open" : ""}`}
+          />
+        </button>
+        {open && (
+          <div className="time-dropdown-panel" style={panelStyle}>
+            <div className="time-dropdown-list" ref={listRef}>
+              <button
+                type="button"
+                className={`time-option${!value ? " selected" : ""}`}
+                onClick={() => { onChange(""); setOpen(false); }}
+              >
+                <IconClockOff size={13} className="time-option-icon" />
+                {t.taskModal.noTime}
+              </button>
+              <div className="time-option-divider" />
+              {TIME_OPTIONS.map((time) => (
+                <button
+                  key={time}
+                  type="button"
+                  className={`time-option${value === time ? " selected" : ""}`}
+                  onClick={() => { onChange(time); setOpen(false); }}
+                >
+                  {time}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const COLOR_PALETTE: string[] = [
   "#C05476",
@@ -59,59 +148,65 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
     updateTask,
     categoryColors,
     updateCategoryColor,
+    taskTimeEntries,
+    saveTimeEntry,
+    deleteTimeEntry,
   } = useAppStore();
 
   const CATEGORIES: { value: Category; label: string }[] = [
-    { value: "work",     label: t.cat.work },
-    { value: "personal", label: t.cat.personal },
-    { value: "health",   label: t.cat.health },
-    { value: "learn",    label: t.cat.learn },
-  ];
-
-  const PRIORITIES: { value: Priority; label: string }[] = [
-    { value: "high", label: t.priority.high },
-    { value: "mid",  label: t.priority.mid },
-    { value: "low",  label: t.priority.low },
+    { value: "work",         label: t.cat.work },
+    { value: "personal",     label: t.cat.personal },
+    { value: "health",       label: t.cat.health },
+    { value: "learn",        label: t.cat.learn },
+    { value: "creative",     label: t.cat.creative },
+    { value: "mindfulness",  label: t.cat.mindfulness },
   ];
 
   const [title, setTitle] = useState("");
   const [description, setDesc] = useState("");
   const [category, setCategory] = useState<Category>("work");
-  const [priority, setPriority] = useState<Priority>("mid");
-  const [reminder, setReminder] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [repeatDaily, setRepeatDaily] = useState(!editTask);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);
-  const [reminderOpen, setReminderOpen] = useState(false);
+  const [startOpen, setStartOpen] = useState(false);
+  const [endOpen, setEndOpen] = useState(false);
+  const [timeError, setTimeError] = useState("");
+
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const reminderRef = useRef<HTMLDivElement>(null);
-  const reminderListRef = useRef<HTMLDivElement>(null);
+  const startRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  const startListRef = useRef<HTMLDivElement>(null);
+  const endListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (editTask) {
       setTitle(editTask.title);
       setDesc(editTask.description ?? "");
       setCategory(editTask.category);
-      setPriority(editTask.priority);
-      setReminder(editTask.reminder ?? "");
       setRepeatDaily(editTask.repeat_daily === 1);
+      const entry = taskTimeEntries.find(
+        (e) => e.task_id === editTask.id && e.date === editTask.date,
+      );
+      if (entry) {
+        setStartTime(entry.start_time);
+        setEndTime(entry.end_time);
+      }
     }
   }, [editTask]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
         setColorPickerFor(null);
       }
-      if (
-        reminderRef.current &&
-        !reminderRef.current.contains(e.target as Node)
-      ) {
-        setReminderOpen(false);
+      if (startRef.current && !startRef.current.contains(e.target as Node)) {
+        setStartOpen(false);
+      }
+      if (endRef.current && !endRef.current.contains(e.target as Node)) {
+        setEndOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -119,36 +214,62 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!reminderOpen || !reminderListRef.current) return;
-    const selected = reminderListRef.current.querySelector(
-      ".time-option.selected",
-    ) as HTMLElement | null;
+    if (!startOpen || !startListRef.current) return;
+    const selected = startListRef.current.querySelector(".time-option.selected") as HTMLElement | null;
     if (selected) selected.scrollIntoView({ block: "center" });
-  }, [reminderOpen]);
+  }, [startOpen]);
+
+  useEffect(() => {
+    if (!endOpen || !endListRef.current) return;
+    const selected = endListRef.current.querySelector(".time-option.selected") as HTMLElement | null;
+    if (selected) selected.scrollIntoView({ block: "center" });
+  }, [endOpen]);
+
+  function validateTimes(): boolean {
+    if (!startTime && !endTime) return true;
+    if (startTime && !endTime) { setTimeError(t.taskModal.endTimeLabel + " ?"); return false; }
+    if (!startTime && endTime) { setTimeError(t.taskModal.startTimeLabel + " ?"); return false; }
+    const [sh, sm] = startTime.split(":").map(Number);
+    const [eh, em] = endTime.split(":").map(Number);
+    if (eh * 60 + em <= sh * 60 + sm) {
+      setTimeError(t.taskCard.timeEndBeforeStart);
+      return false;
+    }
+    setTimeError("");
+    return true;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
+    if (!validateTimes()) return;
+
+    const date = editTask ? editTask.date : selectedDate;
+    const timeEntry = startTime && endTime ? { startTime, endTime } : undefined;
 
     if (editTask) {
       await updateTask(editTask.id, {
         title: title.trim(),
         description: description.trim() || undefined,
         category,
-        priority,
-        reminder: reminder || undefined,
         repeat_daily: repeatDaily ? 1 : 0,
       });
+      if (timeEntry) {
+        await saveTimeEntry(editTask.id, editTask.date, timeEntry.startTime, timeEntry.endTime);
+      } else {
+        await deleteTimeEntry(editTask.id, editTask.date);
+      }
     } else {
-      await addTask({
-        title: title.trim(),
-        description: description.trim() || undefined,
-        category,
-        priority,
-        reminder: reminder || undefined,
-        date: selectedDate,
-        repeat_daily: repeatDaily ? 1 : 0,
-      });
+      await addTask(
+        {
+          title: title.trim(),
+          description: description.trim() || undefined,
+          category,
+          date,
+          repeat_daily: repeatDaily ? 1 : 0,
+        },
+        timeEntry,
+      );
     }
     onClose();
   }
@@ -172,6 +293,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t.taskModal.taskNamePlaceholder}
               autoFocus
+              spellCheck={false}
             />
           </div>
 
@@ -184,176 +306,102 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
               placeholder={t.taskModal.descPlaceholder}
               rows={2}
               style={{ resize: "vertical" }}
+              spellCheck={false}
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">{t.taskModal.categoryLabel}</label>
-              <div className="cat-dropdown" ref={dropdownRef}>
-                <button
-                  type="button"
-                  className="cat-dropdown-trigger"
-                  onClick={() => {
-                    setDropdownOpen((v) => !v);
-                    setColorPickerFor(null);
-                  }}
-                >
-                  <span
-                    className="cat-color-dot"
-                    style={{ background: categoryColors[category] }}
-                  />
-                  <span className="cat-dropdown-label">
-                    {CATEGORIES.find((c) => c.value === category)?.label}
-                  </span>
-                  <IconChevronDown
-                    size={13}
-                    className={`cat-dropdown-chevron${dropdownOpen ? " open" : ""}`}
-                  />
-                </button>
-                {dropdownOpen && (
-                  <div className="cat-dropdown-panel">
-                    {CATEGORIES.map((cat) => (
-                      <div
-                        key={cat.value}
-                        className={`cat-dropdown-item${category === cat.value ? " selected" : ""}`}
-                      >
-                        <button
-                          type="button"
-                          className="cat-dropdown-item-btn"
-                          onClick={() => {
-                            setCategory(cat.value);
-                            setDropdownOpen(false);
-                            setColorPickerFor(null);
-                          }}
-                        >
-                          <span
-                            className="cat-color-dot"
-                            style={{ background: categoryColors[cat.value] }}
-                          />
-                          <span>{cat.label}</span>
-                        </button>
-                        <button
-                          type="button"
-                          className={`cat-item-dots${colorPickerFor === cat.value ? " active" : ""}`}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setColorPickerFor((prev) =>
-                              prev === cat.value ? null : cat.value,
-                            );
-                          }}
-                          title={t.taskModal.changeColor}
-                        >
-                          <IconDotsVertical size={16} />
-                        </button>
-                        {colorPickerFor === cat.value && (
-                          <div
-                            className="cat-color-popup"
-                            onMouseDown={(e) => e.stopPropagation()}
-                          >
-                            {COLOR_PALETTE.map((color) => (
-                              <button
-                                key={color}
-                                type="button"
-                                className={`color-swatch${categoryColors[cat.value] === color ? " color-swatch-active" : ""}`}
-                                style={{ background: color }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateCategoryColor(cat.value, color);
-                                }}
-                                title={color}
-                              >
-                                {categoryColors[cat.value] === color && (
-                                  <IconCheck
-                                    size={10}
-                                    strokeWidth={3}
-                                    color="#fff"
-                                  />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">{t.taskModal.priorityLabel}</label>
-              <select
-                className="form-input"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as Priority)}
-              >
-                {PRIORITIES.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
           <div className="form-group">
-            <label className="form-label">{t.taskModal.reminderLabel}</label>
-            <div className="time-dropdown" ref={reminderRef}>
+            <label className="form-label">{t.taskModal.categoryLabel}</label>
+            <div className="cat-dropdown" ref={dropdownRef}>
               <button
                 type="button"
-                className={`time-dropdown-trigger${reminderOpen ? " open" : ""}`}
-                onClick={() => setReminderOpen((v) => !v)}
+                className="cat-dropdown-trigger"
+                onClick={() => { setDropdownOpen((v) => !v); setColorPickerFor(null); }}
               >
-                {reminder ? (
-                  <IconBell size={14} className="time-dropdown-icon" />
-                ) : (
-                  <IconBellOff size={14} className="time-dropdown-icon muted" />
-                )}
-                <span
-                  className={`time-dropdown-value${!reminder ? " placeholder" : ""}`}
-                >
-                  {reminder || t.taskModal.noReminder}
+                <span className="cat-color-dot" style={{ background: categoryColors[category] }} />
+                <span className="cat-dropdown-label">
+                  {CATEGORIES.find((c) => c.value === category)?.label}
                 </span>
                 <IconChevronDown
                   size={13}
-                  className={`cat-dropdown-chevron${reminderOpen ? " open" : ""}`}
+                  className={`cat-dropdown-chevron${dropdownOpen ? " open" : ""}`}
                 />
               </button>
-              {reminderOpen && (
-                <div className="time-dropdown-panel">
-                  <div className="time-dropdown-list" ref={reminderListRef}>
-                    <button
-                      type="button"
-                      className={`time-option${!reminder ? " selected" : ""}`}
-                      onClick={() => {
-                        setReminder("");
-                        setReminderOpen(false);
-                      }}
+              {dropdownOpen && (
+                <div className="cat-dropdown-panel">
+                  {CATEGORIES.map((cat) => (
+                    <div
+                      key={cat.value}
+                      className={`cat-dropdown-item${category === cat.value ? " selected" : ""}`}
                     >
-                      <IconBellOff size={13} className="time-option-icon" />
-                      {t.taskModal.noReminder}
-                    </button>
-                    <div className="time-option-divider" />
-                    {TIME_OPTIONS.map((time) => (
                       <button
-                        key={time}
                         type="button"
-                        className={`time-option${reminder === time ? " selected" : ""}`}
-                        onClick={() => {
-                          setReminder(time);
-                          setReminderOpen(false);
-                        }}
+                        className="cat-dropdown-item-btn"
+                        onClick={() => { setCategory(cat.value); setDropdownOpen(false); setColorPickerFor(null); }}
                       >
-                        {time}
+                        <span className="cat-color-dot" style={{ background: categoryColors[cat.value] }} />
+                        <span>{cat.label}</span>
                       </button>
-                    ))}
-                  </div>
+                      <button
+                        type="button"
+                        className={`cat-item-dots${colorPickerFor === cat.value ? " active" : ""}`}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setColorPickerFor((prev) => prev === cat.value ? null : cat.value);
+                        }}
+                        title={t.taskModal.changeColor}
+                      >
+                        <IconDotsVertical size={16} />
+                      </button>
+                      {colorPickerFor === cat.value && (
+                        <div className="cat-color-popup" onMouseDown={(e) => e.stopPropagation()}>
+                          {COLOR_PALETTE.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              className={`color-swatch${categoryColors[cat.value] === color ? " color-swatch-active" : ""}`}
+                              style={{ background: color }}
+                              onClick={(e) => { e.stopPropagation(); updateCategoryColor(cat.value, color); }}
+                              title={color}
+                            >
+                              {categoryColors[cat.value] === color && (
+                                <IconCheck size={10} strokeWidth={3} color="#fff" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           </div>
+
+          <div className="form-row">
+            <TimeDropdown
+              label={t.taskModal.startTimeLabel}
+              value={startTime}
+              open={startOpen}
+              setOpen={setStartOpen}
+              onChange={(v) => { setStartTime(v); setTimeError(""); }}
+              dropRef={startRef}
+              listRef={startListRef}
+            />
+            <TimeDropdown
+              label={t.taskModal.endTimeLabel}
+              value={endTime}
+              open={endOpen}
+              setOpen={setEndOpen}
+              onChange={(v) => { setEndTime(v); setTimeError(""); }}
+              dropRef={endRef}
+              listRef={endListRef}
+            />
+          </div>
+          {timeError && (
+            <div className="time-error">{timeError}</div>
+          )}
 
           <div className="form-group">
             <div className="repeat-row">

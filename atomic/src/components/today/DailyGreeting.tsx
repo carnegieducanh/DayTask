@@ -53,11 +53,11 @@ export default function DailyGreeting({ pendingCount, isToday }: Props) {
     return () => clearTimeout(id);
   }, []);
 
-  const taskText = isToday
-    ? pendingCount === 0
-      ? t.greeting.noTasks
-      : t.greeting.hasTasks(pendingCount)
-    : null;
+  const taskText = pendingCount === 0
+    ? t.greeting.noTasks
+    : isToday
+      ? t.greeting.hasTasks(pendingCount)
+      : null;
 
   return (
     <div className={`daily-greeting${visible ? ' daily-greeting--visible' : ''}`}>

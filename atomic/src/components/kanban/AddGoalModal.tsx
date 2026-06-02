@@ -68,10 +68,12 @@ export default function AddGoalModal({
   } = useAppStore();
 
   const CATEGORIES: { value: Category; label: string }[] = [
-    { value: "work",     label: t.cat.work },
-    { value: "personal", label: t.cat.personal },
-    { value: "health",   label: t.cat.health },
-    { value: "learn",    label: t.cat.learn },
+    { value: "work",         label: t.cat.work },
+    { value: "personal",     label: t.cat.personal },
+    { value: "health",       label: t.cat.health },
+    { value: "learn",        label: t.cat.learn },
+    { value: "creative",     label: t.cat.creative },
+    { value: "mindfulness",  label: t.cat.mindfulness },
   ];
 
   const PRIORITIES: { value: Priority; label: string }[] = [
@@ -186,6 +188,7 @@ export default function AddGoalModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t.goalModal.goalNamePlaceholder}
               autoFocus
+              spellCheck={false}
             />
           </div>
 
@@ -197,6 +200,7 @@ export default function AddGoalModal({
               onChange={(e) => setDesc(e.target.value)}
               rows={2}
               style={{ resize: "vertical" }}
+              spellCheck={false}
             />
           </div>
 
@@ -385,6 +389,7 @@ export default function AddGoalModal({
                   onChange={(e) => setNewItemText(e.target.value)}
                   onKeyDown={handleAddKeyDown}
                   placeholder={t.goalModal.addItemPlaceholder}
+                  spellCheck={false}
                 />
                 <button
                   type="button"

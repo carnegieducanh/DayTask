@@ -7,7 +7,7 @@ Windows 11 desktop app quản lý task hàng ngày + mục tiêu năm.
 - **Tech stack:** Tauri v2 + React 19 + TypeScript + SQLite + @tabler/icons-react + @dnd-kit
 - **Project path:** `C:\Users\huydu\Desktop\atomic_task\atomic\`
 - **GitHub repo:** https://github.com/carnegieducanh/DayTask (branch: `main`)
-- **Version hiện tại:** `0.1.3` (released 2026-06-02)
+- **Version hiện tại:** `0.1.6` (released 2026-06-02)
 
 ## Chạy dev server
 
@@ -59,8 +59,9 @@ git push origin main && git push origin v0.X.X
 | 17 | i18n: Tiếng Việt + English                   | ✅ Xong — `src/i18n/vi.ts` + `en.ts` + `index.ts`       |
 | 18 | Undo delete toast (4 giây hoàn tác)          | ✅ Xong — `DeleteToast.tsx` + `softDeleteTask`          |
 | 19 | TaskCard: click cả card → mở edit modal      | ✅ Xong — v0.1.2, stopPropagation trên checkbox/delete  |
-| 20 | App icon redesign (nền tối + SVG source)     | ✅ Xong — v0.1.3, xem mục Icon bên dưới                 |
-| 21 | Auto-start khi mở máy (tauri-plugin-autostart)| 🔲 Chưa làm — xem mục Next Steps bên dưới              |
+| 20 | App icon redesign (SVG source, màu #DA7756)  | ✅ Xong — v0.1.3, xem mục Icon bên dưới                 |
+| 21 | Auto-start khi mở máy (tauri-plugin-autostart)| ✅ Xong — v0.1.4, toggle trong SettingsModal            |
+| 22 | Icon transparent bg + bigger (PNG-in-ICO)    | ✅ Xong — v0.1.6, fix BMP-in-ICO mất alpha → nền đen   |
 
 ## Tính năng đã có
 
@@ -165,10 +166,10 @@ Thêm key mới: sửa `vi.ts` trước (là source of truth cho TypeScript type
 ## App Icon
 
 **Source:** SVG trong `src/assets/atomic_icon_final.html` (tag `<svg id="daytask-icon">`).
-**Design:** Nền `#1C1C1E`, bo góc `rx=14`. 3 ellipse orbit + nucleus + 2 electrons, màu `#DA7756`.
+**Design:** Nền trong suốt (không có background rect). 3 ellipse orbit + nucleus + 2 electrons, màu `#DA7756`.
 **Tham số:** stroke-width=7, nucleus r=11, electron r=7.5, ellipse rx=43 ry=16, electrons cx=±42.
-**viewBox:** `"0 6 100 88"` — tight crop để fill canvas ~97% width, ~93% height.
-**ICO format:** PNG-in-ICO (không phải BMP-in-ICO) để giữ nguyên alpha channel. 6 sizes: 16,32,48,64,128,256px.
+**viewBox:** `"0 6 100 88"` — tight crop, fills ~97% width, ~93% height trong square canvas.
+**ICO format:** PNG-in-ICO (KHÔNG dùng png-to-ico — nó tạo BMP-in-ICO, mất alpha → nền đen trên taskbar).
 
 **Cách regenerate icon khi cần thay đổi:**
 ```powershell
@@ -178,21 +179,11 @@ node export-icons.mjs
 # 3. Xóa script sau khi xong
 Remove-Item export-icons.mjs
 ```
-Dependencies đã có: `sharp` + `png-to-ico`. `.ico` phải có đủ: **16, 32, 48, 64, 128, 256px** (48 bắt buộc cho Windows desktop/taskbar).
+Dependencies đã có: `sharp`. `.ico` phải có đủ: **16, 32, 48, 64, 128, 256px** (48 bắt buộc cho Windows desktop/taskbar).
 
-## Next Steps — Auto-start khi mở máy
+## Next Steps
 
-**Mục tiêu:** Toggle "Khởi động cùng Windows" trong Settings, mặc định **bật**.
-**Plugin:** `tauri-plugin-autostart` (chính thức, Tauri v2).
-
-**Các bước:**
-1. `Cargo.toml`: thêm `tauri-plugin-autostart = "2"`
-2. `src-tauri/src/lib.rs`: đăng ký `.plugin(tauri_plugin_autostart::init(MacosLauncher::LoginItems, Some(vec![])))`
-3. `src-tauri/capabilities/default.json`: thêm permissions `autostart:allow-enable`, `autostart:allow-disable`, `autostart:allow-is-enabled`
-4. `appStore.ts`: thêm `autostart: boolean` state + `setAutostart(v)` → gọi Tauri invoke `enable()`/`disable()`; khi app khởi động lần đầu → check `is_enabled()`, nếu chưa → `enable()`
-5. `SettingsModal.tsx`: thêm toggle row
-6. `vi.ts` + `en.ts`: thêm i18n key
-7. Bump version → `v0.1.4`, commit + tag + push
+Chưa có tính năng tiếp theo được lên kế hoạch.
 
 ## Lưu ý quan trọng
 
