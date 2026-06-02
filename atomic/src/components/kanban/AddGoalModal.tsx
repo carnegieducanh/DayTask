@@ -256,7 +256,7 @@ export default function AddGoalModal({
                           }}
                           title="Đổi màu"
                         >
-                          <IconDotsVertical size={13} />
+                          <IconDotsVertical size={16} />
                         </button>
                         {colorPickerFor === cat.value && (
                           <div

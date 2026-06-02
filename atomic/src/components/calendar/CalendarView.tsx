@@ -113,7 +113,7 @@ export default function CalendarView() {
   const { calendarTasks, loadCalendarTasks, categoryColors, setActiveTab, setSelectedDate } =
     useAppStore();
 
-  const [view, setView] = useState<CalViewType>('month');
+  const [view, setView] = useState<CalViewType>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loadedYear, setLoadedYear] = useState<number | null>(null);
 
