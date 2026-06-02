@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -20,25 +20,12 @@ import HeatmapView from './components/heatmap/HeatmapView';
 import CalendarView from './components/calendar/CalendarView';
 import ReminderPopup from './components/ReminderPopup';
 import SettingsModal from './components/SettingsModal';
+import UpdateDialog from './components/UpdateDialog';
 import { useReminder } from './hooks/useReminder';
 import type { Goal, GoalStatus } from './types';
 import './App.css';
 
 const STATUSES: GoalStatus[] = ['todo', 'doing', 'review', 'done'];
-
-
-async function checkForUpdates() {
-  try {
-    const { check } = await import('@tauri-apps/plugin-updater');
-    const update = await check();
-    if (update) {
-      console.log(`Update available: ${update.version}`);
-      await update.downloadAndInstall();
-    }
-  } catch {
-    // Silently ignore — running in browser or no network
-  }
-}
 
 function App() {
   useReminder();
@@ -52,6 +39,13 @@ function App() {
   const [dragOverlayWidth, setDragOverlayWidth] = useState<number | null>(null);
   // Visual-only goals list during drag: moves active card to destination column for sort animation
   const [liveGoals, setLiveGoals] = useState<Goal[] | null>(null);
+
+  // Auto-update state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateRef = useRef<any>(null);
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+  const [updateDownloading, setUpdateDownloading] = useState(false);
+  const [updateProgress, setUpdateProgress] = useState<number | null>(null);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -67,12 +61,46 @@ function App() {
   useEffect(() => {
     seedIfEmpty().then(() => loadTasks(selectedDate));
     loadCategoryColors();
-    checkForUpdates();
+    // Check for updates after a short delay to not block initial render
+    setTimeout(async () => {
+      try {
+        const { check } = await import('@tauri-apps/plugin-updater');
+        const update = await check();
+        if (update?.available) {
+          updateRef.current = update;
+          setUpdateVersion(update.version);
+        }
+      } catch {
+        // Running in browser or offline — ignore
+      }
+    }, 3000);
   }, []);
 
   useEffect(() => {
     if (activeTab === 'kanban') loadGoals(selectedYear);
   }, [activeTab]);
+
+  async function handleInstallUpdate() {
+    const update = updateRef.current;
+    if (!update) return;
+    setUpdateDownloading(true);
+    setUpdateProgress(null);
+    let downloaded = 0;
+    let contentLength = 0;
+    try {
+      await update.downloadAndInstall((event: { event: string; data: { contentLength?: number; chunkLength?: number } }) => {
+        if (event.event === 'Started') {
+          contentLength = event.data.contentLength ?? 0;
+        } else if (event.event === 'Progress') {
+          downloaded += event.data.chunkLength ?? 0;
+          if (contentLength > 0) setUpdateProgress((downloaded / contentLength) * 100);
+        }
+      });
+    } catch {
+      setUpdateDownloading(false);
+      setUpdateProgress(null);
+    }
+  }
 
   function handleDragStart(event: DragStartEvent) {
     setKanbanDragActiveId(Number(event.active.id));
@@ -229,6 +257,15 @@ function App() {
           {activeTab === 'calendar' && <CalendarView />}
           <ReminderPopup />
           <SettingsModal />
+          {updateVersion && (
+            <UpdateDialog
+              version={updateVersion}
+              downloading={updateDownloading}
+              progress={updateProgress}
+              onConfirm={handleInstallUpdate}
+              onDismiss={() => setUpdateVersion(null)}
+            />
+          )}
         </div>
       </div>
 

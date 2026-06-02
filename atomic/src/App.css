@@ -2716,3 +2716,115 @@ select {
   align-self: flex-start;
   margin-top: auto;
 }
+
+/* ── Update Dialog ── */
+.update-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+}
+.update-dialog {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 340px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+.update-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.93rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+.update-dialog-header svg {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.update-close-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+}
+.update-close-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+.update-version {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  margin: 0 0 18px;
+}
+.update-version strong {
+  color: var(--text-primary);
+}
+.update-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.update-progress-bar {
+  height: 6px;
+  background: var(--border-1);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.update-progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 99px;
+  min-width: 8px;
+}
+.update-progress-label {
+  font-size: 0.79rem;
+  color: var(--text-secondary);
+  text-align: right;
+}
+.update-dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.update-btn-skip {
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-1);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+.update-btn-skip:hover {
+  color: var(--text-primary);
+  border-color: var(--border-2);
+}
+.update-btn-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.update-btn-confirm:hover {
+  background: var(--primary-dark);
+}
