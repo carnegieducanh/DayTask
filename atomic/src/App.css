@@ -1417,6 +1417,312 @@ select {
   transition: width 0.3s ease;
 }
 
+/* ── Task tag chip (on task card) ── */
+.task-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.79rem;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 99px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* ── Tag picker (AddTaskModal) ── */
+.tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-height: 30px;
+}
+
+.tag-picker-chip {
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1.5px solid;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.12s, color 0.12s;
+}
+
+.tag-picker-chip:hover {
+  opacity: 0.85;
+}
+
+.tag-picker-add-btn {
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1.5px dashed var(--border-2);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.tag-picker-add-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.tag-picker-new-input {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tag-picker-input {
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border: 1.5px solid var(--primary);
+  border-radius: 99px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  outline: none;
+  width: 120px;
+}
+
+.tag-picker-confirm,
+.tag-picker-cancel {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: color 0.1s;
+}
+
+.tag-picker-confirm:hover { color: var(--primary); }
+.tag-picker-cancel:hover  { color: #ef4444; }
+
+/* ── Tag dropdown (AddTaskModal — same row as Category) ── */
+.tag-dropdown {
+  position: relative;
+}
+
+.tag-dropdown-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border-1);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  transition: border-color 0.1s;
+}
+
+.tag-dropdown-trigger:hover,
+.tag-dropdown-trigger.open {
+  border-color: var(--primary);
+}
+
+.tag-dropdown-label {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-dropdown-label.placeholder {
+  color: var(--text-muted);
+}
+
+.tag-dropdown-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tag-dropdown-panel {
+  background: var(--bg-primary);
+  border: 1.5px solid var(--border-1);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  z-index: 9999;
+  overflow: hidden;
+  min-width: 180px;
+}
+
+.tag-dropdown-list {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.tag-dropdown-empty {
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.tag-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-top: 0.5px solid var(--border-1);
+  width: 100%;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.tag-dropdown-item:first-child {
+  border-top: none;
+}
+
+.tag-dropdown-item:hover,
+.tag-dropdown-item.selected {
+  background: var(--bg-secondary);
+}
+
+.tag-dropdown-check {
+  width: 14px;
+  flex-shrink: 0;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+}
+
+.tag-dropdown-footer {
+  border-top: 1px solid var(--border-1);
+  padding: 6px 8px;
+}
+
+.tag-dropdown-add-btn {
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1.5px dashed var(--border-1);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.tag-dropdown-add-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ── Settings tag management ── */
+.settings-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 0;
+}
+
+.settings-tags-empty {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  padding: 4px 0;
+  width: 100%;
+}
+
+.settings-tag-chip-row {
+  display: inline-flex;
+}
+
+.settings-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--border-2);
+  background: var(--bg-secondary);
+  font-size: 0.84rem;
+}
+
+.settings-tag-chip.editing {
+  padding: 2px 6px;
+  gap: 4px;
+}
+
+.settings-tag-name {
+  font-size: 0.84rem;
+  color: var(--text-primary);
+}
+
+.settings-tag-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: 99px;
+  padding: 0;
+  transition: color 0.12s, background 0.12s;
+}
+
+.settings-tag-action-btn:hover {
+  color: var(--text-primary);
+  background: var(--border-1);
+}
+
+.settings-tag-action-delete:hover {
+  color: #ef4444;
+  background: #fee2e2;
+}
+
+.settings-tag-rename-input {
+  font-size: 0.84rem;
+  padding: 1px 6px;
+  border: 1.5px solid var(--primary);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  outline: none;
+  width: 100px;
+}
+
+.settings-tag-new {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.settings-tag-add-btn {
+  font-size: 0.82rem;
+  padding: 3px 12px;
+  border-radius: 99px;
+  border: 1.5px dashed var(--border-2);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.settings-tag-add-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
 .goal-checklist-progress {
   display: flex;
   align-items: center;
@@ -1936,6 +2242,48 @@ select {
   text-transform: uppercase;
   letter-spacing: 0.7px;
   margin-bottom: 12px;
+}
+
+.settings-section-toggle {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.settings-section-toggle:hover {
+  color: var(--text-primary);
+}
+
+.settings-tag-count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--bg-secondary);
+  border-radius: 99px;
+  padding: 0 6px;
+  line-height: 1.6;
+}
+
+.settings-tags-dropdown {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.22s ease;
+}
+
+.settings-tags-dropdown.open {
+  grid-template-rows: 1fr;
+}
+
+.settings-tags-dropdown > .settings-tags-list {
+  overflow: hidden;
+  padding-top: 0;
+  transition: padding-top 0.22s ease;
+}
+
+.settings-tags-dropdown.open > .settings-tags-list {
+  padding-top: 10px;
 }
 
 .settings-section-label svg {

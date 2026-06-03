@@ -84,6 +84,22 @@ pub fn run() {
             );",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 7,
+            description: "create_tags_and_task_tags",
+            sql: "CREATE TABLE IF NOT EXISTS tags (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                name       TEXT NOT NULL,
+                color      TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS task_tags (
+                task_id INTEGER NOT NULL,
+                tag_id  INTEGER NOT NULL,
+                PRIMARY KEY (task_id, tag_id)
+            );",
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

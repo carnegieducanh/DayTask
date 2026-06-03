@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { format } from 'date-fns';
 import { invoke } from '@tauri-apps/api/core';
-import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, Language, GoalChecklistItem, Category, CategoryColors, TaskTimeEntry } from '../types';
+import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, Language, GoalChecklistItem, Category, CategoryColors, TaskTimeEntry, Tag } from '../types';
 import {
   isTauri,
   mockTasks, mockGoals, mockChecklist,
@@ -10,7 +10,14 @@ import {
   dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
   dbGetHeatmap, dbGetStreak, dbGetCalendarTasks,
   dbGetTimeEntries, dbGetCalendarTimeEntries, dbSaveTimeEntry, dbDeleteTimeEntry,
+  dbGetTags, dbAddTag, dbUpdateTag, dbDeleteTag, dbGetTaskTagsForDate, dbSetTaskTags,
 } from './mockDb';
+
+const TAG_COLORS = [
+  '#60A5FA', '#34D399', '#FB923C', '#A78BFA',
+  '#F472B6', '#2DD4BF', '#FACC15', '#818CF8',
+  '#4ADE80', '#F87171', '#E879F9', '#38BDF8',
+];
 
 const DEFAULT_CATEGORY_COLORS: CategoryColors = {
   work:         '#7DD3FC',
@@ -131,6 +138,8 @@ interface AppState {
   pendingDeleteTask: Task | null;
   pendingDeleteGoal: Goal | null;
   autostart: boolean;
+  tags: Tag[];
+  taskTags: Record<number, number[]>;
 
   setActiveTab: (tab: Tab) => void;
   toggleTheme: () => void;
@@ -147,12 +156,19 @@ interface AppState {
   initAutostart: () => Promise<void>;
   setAutostart: (v: boolean) => Promise<void>;
 
+  loadTags: () => Promise<void>;
+  loadTaskTagsForDate: (date: string) => Promise<void>;
+  addTag: (name: string) => Promise<number>;
+  updateTag: (id: number, name: string) => Promise<void>;
+  deleteTag: (id: number) => Promise<void>;
+  setTaskTags: (taskId: number, tagIds: number[]) => Promise<void>;
+
   loadTasks: (date: string) => Promise<void>;
   loadCalendarTasks: (startDate: string, endDate: string) => Promise<void>;
   loadTimeEntries: (date: string) => Promise<void>;
   saveTimeEntry: (taskId: number, date: string, startTime: string, endTime: string) => Promise<void>;
   deleteTimeEntry: (taskId: number, date: string) => Promise<void>;
-  addTask: (task: NewTask, timeEntry?: { startTime: string; endTime: string }) => Promise<void>;
+  addTask: (task: NewTask, timeEntry?: { startTime: string; endTime: string }, tagIds?: number[]) => Promise<void>;
   updateTask: (id: number, updates: TaskUpdate) => Promise<void>;
   toggleTask: (id: number) => Promise<void>;
   deleteTask: (id: number) => Promise<void>;
@@ -208,6 +224,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   pendingDeleteTask: null,
   pendingDeleteGoal: null,
   autostart: true,
+  tags: [],
+  taskTags: {},
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -276,15 +294,107 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  // --- Tags ---
+
+  loadTags: async () => {
+    if (!isTauri()) {
+      set({ tags: dbGetTags() });
+      return;
+    }
+    const db = await getDb();
+    const tags = await db.select<Tag[]>('SELECT * FROM tags ORDER BY created_at ASC');
+    set({ tags });
+  },
+
+  loadTaskTagsForDate: async (date) => {
+    if (!isTauri()) {
+      set({ taskTags: dbGetTaskTagsForDate(date) });
+      return;
+    }
+    const db = await getDb();
+    const rows = await db.select<{ task_id: number; tag_id: number }[]>(
+      `SELECT tt.task_id, tt.tag_id FROM task_tags tt
+       INNER JOIN tasks t ON t.id = tt.task_id WHERE t.date = $1`,
+      [date]
+    );
+    const taskTags: Record<number, number[]> = {};
+    for (const row of rows) {
+      if (!taskTags[row.task_id]) taskTags[row.task_id] = [];
+      taskTags[row.task_id].push(row.tag_id);
+    }
+    set({ taskTags });
+  },
+
+  addTag: async (name) => {
+    const color = TAG_COLORS[get().tags.length % TAG_COLORS.length];
+    if (!isTauri()) {
+      const tag = dbAddTag(name, color);
+      set({ tags: dbGetTags() });
+      return tag.id;
+    }
+    const db = await getDb();
+    const result = await db.execute(
+      'INSERT INTO tags (name, color) VALUES ($1, $2)',
+      [name, color]
+    );
+    await get().loadTags();
+    return result.lastInsertId ?? 0;
+  },
+
+  updateTag: async (id, name) => {
+    if (!isTauri()) {
+      dbUpdateTag(id, name);
+      set({ tags: dbGetTags() });
+      return;
+    }
+    const db = await getDb();
+    await db.execute('UPDATE tags SET name = $1 WHERE id = $2', [name, id]);
+    await get().loadTags();
+  },
+
+  deleteTag: async (id) => {
+    if (!isTauri()) {
+      dbDeleteTag(id);
+      const taskTags = { ...get().taskTags };
+      for (const taskId of Object.keys(taskTags)) {
+        taskTags[Number(taskId)] = taskTags[Number(taskId)].filter((tId) => tId !== id);
+      }
+      set({ tags: dbGetTags(), taskTags });
+      return;
+    }
+    const db = await getDb();
+    await db.execute('DELETE FROM task_tags WHERE tag_id = $1', [id]);
+    await db.execute('DELETE FROM tags WHERE id = $1', [id]);
+    const taskTags = { ...get().taskTags };
+    for (const taskId of Object.keys(taskTags)) {
+      taskTags[Number(taskId)] = taskTags[Number(taskId)].filter((tId) => tId !== id);
+    }
+    set({ taskTags });
+    await get().loadTags();
+  },
+
+  setTaskTags: async (taskId, tagIds) => {
+    if (!isTauri()) {
+      dbSetTaskTags(taskId, tagIds);
+      set({ taskTags: { ...get().taskTags, [taskId]: tagIds } });
+      return;
+    }
+    const db = await getDb();
+    await db.execute('DELETE FROM task_tags WHERE task_id = $1', [taskId]);
+    for (const tagId of tagIds) {
+      await db.execute('INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES ($1, $2)', [taskId, tagId]);
+    }
+    set({ taskTags: { ...get().taskTags, [taskId]: tagIds } });
+  },
+
   // --- Tasks ---
 
   loadTasks: async (date) => {
     if (!isTauri()) {
-      set({ tasks: dbGetTasks(date), taskTimeEntries: dbGetTimeEntries(date) });
+      set({ tasks: dbGetTasks(date), taskTimeEntries: dbGetTimeEntries(date), taskTags: dbGetTaskTagsForDate(date) });
       return;
     }
     const db = await getDb();
-    // Roll undone recurring tasks from past dates (skip if a copy for today already exists with same title)
     await db.execute(
       `UPDATE tasks SET date = $1
        WHERE repeat_daily = 1 AND is_done = 0 AND date < $1
@@ -299,7 +409,17 @@ export const useAppStore = create<AppState>((set, get) => ({
       'SELECT * FROM task_time_entries WHERE date = $1',
       [date]
     );
-    set({ tasks, taskTimeEntries });
+    const tagRows = await db.select<{ task_id: number; tag_id: number }[]>(
+      `SELECT tt.task_id, tt.tag_id FROM task_tags tt
+       INNER JOIN tasks t ON t.id = tt.task_id WHERE t.date = $1`,
+      [date]
+    );
+    const taskTags: Record<number, number[]> = {};
+    for (const row of tagRows) {
+      if (!taskTags[row.task_id]) taskTags[row.task_id] = [];
+      taskTags[row.task_id].push(row.tag_id);
+    }
+    set({ tasks, taskTimeEntries, taskTags });
   },
 
   loadCalendarTasks: async (startDate, endDate) => {
@@ -379,11 +499,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ taskTimeEntries, calendarTimeEntries: updatedCalendarEntries });
   },
 
-  addTask: async (task, timeEntry) => {
+  addTask: async (task, timeEntry, tagIds) => {
     if (!isTauri()) {
       const newTask = dbAddTask({ title: task.title, description: task.description ?? null, category: task.category, date: task.date, is_done: 0, repeat_daily: task.repeat_daily ?? 0 });
       if (timeEntry) dbSaveTimeEntry(newTask.id, task.date, timeEntry.startTime, timeEntry.endTime);
-      set({ tasks: dbGetTasks(get().selectedDate), taskTimeEntries: dbGetTimeEntries(get().selectedDate) });
+      if (tagIds?.length) dbSetTaskTags(newTask.id, tagIds);
+      set({ tasks: dbGetTasks(get().selectedDate), taskTimeEntries: dbGetTimeEntries(get().selectedDate), taskTags: dbGetTaskTagsForDate(get().selectedDate) });
       return;
     }
     const db = await getDb();
@@ -391,11 +512,17 @@ export const useAppStore = create<AppState>((set, get) => ({
       `INSERT INTO tasks (title, description, category, date, repeat_daily) VALUES ($1, $2, $3, $4, $5)`,
       [task.title, task.description ?? null, task.category, task.date, task.repeat_daily ?? 0]
     );
-    if (timeEntry && result.lastInsertId) {
+    const newTaskId = result.lastInsertId;
+    if (timeEntry && newTaskId) {
       await db.execute(
         'INSERT OR REPLACE INTO task_time_entries (task_id, date, start_time, end_time) VALUES ($1, $2, $3, $4)',
-        [result.lastInsertId, task.date, timeEntry.startTime, timeEntry.endTime]
+        [newTaskId, task.date, timeEntry.startTime, timeEntry.endTime]
       );
+    }
+    if (tagIds?.length && newTaskId) {
+      for (const tagId of tagIds) {
+        await db.execute('INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES ($1, $2)', [newTaskId, tagId]);
+      }
     }
     await get().loadTasks(get().selectedDate);
   },
@@ -498,6 +625,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
     const db = await getDb();
+    await db.execute('DELETE FROM task_tags WHERE task_id = $1', [task.id]);
     await db.execute('DELETE FROM tasks WHERE id = $1', [task.id]);
   },
 

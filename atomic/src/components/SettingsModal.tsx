@@ -1,15 +1,20 @@
 import { useRef, useState } from 'react';
-import { IconX, IconTextSize, IconDownload, IconUpload, IconDatabaseImport, IconLanguage, IconPower } from '@tabler/icons-react';
+import { IconX, IconTextSize, IconDownload, IconUpload, IconDatabaseImport, IconLanguage, IconPower, IconTag, IconTrash, IconCheck, IconPencil, IconChevronDown } from '@tabler/icons-react';
 import { useAppStore } from '../store/appStore';
 import { useT } from '../i18n';
 import type { Language } from '../types';
 
 export default function SettingsModal() {
-  const { openSettingsModal, setOpenSettingsModal, uiScale, setUiScale, language, setLanguage, exportAllData, importAllData, autostart, setAutostart } = useAppStore();
+  const { openSettingsModal, setOpenSettingsModal, uiScale, setUiScale, language, setLanguage, exportAllData, importAllData, autostart, setAutostart, tags, addTag, updateTag, deleteTag } = useAppStore();
   const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [importError, setImportError] = useState('');
+  const [newTagInput, setNewTagInput] = useState('');
+  const [showNewTagInput, setShowNewTagInput] = useState(false);
+  const [renamingTagId, setRenamingTagId] = useState<number | null>(null);
+  const [renameInput, setRenameInput] = useState('');
+  const [tagSectionOpen, setTagSectionOpen] = useState(false);
 
   const SCALE_OPTIONS: { label: string; value: number; desc: string }[] = [
     { label: t.settings.small,      value: 0.9,  desc: '90%' },
@@ -117,6 +122,105 @@ export default function SettingsModal() {
               onClick={() => setAutostart(!autostart)}
               aria-label={t.settings.autostart}
             />
+          </div>
+        </div>
+
+        {/* Tags management */}
+        <div className="settings-section">
+          <button
+            className="settings-section-label settings-section-toggle"
+            onClick={() => setTagSectionOpen((o) => !o)}
+          >
+            <IconTag size={14} />
+            {t.tags.sectionTitle}
+            {tags.length > 0 && (
+              <span className="settings-tag-count">{tags.length}</span>
+            )}
+            <IconChevronDown
+              size={14}
+              style={{ marginLeft: 'auto', transition: 'transform 0.2s', transform: tagSectionOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            />
+          </button>
+          <div className={`settings-tags-dropdown${tagSectionOpen ? ' open' : ''}`}>
+            <div className="settings-tags-list">
+              {tags.length === 0 && (
+                <div className="settings-tags-empty">{t.tags.noTags}</div>
+              )}
+              {tags.map((tag) => (
+                <div key={tag.id} className="settings-tag-chip-row">
+                  {renamingTagId === tag.id ? (
+                    <div className="settings-tag-chip editing">
+                      <input
+                        className="settings-tag-rename-input"
+                        value={renameInput}
+                        onChange={(e) => setRenameInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            if (renameInput.trim()) updateTag(tag.id, renameInput.trim());
+                            setRenamingTagId(null);
+                          }
+                          if (e.key === 'Escape') setRenamingTagId(null);
+                        }}
+                        autoFocus
+                        spellCheck={false}
+                      />
+                      <button className="settings-tag-action-btn" title={t.tags.save}
+                        onClick={() => { if (renameInput.trim()) updateTag(tag.id, renameInput.trim()); setRenamingTagId(null); }}>
+                        <IconCheck size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="settings-tag-chip">
+                      <span className="settings-tag-name">{tag.name}</span>
+                      <button className="settings-tag-action-btn" title={t.tags.renameTag}
+                        onClick={() => { setRenamingTagId(tag.id); setRenameInput(tag.name); }}>
+                        <IconPencil size={12} />
+                      </button>
+                      <button className="settings-tag-action-btn settings-tag-action-delete" title={t.tags.deleteTag}
+                        onClick={() => { if (window.confirm(t.tags.confirmDelete(tag.name))) deleteTag(tag.id); }}>
+                        <IconTrash size={12} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {showNewTagInput ? (
+                <div className="settings-tag-new">
+                  <input
+                    className="settings-tag-rename-input"
+                    value={newTagInput}
+                    onChange={(e) => setNewTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (newTagInput.trim()) { addTag(newTagInput.trim()); setNewTagInput(''); setShowNewTagInput(false); }
+                      }
+                      if (e.key === 'Escape') { setShowNewTagInput(false); setNewTagInput(''); }
+                    }}
+                    placeholder={t.tags.addPlaceholder}
+                    autoFocus
+                    spellCheck={false}
+                  />
+                  <button
+                    className="icon-btn"
+                    onClick={() => {
+                      if (newTagInput.trim()) { addTag(newTagInput.trim()); setNewTagInput(''); setShowNewTagInput(false); }
+                    }}
+                  >
+                    <IconCheck size={14} />
+                  </button>
+                  <button className="icon-btn" onClick={() => { setShowNewTagInput(false); setNewTagInput(''); }}>
+                    <IconX size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className="settings-tag-add-btn"
+                  onClick={() => setShowNewTagInput(true)}
+                >
+                  {t.tags.createNew}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

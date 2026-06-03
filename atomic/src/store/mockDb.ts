@@ -1,6 +1,6 @@
 // In-memory mock database used when running in browser (no Tauri/SQLite)
 import { format, subDays } from 'date-fns';
-import type { Task, Goal, DayActivity, GoalChecklistItem, TaskTimeEntry } from '../types';
+import type { Task, Goal, DayActivity, GoalChecklistItem, TaskTimeEntry, Tag } from '../types';
 
 export const isTauri = () =>
   typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -232,6 +232,51 @@ export function dbDeleteTimeEntry(taskId: number, date: string): void {
   const idx = mockTimeEntries.findIndex((e) => e.task_id === taskId && e.date === date);
   if (idx !== -1) mockTimeEntries.splice(idx, 1);
   persistTimeEntries();
+}
+
+// ---------- tags ----------
+
+let _nextTagId = 1;
+
+export const mockTags: Tag[] = [];
+export const mockTaskTags: Record<number, number[]> = {};
+
+export function dbGetTags(): Tag[] {
+  return [...mockTags];
+}
+
+export function dbAddTag(name: string, color: string): Tag {
+  const tag: Tag = { id: _nextTagId++, name, color, created_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss') };
+  mockTags.push(tag);
+  return tag;
+}
+
+export function dbUpdateTag(id: number, name: string): void {
+  const tag = mockTags.find((t) => t.id === id);
+  if (tag) tag.name = name;
+}
+
+export function dbDeleteTag(id: number): void {
+  const idx = mockTags.findIndex((t) => t.id === id);
+  if (idx !== -1) mockTags.splice(idx, 1);
+  for (const taskId of Object.keys(mockTaskTags)) {
+    const tid = Number(taskId);
+    mockTaskTags[tid] = (mockTaskTags[tid] ?? []).filter((tId) => tId !== id);
+  }
+}
+
+export function dbGetTaskTagsForDate(date: string): Record<number, number[]> {
+  const taskIds = new Set(mockTasks.filter((t) => t.date === date).map((t) => t.id));
+  const result: Record<number, number[]> = {};
+  for (const [taskId, tagIds] of Object.entries(mockTaskTags)) {
+    const tid = Number(taskId);
+    if (taskIds.has(tid)) result[tid] = [...tagIds];
+  }
+  return result;
+}
+
+export function dbSetTaskTags(taskId: number, tagIds: number[]): void {
+  mockTaskTags[taskId] = [...tagIds];
 }
 
 export function dbGetStreak(): number {

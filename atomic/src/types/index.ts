@@ -85,6 +85,13 @@ export interface DayActivity {
   count: number;
 }
 
+export interface Tag {
+  id: number;
+  name: string;
+  color: string;
+  created_at: string;
+}
+
 export type Tab = 'today' | 'kanban' | 'heatmap' | 'calendar';
 export type Theme = 'light' | 'dark';
 export type Language = 'vi' | 'en';

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { IconCheck, IconClock, IconTrash } from '@tabler/icons-react';
+import { IconCheck, IconClock, IconTrash, IconTag } from '@tabler/icons-react';
 import type { Task } from '../../types';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
@@ -18,7 +18,9 @@ interface Props {
 
 export default function TaskCard({ task, onEdit }: Props) {
   const t = useT();
-  const { toggleTask, softDeleteTask, updateTask, categoryColors, taskTimeEntries, saveTimeEntry, deleteTimeEntry } = useAppStore();
+  const { toggleTask, softDeleteTask, updateTask, categoryColors, taskTimeEntries, saveTimeEntry, deleteTimeEntry, tags, taskTags } = useAppStore();
+  const taskTagIds = taskTags[task.id] ?? [];
+  const taskTagObjects = tags.filter((t) => taskTagIds.includes(t.id));
   const cardBg = hexToRgba(categoryColors[task.category], 1);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -167,6 +169,12 @@ export default function TaskCard({ task, onEdit }: Props) {
           <span className={`tag tag-${task.category}`}>
             {t.cat[task.category]}
           </span>
+          {taskTagObjects.map((tag) => (
+            <span key={tag.id} className="task-tag-chip">
+              <IconTag size={10} style={{ flexShrink: 0 }} />
+              {tag.name}
+            </span>
+          ))}
         </div>
       </div>
 

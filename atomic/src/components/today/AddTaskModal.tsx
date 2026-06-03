@@ -6,6 +6,8 @@ import {
   IconCheck,
   IconClock,
   IconClockOff,
+  IconTag,
+  IconX,
 } from "@tabler/icons-react";
 
 const TIME_OPTIONS: string[] = [];
@@ -151,6 +153,10 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
     taskTimeEntries,
     saveTimeEntry,
     deleteTimeEntry,
+    tags,
+    taskTags,
+    addTag,
+    setTaskTags,
   } = useAppStore();
 
   const CATEGORIES: { value: Category; label: string }[] = [
@@ -174,8 +180,16 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
   const [timeError, setTimeError] = useState("");
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+  const [newTagInput, setNewTagInput] = useState("");
+  const [showNewTagInput, setShowNewTagInput] = useState(false);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const [tagPanelStyle, setTagPanelStyle] = useState<React.CSSProperties>({});
+  const newTagInputRef = useRef<HTMLInputElement>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const tagDropRef = useRef<HTMLDivElement>(null);
+  const tagTriggerRef = useRef<HTMLButtonElement>(null);
   const startRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const startListRef = useRef<HTMLDivElement>(null);
@@ -187,6 +201,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
       setDesc(editTask.description ?? "");
       setCategory(editTask.category);
       setRepeatDaily(editTask.repeat_daily === 1);
+      setSelectedTagIds(taskTags[editTask.id] ?? []);
       const entry = taskTimeEntries.find(
         (e) => e.task_id === editTask.id && e.date === editTask.date,
       );
@@ -202,6 +217,11 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
         setColorPickerFor(null);
+      }
+      if (tagDropRef.current && !tagDropRef.current.contains(e.target as Node)) {
+        setTagDropdownOpen(false);
+        setShowNewTagInput(false);
+        setNewTagInput("");
       }
       if (startRef.current && !startRef.current.contains(e.target as Node)) {
         setStartOpen(false);
@@ -255,6 +275,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
         category,
         repeat_daily: repeatDaily ? 1 : 0,
       });
+      await setTaskTags(editTask.id, selectedTagIds);
       if (timeEntry) {
         await saveTimeEntry(editTask.id, editTask.date, timeEntry.startTime, timeEntry.endTime);
       } else {
@@ -270,9 +291,44 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
           repeat_daily: repeatDaily ? 1 : 0,
         },
         timeEntry,
+        selectedTagIds.length ? selectedTagIds : undefined,
       );
     }
     onClose();
+  }
+
+  function handleTagDropdownClick() {
+    if (!tagDropdownOpen && tagTriggerRef.current) {
+      const rect = tagTriggerRef.current.getBoundingClientRect();
+      setTagPanelStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: Math.max(rect.width, 200),
+        right: 'auto',
+      });
+    }
+    setTagDropdownOpen((v) => !v);
+  }
+
+  function toggleTag(id: number) {
+    setSelectedTagIds((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
+    );
+  }
+
+  async function handleCreateTag() {
+    const name = newTagInput.trim();
+    if (!name) return;
+    const newId = await addTag(name);
+    setSelectedTagIds((prev) => [...prev, newId]);
+    setNewTagInput("");
+    setShowNewTagInput(false);
+  }
+
+  function handleNewTagKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") { e.preventDefault(); handleCreateTag(); }
+    if (e.key === "Escape") { setShowNewTagInput(false); setNewTagInput(""); }
   }
 
   return (
@@ -311,72 +367,169 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">{t.taskModal.categoryLabel}</label>
-            <div className="cat-dropdown" ref={dropdownRef}>
-              <button
-                type="button"
-                className="cat-dropdown-trigger"
-                onClick={() => { setDropdownOpen((v) => !v); setColorPickerFor(null); }}
-              >
-                <span className="cat-color-dot" style={{ background: categoryColors[category] }} />
-                <span className="cat-dropdown-label">
-                  {CATEGORIES.find((c) => c.value === category)?.label}
-                </span>
-                <IconChevronDown
-                  size={13}
-                  className={`cat-dropdown-chevron${dropdownOpen ? " open" : ""}`}
-                />
-              </button>
-              {dropdownOpen && (
-                <div className="cat-dropdown-panel">
-                  {CATEGORIES.map((cat) => (
-                    <div
-                      key={cat.value}
-                      className={`cat-dropdown-item${category === cat.value ? " selected" : ""}`}
-                    >
-                      <button
-                        type="button"
-                        className="cat-dropdown-item-btn"
-                        onClick={() => { setCategory(cat.value); setDropdownOpen(false); setColorPickerFor(null); }}
+          <div className="form-row" style={{ marginBottom: 14 }}>
+            {/* Category */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">{t.taskModal.categoryLabel}</label>
+              <div className="cat-dropdown" ref={dropdownRef}>
+                <button
+                  type="button"
+                  className="cat-dropdown-trigger"
+                  onClick={() => { setDropdownOpen((v) => !v); setColorPickerFor(null); }}
+                >
+                  <span className="cat-color-dot" style={{ background: categoryColors[category] }} />
+                  <span className="cat-dropdown-label">
+                    {CATEGORIES.find((c) => c.value === category)?.label}
+                  </span>
+                  <IconChevronDown
+                    size={13}
+                    className={`cat-dropdown-chevron${dropdownOpen ? " open" : ""}`}
+                  />
+                </button>
+                {dropdownOpen && (
+                  <div className="cat-dropdown-panel">
+                    {CATEGORIES.map((cat) => (
+                      <div
+                        key={cat.value}
+                        className={`cat-dropdown-item${category === cat.value ? " selected" : ""}`}
                       >
-                        <span className="cat-color-dot" style={{ background: categoryColors[cat.value] }} />
-                        <span>{cat.label}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={`cat-item-dots${colorPickerFor === cat.value ? " active" : ""}`}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setColorPickerFor((prev) => prev === cat.value ? null : cat.value);
-                        }}
-                        title={t.taskModal.changeColor}
-                      >
-                        <IconDotsVertical size={16} />
-                      </button>
-                      {colorPickerFor === cat.value && (
-                        <div className="cat-color-popup" onMouseDown={(e) => e.stopPropagation()}>
-                          {COLOR_PALETTE.map((color) => (
-                            <button
-                              key={color}
-                              type="button"
-                              className={`color-swatch${categoryColors[cat.value] === color ? " color-swatch-active" : ""}`}
-                              style={{ background: color }}
-                              onClick={(e) => { e.stopPropagation(); updateCategoryColor(cat.value, color); }}
-                              title={color}
-                            >
-                              {categoryColors[cat.value] === color && (
-                                <IconCheck size={10} strokeWidth={3} color="#fff" />
-                              )}
-                            </button>
-                          ))}
+                        <button
+                          type="button"
+                          className="cat-dropdown-item-btn"
+                          onClick={() => { setCategory(cat.value); setDropdownOpen(false); setColorPickerFor(null); }}
+                        >
+                          <span className="cat-color-dot" style={{ background: categoryColors[cat.value] }} />
+                          <span>{cat.label}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`cat-item-dots${colorPickerFor === cat.value ? " active" : ""}`}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setColorPickerFor((prev) => prev === cat.value ? null : cat.value);
+                          }}
+                          title={t.taskModal.changeColor}
+                        >
+                          <IconDotsVertical size={16} />
+                        </button>
+                        {colorPickerFor === cat.value && (
+                          <div className="cat-color-popup" onMouseDown={(e) => e.stopPropagation()}>
+                            {COLOR_PALETTE.map((color) => (
+                              <button
+                                key={color}
+                                type="button"
+                                className={`color-swatch${categoryColors[cat.value] === color ? " color-swatch-active" : ""}`}
+                                style={{ background: color }}
+                                onClick={(e) => { e.stopPropagation(); updateCategoryColor(cat.value, color); }}
+                                title={color}
+                              >
+                                {categoryColors[cat.value] === color && (
+                                  <IconCheck size={10} strokeWidth={3} color="#fff" />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Tag dropdown */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">
+                <IconTag size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                {t.taskModal.tagLabel}
+              </label>
+              <div className="tag-dropdown" ref={tagDropRef}>
+                <button
+                  ref={tagTriggerRef}
+                  type="button"
+                  className={`tag-dropdown-trigger${tagDropdownOpen ? " open" : ""}`}
+                  onClick={handleTagDropdownClick}
+                >
+                  {selectedTagIds.length === 0 ? (
+                    <>
+                      <IconTag size={13} className="time-dropdown-icon muted" />
+                      <span className="tag-dropdown-label placeholder">{t.taskModal.noTag}</span>
+                    </>
+                  ) : (
+                    <>
+                      {tags.filter((tg) => selectedTagIds.includes(tg.id)).slice(0, 3).map((tg) => (
+                        <span key={tg.id} className="tag-dropdown-dot" style={{ background: tg.color }} />
+                      ))}
+                      <span className="tag-dropdown-label">
+                        {(() => {
+                          const sel = tags.filter((tg) => selectedTagIds.includes(tg.id));
+                          return sel.length === 1
+                            ? sel[0].name
+                            : `${sel[0]?.name ?? ''} +${sel.length - 1}`;
+                        })()}
+                      </span>
+                    </>
+                  )}
+                  <IconChevronDown size={13} className={`cat-dropdown-chevron${tagDropdownOpen ? " open" : ""}`} />
+                </button>
+                {tagDropdownOpen && (
+                  <div className="tag-dropdown-panel" style={tagPanelStyle}>
+                    <div className="tag-dropdown-list">
+                      {tags.length === 0 && (
+                        <div className="tag-dropdown-empty">{t.tags.noTags}</div>
+                      )}
+                      {tags.map((tag) => {
+                        const selected = selectedTagIds.includes(tag.id);
+                        return (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            className={`tag-dropdown-item${selected ? " selected" : ""}`}
+                            onClick={() => toggleTag(tag.id)}
+                          >
+                            <span className="tag-dropdown-check">
+                              {selected && <IconCheck size={13} strokeWidth={3} />}
+                            </span>
+                            <span className="tag-dropdown-dot" style={{ background: tag.color }} />
+                            <span>{tag.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="tag-dropdown-footer">
+                      {showNewTagInput ? (
+                        <div className="tag-picker-new-input">
+                          <input
+                            ref={newTagInputRef}
+                            className="tag-picker-input"
+                            value={newTagInput}
+                            onChange={(e) => setNewTagInput(e.target.value)}
+                            onKeyDown={handleNewTagKeyDown}
+                            placeholder={t.tags.addPlaceholder}
+                            autoFocus
+                            spellCheck={false}
+                          />
+                          <button type="button" className="tag-picker-confirm" onClick={handleCreateTag}>
+                            <IconCheck size={12} strokeWidth={3} />
+                          </button>
+                          <button type="button" className="tag-picker-cancel" onClick={() => { setShowNewTagInput(false); setNewTagInput(""); }}>
+                            <IconX size={12} />
+                          </button>
                         </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="tag-dropdown-add-btn"
+                          onClick={() => { setShowNewTagInput(true); setTimeout(() => newTagInputRef.current?.focus(), 0); }}
+                        >
+                          {t.tags.createNew}
+                        </button>
                       )}
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
