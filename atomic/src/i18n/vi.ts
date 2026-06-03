@@ -172,6 +172,7 @@ export const vi = {
   },
   calendar: {
     today: 'Hôm nay',
+    day: 'Ngày',
     month: 'Tháng',
     week: 'Tuần',
     allDay: 'Cả ngày',
@@ -186,6 +187,7 @@ export const vi = {
     filterReset: 'Bỏ lọc',
     filterNoTags: 'Không có thẻ tag',
     filterNoTime: '',
+    noTitle: '(Chưa đặt tên)',
   },
   update: {
     title: 'Có bản cập nhật mới',

@@ -182,6 +182,7 @@ export const en: typeof vi = {
   },
   calendar: {
     today: 'Today',
+    day: 'Day',
     month: 'Month',
     week: 'Week',
     allDay: 'All day',
@@ -199,6 +200,7 @@ export const en: typeof vi = {
     filterReset: 'Clear',
     filterNoTags: 'No tags',
     filterNoTime: '',
+    noTitle: '(No title)',
   },
   update: {
     title: 'New update available',

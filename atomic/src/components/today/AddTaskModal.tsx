@@ -151,9 +151,11 @@ function getDefaultStartTime(): string {
 interface Props {
   editTask?: Task | null;
   onClose: () => void;
+  initialStartTime?: string;
+  initialEndTime?: string;
 }
 
-export default function AddTaskModal({ editTask, onClose }: Props) {
+export default function AddTaskModal({ editTask, onClose, initialStartTime, initialEndTime }: Props) {
   const t = useT();
   const {
     selectedDate,
@@ -185,8 +187,8 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDesc] = useState("");
   const [category, setCategory] = useState<Category>("work");
-  const [startTime, setStartTime] = useState(() => editTask ? "" : getDefaultStartTime());
-  const [endTime, setEndTime] = useState(() => editTask ? "" : getDefaultStartTime());
+  const [startTime, setStartTime] = useState(() => editTask ? "" : (initialStartTime ?? getDefaultStartTime()));
+  const [endTime, setEndTime] = useState(() => editTask ? "" : (initialEndTime ?? getDefaultStartTime()));
   const [repeatDaily, setRepeatDaily] = useState(!editTask);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [catPanelStyle, setCatPanelStyle] = useState<React.CSSProperties>({});

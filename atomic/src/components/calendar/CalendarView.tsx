@@ -9,6 +9,8 @@ import {
   subMonths,
   addWeeks,
   subWeeks,
+  addDays,
+  subDays,
 } from "date-fns";
 import AddTaskModal from "../today/AddTaskModal";
 import { useAppStore } from "../../store/appStore";
@@ -16,9 +18,12 @@ import { useT } from "../../i18n";
 import type { Category, Task } from "../../types";
 import WeekView from "./WeekView";
 import MonthView from "./MonthView";
+import DayView from "./DayView";
 import CalendarFilterSidebar from "./CalendarFilterSidebar";
 
-type CalViewType = "month" | "week";
+type CalViewType = "day" | "week" | "month";
+
+const VI_DAY_NAMES = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"];
 
 function CalToolbar({
   view,
@@ -37,11 +42,27 @@ function CalToolbar({
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
 
   const label =
-    view === "month"
+    view === "day"
+      ? language === "vi"
+        ? `${VI_DAY_NAMES[currentDate.getDay()]}, ${format(currentDate, "d/MM/yyyy")}`
+        : format(currentDate, "EEEE, MMMM d, yyyy")
+      : view === "month"
       ? language === "vi"
         ? format(currentDate, "'Tháng' M, yyyy")
         : format(currentDate, "MMMM yyyy")
       : `${format(weekStart, "d/MM")} – ${format(weekEnd, "d/MM, yyyy")}`;
+
+  function handlePrev() {
+    if (view === "day") setCurrentDate(subDays(currentDate, 1));
+    else if (view === "month") setCurrentDate(subMonths(currentDate, 1));
+    else setCurrentDate(subWeeks(currentDate, 1));
+  }
+
+  function handleNext() {
+    if (view === "day") setCurrentDate(addDays(currentDate, 1));
+    else if (view === "month") setCurrentDate(addMonths(currentDate, 1));
+    else setCurrentDate(addWeeks(currentDate, 1));
+  }
 
   return (
     <div className="cal-toolbar">
@@ -51,42 +72,26 @@ function CalToolbar({
       >
         {t.calendar.today}
       </button>
-      <button
-        className="cal-toolbar-btn"
-        onClick={() =>
-          setCurrentDate(
-            view === "month"
-              ? subMonths(currentDate, 1)
-              : subWeeks(currentDate, 1),
-          )
-        }
-      >
-        ‹
-      </button>
-      <button
-        className="cal-toolbar-btn"
-        onClick={() =>
-          setCurrentDate(
-            view === "month"
-              ? addMonths(currentDate, 1)
-              : addWeeks(currentDate, 1),
-          )
-        }
-      >
-        ›
-      </button>
+      <button className="cal-toolbar-btn" onClick={handlePrev}>‹</button>
+      <button className="cal-toolbar-btn" onClick={handleNext}>›</button>
       <span className="cal-toolbar-label">{label}</span>
       <button
-        className={`cal-toolbar-btn${view === "month" ? " active" : ""}`}
-        onClick={() => setView("month")}
+        className={`cal-toolbar-btn cal-view-btn${view === "day" ? " active" : ""}`}
+        onClick={() => setView("day")}
       >
-        {t.calendar.month}
+        {t.calendar.day}
       </button>
       <button
-        className={`cal-toolbar-btn${view === "week" ? " active" : ""}`}
+        className={`cal-toolbar-btn cal-view-btn${view === "week" ? " active" : ""}`}
         onClick={() => setView("week")}
       >
         {t.calendar.week}
+      </button>
+      <button
+        className={`cal-toolbar-btn cal-view-btn${view === "month" ? " active" : ""}`}
+        onClick={() => setView("month")}
+      >
+        {t.calendar.month}
       </button>
     </div>
   );
@@ -101,6 +106,7 @@ export default function CalendarView() {
     loadCalendarTasks,
     categoryColors,
     tags,
+    selectedDate,
     setSelectedDate,
     setActiveTab,
   } = useAppStore();
@@ -120,6 +126,25 @@ export default function CalendarView() {
     }
   }, [currentDate, loadedYear, loadCalendarTasks]);
 
+  // When switching to Day view, sync currentDate → selectedDate so tasks are loaded
+  function handleSetView(v: CalViewType) {
+    setView(v);
+    if (v === "day") {
+      const dateStr = format(currentDate, "yyyy-MM-dd");
+      if (dateStr !== selectedDate) {
+        setSelectedDate(dateStr);
+      }
+    }
+  }
+
+  // When navigating in Day view, also update selectedDate to load tasks for that day
+  function handleSetCurrentDate(d: Date) {
+    setCurrentDate(d);
+    if (view === "day") {
+      setSelectedDate(format(d, "yyyy-MM-dd"));
+    }
+  }
+
   const visibleRange = useMemo(() => {
     if (view === "month") {
       return {
@@ -127,10 +152,15 @@ export default function CalendarView() {
         endDate: format(endOfMonth(currentDate), "yyyy-MM-dd"),
       };
     }
-    return {
-      startDate: format(startOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd"),
-      endDate: format(endOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd"),
-    };
+    if (view === "week") {
+      return {
+        startDate: format(startOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+        endDate: format(endOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+      };
+    }
+    // day
+    const d = format(currentDate, "yyyy-MM-dd");
+    return { startDate: d, endDate: d };
   }, [view, currentDate]);
 
   const filteredTasks = useMemo(() => {
@@ -168,25 +198,27 @@ export default function CalendarView() {
     <div className="cal-wrap">
       <CalToolbar
         view={view}
-        setView={setView}
+        setView={handleSetView}
         currentDate={currentDate}
-        setCurrentDate={setCurrentDate}
+        setCurrentDate={handleSetCurrentDate}
       />
       <div className="cal-body">
-        <CalendarFilterSidebar
-          tasks={calendarTasks}
-          timeEntries={calendarTimeEntries}
-          taskTags={calendarTaskTags}
-          tags={tags}
-          categoryColors={categoryColors}
-          startDate={visibleRange.startDate}
-          endDate={visibleRange.endDate}
-          activeCategories={activeCategories}
-          activeTags={activeTags}
-          onToggleCategory={toggleCategory}
-          onToggleTag={toggleTag}
-          onReset={resetFilter}
-        />
+        {view !== "day" && (
+          <CalendarFilterSidebar
+            tasks={calendarTasks}
+            timeEntries={calendarTimeEntries}
+            taskTags={calendarTaskTags}
+            tags={tags}
+            categoryColors={categoryColors}
+            startDate={visibleRange.startDate}
+            endDate={visibleRange.endDate}
+            activeCategories={activeCategories}
+            activeTags={activeTags}
+            onToggleCategory={toggleCategory}
+            onToggleTag={toggleTag}
+            onReset={resetFilter}
+          />
+        )}
         <div className="cal-main">
           {view === "month" && (
             <MonthView
@@ -210,6 +242,12 @@ export default function CalendarView() {
                 setActiveTab("today");
               }}
               timeEntries={calendarTimeEntries}
+            />
+          )}
+          {view === "day" && (
+            <DayView
+              currentDate={currentDate}
+              onTaskClick={(task) => setEditingTask(task)}
             />
           )}
         </div>

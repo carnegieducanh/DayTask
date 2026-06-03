@@ -1,0 +1,478 @@
+import { useState, useRef, useEffect, useCallback } from "react";
+import { format } from "date-fns";
+import { IconTag } from "@tabler/icons-react";
+import { useAppStore } from "../../store/appStore";
+import { useT } from "../../i18n";
+import AddTaskModal from "../today/AddTaskModal";
+import type { Task, TaskTimeEntry } from "../../types";
+
+const HOUR_HEIGHT = 72; // px per hour
+const MIN_DRAG_DURATION = 15; // minimum minutes to trigger task creation
+const DEFAULT_DURATION = 60; // default task duration in minutes for tasks without time entry
+const DRAG_MOVE_THRESHOLD = 4; // px before a mousedown on a task is treated as a move
+const MIN_RESIZE_DURATION = 15; // minimum minutes when resizing
+
+function timeToMin(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minToTime(min: number): string {
+  const clamped = Math.max(0, Math.min(Math.round(min), 1439));
+  const h = Math.floor(clamped / 60);
+  const m = clamped % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function minToPx(min: number): number {
+  return (min / 60) * HOUR_HEIGHT;
+}
+
+function pxToMin(px: number): number {
+  return (px / HOUR_HEIGHT) * 60;
+}
+
+interface LayoutItem {
+  task: Task;
+  entry: TaskTimeEntry | null;
+  startMin: number;
+  endMin: number;
+  col: number;
+  totalCols: number;
+}
+
+function computeLayout(tasks: Task[], entries: TaskTimeEntry[], date: string): LayoutItem[] {
+  const items = tasks.map((task) => {
+    const entry = entries.find((e) => e.task_id === task.id && e.date === date) ?? null;
+    const startMin = entry ? timeToMin(entry.start_time) : 0;
+    const rawEnd = entry ? timeToMin(entry.end_time) : startMin + DEFAULT_DURATION;
+    return { task, entry, startMin, endMin: Math.min(rawEnd, 1440) };
+  });
+
+  if (items.length === 0) return [];
+
+  const sorted = [...items].sort((a, b) => a.startMin - b.startMin);
+  const n = sorted.length;
+  const cols: number[] = new Array(n).fill(-1);
+  const colEnds: number[] = [];
+
+  for (let i = 0; i < n; i++) {
+    let assigned = false;
+    for (let c = 0; c < colEnds.length; c++) {
+      if (colEnds[c] <= sorted[i].startMin) {
+        cols[i] = c;
+        colEnds[c] = sorted[i].endMin;
+        assigned = true;
+        break;
+      }
+    }
+    if (!assigned) {
+      cols[i] = colEnds.length;
+      colEnds.push(sorted[i].endMin);
+    }
+  }
+
+  // totalCols for each item = max column index among all overlapping items + 1
+  const totalCols: number[] = new Array(n).fill(1);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (i !== j && sorted[i].startMin < sorted[j].endMin && sorted[j].startMin < sorted[i].endMin) {
+        totalCols[i] = Math.max(totalCols[i], cols[j] + 1);
+        totalCols[j] = Math.max(totalCols[j], cols[i] + 1);
+      }
+    }
+  }
+
+  return sorted.map((item, i) => ({
+    ...item,
+    col: cols[i],
+    totalCols: totalCols[i],
+  }));
+}
+
+interface DragCreate {
+  startMin: number;
+  endMin: number;
+  startY: number;
+}
+
+interface DragMove {
+  taskId: number;
+  task: Task;
+  offsetPx: number;
+  origStartMin: number;
+  origEndMin: number;
+  newStartMin: number;
+  newEndMin: number;
+  startClientY: number;
+  moved: boolean;
+}
+
+interface DragResize {
+  taskId: number;
+  task: Task;
+  entry: TaskTimeEntry | null;
+  direction: "top" | "bottom";
+  origStartMin: number;
+  origEndMin: number;
+  newStartMin: number;
+  newEndMin: number;
+}
+
+export default function DayView({
+  currentDate,
+  onTaskClick,
+}: {
+  currentDate: Date;
+  onTaskClick: (task: Task) => void;
+}) {
+  const t = useT();
+  const { tasks, taskTimeEntries, saveTimeEntry, categoryColors, tags, taskTags } = useAppStore();
+  const [creating, setCreating] = useState<{ startTime: string; endTime: string } | null>(null);
+  const [pendingCreate, setPendingCreate] = useState<{ startMin: number; endMin: number } | null>(null);
+  const [dragCreate, setDragCreate] = useState<DragCreate | null>(null);
+  const [dragMove, setDragMove] = useState<DragMove | null>(null);
+  const [dragResize, setDragResize] = useState<DragResize | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  const [currentTimeMin, setCurrentTimeMin] = useState(() => {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  });
+
+  const dateStr = format(currentDate, "yyyy-MM-dd");
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const isToday = dateStr === todayStr;
+
+  const layoutItems = computeLayout(tasks, taskTimeEntries, dateStr);
+
+  // Update current-time indicator every minute
+  useEffect(() => {
+    const id = setInterval(() => {
+      const now = new Date();
+      setCurrentTimeMin(now.getHours() * 60 + now.getMinutes());
+    }, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Scroll to current time (−1h) or 08:00 when date changes
+  useEffect(() => {
+    if (!gridRef.current) return;
+    const targetMin = isToday ? Math.max(0, currentTimeMin - 60) : 8 * 60;
+    gridRef.current.scrollTop = minToPx(targetMin);
+  }, [dateStr]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function getRelY(clientY: number): number {
+    if (!gridRef.current) return 0;
+    const rect = gridRef.current.getBoundingClientRect();
+    return clientY - rect.top + gridRef.current.scrollTop;
+  }
+
+  // ── Drag-create: mousedown on the grid background ──
+  function handleGridMouseDown(e: React.MouseEvent) {
+    if (e.button !== 0) return;
+    if ((e.target as HTMLElement).closest(".day-task-block")) return;
+    const y = getRelY(e.clientY);
+    const startMin = Math.max(0, Math.min(pxToMin(y), 1438));
+    setDragCreate({ startMin, endMin: startMin, startY: e.clientY });
+    e.preventDefault();
+  }
+
+  // ── Drag-move: mousedown on a task block body ──
+  function handleTaskMouseDown(e: React.MouseEvent, item: LayoutItem) {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    const y = getRelY(e.clientY);
+    setDragMove({
+      taskId: item.task.id,
+      task: item.task,
+      offsetPx: y - minToPx(item.startMin),
+      origStartMin: item.startMin,
+      origEndMin: item.endMin,
+      newStartMin: item.startMin,
+      newEndMin: item.endMin,
+      startClientY: e.clientY,
+      moved: false,
+    });
+    e.preventDefault();
+  }
+
+  // ── Drag-resize: mousedown on a resize handle ──
+  function handleResizeMouseDown(e: React.MouseEvent, item: LayoutItem, direction: "top" | "bottom") {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    e.preventDefault();
+    setDragResize({
+      taskId: item.task.id,
+      task: item.task,
+      entry: item.entry,
+      direction,
+      origStartMin: item.startMin,
+      origEndMin: item.endMin,
+      newStartMin: item.startMin,
+      newEndMin: item.endMin,
+    });
+  }
+
+  // ── Global mouse-move and mouse-up handlers (window-level) ──
+  const handleWindowMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (dragCreate) {
+        const y = getRelY(e.clientY);
+        const endMin = Math.max(0, Math.min(pxToMin(y), 1440));
+        setDragCreate((prev) =>
+          prev ? { ...prev, endMin: Math.max(endMin, prev.startMin + 1) } : null
+        );
+      }
+      if (dragMove) {
+        const dy = Math.abs(e.clientY - dragMove.startClientY);
+        const y = getRelY(e.clientY);
+        const duration = dragMove.origEndMin - dragMove.origStartMin;
+        const newStartMin = Math.max(0, Math.min(pxToMin(y - dragMove.offsetPx), 1440 - duration));
+        setDragMove((prev) =>
+          prev
+            ? {
+                ...prev,
+                newStartMin,
+                newEndMin: newStartMin + duration,
+                moved: prev.moved || dy > DRAG_MOVE_THRESHOLD,
+              }
+            : null
+        );
+      }
+      if (dragResize) {
+        const y = getRelY(e.clientY);
+        const rawMin = Math.round(pxToMin(y) / 5) * 5; // snap to 5-min grid
+        if (dragResize.direction === "bottom") {
+          const newEndMin = Math.max(dragResize.newStartMin + MIN_RESIZE_DURATION, Math.min(rawMin, 1440));
+          setDragResize((prev) => prev ? { ...prev, newEndMin } : null);
+        } else {
+          const newStartMin = Math.min(dragResize.newEndMin - MIN_RESIZE_DURATION, Math.max(rawMin, 0));
+          setDragResize((prev) => prev ? { ...prev, newStartMin } : null);
+        }
+      }
+    },
+    [dragCreate, dragMove, dragResize] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  const handleWindowMouseUp = useCallback(async () => {
+    if (dragCreate) {
+      const { startMin, endMin } = dragCreate;
+      if (endMin - startMin >= MIN_DRAG_DURATION) {
+        const clampedEnd = Math.min(endMin, 1440);
+        setPendingCreate({ startMin, endMin: clampedEnd });
+        setCreating({
+          startTime: minToTime(startMin),
+          endTime: minToTime(clampedEnd),
+        });
+      }
+      setDragCreate(null);
+    }
+    if (dragMove) {
+      if (dragMove.moved) {
+        if (dragMove.newStartMin !== dragMove.origStartMin) {
+          await saveTimeEntry(
+            dragMove.taskId,
+            dateStr,
+            minToTime(dragMove.newStartMin),
+            minToTime(dragMove.newEndMin)
+          );
+        }
+      } else {
+        onTaskClick(dragMove.task);
+      }
+      setDragMove(null);
+    }
+    if (dragResize) {
+      if (
+        dragResize.newStartMin !== dragResize.origStartMin ||
+        dragResize.newEndMin !== dragResize.origEndMin
+      ) {
+        await saveTimeEntry(
+          dragResize.taskId,
+          dateStr,
+          minToTime(dragResize.newStartMin),
+          minToTime(dragResize.newEndMin)
+        );
+      }
+      setDragResize(null);
+    }
+  }, [dragCreate, dragMove, dragResize, dateStr, saveTimeEntry, onTaskClick]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!dragCreate && !dragMove && !dragResize) return;
+    window.addEventListener("mousemove", handleWindowMouseMove);
+    window.addEventListener("mouseup", handleWindowMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleWindowMouseMove);
+      window.removeEventListener("mouseup", handleWindowMouseUp);
+    };
+  }, [dragCreate, dragMove, dragResize, handleWindowMouseMove, handleWindowMouseUp]);
+
+  const HOURS = Array.from({ length: 24 }, (_, i) => i);
+  const ghostTop = dragCreate ? minToPx(Math.min(dragCreate.startMin, dragCreate.endMin)) : 0;
+  const ghostHeight = dragCreate
+    ? Math.max(minToPx(Math.abs(dragCreate.endMin - dragCreate.startMin)), 4)
+    : 0;
+
+  return (
+    <div className="day-view">
+      <div
+        className="day-grid"
+        ref={gridRef}
+        style={{ cursor: dragCreate ? "ns-resize" : dragMove?.moved ? "grabbing" : dragResize ? "ns-resize" : "default" }}
+      >
+        {/* Time gutter */}
+        <div className="day-gutter">
+          {HOURS.map((h) => (
+            <div key={h} className="day-gutter-slot">
+              {h > 0 && (
+                <span className="day-hour-label">{`${String(h).padStart(2, "0")}:00`}</span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Events column */}
+        <div
+          className="day-events-col"
+          onMouseDown={handleGridMouseDown}
+        >
+          {/* Hour lines */}
+          {HOURS.map((h) => (
+            <div key={h} className="day-hour-line" style={{ top: minToPx(h * 60) }} />
+          ))}
+          {/* Half-hour lines */}
+          {HOURS.map((h) => (
+            <div key={`hh-${h}`} className="day-half-line" style={{ top: minToPx(h * 60 + 30) }} />
+          ))}
+
+          {/* Current-time indicator */}
+          {isToday && (
+            <div className="day-now-line" style={{ top: minToPx(currentTimeMin) }}>
+              <div className="day-now-dot" />
+            </div>
+          )}
+
+          {/* Task blocks */}
+          {layoutItems.map((item) => {
+            const isMoving = dragMove?.taskId === item.task.id && dragMove.moved;
+            const isResizing = dragResize?.taskId === item.task.id;
+            const startMin = isMoving
+              ? dragMove!.newStartMin
+              : isResizing
+              ? dragResize!.newStartMin
+              : item.startMin;
+            const endMin = isMoving
+              ? dragMove!.newEndMin
+              : isResizing
+              ? dragResize!.newEndMin
+              : item.endMin;
+            const top = minToPx(startMin);
+            const height = Math.max(minToPx(endMin - startMin), 22);
+            const widthPct = 97 / item.totalCols;
+            const leftPct = 0.5 + item.col * widthPct;
+            const color = categoryColors[item.task.category];
+            const tagIds = taskTags[item.task.id] ?? [];
+            const taskTagObjects = tags.filter((t) => tagIds.includes(t.id));
+
+            return (
+              <div
+                key={item.task.id}
+                className={`day-task-block${isMoving ? " dragging" : ""}${isResizing ? " resizing" : ""}`}
+                style={{
+                  top,
+                  height,
+                  left: `${leftPct}%`,
+                  width: `${widthPct - 0.5}%`,
+                  backgroundColor: color,
+                  borderLeft: `3px solid ${color}`,
+                }}
+                onMouseDown={(e) => handleTaskMouseDown(e, item)}
+              >
+                {/* Top resize handle */}
+                <div
+                  className="day-resize-handle day-resize-handle-top"
+                  onMouseDown={(e) => handleResizeMouseDown(e, item, "top")}
+                />
+                <div className="day-task-title">{item.task.title}</div>
+                {height >= 34 && (
+                  <div className="day-task-meta">
+                    {item.entry && (
+                      <span className="day-task-time">
+                        {minToTime(startMin)} – {minToTime(endMin)}
+                      </span>
+                    )}
+                    <span className={`tag tag-${item.task.category}`}>
+                      {t.cat[item.task.category]}
+                    </span>
+                    {taskTagObjects.map((tag) => (
+                      <span key={tag.id} className="task-tag-chip">
+                        <IconTag size={10} style={{ flexShrink: 0 }} />
+                        {tag.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {/* Bottom resize handle */}
+                <div
+                  className="day-resize-handle day-resize-handle-bottom"
+                  onMouseDown={(e) => handleResizeMouseDown(e, item, "bottom")}
+                />
+              </div>
+            );
+          })}
+
+          {/* Drag-create ghost */}
+          {dragCreate && dragCreate.endMin - dragCreate.startMin >= 2 && (
+            <div
+              className="day-drag-ghost"
+              style={{ top: ghostTop, height: ghostHeight }}
+            />
+          )}
+
+          {/* Pending-create preview block (shown while modal is open) */}
+          {pendingCreate && (() => {
+            const color = categoryColors["work"];
+            const h = minToPx(pendingCreate.endMin - pendingCreate.startMin);
+            return (
+              <div
+                className="day-task-block day-task-block-pending"
+                style={{
+                  top: minToPx(pendingCreate.startMin),
+                  height: Math.max(h, 22),
+                  left: "0.5%",
+                  width: "98%",
+                  backgroundColor: color,
+                  borderLeft: `3px solid ${color}`,
+                  opacity: 0.85,
+                  cursor: "default",
+                  zIndex: 6,
+                }}
+              >
+                <div className="day-task-title" style={{ fontStyle: "italic" }}>
+                  {t.calendar.noTitle}
+                </div>
+                {h >= 34 && (
+                  <div className="day-task-meta">
+                    <span className="day-task-time">
+                      {minToTime(pendingCreate.startMin)} – {minToTime(pendingCreate.endMin)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
+      {creating && (
+        <AddTaskModal
+          onClose={() => { setCreating(null); setPendingCreate(null); }}
+          initialStartTime={creating.startTime}
+          initialEndTime={creating.endTime}
+        />
+      )}
+    </div>
+  );
+}

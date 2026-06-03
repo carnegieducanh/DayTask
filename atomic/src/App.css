@@ -1536,13 +1536,13 @@ select {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 10px;
-  background: var(--bg-secondary);
-  border: 1.5px solid var(--border-1);
-  border-radius: 8px;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border-2);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: var(--text-primary);
   transition: border-color 0.1s;
 }
@@ -3287,6 +3287,10 @@ select {
   color: #fff;
   border-color: var(--primary);
 }
+.cal-view-btn {
+  min-width: 60px;
+  text-align: center;
+}
 
 /* Month view — dot style */
 .cal-month-event {
@@ -3928,6 +3932,184 @@ select {
 }
 .cal-filter-item.active .cal-filter-item-time {
   color: var(--text-primary);
+}
+
+/* ── Day View ── */
+.day-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.day-grid {
+  display: flex;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-2) transparent;
+}
+
+.day-gutter {
+  width: 52px;
+  flex-shrink: 0;
+  position: sticky;
+  left: 0;
+  background: var(--bg-primary);
+  z-index: 2;
+}
+
+.day-gutter-slot {
+  height: 72px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.day-hour-label {
+  position: absolute;
+  top: -0.55em;
+  right: 10px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+.day-events-col {
+  flex: 1;
+  position: relative;
+  min-height: 1728px; /* 24 × 72px */
+  border-left: 1px solid var(--border-1);
+  cursor: crosshair;
+}
+
+.day-hour-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-1);
+  pointer-events: none;
+}
+
+.day-half-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-1);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.day-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ea4335;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.day-now-dot {
+  position: absolute;
+  left: -5px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ea4335;
+}
+
+.day-task-block {
+  position: absolute;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  overflow: hidden;
+  z-index: 1;
+  box-sizing: border-box;
+  transition: filter 0.1s;
+}
+
+.day-task-block:hover {
+  filter: brightness(0.93);
+}
+
+.day-task-block.dragging {
+  opacity: 0.75;
+  cursor: grabbing;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.day-task-block.resizing {
+  opacity: 0.85;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.day-resize-handle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+  z-index: 2;
+  border-radius: 4px;
+}
+
+.day-resize-handle-top {
+  top: 0;
+}
+
+.day-resize-handle-bottom {
+  bottom: 0;
+}
+
+.day-task-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.day-task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.day-task-time {
+  font-size: 0.78rem;
+  color: rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+}
+
+.day-drag-ghost {
+  position: absolute;
+  left: 0.5%;
+  right: 0.5%;
+  border-radius: 4px;
+  background: var(--primary);
+  opacity: 0.18;
+  border: 2px dashed var(--primary);
+  z-index: 5;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.day-task-block-pending {
+  pointer-events: none;
 }
 
 /* ── Update Dialog ── */
