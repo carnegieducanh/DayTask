@@ -10,7 +10,7 @@ import {
   dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
   dbGetHeatmap, dbGetStreak, dbGetCalendarTasks,
   dbGetTimeEntries, dbGetCalendarTimeEntries, dbSaveTimeEntry, dbDeleteTimeEntry,
-  dbGetTags, dbAddTag, dbUpdateTag, dbDeleteTag, dbGetTaskTagsForDate, dbSetTaskTags,
+  dbGetTags, dbAddTag, dbUpdateTag, dbDeleteTag, dbGetTaskTagsForDate, dbSetTaskTags, dbGetCalendarTaskTags,
 } from './mockDb';
 
 const TAG_COLORS = [
@@ -120,6 +120,7 @@ interface AppState {
   calendarTasks: Task[];
   taskTimeEntries: TaskTimeEntry[];
   calendarTimeEntries: TaskTimeEntry[];
+  calendarTaskTags: Record<number, number[]>;
   goals: Goal[];
   checklistItems: Record<number, GoalChecklistItem[]>;
   heatmap: DayActivity[];
@@ -210,6 +211,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   calendarTasks: [],
   taskTimeEntries: [],
   calendarTimeEntries: [],
+  calendarTaskTags: {},
   goals: [],
   checklistItems: {},
   heatmap: [],
@@ -465,6 +467,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({
         calendarTasks: dbGetCalendarTasks(startDate, endDate),
         calendarTimeEntries: dbGetCalendarTimeEntries(startDate, endDate),
+        calendarTaskTags: dbGetCalendarTaskTags(startDate, endDate),
       });
       return;
     }
@@ -477,7 +480,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       'SELECT * FROM task_time_entries WHERE date >= $1 AND date <= $2',
       [startDate, endDate]
     );
-    set({ calendarTasks: tasks, calendarTimeEntries });
+    const tagRows = await db.select<{ task_id: number; tag_id: number }[]>(
+      `SELECT tt.task_id, tt.tag_id FROM task_tags tt
+       INNER JOIN tasks t ON t.id = tt.task_id
+       WHERE t.is_done = 1 AND t.date >= $1 AND t.date <= $2`,
+      [startDate, endDate]
+    );
+    const calendarTaskTags: Record<number, number[]> = {};
+    for (const row of tagRows) {
+      if (!calendarTaskTags[row.task_id]) calendarTaskTags[row.task_id] = [];
+      calendarTaskTags[row.task_id].push(row.tag_id);
+    }
+    set({ calendarTasks: tasks, calendarTimeEntries, calendarTaskTags });
   },
 
   loadTimeEntries: async (date) => {

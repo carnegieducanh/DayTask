@@ -306,6 +306,18 @@ export function dbGetTaskTagsForDate(date: string): Record<number, number[]> {
   return result;
 }
 
+export function dbGetCalendarTaskTags(startDate: string, endDate: string): Record<number, number[]> {
+  const taskIds = new Set(
+    mockTasks.filter((t) => t.date >= startDate && t.date <= endDate).map((t) => t.id)
+  );
+  const result: Record<number, number[]> = {};
+  for (const [taskId, tagIds] of Object.entries(mockTaskTags)) {
+    const tid = Number(taskId);
+    if (taskIds.has(tid)) result[tid] = [...tagIds];
+  }
+  return result;
+}
+
 export function dbSetTaskTags(taskId: number, tagIds: number[]): void {
   mockTaskTags[taskId] = [...tagIds];
 }

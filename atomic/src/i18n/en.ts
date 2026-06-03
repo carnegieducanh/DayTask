@@ -192,6 +192,12 @@ export const en: typeof vi = {
     weekDowShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     statsTotal: 'Total',
     noTasks: 'No tasks',
+    filterTitle: 'Filters',
+    filterCategories: 'Categories',
+    filterTags: 'Tags',
+    filterReset: 'Clear',
+    filterNoTags: 'No tags',
+    filterNoTime: '',
   },
   update: {
     title: 'New update available',

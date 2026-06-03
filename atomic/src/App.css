@@ -3726,6 +3726,148 @@ select {
   color: var(--text-primary);
 }
 
+/* ── Calendar body layout (sidebar + main) ── */
+.cal-body {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+.cal-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.cal-main > * {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Calendar Filter Sidebar ── */
+.cal-filter-sidebar {
+  width: 168px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--bg-secondary);
+  border: 0.5px solid var(--border-1);
+  border-radius: var(--radius-md);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 8px 12px;
+}
+.cal-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 4px;
+}
+.cal-filter-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+.cal-filter-reset {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+}
+.cal-filter-reset:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.cal-filter-section {
+  margin-bottom: 10px;
+}
+.cal-filter-section-label {
+  font-size: 0.67rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0 4px;
+  margin-bottom: 4px;
+}
+.cal-filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.cal-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 5px 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+  color: var(--text-primary);
+}
+.cal-filter-item:hover {
+  background: var(--bg-hover);
+}
+.cal-filter-item.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.cal-filter-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.3;
+  transition: opacity 0.15s;
+}
+.cal-filter-tag-chip {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  opacity: 0.3;
+  transition: opacity 0.15s;
+}
+.cal-filter-item.active .cal-filter-dot,
+.cal-filter-item.active .cal-filter-tag-chip {
+  opacity: 1;
+}
+.cal-filter-item-name {
+  flex: 1;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+.cal-filter-item.active .cal-filter-item-name {
+  font-weight: 600;
+}
+.cal-filter-item-time {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.cal-filter-item.active .cal-filter-item-time {
+  color: var(--text-primary);
+}
+
 /* ── Update Dialog ── */
 .update-overlay {
   position: fixed;

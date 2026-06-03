@@ -179,6 +179,12 @@ export const vi = {
     weekDowShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
     statsTotal: 'Tổng',
     noTasks: 'Không có task',
+    filterTitle: 'Bộ lọc',
+    filterCategories: 'Danh mục',
+    filterTags: 'Thẻ tag',
+    filterReset: 'Bỏ lọc',
+    filterNoTags: 'Không có thẻ tag',
+    filterNoTime: '',
   },
   update: {
     title: 'Có bản cập nhật mới',
