@@ -4,6 +4,7 @@ import { vi as viLocale } from 'date-fns/locale';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
 import type { DayActivity } from '../../types';
+import { getHeatmapColors } from '../../utils/heatmapColors';
 
 function getLevel(count: number): number {
   if (count === 0) return 0;
@@ -20,8 +21,8 @@ interface Props {
 
 export default function HeatmapGrid({ year, data }: Props) {
   const t = useT();
-  const { theme, language } = useAppStore();
-  const LEVEL_COLORS = ['var(--bg-secondary)', '#B5D4F4', '#378ADD', theme === 'dark' ? '#7ab0e0' : '#125680', '#0a3d5e'];
+  const { theme, language, accentColor } = useAppStore();
+  const LEVEL_COLORS = getHeatmapColors(accentColor, theme);
 
   const activityMap = useMemo(() => {
     const m: Record<string, number> = {};

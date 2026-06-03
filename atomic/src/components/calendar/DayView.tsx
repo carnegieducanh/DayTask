@@ -40,8 +40,8 @@ interface LayoutItem {
   entry: TaskTimeEntry | null;
   startMin: number;
   endMin: number;
-  col: number;
-  totalCols: number;
+  zIndex: number;
+  hasOverlapAbove: boolean;
 }
 
 function computeLayout(tasks: Task[], entries: TaskTimeEntry[], date: string): LayoutItem[] {
@@ -54,43 +54,16 @@ function computeLayout(tasks: Task[], entries: TaskTimeEntry[], date: string): L
 
   if (items.length === 0) return [];
 
-  const sorted = [...items].sort((a, b) => a.startMin - b.startMin);
-  const n = sorted.length;
-  const cols: number[] = new Array(n).fill(-1);
-  const colEnds: number[] = [];
+  // Sort by startMin; use task.id as stable tiebreaker
+  const sorted = [...items].sort((a, b) => a.startMin - b.startMin || a.task.id - b.task.id);
 
-  for (let i = 0; i < n; i++) {
-    let assigned = false;
-    for (let c = 0; c < colEnds.length; c++) {
-      if (colEnds[c] <= sorted[i].startMin) {
-        cols[i] = c;
-        colEnds[c] = sorted[i].endMin;
-        assigned = true;
-        break;
-      }
-    }
-    if (!assigned) {
-      cols[i] = colEnds.length;
-      colEnds.push(sorted[i].endMin);
-    }
-  }
-
-  // totalCols for each item = max column index among all overlapping items + 1
-  const totalCols: number[] = new Array(n).fill(1);
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j < n; j++) {
-      if (i !== j && sorted[i].startMin < sorted[j].endMin && sorted[j].startMin < sorted[i].endMin) {
-        totalCols[i] = Math.max(totalCols[i], cols[j] + 1);
-        totalCols[j] = Math.max(totalCols[j], cols[i] + 1);
-      }
-    }
-  }
-
-  return sorted.map((item, i) => ({
-    ...item,
-    col: cols[i],
-    totalCols: totalCols[i],
-  }));
+  return sorted.map((item, i) => {
+    // Overlaps with any earlier item → needs border-top separator
+    const hasOverlapAbove = sorted
+      .slice(0, i)
+      .some((prev) => prev.startMin < item.endMin && item.startMin < prev.endMin);
+    return { ...item, zIndex: i + 1, hasOverlapAbove };
+  });
 }
 
 interface DragCreate {
@@ -465,8 +438,6 @@ export default function DayView({
               : item.endMin;
             const top = minToPx(startMin);
             const height = Math.max(minToPx(endMin - startMin), 22);
-            const widthPct = 97 / item.totalCols;
-            const leftPct = 0.5 + item.col * widthPct;
             const color = categoryColors[item.task.category];
             const tagIds = taskTags[item.task.id] ?? [];
             const taskTagObjects = tags.filter((t) => tagIds.includes(t.id));
@@ -478,10 +449,12 @@ export default function DayView({
                 style={{
                   top,
                   height,
-                  left: `${leftPct}%`,
-                  width: `${widthPct - 0.5}%`,
+                  left: "0.5%",
+                  width: "97%",
                   backgroundColor: color,
                   borderLeft: `3px solid ${color}`,
+                  borderTop: item.hasOverlapAbove ? "2px solid rgba(255,255,255,0.25)" : undefined,
+                  zIndex: isMoving || isResizing ? 50 : item.zIndex,
                 }}
                 onMouseDown={(e) => handleTaskMouseDown(e, item)}
               >

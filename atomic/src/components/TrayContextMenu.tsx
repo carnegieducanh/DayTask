@@ -3,12 +3,20 @@ import { invoke } from '@tauri-apps/api/core';
 import { useAppStore } from '../store/appStore';
 
 export default function TrayContextMenu() {
-  const { theme, language } = useAppStore();
+  const { theme, language, accentColor } = useAppStore();
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.style.fontSize = '14px';
   }, [theme]);
+
+  useEffect(() => {
+    if (accentColor === 'orange') {
+      document.documentElement.style.setProperty('--primary', '#DA7756');
+    } else {
+      document.documentElement.style.removeProperty('--primary');
+    }
+  }, [accentColor]);
 
   async function openMain() {
     await invoke('show_main_window');

@@ -98,4 +98,5 @@ export interface Tag {
 export type Tab = 'today' | 'kanban' | 'heatmap' | 'calendar';
 export type Theme = 'light' | 'dark';
 export type Language = 'vi' | 'en';
+export type AccentColor = 'blue' | 'orange' | 'green' | 'purple' | 'red' | 'yellow';
 export type CategoryColors = Record<Category, string>;

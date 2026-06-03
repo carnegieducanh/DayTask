@@ -8,7 +8,7 @@ import { useT } from '../i18n';
 
 export default function TrayPopup() {
   const t = useT();
-  const { tasks, loadTasks, theme, language } = useAppStore();
+  const { tasks, loadTasks, theme, language, accentColor } = useAppStore();
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const done = tasks.filter((task) => task.is_done).length;
@@ -37,6 +37,10 @@ export default function TrayPopup() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--primary', '#DA7756');
+  }, []);
 
   async function openMain() {
     await invoke('show_main_window');

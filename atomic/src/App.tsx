@@ -31,7 +31,7 @@ const STATUSES: GoalStatus[] = ['todo', 'doing', 'review', 'done'];
 function App() {
   useReminder();
   const {
-    activeTab, theme, uiScale, language, selectedDate, selectedYear,
+    activeTab, theme, uiScale, language, accentColor, selectedDate, selectedYear,
     loadTasks, loadGoals, loadCategoryColors, loadTags, initAutostart,
     goals, reorderGoal, kanbanDragActiveId, setKanbanDragActiveId,
   } = useAppStore();
@@ -51,6 +51,21 @@ function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const accentMap: Record<string, string> = {
+      orange: '#DA7756',
+      green:  '#1D9E75',
+      purple: '#7F77DD',
+      red:    '#E24B4A',
+      yellow: '#EF9F27',
+    };
+    if (accentMap[accentColor]) {
+      document.documentElement.style.setProperty('--primary', accentMap[accentColor]);
+    } else {
+      document.documentElement.style.removeProperty('--primary');
+    }
+  }, [accentColor]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-lang', language);

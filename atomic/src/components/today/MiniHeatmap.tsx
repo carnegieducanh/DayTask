@@ -4,13 +4,14 @@ import { vi as viLocale } from 'date-fns/locale';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
 import type { DayActivity } from '../../types';
+import { getHeatmapColors } from '../../utils/heatmapColors';
 
 function level(n: number) { return n === 0 ? 0 : n <= 2 ? 1 : n <= 4 ? 2 : n <= 6 ? 3 : 4; }
 
 export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
   const t = useT();
-  const { theme, language } = useAppStore();
-  const COLORS = ['var(--border-1)', '#B5D4F4', '#378ADD', theme === 'dark' ? '#7ab0e0' : '#125680', '#0a3d5e'];
+  const { theme, language, accentColor } = useAppStore();
+  const COLORS = getHeatmapColors(accentColor, theme, 'var(--border-1)');
 
   const map = useMemo(
     () => Object.fromEntries(data.map((d) => [d.date, d.count])),

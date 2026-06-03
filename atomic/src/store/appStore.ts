@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { format, subDays } from 'date-fns';
 import { invoke } from '@tauri-apps/api/core';
-import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, Language, GoalChecklistItem, Category, CategoryColors, TaskTimeEntry, Tag } from '../types';
+import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, Language, AccentColor, GoalChecklistItem, Category, CategoryColors, TaskTimeEntry, Tag } from '../types';
 import {
   isTauri,
-  mockTasks, mockGoals, mockChecklist, mockTags, mockTaskTags,
+  mockTasks, mockGoals, mockChecklist, mockTags, mockTaskTags, mockTimeEntries,
   dbGetTasks, dbAddTask, dbUpdateTask, dbDeleteTask,
   dbGetGoals, dbAddGoal, dbUpdateGoal, dbDeleteGoal,
   dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
@@ -140,6 +140,7 @@ interface AppState {
   pendingDeleteGoal: Goal | null;
   pendingDeleteTag: Tag | null;
   autostart: boolean;
+  accentColor: AccentColor;
   tags: Tag[];
   taskTags: Record<number, number[]>;
 
@@ -147,6 +148,7 @@ interface AppState {
   toggleTheme: () => void;
   setUiScale: (scale: number) => void;
   setLanguage: (lang: Language) => void;
+  setAccentColor: (color: AccentColor) => void;
   setOpenSettingsModal: (val: boolean) => void;
   setSelectedDate: (date: string) => void;
   setSelectedYear: (year: number) => void;
@@ -202,6 +204,7 @@ interface AppState {
   seedIfEmpty: () => Promise<void>;
   exportAllData: () => Promise<void>;
   importAllData: (file: File) => Promise<void>;
+  resetAllData: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -231,6 +234,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   pendingDeleteGoal: null,
   pendingDeleteTag: null,
   autostart: true,
+  accentColor: (localStorage.getItem('accentColor') as AccentColor) ?? 'blue',
   tags: [],
   taskTags: {},
 
@@ -244,6 +248,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   setLanguage: (lang) => {
     localStorage.setItem('language', lang);
     set({ language: lang });
+  },
+
+  setAccentColor: (color) => {
+    localStorage.setItem('accentColor', color);
+    set({ accentColor: color });
   },
 
   setOpenSettingsModal: (val) => set({ openSettingsModal: val }),
@@ -1093,6 +1102,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     let categoryColors: CategoryColors;
     let tags: Tag[];
     let taskTagPairs: Array<{ task_id: number; tag_id: number }>;
+    let timeEntries: TaskTimeEntry[];
 
     if (!isTauri()) {
       tasks = [...mockTasks];
@@ -1104,6 +1114,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       taskTagPairs = Object.entries(mockTaskTags).flatMap(([taskId, tagIds]) =>
         tagIds.map((tagId) => ({ task_id: Number(taskId), tag_id: tagId }))
       );
+      timeEntries = [...mockTimeEntries];
     } else {
       const db = await getDb();
       tasks = await db.select<Task[]>('SELECT * FROM tasks ORDER BY date ASC, created_at ASC');
@@ -1116,9 +1127,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
       tags = await db.select<Tag[]>('SELECT * FROM tags ORDER BY created_at ASC');
       taskTagPairs = await db.select<Array<{ task_id: number; tag_id: number }>>('SELECT task_id, tag_id FROM task_tags');
+      timeEntries = await db.select<TaskTimeEntry[]>('SELECT * FROM task_time_entries ORDER BY task_id, date');
     }
 
-    const payload = { version: '1.1', exportedAt: new Date().toISOString(), tasks, goals, checklistItems, categoryColors, tags, taskTags: taskTagPairs };
+    const payload = { version: '1.2', exportedAt: new Date().toISOString(), tasks, goals, checklistItems, categoryColors, tags, taskTags: taskTagPairs, timeEntries };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1132,7 +1144,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   importAllData: async (file: File) => {
     const text = await file.text();
-    let data: { tasks?: Task[]; goals?: Goal[]; checklistItems?: GoalChecklistItem[]; categoryColors?: CategoryColors; tags?: Tag[]; taskTags?: Array<{ task_id: number; tag_id: number }> };
+    let data: { tasks?: Task[]; goals?: Goal[]; checklistItems?: GoalChecklistItem[]; categoryColors?: CategoryColors; tags?: Tag[]; taskTags?: Array<{ task_id: number; tag_id: number }>; timeEntries?: TaskTimeEntry[] };
     try {
       data = JSON.parse(text);
     } catch {
@@ -1161,8 +1173,12 @@ export const useAppStore = create<AppState>((set, get) => ({
           mockTaskTags[tt.task_id].push(tt.tag_id);
         }
       }
+      mockTimeEntries.length = 0;
+      if (Array.isArray(data.timeEntries)) mockTimeEntries.push(...data.timeEntries);
     } else {
       const db = await getDb();
+      await db.execute('DELETE FROM task_time_entries');
+      await db.execute('DELETE FROM task_tags');
       await db.execute('DELETE FROM goal_checklist_items');
       await db.execute('DELETE FROM tasks');
       await db.execute('DELETE FROM goals');
@@ -1208,8 +1224,43 @@ export const useAppStore = create<AppState>((set, get) => ({
           await db.execute('INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES ($1, $2)', [tt.task_id, tt.tag_id]);
         }
       }
+      if (Array.isArray(data.timeEntries)) {
+        for (const te of data.timeEntries) {
+          await db.execute(
+            'INSERT OR IGNORE INTO task_time_entries (task_id, date, start_time, end_time) VALUES ($1, $2, $3, $4)',
+            [te.task_id, te.date, te.start_time, te.end_time]
+          );
+        }
+      }
     }
 
+    const year = new Date().getFullYear();
+    await get().loadTasks(get().selectedDate);
+    await get().loadGoals(get().selectedYear);
+    await get().loadHeatmap(get().selectedYear);
+    await get().loadCategoryColors();
+    await get().loadTags();
+    await get().loadCalendarTasks(`${year}-01-01`, `${year}-12-31`);
+  },
+
+  resetAllData: async () => {
+    if (!isTauri()) {
+      mockTasks.length = 0;
+      mockGoals.length = 0;
+      mockChecklist.length = 0;
+      mockTags.length = 0;
+      for (const k of Object.keys(mockTaskTags)) delete mockTaskTags[Number(k)];
+      localStorage.removeItem('categoryColors');
+    } else {
+      const db = await getDb();
+      await db.execute('DELETE FROM task_time_entries');
+      await db.execute('DELETE FROM task_tags');
+      await db.execute('DELETE FROM goal_checklist_items');
+      await db.execute('DELETE FROM tasks');
+      await db.execute('DELETE FROM goals');
+      await db.execute('DELETE FROM category_colors');
+      await db.execute('DELETE FROM tags');
+    }
     const year = new Date().getFullYear();
     await get().loadTasks(get().selectedDate);
     await get().loadGoals(get().selectedYear);
