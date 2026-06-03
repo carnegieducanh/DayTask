@@ -1,129 +1,21 @@
-import { useCallback, useEffect, useState } from "react";
-import AddTaskModal from "../today/AddTaskModal";
-import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import { useEffect, useState } from "react";
 import {
   format,
-  parse,
   startOfWeek,
   endOfWeek,
-  getDay,
   addMonths,
   subMonths,
   addWeeks,
   subWeeks,
 } from "date-fns";
-import { vi as viLocale } from "date-fns/locale";
-import "react-big-calendar/lib/css/react-big-calendar.css";
+import AddTaskModal from "../today/AddTaskModal";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 import type { Task } from "../../types";
 import WeekView from "./WeekView";
-import { calcDayStats, formatMins } from "./calendarUtils";
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: (date: Date) => startOfWeek(date, { weekStartsOn: 1 }),
-  getDay,
-  locales: { vi: viLocale },
-});
-
-interface CalEvent {
-  id: number;
-  title: string;
-  start: Date;
-  end: Date;
-  allDay: true;
-  resource: Task;
-}
+import MonthView from "./MonthView";
 
 type CalViewType = "month" | "week";
-
-function MonthEvent({ event }: { event: object }) {
-  const e = event as CalEvent;
-  const color =
-    useAppStore.getState().categoryColors[e.resource.category] ?? "#7DD3FC";
-  return (
-    <span className="cal-month-event">
-      <span className="cal-month-dot" style={{ background: color }} />
-      <span className="cal-month-title">{e.title}</span>
-    </span>
-  );
-}
-
-function MonthDateHeader({
-  label,
-  onDrillDown,
-  drilldownView,
-  date,
-}: {
-  label: string;
-  onDrillDown?: () => void;
-  drilldownView?: string;
-  date: Date;
-  isOffRange?: boolean;
-}) {
-  return (
-    <div className="cal-month-date-header">
-      {drilldownView ? (
-        <a
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            onDrillDown?.();
-          }}
-          role="cell"
-          className="rbc-button-link"
-        >
-          {label}
-        </a>
-      ) : (
-        <span className="rbc-button-link">{label}</span>
-      )}
-    </div>
-  );
-}
-
-function DayCellWrapper({
-  value,
-  children,
-}: {
-  value: Date;
-  children?: React.ReactNode;
-}) {
-  const calendarTasks = useAppStore((s) => s.calendarTasks);
-  const calendarTimeEntries = useAppStore((s) => s.calendarTimeEntries);
-  const categoryColors = useAppStore((s) => s.categoryColors);
-  const dateStr = format(value, "yyyy-MM-dd");
-  const stats = calcDayStats(
-    calendarTasks,
-    calendarTimeEntries,
-    dateStr,
-    categoryColors,
-  );
-  const total = stats.reduce((sum, s) => sum + s.totalMins, 0);
-
-  return (
-    <div className="cal-month-cell-wrap">
-      {children}
-      {stats.length > 0 && (
-        <div className="cal-month-cell-stats">
-          <span className="cal-month-day-stats-dots">
-            {stats.slice(0, 4).map((s) => (
-              <span
-                key={s.category}
-                className="cal-month-stat-dot"
-                style={{ background: s.color }}
-                title={`${s.category}: ${formatMins(s.totalMins)}`}
-              />
-            ))}
-          </span>
-          <span className="cal-month-day-stats-time">{formatMins(total)}</span>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function CalToolbar({
   view,
@@ -198,7 +90,6 @@ function CalToolbar({
 }
 
 export default function CalendarView() {
-  const t = useT();
   const language = useAppStore((s) => s.language);
   const {
     calendarTasks,
@@ -222,56 +113,6 @@ export default function CalendarView() {
     }
   }, [currentDate, loadedYear, loadCalendarTasks]);
 
-  const messages = {
-    allDay: t.calendar.allDay,
-    previous: "‹",
-    next: "›",
-    today: t.calendar.today,
-    month: t.calendar.month,
-    week: t.calendar.week,
-    noEventsInRange: t.calendar.noEvents,
-    showMore: (n: number) => `+${n}`,
-  };
-
-  const events: CalEvent[] = calendarTasks.map((task) => {
-    const d = new Date(task.date + "T00:00:00");
-    return {
-      id: task.id,
-      title: task.title,
-      start: d,
-      end: d,
-      allDay: true,
-      resource: task,
-    };
-  });
-
-  const handleNavigate = useCallback((date: Date) => {
-    setCurrentDate(date);
-  }, []);
-
-  const handleSelectEvent = useCallback((event: object) => {
-    const e = event as CalEvent;
-    setEditingTask(e.resource);
-  }, []);
-
-  const handleSelectSlot = useCallback(
-    ({ start }: { start: Date }) => {
-      setSelectedDate(format(start, "yyyy-MM-dd"));
-    },
-    [setSelectedDate],
-  );
-
-  const eventPropGetter = useCallback(() => {
-    return {
-      style: {
-        background: "transparent",
-        border: "none",
-        padding: 0,
-        cursor: "pointer",
-      },
-    };
-  }, []);
-
   return (
     <div className="cal-wrap">
       <CalToolbar
@@ -281,26 +122,14 @@ export default function CalendarView() {
         setCurrentDate={setCurrentDate}
       />
       {view === "month" && (
-        <Calendar
-          localizer={localizer}
-          events={events}
-          views={["month"]}
-          view="month"
-          date={currentDate}
-          toolbar={false}
-          onNavigate={handleNavigate}
-          onSelectEvent={handleSelectEvent}
-          onSelectSlot={handleSelectSlot}
-          selectable
-          culture={language === "vi" ? "vi" : undefined}
-          messages={messages}
-          components={{
-            event: MonthEvent,
-            month: { dateHeader: MonthDateHeader },
-            dateCellWrapper: DayCellWrapper,
-          }}
-          eventPropGetter={eventPropGetter}
-          popup
+        <MonthView
+          tasks={calendarTasks}
+          currentDate={currentDate}
+          categoryColors={categoryColors}
+          onTaskClick={(task) => setEditingTask(task)}
+          onDayClick={(date) => setSelectedDate(date)}
+          timeEntries={calendarTimeEntries}
+          language={language}
         />
       )}
       {view === "week" && (
