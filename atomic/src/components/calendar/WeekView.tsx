@@ -115,7 +115,7 @@ export default function WeekView({
                   <div
                     key={task.id}
                     className="cal-week-task-card"
-                    style={{ borderLeftColor: color }}
+                    style={{ backgroundColor: color }}
                     onClick={() => onTaskClick(task)}
                   >
                     <span className="cal-week-task-title">{task.title}</span>
@@ -125,7 +125,7 @@ export default function WeekView({
                     <div className="cal-week-task-footer">
                       <span
                         className="cal-week-task-badge"
-                        style={{ background: color + '33', color }}
+                        style={{ background: 'rgba(255,255,255,0.3)', color: 'rgba(0,0,0,0.72)' }}
                       >
                         {t.cat[task.category] ?? task.category}
                       </span>

@@ -4,7 +4,9 @@
 }
 
 [data-lang="en"] {
-  --font: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font:
+    "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, "Helvetica Neue",
+    Arial, sans-serif;
 }
 
 :root {
@@ -419,13 +421,23 @@ select {
 }
 
 @keyframes overlay-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modal-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.97); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .modal {
@@ -540,7 +552,7 @@ select {
 }
 
 .toggle-switch::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 3px;
   left: 3px;
@@ -1467,7 +1479,9 @@ select {
   font-weight: 500;
   display: inline-flex;
   align-items: center;
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 
 .tag-picker-chip:hover {
@@ -1482,7 +1496,9 @@ select {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: border-color 0.12s, color 0.12s;
+  transition:
+    border-color 0.12s,
+    color 0.12s;
 }
 
 .tag-picker-add-btn:hover {
@@ -1520,8 +1536,12 @@ select {
   transition: color 0.1s;
 }
 
-.tag-picker-confirm:hover { color: var(--primary); }
-.tag-picker-cancel:hover  { color: #ef4444; }
+.tag-picker-confirm:hover {
+  color: var(--primary);
+}
+.tag-picker-cancel:hover {
+  color: #ef4444;
+}
 
 /* ── Tag dropdown (AddTaskModal — same row as Category) ── */
 .tag-dropdown {
@@ -1571,7 +1591,7 @@ select {
   background: var(--bg-primary);
   border: 1.5px solid var(--border-1);
   border-radius: 10px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   z-index: 9999;
   overflow: hidden;
   min-width: 180px;
@@ -1666,7 +1686,9 @@ select {
   color: var(--text-secondary);
   border-radius: 4px;
   padding: 0;
-  transition: color 0.12s, background 0.12s;
+  transition:
+    color 0.12s,
+    background 0.12s;
   flex-shrink: 0;
 }
 
@@ -1693,7 +1715,9 @@ select {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: border-color 0.12s, color 0.12s;
+  transition:
+    border-color 0.12s,
+    color 0.12s;
 }
 
 .tag-dropdown-add-btn:hover {
@@ -1753,7 +1777,9 @@ select {
   color: var(--text-secondary);
   border-radius: 99px;
   padding: 0;
-  transition: color 0.12s, background 0.12s;
+  transition:
+    color 0.12s,
+    background 0.12s;
 }
 
 .settings-tag-action-btn:hover {
@@ -1792,7 +1818,9 @@ select {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: border-color 0.12s, color 0.12s;
+  transition:
+    border-color 0.12s,
+    color 0.12s;
 }
 
 .settings-tag-add-btn:hover {
@@ -2008,8 +2036,14 @@ select {
 }
 
 @keyframes reminder-in {
-  from { opacity: 0; transform: translateX(12px) scale(0.97); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateX(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .reminder-popup-header {
@@ -2093,8 +2127,14 @@ select {
 }
 
 @keyframes toast-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 .delete-toast-msg {
@@ -2487,17 +2527,17 @@ select {
 }
 
 .settings-backup-ok {
-  background: color-mix(in srgb, #33B679 12%, transparent);
-  color: #0B8043;
+  background: color-mix(in srgb, #33b679 12%, transparent);
+  color: #0b8043;
 }
 
 .dark .settings-backup-ok {
-  color: #33B679;
+  color: #33b679;
 }
 
 .settings-backup-err {
-  background: color-mix(in srgb, #D50000 10%, transparent);
-  color: #D50000;
+  background: color-mix(in srgb, #d50000 10%, transparent);
+  color: #d50000;
 }
 
 .settings-autostart-row {
@@ -2526,7 +2566,7 @@ select {
 }
 
 .settings-toggle::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0.1875rem;
   left: 0.1875rem;
@@ -3319,7 +3359,11 @@ select {
   transition: background 0.15s;
 }
 .cal-week-header:not(.today):hover {
-  background: color-mix(in srgb, var(--text-secondary) 10%, var(--bg-secondary));
+  background: color-mix(
+    in srgb,
+    var(--text-secondary) 10%,
+    var(--bg-secondary)
+  );
 }
 .cal-week-header:not(.today):hover .cal-week-header-day,
 .cal-week-header:not(.today):hover .cal-week-header-date {
@@ -3361,22 +3405,30 @@ select {
   padding: 4px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   overflow-y: auto;
 }
 .cal-week-task-card {
-  border-left: 3px solid;
   padding: 6px 8px;
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
   cursor: pointer;
   min-height: 56px;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  transition: filter 0.1s;
 }
 .cal-week-task-card:hover {
-  filter: brightness(0.96);
+  filter: brightness(0.92);
+}
+.cal-week-task-card .cal-week-task-title {
+  color: rgba(0, 0, 0, 0.88);
+}
+.cal-week-task-card .cal-week-task-desc {
+  color: rgba(0, 0, 0, 0.65);
+}
+.cal-week-task-card .cal-week-task-duration {
+  color: rgba(0, 0, 0, 0.55);
 }
 .cal-week-task-title {
   font-size: 0.86rem;
@@ -3610,8 +3662,14 @@ select {
   animation: cal-popover-in 0.12s ease;
 }
 @keyframes cal-popover-in {
-  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .cal-day-popover-header {
   display: flex;

@@ -45,7 +45,7 @@ export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
       for (const d of week) {
         if (!d) continue;
         const m = d.getMonth();
-        if ((d.getDate() === 1 || last === -1) && m !== last) {
+        if (d.getDate() === 1 && m !== last) {
           out.push({ label: t.heatmap.monthsShort[m], col });
           last = m;
           break;
