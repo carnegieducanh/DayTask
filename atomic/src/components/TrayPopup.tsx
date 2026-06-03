@@ -8,9 +8,7 @@ import { useT } from '../i18n';
 
 export default function TrayPopup() {
   const t = useT();
-  const { tasks, loadTasks, theme, language, accentColor } = useAppStore();
-
-  const today = format(new Date(), 'yyyy-MM-dd');
+  const { tasks, loadTasks, theme, language } = useAppStore();
   const done = tasks.filter((task) => task.is_done).length;
   const total = tasks.length;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);

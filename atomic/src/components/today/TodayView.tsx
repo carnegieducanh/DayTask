@@ -15,7 +15,7 @@ import type { Task } from '../../types';
 export default function TodayView() {
   const t = useT();
   const {
-    tasks, selectedDate, setSelectedDate,
+    tasks, selectedDate,
     heatmap, loadHeatmap,
     language,
     getStreak, setReminderPopup,
