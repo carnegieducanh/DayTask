@@ -188,11 +188,14 @@ export function dbUpdateTask(id: number, updates: Partial<Task>): void {
   // Handle repeat_daily toggle
   if ('repeat_daily' in updates) {
     if (updates.repeat_daily === 0 && task.repeat_daily === 1) {
-      const yesterday = format(subDays(new Date(task.date + 'T00:00:00'), 1), 'yyyy-MM-dd');
+      // Convert template to regular task and delete all instances
       const tpl = mockTasks.find((t) => t.id === templateId);
-      if (tpl) tpl.repeat_end_date = yesterday;
+      if (tpl) {
+        tpl.repeat_daily = 0;
+        tpl.repeat_end_date = null;
+      }
       for (let i = mockTasks.length - 1; i >= 0; i--) {
-        if (mockTasks[i].series_id === templateId && mockTasks[i].date >= task.date) {
+        if (mockTasks[i].series_id === templateId) {
           delete mockTaskTags[mockTasks[i].id];
           mockTasks.splice(i, 1);
         }

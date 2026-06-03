@@ -3509,6 +3509,9 @@ select {
   display: flex;
   align-items: center;
   gap: 5px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 .cal-week-stat-dot {
   width: 6px;
@@ -3519,11 +3522,55 @@ select {
 .cal-week-stat-cat-name {
   font-size: 0.8rem;
   color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .cal-week-stat-cat-val {
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-primary);
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-left: 4px;
+}
+
+/* Stats hover popup */
+.cal-stats-popup {
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg-primary);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  width: max-content;
+  pointer-events: none;
+}
+.cal-stats-popup-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+.cal-stats-popup-cat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  white-space: nowrap;
+}
+.cal-stats-popup-cat-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.cal-stats-popup-cat-name {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 /* Month view — date header */
@@ -3983,4 +4030,122 @@ select {
 }
 .update-btn-confirm:hover {
   background: var(--primary-dark);
+}
+
+/* ── Tray Popup ── */
+.tp {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font);
+  overflow: hidden;
+  user-select: none;
+}
+
+.tp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 11px;
+  border-bottom: 1px solid var(--border-1);
+  flex-shrink: 0;
+}
+
+.tp-appname {
+  font-size: 0.93rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+.tp-date {
+  font-size: 0.79rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.tp-body {
+  flex: 1;
+  padding: 12px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+}
+
+.tp-stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.tp-stat-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tp-stat-count {
+  font-size: 0.79rem;
+  color: var(--text-secondary);
+}
+
+.tp-bar {
+  height: 5px;
+  background: var(--border-1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tp-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.tp-stat-sub {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.tp-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 14px;
+  flex-shrink: 0;
+}
+
+.tp-btn {
+  flex: 1;
+  height: 30px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.tp-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-2);
+}
+
+.tp-btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.tp-btn-primary:hover {
+  opacity: 0.88;
+  background: var(--primary);
 }

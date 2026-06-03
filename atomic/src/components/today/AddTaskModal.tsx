@@ -186,7 +186,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   const [description, setDesc] = useState("");
   const [category, setCategory] = useState<Category>("work");
   const [startTime, setStartTime] = useState(() => editTask ? "" : getDefaultStartTime());
-  const [endTime, setEndTime] = useState("");
+  const [endTime, setEndTime] = useState(() => editTask ? "" : getDefaultStartTime());
   const [repeatDaily, setRepeatDaily] = useState(!editTask);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [catPanelStyle, setCatPanelStyle] = useState<React.CSSProperties>({});
@@ -212,7 +212,8 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   const startListRef = useRef<HTMLDivElement>(null);
   const endListRef = useRef<HTMLDivElement>(null);
 
-  const isEditingSeries = !!(editTask && (editTask.repeat_daily === 1 || editTask.series_id != null));
+  // Only lock the toggle for instances (series_id != null); templates can still turn off repeat
+  const isSeriesInstance = !!(editTask && editTask.series_id != null);
 
   useEffect(() => {
     if (editTask) {
@@ -615,7 +616,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
               value={startTime}
               open={startOpen}
               setOpen={setStartOpen}
-              onChange={(v) => { setStartTime(v); setTimeError(""); }}
+              onChange={(v) => { if (!editTask && endTime === startTime) setEndTime(v); setStartTime(v); setTimeError(""); }}
               dropRef={startRef}
               listRef={startListRef}
             />
@@ -638,15 +639,15 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
               <div>
                 <div className="form-label" style={{ marginBottom: 2 }}>{t.taskModal.repeatLabel}</div>
                 <div className="repeat-hint">
-                  {isEditingSeries ? t.taskModal.repeatSeriesHint : t.taskModal.repeatHint}
+                  {isSeriesInstance ? t.taskModal.repeatSeriesHint : t.taskModal.repeatHint}
                 </div>
               </div>
               <button
                 type="button"
                 className={`toggle-switch${repeatDaily ? " on" : ""}`}
-                onClick={() => !isEditingSeries && setRepeatDaily((v) => !v)}
+                onClick={() => !isSeriesInstance && setRepeatDaily((v) => !v)}
                 aria-pressed={repeatDaily}
-                style={isEditingSeries ? { opacity: 0.5, cursor: 'default' } : undefined}
+                style={isSeriesInstance ? { opacity: 0.5, cursor: 'default' } : undefined}
               />
             </div>
           </div>

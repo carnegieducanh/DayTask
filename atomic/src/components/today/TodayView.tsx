@@ -78,13 +78,6 @@ export default function TodayView() {
     language === 'vi' ? { locale: viLocale } : undefined,
   );
 
-  const CAT_LABELS: Record<string, string> = {
-    work: t.cat.work,
-    personal: t.cat.personal,
-    health: t.cat.health,
-    learn: t.cat.learn,
-  };
-
   function openAdd()         { setEditTask(null); setShowModal(true); }
   function openEdit(task: Task) { setEditTask(task); setShowModal(true); }
 
@@ -203,7 +196,7 @@ export default function TodayView() {
                         </div>
                         <div className="today-schedule-body">
                           <div className="today-schedule-title">{task.title}</div>
-                          <div className="today-schedule-cat">{CAT_LABELS[task.category] ?? task.category}</div>
+                          <div className="today-schedule-cat">{t.cat[task.category as keyof typeof t.cat] ?? task.category}</div>
                         </div>
                         <button
                           className={`today-schedule-tick${task.is_done ? ' checked' : ''}`}

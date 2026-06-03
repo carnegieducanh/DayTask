@@ -680,12 +680,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     // Handle repeat_daily toggle
     if ('repeat_daily' in updates) {
       if (updates.repeat_daily === 0 && task.repeat_daily === 1) {
-        // Turning OFF series: stop from today
-        const yesterday = format(subDays(new Date(task.date + 'T00:00:00'), 1), 'yyyy-MM-dd');
-        await db.execute('UPDATE tasks SET repeat_end_date = $1 WHERE id = $2', [yesterday, templateId]);
-        await db.execute('DELETE FROM task_time_entries WHERE task_id IN (SELECT id FROM tasks WHERE series_id = $1 AND date >= $2)', [templateId, task.date]);
-        await db.execute('DELETE FROM task_tags WHERE task_id IN (SELECT id FROM tasks WHERE series_id = $1 AND date >= $2)', [templateId, task.date]);
-        await db.execute('DELETE FROM tasks WHERE series_id = $1 AND date >= $2', [templateId, task.date]);
+        // Turning OFF: convert template to regular task and delete all instances
+        await db.execute('DELETE FROM task_time_entries WHERE task_id IN (SELECT id FROM tasks WHERE series_id = $1)', [templateId]);
+        await db.execute('DELETE FROM task_tags WHERE task_id IN (SELECT id FROM tasks WHERE series_id = $1)', [templateId]);
+        await db.execute('DELETE FROM tasks WHERE series_id = $1', [templateId]);
+        await db.execute('UPDATE tasks SET repeat_daily = 0, series_id = NULL, repeat_end_date = NULL WHERE id = $1', [templateId]);
       } else if (updates.repeat_daily === 1 && task.repeat_daily === 0 && task.series_id != null) {
         // Instance: can't turn ON repeat for an instance, no-op
       } else if (updates.repeat_daily === 1 && task.repeat_daily === 0) {

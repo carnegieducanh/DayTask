@@ -160,6 +160,22 @@ pub fn run() {
         },
     ];
 
+    #[tauri::command]
+    fn show_main_window(app: tauri::AppHandle) {
+        if let Some(w) = app.get_webview_window("main") {
+            let _ = w.show();
+            let _ = w.set_focus();
+        }
+        if let Some(popup) = app.get_webview_window("tray-popup") {
+            let _ = popup.hide();
+        }
+    }
+
+    #[tauri::command]
+    fn quit_app(app: tauri::AppHandle) {
+        app.exit(0);
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(w) = app.get_webview_window("main") {
@@ -187,12 +203,18 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                let _ = window.hide();
-                api.prevent_close();
+            match event {
+                tauri::WindowEvent::CloseRequested { api, .. } => {
+                    let _ = window.hide();
+                    api.prevent_close();
+                }
+                tauri::WindowEvent::Focused(false) if window.label() == "tray-popup" => {
+                    let _ = window.hide();
+                }
+                _ => {}
             }
         })
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![show_main_window, quit_app])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
