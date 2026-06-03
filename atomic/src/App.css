@@ -3327,13 +3327,14 @@ select {
   border: 0.5px solid var(--border-1);
   border-radius: var(--radius-md);
   overflow: hidden;
+  min-width: calc(7 * 110px + 6px);
 }
 .cal-week-col {
   background: var(--bg-primary);
   display: flex;
   flex-direction: column;
   min-height: 0;
-  min-width: 0;
+  min-width: 110px;
   overflow: hidden;
 }
 .cal-week-header {
@@ -3435,17 +3436,25 @@ select {
   align-items: center;
   gap: 6px;
   margin-top: auto;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 .cal-week-task-badge {
   font-size: 0.8rem;
   padding: 1px 6px;
   border-radius: 99px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
 }
 .cal-week-task-duration {
   font-size: 0.8rem;
   color: var(--text-secondary);
   margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .cal-week-tasks {
   flex: 1;
@@ -3802,7 +3811,8 @@ select {
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
+  overflow-y: hidden;
+  overflow-x: auto;
 }
 .cal-main > * {
   flex: 1;
@@ -4112,6 +4122,61 @@ select {
   pointer-events: none;
 }
 
+.day-deck-row {
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-1);
+  background: var(--bg-primary);
+}
+
+.day-deck-gutter-spacer {
+  width: 52px;
+  flex-shrink: 0;
+}
+
+.day-deck-events-area {
+  flex: 1;
+  position: relative;
+  border-left: 1px solid var(--border-1);
+}
+
+.day-deck-card {
+  position: absolute;
+  left: 0.5%;
+  right: 0.5%;
+  height: 52px;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 0.88rem;
+  cursor: grab;
+  overflow: hidden;
+  box-sizing: border-box;
+  user-select: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  transition: filter 0.1s;
+}
+
+.day-deck-card:hover {
+  filter: brightness(0.93);
+}
+
+.day-deck-card:active {
+  cursor: grabbing;
+}
+
+.day-deck-badge {
+  position: absolute;
+  right: 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-1);
+  border-radius: 10px;
+  padding: 1px 7px;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* ── Update Dialog ── */
 .update-overlay {
   position: fixed;
@@ -4296,7 +4361,7 @@ select {
 
 .tp-bar-fill {
   height: 100%;
-  background: var(--primary);
+  background: #DA7756;
   border-radius: 3px;
   transition: width 0.4s ease;
 }
@@ -4333,15 +4398,15 @@ select {
 }
 
 .tp-btn-primary {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: #DA7756;
+  border-color: #DA7756;
   color: #fff;
   font-weight: 600;
 }
 
 .tp-btn-primary:hover {
   opacity: 0.88;
-  background: var(--primary);
+  background: #DA7756;
 }
 
 /* ── Tray Context Menu (right-click) ── */
@@ -4384,12 +4449,12 @@ select {
 }
 
 .tcm-item-quit {
-  color: #e05454;
+  color: #DA7756;
 }
 
 .tcm-item-quit:hover {
-  background: rgba(224, 84, 84, 0.1);
-  color: #e05454;
+  background: rgba(218, 119, 86, 0.1);
+  color: #DA7756;
 }
 
 .tcm-divider {

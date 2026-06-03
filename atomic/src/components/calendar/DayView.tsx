@@ -11,6 +11,9 @@ const MIN_DRAG_DURATION = 15; // minimum minutes to trigger task creation
 const DEFAULT_DURATION = 60; // default task duration in minutes for tasks without time entry
 const DRAG_MOVE_THRESHOLD = 4; // px before a mousedown on a task is treated as a move
 const MIN_RESIZE_DURATION = 15; // minimum minutes when resizing
+const DECK_OFFSET = 28; // px each unscheduled card is offset from the one below
+const CARD_HEIGHT = 52; // px height of each deck card
+const MAX_DECK = 5; // max visible cards in deck
 
 function timeToMin(time: string): number {
   const [h, m] = time.split(":").map(Number);
@@ -119,6 +122,13 @@ interface DragResize {
   newEndMin: number;
 }
 
+interface DragDeckTask {
+  taskId: number;
+  task: Task;
+  startMin: number; // -1 = cursor not yet on timeline
+  endMin: number;
+}
+
 export default function DayView({
   currentDate,
   onTaskClick,
@@ -133,6 +143,7 @@ export default function DayView({
   const [dragCreate, setDragCreate] = useState<DragCreate | null>(null);
   const [dragMove, setDragMove] = useState<DragMove | null>(null);
   const [dragResize, setDragResize] = useState<DragResize | null>(null);
+  const [dragDeckTask, setDragDeckTask] = useState<DragDeckTask | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
   const [currentTimeMin, setCurrentTimeMin] = useState(() => {
@@ -144,7 +155,21 @@ export default function DayView({
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const isToday = dateStr === todayStr;
 
-  const layoutItems = computeLayout(tasks, taskTimeEntries, dateStr);
+  const dateEntries = taskTimeEntries.filter((e) => e.date === dateStr);
+  const scheduledTaskIds = new Set(dateEntries.map((e) => e.task_id));
+  const scheduledTasks = tasks.filter((t) => scheduledTaskIds.has(t.id));
+  const unscheduledTasks = tasks.filter(
+    (t) => !scheduledTaskIds.has(t.id) && t.is_done === 0 && t.id !== dragDeckTask?.taskId
+  );
+
+  const layoutItems = computeLayout(scheduledTasks, taskTimeEntries, dateStr);
+
+  const visibleDeckTasks = unscheduledTasks.slice(-MAX_DECK);
+  const hiddenCount = Math.max(0, unscheduledTasks.length - MAX_DECK);
+  const deckHeight =
+    visibleDeckTasks.length > 0
+      ? CARD_HEIGHT + (visibleDeckTasks.length - 1) * DECK_OFFSET
+      : 0;
 
   // Update current-time indicator every minute
   useEffect(() => {
@@ -214,6 +239,14 @@ export default function DayView({
     });
   }
 
+  // ── Drag-deck: mousedown on an unscheduled card ──
+  function handleDeckCardMouseDown(e: React.MouseEvent, task: Task) {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    e.preventDefault();
+    setDragDeckTask({ taskId: task.id, task, startMin: -1, endMin: -1 });
+  }
+
   // ── Global mouse-move and mouse-up handlers (window-level) ──
   const handleWindowMouseMove = useCallback(
     (e: MouseEvent) => {
@@ -251,8 +284,26 @@ export default function DayView({
           setDragResize((prev) => prev ? { ...prev, newStartMin } : null);
         }
       }
+      if (dragDeckTask) {
+        const rect = gridRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const viewportY = e.clientY - rect.top;
+        if (viewportY < 0) {
+          // Cursor back above the grid (deck area) — reset placement
+          setDragDeckTask((prev) =>
+            prev && prev.startMin !== -1 ? { ...prev, startMin: -1, endMin: -1 } : prev
+          );
+        } else {
+          // Ghost follows cursor with fixed DEFAULT_DURATION height
+          const y = getRelY(e.clientY);
+          const startMin = Math.max(0, Math.min(Math.round(pxToMin(y) / 5) * 5, 1438));
+          setDragDeckTask((prev) =>
+            prev ? { ...prev, startMin, endMin: Math.min(startMin + DEFAULT_DURATION, 1440) } : null
+          );
+        }
+      }
     },
-    [dragCreate, dragMove, dragResize] // eslint-disable-line react-hooks/exhaustive-deps
+    [dragCreate, dragMove, dragResize, dragDeckTask] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const handleWindowMouseUp = useCallback(async () => {
@@ -297,17 +348,29 @@ export default function DayView({
       }
       setDragResize(null);
     }
-  }, [dragCreate, dragMove, dragResize, dateStr, saveTimeEntry, onTaskClick]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (dragDeckTask) {
+      if (dragDeckTask.startMin !== -1) {
+        await saveTimeEntry(
+          dragDeckTask.taskId,
+          dateStr,
+          minToTime(dragDeckTask.startMin),
+          minToTime(dragDeckTask.endMin)
+        );
+      }
+      // else: card returns to deck naturally (dragDeckTask cleared)
+      setDragDeckTask(null);
+    }
+  }, [dragCreate, dragMove, dragResize, dragDeckTask, dateStr, saveTimeEntry, onTaskClick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!dragCreate && !dragMove && !dragResize) return;
+    if (!dragCreate && !dragMove && !dragResize && !dragDeckTask) return;
     window.addEventListener("mousemove", handleWindowMouseMove);
     window.addEventListener("mouseup", handleWindowMouseUp);
     return () => {
       window.removeEventListener("mousemove", handleWindowMouseMove);
       window.removeEventListener("mouseup", handleWindowMouseUp);
     };
-  }, [dragCreate, dragMove, dragResize, handleWindowMouseMove, handleWindowMouseUp]);
+  }, [dragCreate, dragMove, dragResize, dragDeckTask, handleWindowMouseMove, handleWindowMouseUp]);
 
   const HOURS = Array.from({ length: 24 }, (_, i) => i);
   const ghostTop = dragCreate ? minToPx(Math.min(dragCreate.startMin, dragCreate.endMin)) : 0;
@@ -317,10 +380,42 @@ export default function DayView({
 
   return (
     <div className="day-view">
+      {/* Unscheduled task deck — fixed row above the scrollable grid */}
+      {visibleDeckTasks.length > 0 && (
+        <div className="day-deck-row" style={{ height: deckHeight + (hiddenCount > 0 ? 22 : 0) }}>
+          <div className="day-deck-gutter-spacer" />
+          <div className="day-deck-events-area" style={{ height: deckHeight }}>
+            {visibleDeckTasks.map((task, i) => {
+              const color = categoryColors[task.category];
+              return (
+                <div
+                  key={task.id}
+                  className="day-deck-card"
+                  style={{
+                    top: i * DECK_OFFSET,
+                    zIndex: i + 1,
+                    backgroundColor: color,
+                    borderLeft: `3px solid ${color}`,
+                  }}
+                  onMouseDown={(e) => handleDeckCardMouseDown(e, task)}
+                >
+                  <div className="day-task-title">{task.title}</div>
+                </div>
+              );
+            })}
+            {hiddenCount > 0 && (
+              <div className="day-deck-badge" style={{ top: deckHeight + 4 }}>
+                +{hiddenCount}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div
         className="day-grid"
         ref={gridRef}
-        style={{ cursor: dragCreate ? "ns-resize" : dragMove?.moved ? "grabbing" : dragResize ? "ns-resize" : "default" }}
+        style={{ cursor: dragCreate ? "ns-resize" : dragMove?.moved || dragDeckTask ? "grabbing" : dragResize ? "ns-resize" : "default" }}
       >
         {/* Time gutter */}
         <div className="day-gutter">
@@ -422,6 +517,32 @@ export default function DayView({
               </div>
             );
           })}
+
+          {/* Deck drag ghost — shows on timeline while dragging from deck */}
+          {dragDeckTask && dragDeckTask.startMin !== -1 && (
+            <div
+              className="day-task-block"
+              style={{
+                top: minToPx(dragDeckTask.startMin),
+                height: Math.max(minToPx(dragDeckTask.endMin - dragDeckTask.startMin), 22),
+                left: "0.5%",
+                width: "98%",
+                backgroundColor: categoryColors[dragDeckTask.task.category],
+                borderLeft: `3px solid ${categoryColors[dragDeckTask.task.category]}`,
+                opacity: 0.8,
+                zIndex: 100,
+                cursor: "grabbing",
+                pointerEvents: "none",
+              }}
+            >
+              <div className="day-task-title">{dragDeckTask.task.title}</div>
+              <div className="day-task-meta">
+                <span className="day-task-time">
+                  {minToTime(dragDeckTask.startMin)} – {minToTime(dragDeckTask.endMin)}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Drag-create ghost */}
           {dragCreate && dragCreate.endMin - dragCreate.startMin >= 2 && (

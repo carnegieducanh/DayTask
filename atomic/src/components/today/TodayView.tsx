@@ -96,12 +96,6 @@ export default function TodayView() {
         />
 
         <div className="today-topbar-side today-topbar-actions">
-          {selectedDate !== format(new Date(), 'yyyy-MM-dd') && (
-            <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 13 }}
-              onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}>
-              {t.today.backToToday}
-            </button>
-          )}
         </div>
       </div>
 
