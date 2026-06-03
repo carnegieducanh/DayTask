@@ -358,11 +358,12 @@ export default function AddGoalModal({
                   <div
                     key={item.id}
                     className={`checklist-item${item.is_done ? " checklist-item-done" : ""}`}
+                    onClick={() => toggleChecklistItem(item.id, editGoal.id)}
                   >
                     <button
                       type="button"
                       className={`checklist-checkbox${item.is_done ? " checked" : ""}`}
-                      onClick={() => toggleChecklistItem(item.id, editGoal.id)}
+                      onClick={(e) => e.stopPropagation()}
                       title={item.is_done ? t.goalModal.markUndone : t.goalModal.markDone}
                     >
                       {!!item.is_done && (
@@ -373,7 +374,7 @@ export default function AddGoalModal({
                     <button
                       type="button"
                       className="checklist-item-delete"
-                      onClick={() => deleteChecklistItem(item.id, editGoal.id)}
+                      onClick={(e) => { e.stopPropagation(); deleteChecklistItem(item.id, editGoal.id); }}
                       title={t.goalModal.delete}
                     >
                       <IconX size={11} />

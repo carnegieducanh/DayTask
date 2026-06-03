@@ -15,6 +15,7 @@
 
   --bg-primary: #ffffff;
   --bg-secondary: #f8f7f5;
+  --bg-hover: #edeae5;
   --text-primary: #1a1a1a;
   --text-secondary: #717171;
   --border-1: #e8e6e0;
@@ -64,6 +65,7 @@
 [data-theme="dark"] {
   --bg-primary: #1a1a1a; /* content, cards */
   --bg-secondary: #131314; /* sidebar, kanban columns */
+  --bg-hover: #242424;
   --text-primary: #f0eeeb;
   --text-secondary: #888888;
   --border-1: #333333;
@@ -1888,9 +1890,10 @@ select {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 2px;
+  padding: 7px 6px;
   border-radius: var(--radius-sm);
   transition: background 0.1s;
+  cursor: pointer;
 }
 
 .checklist-item:hover {
@@ -2634,10 +2637,6 @@ select {
 }
 
 .cat-dropdown-panel {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
   background: var(--bg-primary);
   border: 0.5px solid var(--border-2);
   border-radius: var(--radius-md);
@@ -3194,7 +3193,7 @@ select {
 .cal-wrap .rbc-label {
   background: var(--bg-secondary);
   color: var(--text-secondary);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-family: var(--font);
   padding: 0 8px;
   border-right: 0.5px solid var(--border-1);
@@ -3421,7 +3420,7 @@ select {
   text-overflow: ellipsis;
 }
 .cal-week-task-desc {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -3435,12 +3434,12 @@ select {
   flex-wrap: wrap;
 }
 .cal-week-task-badge {
-  font-size: 0.71rem;
+  font-size: 0.8rem;
   padding: 1px 6px;
   border-radius: 99px;
 }
 .cal-week-task-duration {
-  font-size: 0.71rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   margin-left: auto;
 }
@@ -3460,7 +3459,7 @@ select {
 .cal-week-stats-empty {
   padding: 6px 0;
   text-align: center;
-  font-size: 0.71rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   opacity: 0.5;
 }
@@ -3471,14 +3470,14 @@ select {
   margin-bottom: 5px;
 }
 .cal-week-stat-total-label {
-  font-size: 0.71rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 3px;
 }
 .cal-week-stat-total-val {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -3518,11 +3517,11 @@ select {
   flex-shrink: 0;
 }
 .cal-week-stat-cat-name {
-  font-size: 0.71rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
 }
 .cal-week-stat-cat-val {
-  font-size: 0.71rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-primary);
 }
@@ -3618,7 +3617,7 @@ select {
   padding: 0 2px;
 }
 .cal-month-more-row {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--primary);
   font-weight: 500;
   padding: 1px 6px;
@@ -3721,7 +3720,7 @@ select {
   flex-shrink: 0;
 }
 .cal-month-stat-total-val {
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -3778,7 +3777,7 @@ select {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   background: none;
   border: none;
@@ -3795,7 +3794,7 @@ select {
   margin-bottom: 10px;
 }
 .cal-filter-section-label {
-  font-size: 0.67rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -3850,7 +3849,7 @@ select {
 }
 .cal-filter-item-name {
   flex: 1;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3860,7 +3859,7 @@ select {
   font-weight: 600;
 }
 .cal-filter-item-time {
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   flex-shrink: 0;
 }

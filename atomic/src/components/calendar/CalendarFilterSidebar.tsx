@@ -46,12 +46,14 @@ export default function CalendarFilterSidebar({
     <div className="cal-filter-sidebar">
       <div className="cal-filter-header">
         <span className="cal-filter-title">{t.calendar.filterTitle}</span>
-        {hasFilter && (
-          <button className="cal-filter-reset" onClick={onReset}>
-            <IconX size="0.7rem" />
-            {t.calendar.filterReset}
-          </button>
-        )}
+        <button
+          className="cal-filter-reset"
+          onClick={onReset}
+          style={{ visibility: hasFilter ? 'visible' : 'hidden' }}
+        >
+          <IconX size="0.7rem" />
+          {t.calendar.filterReset}
+        </button>
       </div>
 
       <div className="cal-filter-section">

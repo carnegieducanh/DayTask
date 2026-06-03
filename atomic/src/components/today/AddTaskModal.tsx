@@ -189,6 +189,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   const [endTime, setEndTime] = useState("");
   const [repeatDaily, setRepeatDaily] = useState(!editTask);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [catPanelStyle, setCatPanelStyle] = useState<React.CSSProperties>({});
   const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
@@ -203,6 +204,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   const newTagInputRef = useRef<HTMLInputElement>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const catTriggerRef = useRef<HTMLButtonElement>(null);
   const tagDropRef = useRef<HTMLDivElement>(null);
   const tagTriggerRef = useRef<HTMLButtonElement>(null);
   const startRef = useRef<HTMLDivElement>(null);
@@ -388,9 +390,23 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
               <label className="form-label">{t.taskModal.categoryLabel}</label>
               <div className="cat-dropdown" ref={dropdownRef}>
                 <button
+                  ref={catTriggerRef}
                   type="button"
                   className="cat-dropdown-trigger"
-                  onClick={() => { setDropdownOpen((v) => !v); setColorPickerFor(null); }}
+                  onClick={() => {
+                    if (!dropdownOpen && catTriggerRef.current) {
+                      const rect = catTriggerRef.current.getBoundingClientRect();
+                      setCatPanelStyle({
+                        position: 'fixed',
+                        top: rect.bottom + 4,
+                        left: rect.left,
+                        width: rect.width,
+                        right: 'auto',
+                      });
+                    }
+                    setDropdownOpen((v) => !v);
+                    setColorPickerFor(null);
+                  }}
                 >
                   <span className="cat-color-dot" style={{ background: categoryColors[category] }} />
                   <span className="cat-dropdown-label">
@@ -402,7 +418,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
                   />
                 </button>
                 {dropdownOpen && (
-                  <div className="cat-dropdown-panel">
+                  <div className="cat-dropdown-panel" style={catPanelStyle}>
                     {CATEGORIES.map((cat) => (
                       <div
                         key={cat.value}
