@@ -11,12 +11,13 @@ export const vi = {
     lightMode: '☼  Light mode',
   },
   cat: {
-    work: 'Công việc',
-    personal: 'Cá nhân',
+    work: 'Sự nghiệp',
+    personal: 'Kết nối',
     health: 'Sức khỏe',
     learn: 'Học tập',
     creative: 'Sáng tạo',
     mindfulness: 'Thiền định',
+    finance: 'Tài chính',
   },
   priority: {
     high: 'Cao',

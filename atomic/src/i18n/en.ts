@@ -13,12 +13,13 @@ export const en: typeof vi = {
     lightMode: '☼  Light mode',
   },
   cat: {
-    work: 'Work',
-    personal: 'Personal',
+    work: 'Career',
+    personal: 'Connection',
     health: 'Health',
     learn: 'Learning',
     creative: 'Creative',
     mindfulness: 'Mindfulness',
+    finance: 'Finance',
   },
   priority: {
     high: 'High',

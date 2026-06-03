@@ -74,6 +74,7 @@ export default function AddGoalModal({
     { value: "learn",        label: t.cat.learn },
     { value: "creative",     label: t.cat.creative },
     { value: "mindfulness",  label: t.cat.mindfulness },
+    { value: "finance",      label: t.cat.finance },
   ];
 
   const PRIORITIES: { value: Priority; label: string }[] = [

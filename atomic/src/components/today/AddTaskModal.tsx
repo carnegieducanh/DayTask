@@ -160,6 +160,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
     { value: "learn",        label: t.cat.learn },
     { value: "creative",     label: t.cat.creative },
     { value: "mindfulness",  label: t.cat.mindfulness },
+    { value: "finance",      label: t.cat.finance },
   ];
 
   const [title, setTitle] = useState("");
