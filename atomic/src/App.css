@@ -397,6 +397,17 @@ select {
   align-items: center;
   justify-content: center;
   z-index: 100;
+  animation: overlay-fade-in 0.16s ease;
+}
+
+@keyframes overlay-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
 }
 
 .modal {
@@ -407,6 +418,7 @@ select {
   max-height: 90vh;
   overflow-y: auto;
   padding: 20px 24px;
+  animation: modal-in 0.16s ease;
 }
 
 .modal-title {
@@ -1609,18 +1621,12 @@ select {
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
   padding: 12px 14px;
   z-index: 200;
-  animation: slideIn 0.2s ease;
+  animation: reminder-in 0.18s ease;
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+@keyframes reminder-in {
+  from { opacity: 0; transform: translateX(12px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
 }
 
 .reminder-popup-header {
@@ -2277,6 +2283,7 @@ select {
   display: grid;
   grid-template-columns: repeat(6, 20px);
   gap: 5px;
+  animation: cal-popover-in 0.12s ease;
 }
 
 /* ── Category color picker ── */
@@ -3264,6 +3271,7 @@ select {
   justify-content: center;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(2px);
+  animation: overlay-fade-in 0.16s ease;
 }
 .update-dialog {
   background: var(--bg-primary);
@@ -3272,6 +3280,7 @@ select {
   padding: 24px;
   width: 340px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  animation: modal-in 0.16s ease;
 }
 .update-dialog-header {
   display: flex;
