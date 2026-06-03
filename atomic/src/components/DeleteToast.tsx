@@ -9,9 +9,11 @@ export default function DeleteToast() {
   const {
     pendingDeleteTask, undoDeleteTask, confirmDeleteTask,
     pendingDeleteGoal, undoDeleteGoal, confirmDeleteGoal,
+    pendingDeleteTag, undoDeleteTag, confirmDeleteTag,
   } = useAppStore();
   const taskTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const goalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tagTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (taskTimerRef.current) clearTimeout(taskTimerRef.current);
@@ -31,7 +33,16 @@ export default function DeleteToast() {
     return () => { if (goalTimerRef.current) clearTimeout(goalTimerRef.current); };
   }, [pendingDeleteGoal]);
 
-  if (!pendingDeleteTask && !pendingDeleteGoal) return null;
+  useEffect(() => {
+    if (tagTimerRef.current) clearTimeout(tagTimerRef.current);
+    if (!pendingDeleteTag) return;
+    tagTimerRef.current = setTimeout(() => {
+      confirmDeleteTag(pendingDeleteTag);
+    }, TOAST_DURATION);
+    return () => { if (tagTimerRef.current) clearTimeout(tagTimerRef.current); };
+  }, [pendingDeleteTag]);
+
+  if (!pendingDeleteTask && !pendingDeleteGoal && !pendingDeleteTag) return null;
 
   return (
     <>
@@ -61,6 +72,22 @@ export default function DeleteToast() {
             onClick={() => {
               if (goalTimerRef.current) clearTimeout(goalTimerRef.current);
               undoDeleteGoal();
+            }}
+          >
+            {t.toast.undo}
+          </button>
+        </div>
+      )}
+      {pendingDeleteTag && (
+        <div className="delete-toast" role="status">
+          <span className="delete-toast-msg">
+            {t.toast.deleted(pendingDeleteTag.name)}
+          </span>
+          <button
+            className="delete-toast-undo"
+            onClick={() => {
+              if (tagTimerRef.current) clearTimeout(tagTimerRef.current);
+              undoDeleteTag();
             }}
           >
             {t.toast.undo}

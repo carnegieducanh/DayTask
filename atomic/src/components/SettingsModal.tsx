@@ -5,7 +5,7 @@ import { useT } from '../i18n';
 import type { Language } from '../types';
 
 export default function SettingsModal() {
-  const { openSettingsModal, setOpenSettingsModal, uiScale, setUiScale, language, setLanguage, exportAllData, importAllData, autostart, setAutostart, tags, addTag, updateTag, deleteTag } = useAppStore();
+  const { openSettingsModal, setOpenSettingsModal, uiScale, setUiScale, language, setLanguage, exportAllData, importAllData, autostart, setAutostart, tags, addTag, updateTag, softDeleteTag } = useAppStore();
   const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -177,7 +177,7 @@ export default function SettingsModal() {
                         <IconPencil size={12} />
                       </button>
                       <button className="settings-tag-action-btn settings-tag-action-delete" title={t.tags.deleteTag}
-                        onClick={() => { if (window.confirm(t.tags.confirmDelete(tag.name))) deleteTag(tag.id); }}>
+                        onClick={() => softDeleteTag(tag.id)}>
                         <IconTrash size={12} />
                       </button>
                     </div>

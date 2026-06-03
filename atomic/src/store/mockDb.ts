@@ -18,9 +18,13 @@ export const mockTasks: Task[] = [
   { id: 3, title: 'Tập thể dục buổi sáng', description: 'Chạy bộ 5km + stretch', category: 'health', date: today, is_done: 1, repeat_daily: 0, created_at: today },
   { id: 4, title: 'Review code pull request', description: 'PR #42 — refactor auth module', category: 'work', date: today, is_done: 1, repeat_daily: 0, created_at: today },
   { id: 5, title: 'Gửi báo cáo tuần', description: 'Tổng kết KPI tuần, gửi cho manager', category: 'work', date: today, is_done: 1, repeat_daily: 0, created_at: today },
+  { id: 6, title: 'Viết blog post kỹ thuật', description: 'Chủ đề: Zustand vs Redux — so sánh thực tế', category: 'creative', date: today, is_done: 0, repeat_daily: 0, created_at: today },
+  { id: 7, title: 'Thiền buổi sáng', description: 'Thở sâu + body scan 15 phút', category: 'mindfulness', date: today, is_done: 1, repeat_daily: 1, created_at: today },
+  { id: 8, title: 'Lên kế hoạch sprint Q3', description: 'Roadmap tính năng, ước tính effort từng item', category: 'work', date: today, is_done: 0, repeat_daily: 0, created_at: today },
+  { id: 9, title: 'Học tiếng Anh 1 tiếng', description: 'Luyện nghe IELTS Listening test 3', category: 'learn', date: today, is_done: 0, repeat_daily: 0, created_at: today },
 ];
 
-const MOCK_TIME_ENTRIES_KEY = 'mock_time_entries';
+const MOCK_TIME_ENTRIES_KEY = 'mock_time_entries_v3';
 
 function loadMockTimeEntries(): TaskTimeEntry[] {
   try {
@@ -28,7 +32,14 @@ function loadMockTimeEntries(): TaskTimeEntry[] {
     if (stored) return JSON.parse(stored);
   } catch {}
   return [
+    { task_id: 7, date: today, start_time: '06:30', end_time: '06:45' },
+    { task_id: 3, date: today, start_time: '07:00', end_time: '08:00' },
+    { task_id: 6, date: today, start_time: '09:00', end_time: '10:00' },
+    { task_id: 4, date: today, start_time: '10:00', end_time: '11:00' },
     { task_id: 1, date: today, start_time: '14:00', end_time: '15:30' },
+    { task_id: 8, date: today, start_time: '15:30', end_time: '16:00' },
+    { task_id: 5, date: today, start_time: '16:00', end_time: '16:30' },
+    { task_id: 9, date: today, start_time: '19:00', end_time: '20:00' },
     { task_id: 2, date: today, start_time: '21:00', end_time: '21:30' },
   ];
 }
@@ -236,10 +247,30 @@ export function dbDeleteTimeEntry(taskId: number, date: string): void {
 
 // ---------- tags ----------
 
-let _nextTagId = 1;
+let _nextTagId = 8;
 
-export const mockTags: Tag[] = [];
-export const mockTaskTags: Record<number, number[]> = {};
+export const mockTags: Tag[] = [
+  { id: 1, name: 'Khẩn cấp',  color: '#F87171', created_at: today },
+  { id: 2, name: 'Deep Work',  color: '#60A5FA', created_at: today },
+  { id: 3, name: 'Họp',        color: '#A78BFA', created_at: today },
+  { id: 4, name: 'Học tập',    color: '#34D399', created_at: today },
+  { id: 5, name: 'Sức khỏe',   color: '#2DD4BF', created_at: today },
+  { id: 6, name: 'Cá nhân',    color: '#FB923C', created_at: today },
+  { id: 7, name: 'Nhanh',      color: '#FACC15', created_at: today },
+];
+
+// task_id → tag_ids
+export const mockTaskTags: Record<number, number[]> = {
+  1: [3, 1],    // Họp team:           Họp + Khẩn cấp
+  2: [4, 6],    // Đọc sách:           Học tập + Cá nhân
+  3: [5],       // Tập thể dục:        Sức khỏe
+  4: [2, 1],    // Review code:        Deep Work + Khẩn cấp
+  5: [7, 1],    // Gửi báo cáo:        Nhanh + Khẩn cấp
+  6: [2, 4],    // Viết blog:          Deep Work + Học tập
+  7: [5, 7],    // Thiền:              Sức khỏe + Nhanh
+  8: [3, 2],    // Lên kế hoạch:       Họp + Deep Work
+  9: [4],       // Học tiếng Anh:      Học tập
+};
 
 export function dbGetTags(): Tag[] {
   return [...mockTags];

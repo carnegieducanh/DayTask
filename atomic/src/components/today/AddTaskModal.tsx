@@ -8,6 +8,8 @@ import {
   IconClockOff,
   IconTag,
   IconX,
+  IconPencil,
+  IconTrash,
 } from "@tabler/icons-react";
 
 const TIME_OPTIONS: string[] = [];
@@ -156,6 +158,8 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
     tags,
     taskTags,
     addTag,
+    updateTag,
+    softDeleteTag,
     setTaskTags,
   } = useAppStore();
 
@@ -184,6 +188,8 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   const [newTagInput, setNewTagInput] = useState("");
   const [showNewTagInput, setShowNewTagInput] = useState(false);
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const [renamingTagId, setRenamingTagId] = useState<number | null>(null);
+  const [renameInput, setRenameInput] = useState("");
   const [tagPanelStyle, setTagPanelStyle] = useState<React.CSSProperties>({});
   const newTagInputRef = useRef<HTMLInputElement>(null);
 
@@ -457,19 +463,14 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
                       <span className="tag-dropdown-label placeholder">{t.taskModal.noTag}</span>
                     </>
                   ) : (
-                    <>
-                      {tags.filter((tg) => selectedTagIds.includes(tg.id)).slice(0, 3).map((tg) => (
-                        <span key={tg.id} className="tag-dropdown-dot" style={{ background: tg.color }} />
-                      ))}
-                      <span className="tag-dropdown-label">
-                        {(() => {
-                          const sel = tags.filter((tg) => selectedTagIds.includes(tg.id));
-                          return sel.length === 1
-                            ? sel[0].name
-                            : `${sel[0]?.name ?? ''} +${sel.length - 1}`;
-                        })()}
-                      </span>
-                    </>
+                    <span className="tag-dropdown-label">
+                      {(() => {
+                        const sel = tags.filter((tg) => selectedTagIds.includes(tg.id));
+                        return sel.length === 1
+                          ? sel[0].name
+                          : `${sel[0]?.name ?? ''} +${sel.length - 1}`;
+                      })()}
+                    </span>
                   )}
                   <IconChevronDown size={13} className={`cat-dropdown-chevron${tagDropdownOpen ? " open" : ""}`} />
                 </button>
@@ -482,18 +483,66 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
                       {tags.map((tag) => {
                         const selected = selectedTagIds.includes(tag.id);
                         return (
-                          <button
+                          <div
                             key={tag.id}
-                            type="button"
                             className={`tag-dropdown-item${selected ? " selected" : ""}`}
-                            onClick={() => toggleTag(tag.id)}
                           >
-                            <span className="tag-dropdown-check">
-                              {selected && <IconCheck size={13} strokeWidth={3} />}
-                            </span>
-                            <span className="tag-dropdown-dot" style={{ background: tag.color }} />
-                            <span>{tag.name}</span>
-                          </button>
+                            {renamingTagId === tag.id ? (
+                              <>
+                                <input
+                                  className="tag-dropdown-rename-input"
+                                  value={renameInput}
+                                  onChange={(e) => setRenameInput(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      if (renameInput.trim()) updateTag(tag.id, renameInput.trim());
+                                      setRenamingTagId(null);
+                                    }
+                                    if (e.key === "Escape") setRenamingTagId(null);
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  autoFocus
+                                  spellCheck={false}
+                                />
+                                <button
+                                  type="button"
+                                  className="tag-dropdown-action-btn"
+                                  onClick={(e) => { e.stopPropagation(); if (renameInput.trim()) updateTag(tag.id, renameInput.trim()); setRenamingTagId(null); }}
+                                >
+                                  <IconCheck size={12} />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  className="tag-dropdown-item-select"
+                                  onClick={() => toggleTag(tag.id)}
+                                >
+                                  <span className="tag-dropdown-check">
+                                    {selected && <IconCheck size={13} strokeWidth={3} />}
+                                  </span>
+                                  <span>{tag.name}</span>
+                                </button>
+                                <div className="tag-dropdown-item-actions">
+                                  <button
+                                    type="button"
+                                    className="tag-dropdown-action-btn"
+                                    onClick={(e) => { e.stopPropagation(); setRenamingTagId(tag.id); setRenameInput(tag.name); }}
+                                  >
+                                    <IconPencil size={12} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="tag-dropdown-action-btn tag-dropdown-action-delete"
+                                    onClick={(e) => { e.stopPropagation(); softDeleteTag(tag.id); setSelectedTagIds((prev) => prev.filter((id) => id !== tag.id)); }}
+                                  >
+                                    <IconTrash size={12} />
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         );
                       })}
                     </div>

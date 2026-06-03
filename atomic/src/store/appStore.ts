@@ -137,6 +137,7 @@ interface AppState {
   language: Language;
   pendingDeleteTask: Task | null;
   pendingDeleteGoal: Goal | null;
+  pendingDeleteTag: Tag | null;
   autostart: boolean;
   tags: Tag[];
   taskTags: Record<number, number[]>;
@@ -161,6 +162,9 @@ interface AppState {
   addTag: (name: string) => Promise<number>;
   updateTag: (id: number, name: string) => Promise<void>;
   deleteTag: (id: number) => Promise<void>;
+  softDeleteTag: (id: number) => void;
+  undoDeleteTag: () => void;
+  confirmDeleteTag: (tag: Tag) => Promise<void>;
   setTaskTags: (taskId: number, tagIds: number[]) => Promise<void>;
 
   loadTasks: (date: string) => Promise<void>;
@@ -223,6 +227,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   language: (localStorage.getItem('language') as Language) ?? 'vi',
   pendingDeleteTask: null,
   pendingDeleteGoal: null,
+  pendingDeleteTag: null,
   autostart: true,
   tags: [],
   taskTags: {},
@@ -371,6 +376,39 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     set({ taskTags });
     await get().loadTags();
+  },
+
+  softDeleteTag: (id) => {
+    const tag = get().tags.find((t) => t.id === id);
+    if (!tag) return;
+    const prev = get().pendingDeleteTag;
+    if (prev) get().confirmDeleteTag(prev);
+    set({ tags: get().tags.filter((t) => t.id !== id), pendingDeleteTag: tag });
+  },
+
+  undoDeleteTag: () => {
+    const tag = get().pendingDeleteTag;
+    if (!tag) return;
+    const tags = [...get().tags, tag].sort((a, b) =>
+      a.created_at && b.created_at ? a.created_at.localeCompare(b.created_at) : 0
+    );
+    set({ tags, pendingDeleteTag: null });
+  },
+
+  confirmDeleteTag: async (tag) => {
+    set({ pendingDeleteTag: null });
+    const taskTags = { ...get().taskTags };
+    for (const taskId of Object.keys(taskTags)) {
+      taskTags[Number(taskId)] = taskTags[Number(taskId)].filter((tId) => tId !== tag.id);
+    }
+    set({ taskTags });
+    if (!isTauri()) {
+      dbDeleteTag(tag.id);
+      return;
+    }
+    const db = await getDb();
+    await db.execute('DELETE FROM task_tags WHERE tag_id = $1', [tag.id]);
+    await db.execute('DELETE FROM tags WHERE id = $1', [tag.id]);
   },
 
   setTaskTags: async (taskId, tagIds) => {

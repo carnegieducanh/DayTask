@@ -32,6 +32,12 @@
   --cat-health-text: #633806;
   --cat-learn-bg: #eeedfe;
   --cat-learn-text: #3c3489;
+  --cat-creative-bg: #fce7f0;
+  --cat-creative-text: #831843;
+  --cat-mindfulness-bg: #d1fae5;
+  --cat-mindfulness-text: #065f46;
+  --cat-finance-bg: #fef3c7;
+  --cat-finance-text: #78350f;
 
   /* Priority */
   --pri-high: #d94f4f;
@@ -369,6 +375,18 @@ select {
 .tag-learn {
   background: var(--cat-learn-bg);
   color: var(--cat-learn-text);
+}
+.tag-creative {
+  background: var(--cat-creative-bg);
+  color: var(--cat-creative-text);
+}
+.tag-mindfulness {
+  background: var(--cat-mindfulness-bg);
+  color: var(--cat-mindfulness-text);
+}
+.tag-finance {
+  background: var(--cat-finance-bg);
+  color: var(--cat-finance-text);
 }
 
 /* ── Priority dot ── */
@@ -1573,16 +1591,14 @@ select {
 .tag-dropdown-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 12px;
-  cursor: pointer;
+  gap: 4px;
+  padding: 4px 8px 4px 12px;
   font-size: 0.875rem;
   color: var(--text-primary);
   background: transparent;
   border: none;
   border-top: 0.5px solid var(--border-1);
   width: 100%;
-  text-align: left;
   transition: background 0.1s;
 }
 
@@ -1595,12 +1611,73 @@ select {
   background: var(--bg-secondary);
 }
 
+.tag-dropdown-item-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  text-align: left;
+  padding: 3px 0;
+  min-width: 0;
+}
+
+.tag-dropdown-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .tag-dropdown-check {
   width: 14px;
   flex-shrink: 0;
   color: var(--primary);
   display: flex;
   align-items: center;
+}
+
+.tag-dropdown-rename-input {
+  flex: 1;
+  font-size: 0.84rem;
+  padding: 2px 6px;
+  border: 1.5px solid var(--primary);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  outline: none;
+  min-width: 0;
+}
+
+.tag-dropdown-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  padding: 0;
+  transition: color 0.12s, background 0.12s;
+  flex-shrink: 0;
+}
+
+.tag-dropdown-action-btn:hover {
+  color: var(--text-primary);
+  background: var(--border-1);
+}
+
+.tag-dropdown-action-delete:hover {
+  color: #ef4444;
+  background: #fee2e2;
 }
 
 .tag-dropdown-footer {
