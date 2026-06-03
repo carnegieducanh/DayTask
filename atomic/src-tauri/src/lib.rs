@@ -169,6 +169,9 @@ pub fn run() {
         if let Some(popup) = app.get_webview_window("tray-popup") {
             let _ = popup.hide();
         }
+        if let Some(ctx) = app.get_webview_window("tray-context") {
+            let _ = ctx.hide();
+        }
     }
 
     #[tauri::command]
@@ -208,7 +211,9 @@ pub fn run() {
                     let _ = window.hide();
                     api.prevent_close();
                 }
-                tauri::WindowEvent::Focused(false) if window.label() == "tray-popup" => {
+                tauri::WindowEvent::Focused(false)
+                    if matches!(window.label(), "tray-popup" | "tray-context") =>
+                {
                     let _ = window.hide();
                 }
                 _ => {}

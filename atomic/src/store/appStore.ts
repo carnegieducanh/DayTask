@@ -690,6 +690,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       } else if (updates.repeat_daily === 1 && task.repeat_daily === 0) {
         // Turning ON: this non-recurring task becomes a template
         await db.execute('UPDATE tasks SET repeat_daily = 1, series_id = NULL WHERE id = $1', [id]);
+      } else if (updates.repeat_daily === 1 && task.repeat_daily === 1) {
+        // Template stays ON: clear repeat_end_date in case it was capped by a prior deletion
+        await db.execute('UPDATE tasks SET repeat_end_date = NULL WHERE id = $1', [templateId]);
       }
     }
 

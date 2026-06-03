@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { useAppStore } from '../store/appStore';
 import { useT } from '../i18n';
 
@@ -23,7 +24,14 @@ export default function TrayPopup() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.style.fontSize = '14px';
-    loadTasks(today);
+
+    const refresh = () => loadTasks(format(new Date(), 'yyyy-MM-dd'));
+    refresh();
+
+    let unlisten: (() => void) | undefined;
+    listen('tauri://focus', refresh).then((fn) => { unlisten = fn; });
+
+    return () => { unlisten?.(); };
   }, []);
 
   useEffect(() => {
