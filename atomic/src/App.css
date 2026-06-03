@@ -3807,6 +3807,10 @@ select {
   flex-direction: column;
   gap: 1px;
 }
+.cal-filter-list--scrollable {
+  max-height: 12rem;
+  overflow-y: auto;
+}
 .cal-filter-item {
   display: flex;
   align-items: center;

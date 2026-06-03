@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { invoke } from '@tauri-apps/api/core';
 import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, Language, GoalChecklistItem, Category, CategoryColors, TaskTimeEntry, Tag } from '../types';
 import {
   isTauri,
-  mockTasks, mockGoals, mockChecklist,
+  mockTasks, mockGoals, mockChecklist, mockTags, mockTaskTags,
   dbGetTasks, dbAddTask, dbUpdateTask, dbDeleteTask,
   dbGetGoals, dbAddGoal, dbUpdateGoal, dbDeleteGoal,
   dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
@@ -360,23 +360,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deleteTag: async (id) => {
+    const filterTag = (map: Record<number, number[]>) => {
+      const next = { ...map };
+      for (const k of Object.keys(next)) next[Number(k)] = next[Number(k)].filter((tId) => tId !== id);
+      return next;
+    };
     if (!isTauri()) {
       dbDeleteTag(id);
-      const taskTags = { ...get().taskTags };
-      for (const taskId of Object.keys(taskTags)) {
-        taskTags[Number(taskId)] = taskTags[Number(taskId)].filter((tId) => tId !== id);
-      }
-      set({ tags: dbGetTags(), taskTags });
+      set({ tags: dbGetTags(), taskTags: filterTag(get().taskTags), calendarTaskTags: filterTag(get().calendarTaskTags) });
       return;
     }
     const db = await getDb();
     await db.execute('DELETE FROM task_tags WHERE tag_id = $1', [id]);
     await db.execute('DELETE FROM tags WHERE id = $1', [id]);
-    const taskTags = { ...get().taskTags };
-    for (const taskId of Object.keys(taskTags)) {
-      taskTags[Number(taskId)] = taskTags[Number(taskId)].filter((tId) => tId !== id);
-    }
-    set({ taskTags });
+    set({ taskTags: filterTag(get().taskTags), calendarTaskTags: filterTag(get().calendarTaskTags) });
     await get().loadTags();
   },
 
@@ -398,12 +395,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   confirmDeleteTag: async (tag) => {
-    set({ pendingDeleteTag: null });
-    const taskTags = { ...get().taskTags };
-    for (const taskId of Object.keys(taskTags)) {
-      taskTags[Number(taskId)] = taskTags[Number(taskId)].filter((tId) => tId !== tag.id);
-    }
-    set({ taskTags });
+    const filterTag = (map: Record<number, number[]>) => {
+      const next = { ...map };
+      for (const k of Object.keys(next)) next[Number(k)] = next[Number(k)].filter((tId) => tId !== tag.id);
+      return next;
+    };
+    set({ pendingDeleteTag: null, taskTags: filterTag(get().taskTags), calendarTaskTags: filterTag(get().calendarTaskTags) });
     if (!isTauri()) {
       dbDeleteTag(tag.id);
       return;
@@ -414,17 +411,40 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setTaskTags: async (taskId, tagIds) => {
+    const task = get().tasks.find((t) => t.id === taskId);
+    const isSeriesTask = task && (task.repeat_daily === 1 || task.series_id != null);
+    const templateId = task?.series_id ?? (task?.repeat_daily === 1 ? taskId : null);
+    const fromDate = task?.date;
+
     if (!isTauri()) {
       dbSetTaskTags(taskId, tagIds);
-      set({ taskTags: { ...get().taskTags, [taskId]: tagIds } });
+      set({ taskTags: { ...get().taskTags, [taskId]: tagIds }, calendarTaskTags: { ...get().calendarTaskTags, [taskId]: tagIds } });
       return;
     }
     const db = await getDb();
-    await db.execute('DELETE FROM task_tags WHERE task_id = $1', [taskId]);
-    for (const tagId of tagIds) {
-      await db.execute('INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES ($1, $2)', [taskId, tagId]);
+
+    if (isSeriesTask && templateId && fromDate) {
+      // Update tags on template + all instances from this date onwards
+      const affected = await db.select<{ id: number }[]>(
+        `SELECT id FROM tasks WHERE id = $1 OR (series_id = $1 AND date >= $2)`,
+        [templateId, fromDate]
+      );
+      for (const { id } of affected) {
+        await db.execute('DELETE FROM task_tags WHERE task_id = $1', [id]);
+        for (const tagId of tagIds) {
+          await db.execute('INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES ($1, $2)', [id, tagId]);
+        }
+      }
+    } else {
+      await db.execute('DELETE FROM task_tags WHERE task_id = $1', [taskId]);
+      for (const tagId of tagIds) {
+        await db.execute('INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES ($1, $2)', [taskId, tagId]);
+      }
     }
-    set({ taskTags: { ...get().taskTags, [taskId]: tagIds } });
+    set({
+      taskTags: { ...get().taskTags, [taskId]: tagIds },
+      calendarTaskTags: { ...get().calendarTaskTags, [taskId]: tagIds },
+    });
   },
 
   // --- Tasks ---
@@ -435,14 +455,37 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
     const db = await getDb();
-    await db.execute(
-      `UPDATE tasks SET date = $1
-       WHERE repeat_daily = 1 AND is_done = 0 AND date < $1
-       AND title NOT IN (SELECT title FROM tasks WHERE repeat_daily = 1 AND date = $1 AND is_done = 0)`,
+
+    // Lazy-create instances for active series templates that don't yet have one for this date.
+    // A template is: repeat_daily=1, series_id IS NULL, date < $date, repeat_end_date IS NULL OR >= $date.
+    const templatesToInstantiate = await db.select<{ id: number; title: string; category: string; created_at: string }[]>(
+      `SELECT t.id, t.title, t.category, t.created_at FROM tasks t
+       WHERE t.repeat_daily = 1 AND t.series_id IS NULL
+         AND t.date < $1
+         AND (t.repeat_end_date IS NULL OR t.repeat_end_date >= $1)
+         AND NOT EXISTS (
+           SELECT 1 FROM tasks inst WHERE inst.series_id = t.id AND inst.date = $1
+         )`,
       [date]
     );
+    for (const tpl of templatesToInstantiate) {
+      const result = await db.execute(
+        `INSERT INTO tasks (title, description, category, date, is_done, repeat_daily, series_id, created_at)
+         VALUES ($1, NULL, $2, $3, 0, 0, $4, $5)`,
+        [tpl.title, tpl.category, date, tpl.id, tpl.created_at]
+      );
+      const newId = result.lastInsertId;
+      if (newId) {
+        await db.execute(
+          `INSERT INTO task_tags (task_id, tag_id) SELECT $1, tag_id FROM task_tags WHERE task_id = $2`,
+          [newId, tpl.id]
+        );
+      }
+    }
+
     const tasks = await db.select<Task[]>(
-      'SELECT id, title, description, category, date, is_done, repeat_daily, created_at FROM tasks WHERE date = $1 ORDER BY is_done ASC, created_at ASC',
+      `SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at
+       FROM tasks WHERE date = $1 ORDER BY is_done ASC, created_at ASC`,
       [date]
     );
     const taskTimeEntries = await db.select<TaskTimeEntry[]>(
@@ -473,7 +516,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     const db = await getDb();
     const tasks = await db.select<Task[]>(
-      'SELECT id, title, description, category, date, is_done, repeat_daily, created_at FROM tasks WHERE is_done = 1 AND date >= $1 AND date <= $2 ORDER BY date ASC',
+      'SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at FROM tasks WHERE is_done = 1 AND date >= $1 AND date <= $2 ORDER BY date ASC',
       [startDate, endDate]
     );
     const calendarTimeEntries = await db.select<TaskTimeEntry[]>(
@@ -553,7 +596,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   addTask: async (task, timeEntry, tagIds) => {
     if (!isTauri()) {
-      const newTask = dbAddTask({ title: task.title, description: task.description ?? null, category: task.category, date: task.date, is_done: 0, repeat_daily: task.repeat_daily ?? 0 });
+      const newTask = dbAddTask({
+        title: task.title, description: task.description ?? null, category: task.category,
+        date: task.date, is_done: 0, repeat_daily: task.repeat_daily ?? 0,
+        series_id: null, repeat_end_date: null,
+      });
       if (timeEntry) dbSaveTimeEntry(newTask.id, task.date, timeEntry.startTime, timeEntry.endTime);
       if (tagIds?.length) dbSetTaskTags(newTask.id, tagIds);
       set({ tasks: dbGetTasks(get().selectedDate), taskTimeEntries: dbGetTimeEntries(get().selectedDate), taskTags: dbGetTaskTagsForDate(get().selectedDate) });
@@ -580,20 +627,75 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   updateTask: async (id, updates) => {
+    const task = get().tasks.find((t) => t.id === id);
+    if (!task) return;
+
+    const isSeriesTask = task.repeat_daily === 1 || task.series_id != null;
+    const templateId = task.series_id ?? (task.repeat_daily === 1 ? task.id : null);
+
     if (!isTauri()) {
       dbUpdateTask(id, updates);
-      set({ tasks: dbGetTasks(get().selectedDate) });
+      set({
+        tasks: dbGetTasks(get().selectedDate),
+        calendarTasks: get().calendarTasks.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+      });
       return;
     }
+
     const db = await getDb();
-    const fields = Object.keys(updates) as (keyof TaskUpdate)[];
-    const setClauses = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
-    const values = fields.map((f) => updates[f]);
-    await db.execute(
-      `UPDATE tasks SET ${setClauses} WHERE id = $1`,
-      [id, ...values]
-    );
+
+    if (!isSeriesTask || !templateId) {
+      // Regular non-recurring task
+      const fields = Object.keys(updates) as (keyof TaskUpdate)[];
+      const setClauses = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
+      const values = fields.map((f) => updates[f]);
+      await db.execute(`UPDATE tasks SET ${setClauses} WHERE id = $1`, [id, ...values]);
+      await get().loadTasks(get().selectedDate);
+      set({ calendarTasks: get().calendarTasks.map((t) => (t.id === id ? { ...t, ...updates } : t)) });
+      return;
+    }
+
+    // Series task: route fields to series (title/category) vs instance (description)
+    const SERIES_FIELDS: (keyof TaskUpdate)[] = ['title', 'category'];
+    const INSTANCE_FIELDS: (keyof TaskUpdate)[] = ['description', 'is_done'];
+
+    const seriesEntries = SERIES_FIELDS.filter((f) => f in updates);
+    const instanceEntries = INSTANCE_FIELDS.filter((f) => f in updates);
+
+    if (seriesEntries.length > 0) {
+      const setClauses = seriesEntries.map((f, i) => `${f} = $${i + 3}`).join(', ');
+      const values = seriesEntries.map((f) => updates[f]);
+      await db.execute(
+        `UPDATE tasks SET ${setClauses} WHERE id = $1 OR (series_id = $1 AND date >= $2)`,
+        [templateId, task.date, ...values]
+      );
+    }
+
+    if (instanceEntries.length > 0) {
+      const setClauses = instanceEntries.map((f, i) => `${f} = $${i + 2}`).join(', ');
+      const values = instanceEntries.map((f) => updates[f]);
+      await db.execute(`UPDATE tasks SET ${setClauses} WHERE id = $1`, [id, ...values]);
+    }
+
+    // Handle repeat_daily toggle
+    if ('repeat_daily' in updates) {
+      if (updates.repeat_daily === 0 && task.repeat_daily === 1) {
+        // Turning OFF series: stop from today
+        const yesterday = format(subDays(new Date(task.date + 'T00:00:00'), 1), 'yyyy-MM-dd');
+        await db.execute('UPDATE tasks SET repeat_end_date = $1 WHERE id = $2', [yesterday, templateId]);
+        await db.execute('DELETE FROM task_time_entries WHERE task_id IN (SELECT id FROM tasks WHERE series_id = $1 AND date >= $2)', [templateId, task.date]);
+        await db.execute('DELETE FROM task_tags WHERE task_id IN (SELECT id FROM tasks WHERE series_id = $1 AND date >= $2)', [templateId, task.date]);
+        await db.execute('DELETE FROM tasks WHERE series_id = $1 AND date >= $2', [templateId, task.date]);
+      } else if (updates.repeat_daily === 1 && task.repeat_daily === 0 && task.series_id != null) {
+        // Instance: can't turn ON repeat for an instance, no-op
+      } else if (updates.repeat_daily === 1 && task.repeat_daily === 0) {
+        // Turning ON: this non-recurring task becomes a template
+        await db.execute('UPDATE tasks SET repeat_daily = 1, series_id = NULL WHERE id = $1', [id]);
+      }
+    }
+
     await get().loadTasks(get().selectedDate);
+    set({ calendarTasks: get().calendarTasks.map((t) => (t.id === id ? { ...t, ...updates } : t)) });
   },
 
   toggleTask: async (id) => {
@@ -603,38 +705,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     if (!isTauri()) {
       dbUpdateTask(id, { is_done: newDone });
-      // Tạo bản copy cho ngày mai khi đánh dấu done một recurring task
-      if (newDone === 1 && task.repeat_daily === 1) {
-        const nextDate = new Date(task.date + 'T00:00:00');
-        nextDate.setDate(nextDate.getDate() + 1);
-        const nextDateStr = format(nextDate, 'yyyy-MM-dd');
-        const alreadyExists = mockTasks.some(
-          (t) => t.repeat_daily === 1 && t.is_done === 0 && t.date === nextDateStr && t.title === task.title
-        );
-        if (!alreadyExists) {
-          dbAddTask({ title: task.title, description: task.description, category: task.category, date: nextDateStr, is_done: 0, repeat_daily: 1 });
-        }
-      }
       set({ tasks: dbGetTasks(get().selectedDate) });
       return;
     }
 
     const db = await getDb();
     await db.execute('UPDATE tasks SET is_done = $1 WHERE id = $2', [newDone, id]);
-    // Tạo bản copy cho ngày mai khi đánh dấu done một recurring task
-    if (newDone === 1 && task.repeat_daily === 1) {
-      const nextDate = new Date(task.date + 'T00:00:00');
-      nextDate.setDate(nextDate.getDate() + 1);
-      const nextDateStr = format(nextDate, 'yyyy-MM-dd');
-      await db.execute(
-        `INSERT INTO tasks (title, description, category, date, repeat_daily)
-         SELECT $1, $2, $3, $4, 1
-         WHERE NOT EXISTS (
-           SELECT 1 FROM tasks WHERE repeat_daily = 1 AND is_done = 0 AND date = $4 AND title = $1
-         )`,
-        [task.title, task.description, task.category, nextDateStr]
-      );
-    }
     await get().loadTasks(get().selectedDate);
   },
 
@@ -671,14 +747,42 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   confirmDeleteTask: async (task) => {
-    set({ pendingDeleteTask: null });
+    const calendarTaskTags = { ...get().calendarTaskTags };
+    delete calendarTaskTags[task.id];
+    set({
+      pendingDeleteTask: null,
+      calendarTasks: get().calendarTasks.filter((t) => t.id !== task.id),
+      calendarTaskTags,
+    });
     if (!isTauri()) {
       dbDeleteTask(task.id);
       return;
     }
     const db = await getDb();
-    await db.execute('DELETE FROM task_tags WHERE task_id = $1', [task.id]);
-    await db.execute('DELETE FROM tasks WHERE id = $1', [task.id]);
+    const isSeriesTask = task.repeat_daily === 1 || task.series_id != null;
+
+    if (isSeriesTask) {
+      const templateId = task.series_id ?? task.id;
+      const tplRows = await db.select<{ date: string }[]>('SELECT date FROM tasks WHERE id = $1', [templateId]);
+      const templateStartDate = tplRows[0]?.date;
+
+      if (!templateStartDate || task.date <= templateStartDate) {
+        // Delete entire series
+        await db.execute('DELETE FROM task_time_entries WHERE task_id = $1 OR task_id IN (SELECT id FROM tasks WHERE series_id = $1)', [templateId]);
+        await db.execute('DELETE FROM task_tags WHERE task_id = $1 OR task_id IN (SELECT id FROM tasks WHERE series_id = $1)', [templateId]);
+        await db.execute('DELETE FROM tasks WHERE id = $1 OR series_id = $1', [templateId]);
+      } else {
+        // Stop series from task.date onwards
+        const yesterday = format(subDays(new Date(task.date + 'T00:00:00'), 1), 'yyyy-MM-dd');
+        await db.execute('UPDATE tasks SET repeat_end_date = $1 WHERE id = $2', [yesterday, templateId]);
+        await db.execute('DELETE FROM task_time_entries WHERE task_id IN (SELECT id FROM tasks WHERE (id = $1 OR series_id = $1) AND date >= $2)', [templateId, task.date]);
+        await db.execute('DELETE FROM task_tags WHERE task_id IN (SELECT id FROM tasks WHERE series_id = $1 AND date >= $2)', [templateId, task.date]);
+        await db.execute('DELETE FROM tasks WHERE series_id = $1 AND date >= $2', [templateId, task.date]);
+      }
+    } else {
+      await db.execute('DELETE FROM task_tags WHERE task_id = $1', [task.id]);
+      await db.execute('DELETE FROM tasks WHERE id = $1', [task.id]);
+    }
   },
 
   // --- Category Colors ---
@@ -985,6 +1089,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     let goals: Goal[];
     let checklistItems: GoalChecklistItem[];
     let categoryColors: CategoryColors;
+    let tags: Tag[];
+    let taskTagPairs: Array<{ task_id: number; tag_id: number }>;
 
     if (!isTauri()) {
       tasks = [...mockTasks];
@@ -992,6 +1098,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       checklistItems = dbGetAllChecklistItems();
       const stored = localStorage.getItem('categoryColors');
       categoryColors = stored ? JSON.parse(stored) : { ...DEFAULT_CATEGORY_COLORS };
+      tags = [...mockTags];
+      taskTagPairs = Object.entries(mockTaskTags).flatMap(([taskId, tagIds]) =>
+        tagIds.map((tagId) => ({ task_id: Number(taskId), tag_id: tagId }))
+      );
     } else {
       const db = await getDb();
       tasks = await db.select<Task[]>('SELECT * FROM tasks ORDER BY date ASC, created_at ASC');
@@ -1002,9 +1112,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       for (const row of colorRows) {
         categoryColors[row.category as Category] = row.color;
       }
+      tags = await db.select<Tag[]>('SELECT * FROM tags ORDER BY created_at ASC');
+      taskTagPairs = await db.select<Array<{ task_id: number; tag_id: number }>>('SELECT task_id, tag_id FROM task_tags');
     }
 
-    const payload = { version: '1.0', exportedAt: new Date().toISOString(), tasks, goals, checklistItems, categoryColors };
+    const payload = { version: '1.1', exportedAt: new Date().toISOString(), tasks, goals, checklistItems, categoryColors, tags, taskTags: taskTagPairs };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1018,7 +1130,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   importAllData: async (file: File) => {
     const text = await file.text();
-    let data: { tasks?: Task[]; goals?: Goal[]; checklistItems?: GoalChecklistItem[]; categoryColors?: CategoryColors };
+    let data: { tasks?: Task[]; goals?: Goal[]; checklistItems?: GoalChecklistItem[]; categoryColors?: CategoryColors; tags?: Tag[]; taskTags?: Array<{ task_id: number; tag_id: number }> };
     try {
       data = JSON.parse(text);
     } catch {
@@ -1038,18 +1150,29 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (data.categoryColors) {
         localStorage.setItem('categoryColors', JSON.stringify(data.categoryColors));
       }
+      mockTags.length = 0;
+      if (Array.isArray(data.tags)) mockTags.push(...data.tags);
+      for (const k of Object.keys(mockTaskTags)) delete mockTaskTags[Number(k)];
+      if (Array.isArray(data.taskTags)) {
+        for (const tt of data.taskTags) {
+          if (!mockTaskTags[tt.task_id]) mockTaskTags[tt.task_id] = [];
+          mockTaskTags[tt.task_id].push(tt.tag_id);
+        }
+      }
     } else {
       const db = await getDb();
       await db.execute('DELETE FROM goal_checklist_items');
       await db.execute('DELETE FROM tasks');
       await db.execute('DELETE FROM goals');
       await db.execute('DELETE FROM category_colors');
+      await db.execute('DELETE FROM tags');
 
       for (const t of data.tasks) {
         await db.execute(
-          `INSERT INTO tasks (id, title, description, category, date, is_done, repeat_daily, created_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-          [t.id, t.title, t.description ?? null, t.category, t.date, t.is_done, t.repeat_daily ?? 0, t.created_at]
+          `INSERT INTO tasks (id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+          [t.id, t.title, t.description ?? null, t.category, t.date, t.is_done, t.repeat_daily ?? 0,
+           t.series_id ?? null, t.repeat_end_date ?? null, t.created_at]
         );
       }
       for (const g of data.goals) {
@@ -1070,11 +1193,27 @@ export const useAppStore = create<AppState>((set, get) => ({
           await db.execute('INSERT OR REPLACE INTO category_colors (category, color) VALUES ($1, $2)', [cat, color]);
         }
       }
+      if (Array.isArray(data.tags)) {
+        for (const tag of data.tags) {
+          await db.execute(
+            'INSERT INTO tags (id, name, color, created_at) VALUES ($1, $2, $3, $4)',
+            [tag.id, tag.name, tag.color, tag.created_at]
+          );
+        }
+      }
+      if (Array.isArray(data.taskTags)) {
+        for (const tt of data.taskTags) {
+          await db.execute('INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES ($1, $2)', [tt.task_id, tt.tag_id]);
+        }
+      }
     }
 
+    const year = new Date().getFullYear();
     await get().loadTasks(get().selectedDate);
     await get().loadGoals(get().selectedYear);
     await get().loadHeatmap(get().selectedYear);
     await get().loadCategoryColors();
+    await get().loadTags();
+    await get().loadCalendarTasks(`${year}-01-01`, `${year}-12-31`);
   },
 }));

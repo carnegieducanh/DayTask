@@ -50,6 +50,7 @@ export const vi = {
     noTag: 'Không có thẻ',
     repeatLabel: 'Lặp lại hàng ngày',
     repeatHint: 'Task tự động xuất hiện mỗi ngày',
+    repeatSeriesHint: 'Tên, danh mục, tag áp dụng cho cả chuỗi · Mô tả & giờ chỉ áp dụng ngày này',
     cancel: 'Hủy',
     save: 'Lưu thay đổi',
     add: 'Thêm task',

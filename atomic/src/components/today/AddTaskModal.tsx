@@ -212,12 +212,14 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   const startListRef = useRef<HTMLDivElement>(null);
   const endListRef = useRef<HTMLDivElement>(null);
 
+  const isEditingSeries = !!(editTask && (editTask.repeat_daily === 1 || editTask.series_id != null));
+
   useEffect(() => {
     if (editTask) {
       setTitle(editTask.title);
       setDesc(editTask.description ?? "");
       setCategory(editTask.category);
-      setRepeatDaily(editTask.repeat_daily === 1);
+      setRepeatDaily(editTask.repeat_daily === 1 || editTask.series_id != null);
       setSelectedTagIds(taskTags[editTask.id] ?? []);
       const entry = taskTimeEntries.find(
         (e) => e.task_id === editTask.id && e.date === editTask.date,
@@ -288,7 +290,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
     if (editTask) {
       await updateTask(editTask.id, {
         title: title.trim(),
-        description: description.trim() || undefined,
+        description: description.trim() || null,
         category,
         repeat_daily: repeatDaily ? 1 : 0,
       });
@@ -635,13 +637,16 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
             <div className="repeat-row">
               <div>
                 <div className="form-label" style={{ marginBottom: 2 }}>{t.taskModal.repeatLabel}</div>
-                <div className="repeat-hint">{t.taskModal.repeatHint}</div>
+                <div className="repeat-hint">
+                  {isEditingSeries ? t.taskModal.repeatSeriesHint : t.taskModal.repeatHint}
+                </div>
               </div>
               <button
                 type="button"
                 className={`toggle-switch${repeatDaily ? " on" : ""}`}
-                onClick={() => setRepeatDaily((v) => !v)}
+                onClick={() => !isEditingSeries && setRepeatDaily((v) => !v)}
                 aria-pressed={repeatDaily}
+                style={isEditingSeries ? { opacity: 0.5, cursor: 'default' } : undefined}
               />
             </div>
           </div>

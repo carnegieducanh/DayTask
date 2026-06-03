@@ -4,7 +4,6 @@ import type { Category, CategoryColors, Tag, Task, TaskTimeEntry } from '../../t
 import {
   calcRangeCategoryStats,
   calcRangeTagStats,
-  formatMins,
 } from './calendarUtils';
 
 interface CalendarFilterSidebarProps {
@@ -69,9 +68,6 @@ export default function CalendarFilterSidebar({
               >
                 <span className="cal-filter-dot" style={{ background: s.color }} />
                 <span className="cal-filter-item-name">{t.cat[s.category]}</span>
-                {s.totalMins > 0 && (
-                  <span className="cal-filter-item-time">{formatMins(s.totalMins)}</span>
-                )}
               </button>
             );
           })}
@@ -81,7 +77,7 @@ export default function CalendarFilterSidebar({
       {tags.length > 0 && (
         <div className="cal-filter-section">
           <div className="cal-filter-section-label">{t.calendar.filterTags}</div>
-          <div className="cal-filter-list">
+          <div className="cal-filter-list cal-filter-list--scrollable">
             {tagStats.map((s) => {
               const active = activeTags.has(s.tagId);
               return (
@@ -95,9 +91,6 @@ export default function CalendarFilterSidebar({
                     style={{ background: s.color }}
                   />
                   <span className="cal-filter-item-name">{s.name}</span>
-                  {s.totalMins > 0 && (
-                    <span className="cal-filter-item-time">{formatMins(s.totalMins)}</span>
-                  )}
                 </button>
               );
             })}

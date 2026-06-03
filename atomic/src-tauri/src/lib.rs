@@ -100,6 +100,64 @@ pub fn run() {
             );",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 8,
+            description: "expand_category_check_constraint",
+            sql: "PRAGMA foreign_keys = OFF;
+            ALTER TABLE tasks RENAME TO tasks_old;
+            CREATE TABLE tasks (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                title        TEXT NOT NULL,
+                description  TEXT,
+                category     TEXT CHECK(category IN ('work','personal','health','learn','creative','mindfulness','finance')),
+                priority     TEXT CHECK(priority IN ('high','mid','low')) DEFAULT 'mid',
+                reminder     TEXT,
+                date         TEXT NOT NULL,
+                is_done      INTEGER DEFAULT 0,
+                created_at   TEXT DEFAULT (datetime('now')),
+                repeat_daily INTEGER NOT NULL DEFAULT 0
+            );
+            INSERT INTO tasks SELECT * FROM tasks_old;
+            DROP TABLE tasks_old;
+            ALTER TABLE goals RENAME TO goals_old;
+            CREATE TABLE goals (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                title       TEXT NOT NULL,
+                description TEXT,
+                category    TEXT CHECK(category IN ('work','personal','health','learn','creative','mindfulness','finance')),
+                priority    TEXT CHECK(priority IN ('high','mid','low')) DEFAULT 'mid',
+                year        INTEGER NOT NULL,
+                quarter     TEXT CHECK(quarter IN ('Q1','Q2','Q3','Q4','full')),
+                status      TEXT CHECK(status IN ('todo','doing','review','done')) DEFAULT 'todo',
+                progress    INTEGER DEFAULT 0 CHECK(progress BETWEEN 0 AND 100),
+                position    INTEGER DEFAULT 0,
+                created_at  TEXT DEFAULT (datetime('now'))
+            );
+            INSERT INTO goals SELECT * FROM goals_old;
+            DROP TABLE goals_old;
+            PRAGMA foreign_keys = ON;
+            INSERT OR IGNORE INTO category_colors (category, color) VALUES
+                ('creative',    '#F9A8D4'),
+                ('mindfulness', '#6EE7B7'),
+                ('finance',     '#FDE68A');",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 9,
+            description: "add_series_fields_to_tasks",
+            sql: "ALTER TABLE tasks ADD COLUMN series_id INTEGER DEFAULT NULL;
+            ALTER TABLE tasks ADD COLUMN repeat_end_date TEXT DEFAULT NULL;
+            UPDATE tasks SET repeat_daily = 0
+            WHERE repeat_daily = 1 AND is_done = 0
+              AND id != (
+                SELECT t2.id FROM tasks t2
+                WHERE t2.repeat_daily = 1 AND t2.is_done = 0
+                  AND t2.title = tasks.title AND t2.category = tasks.category
+                ORDER BY t2.date DESC, t2.id ASC
+                LIMIT 1
+              );",
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

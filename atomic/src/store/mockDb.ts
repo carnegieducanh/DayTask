@@ -13,15 +13,16 @@ const today = format(new Date(), 'yyyy-MM-dd');
 // ---------- seed tasks ----------
 
 export const mockTasks: Task[] = [
-  { id: 1, title: 'Họp team sprint planning', description: 'Discuss sprint goals and assign tickets', category: 'work', date: today, is_done: 0, repeat_daily: 0, created_at: today },
-  { id: 2, title: 'Đọc sách 30 phút', description: 'Atomic Habits — chương 7', category: 'personal', date: today, is_done: 0, repeat_daily: 0, created_at: today },
-  { id: 3, title: 'Tập thể dục buổi sáng', description: 'Chạy bộ 5km + stretch', category: 'health', date: today, is_done: 1, repeat_daily: 0, created_at: today },
-  { id: 4, title: 'Review code pull request', description: 'PR #42 — refactor auth module', category: 'work', date: today, is_done: 1, repeat_daily: 0, created_at: today },
-  { id: 5, title: 'Gửi báo cáo tuần', description: 'Tổng kết KPI tuần, gửi cho manager', category: 'work', date: today, is_done: 1, repeat_daily: 0, created_at: today },
-  { id: 6, title: 'Viết blog post kỹ thuật', description: 'Chủ đề: Zustand vs Redux — so sánh thực tế', category: 'creative', date: today, is_done: 0, repeat_daily: 0, created_at: today },
-  { id: 7, title: 'Thiền buổi sáng', description: 'Thở sâu + body scan 15 phút', category: 'mindfulness', date: today, is_done: 1, repeat_daily: 1, created_at: today },
-  { id: 8, title: 'Lên kế hoạch sprint Q3', description: 'Roadmap tính năng, ước tính effort từng item', category: 'work', date: today, is_done: 0, repeat_daily: 0, created_at: today },
-  { id: 9, title: 'Học tiếng Anh 1 tiếng', description: 'Luyện nghe IELTS Listening test 3', category: 'learn', date: today, is_done: 0, repeat_daily: 0, created_at: today },
+  { id: 1, title: 'Họp team sprint planning', description: 'Discuss sprint goals and assign tickets', category: 'work', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
+  { id: 2, title: 'Đọc sách 30 phút', description: 'Atomic Habits — chương 7', category: 'personal', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
+  { id: 3, title: 'Tập thể dục buổi sáng', description: 'Chạy bộ 5km + stretch', category: 'health', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
+  { id: 4, title: 'Review code pull request', description: 'PR #42 — refactor auth module', category: 'work', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
+  { id: 5, title: 'Gửi báo cáo tuần', description: 'Tổng kết KPI tuần, gửi cho manager', category: 'work', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
+  { id: 6, title: 'Viết blog post kỹ thuật', description: 'Chủ đề: Zustand vs Redux — so sánh thực tế', category: 'creative', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
+  // Template for recurring task — series_id = null means it IS the template
+  { id: 7, title: 'Thiền buổi sáng', description: 'Thở sâu + body scan 15 phút', category: 'mindfulness', date: today, is_done: 1, repeat_daily: 1, series_id: null, repeat_end_date: null, created_at: today },
+  { id: 8, title: 'Lên kế hoạch sprint Q3', description: 'Roadmap tính năng, ước tính effort từng item', category: 'work', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
+  { id: 9, title: 'Học tiếng Anh 1 tiếng', description: 'Luyện nghe IELTS Listening test 3', category: 'learn', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
 ];
 
 const MOCK_TIME_ENTRIES_KEY = 'mock_time_entries_v3';
@@ -66,6 +67,8 @@ for (let i = 1; i <= 90; i++) {
       date: dateStr,
       is_done: 1,
       repeat_daily: 0,
+      series_id: null,
+      repeat_end_date: null,
       created_at: dateStr,
     });
   }
@@ -117,19 +120,35 @@ export const mockChecklist: GoalChecklistItem[] = [
 // ---------- in-memory ops ----------
 
 export function dbGetTasks(date: string): Task[] {
-  // Roll undone recurring tasks from past dates (if no copy already exists for date)
-  const todayRepeatTitles = new Set(
-    mockTasks.filter((t) => t.repeat_daily === 1 && t.is_done === 0 && t.date === date).map((t) => t.title)
+  // Lazy-create instances for active series templates without one on this date
+  const templates = mockTasks.filter(
+    (t) =>
+      t.repeat_daily === 1 &&
+      t.series_id === null &&
+      t.date < date &&
+      (t.repeat_end_date === null || t.repeat_end_date >= date)
   );
-  for (const task of mockTasks) {
-    if (task.repeat_daily === 1 && task.is_done === 0 && task.date < date && !todayRepeatTitles.has(task.title)) {
-      task.date = date;
-      todayRepeatTitles.add(task.title);
+  for (const tpl of templates) {
+    const hasInstance = mockTasks.some((inst) => inst.series_id === tpl.id && inst.date === date);
+    if (!hasInstance) {
+      const instance: Task = {
+        id: _nextTaskId++,
+        title: tpl.title,
+        description: null,
+        category: tpl.category,
+        date,
+        is_done: 0,
+        repeat_daily: 0,
+        series_id: tpl.id,
+        repeat_end_date: null,
+        created_at: tpl.created_at,
+      };
+      mockTasks.push(instance);
+      const tplTags = mockTaskTags[tpl.id];
+      if (tplTags?.length) mockTaskTags[instance.id] = [...tplTags];
     }
   }
-  return mockTasks
-    .filter((t) => t.date === date)
-    .sort((a, b) => a.is_done - b.is_done || a.id - b.id);
+  return mockTasks.filter((t) => t.date === date).sort((a, b) => a.is_done - b.is_done || a.id - b.id);
 }
 
 export function dbAddTask(task: Omit<Task, 'id' | 'created_at'>): Task {
@@ -139,13 +158,89 @@ export function dbAddTask(task: Omit<Task, 'id' | 'created_at'>): Task {
 }
 
 export function dbUpdateTask(id: number, updates: Partial<Task>): void {
-  const idx = mockTasks.findIndex((t) => t.id === id);
-  if (idx !== -1) Object.assign(mockTasks[idx], updates);
+  const task = mockTasks.find((t) => t.id === id);
+  if (!task) return;
+
+  const isSeriesTask = task.repeat_daily === 1 || task.series_id != null;
+  const templateId = task.series_id ?? (task.repeat_daily === 1 ? task.id : null);
+
+  if (!isSeriesTask || !templateId) {
+    Object.assign(task, updates);
+    return;
+  }
+
+  const SERIES_FIELDS = new Set(['title', 'category']);
+  const INSTANCE_FIELDS = new Set(['description', 'is_done']);
+
+  const seriesUpdates = Object.fromEntries(Object.entries(updates).filter(([k]) => SERIES_FIELDS.has(k)));
+  const instanceUpdates = Object.fromEntries(Object.entries(updates).filter(([k]) => INSTANCE_FIELDS.has(k)));
+
+  if (Object.keys(seriesUpdates).length > 0) {
+    const tpl = mockTasks.find((t) => t.id === templateId);
+    if (tpl) Object.assign(tpl, seriesUpdates);
+    for (const inst of mockTasks) {
+      if (inst.series_id === templateId && inst.date >= task.date) Object.assign(inst, seriesUpdates);
+    }
+  }
+
+  if (Object.keys(instanceUpdates).length > 0) Object.assign(task, instanceUpdates);
+
+  // Handle repeat_daily toggle
+  if ('repeat_daily' in updates) {
+    if (updates.repeat_daily === 0 && task.repeat_daily === 1) {
+      const yesterday = format(subDays(new Date(task.date + 'T00:00:00'), 1), 'yyyy-MM-dd');
+      const tpl = mockTasks.find((t) => t.id === templateId);
+      if (tpl) tpl.repeat_end_date = yesterday;
+      for (let i = mockTasks.length - 1; i >= 0; i--) {
+        if (mockTasks[i].series_id === templateId && mockTasks[i].date >= task.date) {
+          delete mockTaskTags[mockTasks[i].id];
+          mockTasks.splice(i, 1);
+        }
+      }
+    } else if (updates.repeat_daily === 1 && task.repeat_daily === 0 && task.series_id == null) {
+      task.repeat_daily = 1;
+    }
+  }
 }
 
 export function dbDeleteTask(id: number): void {
-  const idx = mockTasks.findIndex((t) => t.id === id);
-  if (idx !== -1) mockTasks.splice(idx, 1);
+  const task = mockTasks.find((t) => t.id === id);
+  if (!task) return;
+
+  const isSeriesTask = task.repeat_daily === 1 || task.series_id != null;
+  const templateId = task.series_id ?? (task.repeat_daily === 1 ? task.id : null);
+
+  if (isSeriesTask && templateId) {
+    const tpl = mockTasks.find((t) => t.id === templateId);
+    const templateStartDate = tpl?.date;
+
+    if (!templateStartDate || task.date <= templateStartDate) {
+      // Delete entire series
+      const idsToDelete = new Set(
+        mockTasks.filter((t) => t.id === templateId || t.series_id === templateId).map((t) => t.id)
+      );
+      for (const tid of idsToDelete) delete mockTaskTags[tid];
+      for (let i = mockTasks.length - 1; i >= 0; i--) {
+        if (idsToDelete.has(mockTasks[i].id)) mockTasks.splice(i, 1);
+      }
+    } else {
+      // Stop series from task.date onwards
+      const yesterday = format(subDays(new Date(task.date + 'T00:00:00'), 1), 'yyyy-MM-dd');
+      if (tpl) tpl.repeat_end_date = yesterday;
+      for (let i = mockTasks.length - 1; i >= 0; i--) {
+        if (mockTasks[i].series_id === templateId && mockTasks[i].date >= task.date) {
+          delete mockTaskTags[mockTasks[i].id];
+          mockTasks.splice(i, 1);
+        }
+      }
+    }
+  } else {
+    const idx = mockTasks.findIndex((t) => t.id === id);
+    if (idx !== -1) {
+      delete mockTaskTags[id];
+      mockTasks.splice(idx, 1);
+    }
+  }
 }
 
 export function dbGetGoals(year: number): Goal[] {
@@ -319,7 +414,20 @@ export function dbGetCalendarTaskTags(startDate: string, endDate: string): Recor
 }
 
 export function dbSetTaskTags(taskId: number, tagIds: number[]): void {
-  mockTaskTags[taskId] = [...tagIds];
+  const task = mockTasks.find((t) => t.id === taskId);
+  const isSeriesTask = task && (task.repeat_daily === 1 || task.series_id != null);
+  const templateId = task?.series_id ?? (task?.repeat_daily === 1 ? taskId : null);
+  const fromDate = task?.date;
+
+  if (isSeriesTask && templateId && fromDate) {
+    // Update template + all instances from this date onwards
+    const affected = mockTasks
+      .filter((t) => t.id === templateId || (t.series_id === templateId && t.date >= fromDate))
+      .map((t) => t.id);
+    for (const id of affected) mockTaskTags[id] = [...tagIds];
+  } else {
+    mockTaskTags[taskId] = [...tagIds];
+  }
 }
 
 export function dbGetStreak(): number {

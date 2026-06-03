@@ -52,6 +52,7 @@ export const en: typeof vi = {
     noTag: 'No tag',
     repeatLabel: 'Repeat Daily',
     repeatHint: 'Task automatically appears every day',
+    repeatSeriesHint: 'Name, category, tags apply to the whole series · Description & time apply to this day only',
     cancel: 'Cancel',
     save: 'Save Changes',
     add: 'Add Task',

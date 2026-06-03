@@ -11,6 +11,8 @@ export interface Task {
   date: string;
   is_done: number;
   repeat_daily: number;
+  series_id: number | null;
+  repeat_end_date: string | null;
   created_at: string;
 }
 
@@ -24,10 +26,11 @@ export interface NewTask {
 
 export interface TaskUpdate {
   title?: string;
-  description?: string;
+  description?: string | null;
   category?: Category;
   is_done?: number;
   repeat_daily?: number;
+  repeat_end_date?: string | null;
 }
 
 export interface TaskTimeEntry {
