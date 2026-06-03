@@ -7,6 +7,7 @@ import {
   IconChevronRight,
   IconSettings,
 } from "@tabler/icons-react";
+import { format } from "date-fns";
 import { useAppStore } from "../store/appStore";
 import { useT } from "../i18n";
 import type { Tab } from "../types";
@@ -17,6 +18,7 @@ export default function Sidebar() {
     activeTab,
     tasks,
     setActiveTab,
+    setSelectedDate,
     theme,
     toggleTheme,
     selectedYear,
@@ -49,7 +51,10 @@ export default function Sidebar() {
           <button
             key={item.id}
             className={`nav-item${activeTab === item.id ? " active" : ""}`}
-            onClick={() => setActiveTab(item.id)}
+            onClick={() => {
+              if (item.id === 'today') setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
+              setActiveTab(item.id);
+            }}
           >
             <span className="nav-icon">{item.icon}</span>
             {item.label}

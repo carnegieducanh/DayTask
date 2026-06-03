@@ -47,8 +47,19 @@ export default function TodayView() {
     return () => clearTimeout(timer);
   }, [tasks, taskTimeEntries]);
 
-  const pending   = tasks.filter((task) => !task.is_done);
-  const done      = tasks.filter((task) => task.is_done);
+  function sortByTime(list: typeof tasks) {
+    return [...list].sort((a, b) => {
+      const ea = taskTimeEntries.find((e) => e.task_id === a.id);
+      const eb = taskTimeEntries.find((e) => e.task_id === b.id);
+      if (ea && eb) return ea.start_time.localeCompare(eb.start_time);
+      if (ea) return -1;
+      if (eb) return 1;
+      return 0;
+    });
+  }
+
+  const pending   = sortByTime(tasks.filter((task) => !task.is_done));
+  const done      = sortByTime(tasks.filter((task) => task.is_done));
   const total     = tasks.length;
   const pct       = total === 0 ? 0 : Math.round((done.length / total) * 100);
   const scheduled = taskTimeEntries.length;

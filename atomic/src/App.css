@@ -361,34 +361,16 @@ select {
   padding: 2px 8px;
   border-radius: 99px;
   font-weight: 500;
+  background: rgba(255, 255, 255, 0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: rgba(0, 0, 0, 0.62);
 }
-.tag-work {
-  background: var(--cat-work-bg);
-  color: var(--cat-work-text);
-}
-.tag-personal {
-  background: var(--cat-personal-bg);
-  color: var(--cat-personal-text);
-}
-.tag-health {
-  background: var(--cat-health-bg);
-  color: var(--cat-health-text);
-}
-.tag-learn {
-  background: var(--cat-learn-bg);
-  color: var(--cat-learn-text);
-}
-.tag-creative {
-  background: var(--cat-creative-bg);
-  color: var(--cat-creative-text);
-}
-.tag-mindfulness {
-  background: var(--cat-mindfulness-bg);
-  color: var(--cat-mindfulness-text);
-}
-.tag-finance {
-  background: var(--cat-finance-bg);
-  color: var(--cat-finance-text);
+[data-theme="dark"] .tag {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: rgba(0, 0, 0, 0.72);
 }
 
 /* ── Priority dot ── */

@@ -139,6 +139,15 @@ const COLOR_PALETTE: string[] = [
   "#A3978B",
 ];
 
+function getDefaultStartTime(): string {
+  const now = new Date();
+  const totalMin = now.getHours() * 60 + now.getMinutes();
+  const rounded = Math.ceil(totalMin / 15) * 15;
+  const h = Math.floor(rounded / 60) % 24;
+  const m = rounded % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 interface Props {
   editTask?: Task | null;
   onClose: () => void;
@@ -176,7 +185,7 @@ export default function AddTaskModal({ editTask, onClose }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDesc] = useState("");
   const [category, setCategory] = useState<Category>("work");
-  const [startTime, setStartTime] = useState("");
+  const [startTime, setStartTime] = useState(() => editTask ? "" : getDefaultStartTime());
   const [endTime, setEndTime] = useState("");
   const [repeatDaily, setRepeatDaily] = useState(!editTask);
   const [dropdownOpen, setDropdownOpen] = useState(false);
