@@ -67,15 +67,6 @@ function CalToolbar({
   return (
     <div className="cal-toolbar">
       <button
-        className="cal-toolbar-btn"
-        onClick={() => setCurrentDate(new Date())}
-      >
-        {t.calendar.today}
-      </button>
-      <button className="cal-toolbar-btn" onClick={handlePrev}>‹</button>
-      <button className="cal-toolbar-btn" onClick={handleNext}>›</button>
-      <span className="cal-toolbar-label">{label}</span>
-      <button
         className={`cal-toolbar-btn cal-view-btn${view === "day" ? " active" : ""}`}
         onClick={() => setView("day")}
       >
@@ -93,6 +84,15 @@ function CalToolbar({
       >
         {t.calendar.month}
       </button>
+      <span className="cal-toolbar-label">{label}</span>
+      <button
+        className="cal-toolbar-btn"
+        onClick={() => setCurrentDate(new Date())}
+      >
+        {t.calendar.today}
+      </button>
+      <button className="cal-toolbar-btn" onClick={handlePrev}>‹</button>
+      <button className="cal-toolbar-btn" onClick={handleNext}>›</button>
     </div>
   );
 }
