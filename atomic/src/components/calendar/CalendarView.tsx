@@ -126,6 +126,17 @@ export default function CalendarView() {
     }
   }, [currentDate, loadedYear, loadCalendarTasks]);
 
+  // On mount: if day view and store's selectedDate differs from currentDate, reload tasks
+  useEffect(() => {
+    if (view === "day") {
+      const dateStr = format(currentDate, "yyyy-MM-dd");
+      if (dateStr !== selectedDate) {
+        setSelectedDate(dateStr);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // When switching to Day view, sync currentDate → selectedDate so tasks are loaded
   function handleSetView(v: CalViewType) {
     setView(v);

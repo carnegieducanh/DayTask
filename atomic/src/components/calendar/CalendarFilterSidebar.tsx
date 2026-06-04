@@ -1,5 +1,7 @@
+import { useRef } from 'react';
 import { IconX } from '@tabler/icons-react';
 import { useT } from '../../i18n';
+import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import type { Category, CategoryColors, Tag, Task, TaskTimeEntry } from '../../types';
 import {
   calcRangeCategoryStats,
@@ -36,13 +38,15 @@ export default function CalendarFilterSidebar({
   onReset,
 }: CalendarFilterSidebarProps) {
   const t = useT();
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  useSmoothScroll(sidebarRef);
 
   const catStats = calcRangeCategoryStats(tasks, timeEntries, startDate, endDate, categoryColors);
   const tagStats = calcRangeTagStats(tasks, timeEntries, taskTags, tags, startDate, endDate);
   const hasFilter = activeCategories.size > 0 || activeTags.size > 0;
 
   return (
-    <div className="cal-filter-sidebar">
+    <div className="cal-filter-sidebar" ref={sidebarRef}>
       <div className="cal-filter-header">
         <span className="cal-filter-title">{t.calendar.filterTitle}</span>
         <button

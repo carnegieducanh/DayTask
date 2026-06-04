@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import { IconTrophy, IconCalendar, IconChartBar, IconAward } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
@@ -8,6 +9,8 @@ export default function HeatmapView() {
   const t = useT();
   const { heatmap, selectedYear, setSelectedYear, loadHeatmap, getStreak } = useAppStore();
   const [streak, setStreak] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+  useSmoothScroll(contentRef);
 
   useEffect(() => {
     loadHeatmap(selectedYear);
@@ -77,7 +80,7 @@ export default function HeatmapView() {
         </div>
       </div>
 
-      <div className="view-content">
+      <div className="view-content" ref={contentRef}>
         {/* Stat cards */}
         <div className="stats-row">
           <div className="stat-card">

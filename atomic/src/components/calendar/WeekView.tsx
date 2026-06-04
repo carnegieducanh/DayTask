@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { attachSmoothScroll } from '../../hooks/useSmoothScroll';
 import { createPortal } from 'react-dom';
 import { startOfWeek, addDays, format, isSameDay } from 'date-fns';
 import { IconClock } from '@tabler/icons-react';
@@ -152,9 +153,18 @@ export default function WeekView({
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
 
+  // Smooth scroll for each day column's task area
+  const taskAreaRefs = useRef<Array<HTMLDivElement | null>>(Array(7).fill(null));
+  useEffect(() => {
+    const cleanups = taskAreaRefs.current
+      .filter((el): el is HTMLDivElement => el !== null)
+      .map(attachSmoothScroll);
+    return () => cleanups.forEach((fn) => fn());
+  }, []);
+
   return (
     <div className="cal-week-grid">
-      {days.map((day) => {
+      {days.map((day, i) => {
         const dateStr = format(day, 'yyyy-MM-dd');
         const dayTasks = tasks.filter((task) => task.date === dateStr);
         const isToday = isSameDay(day, today);
@@ -169,7 +179,7 @@ export default function WeekView({
               <div className="cal-week-header-day">{t.calendar.weekDowShort[day.getDay()]}</div>
               <div className="cal-week-header-date">{format(day, 'd')}</div>
             </div>
-            <div className="cal-week-tasks">
+            <div className="cal-week-tasks" ref={(el) => { taskAreaRefs.current[i] = el; }}>
               {dayTasks.map((task) => {
                 const color = categoryColors[task.category] ?? '#7DD3FC';
                 const entry = timeEntries.find((e) => e.task_id === task.id && e.date === dateStr);

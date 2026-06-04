@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import { format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
 import { IconPlus, IconSun, IconCheck } from '@tabler/icons-react';
@@ -27,6 +28,10 @@ export default function TodayView() {
   const [editTask, setEditTask]           = useState<Task | null>(null);
   const [streak, setStreak]               = useState(0);
   const demoPopupShown = useRef(false);
+  const mainRef  = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
+  useSmoothScroll(mainRef);
+  useSmoothScroll(rightRef);
 
   useEffect(() => {
     getStreak().then(setStreak);
@@ -103,7 +108,7 @@ export default function TodayView() {
         <div className="today-layout">
 
           {/* ── Left column ── */}
-          <div className="today-main">
+          <div className="today-main" ref={mainRef}>
             {/* Stat cards */}
             <div className="stats-row">
               <div className="stat-card">
@@ -168,7 +173,7 @@ export default function TodayView() {
           </div>
 
           {/* ── Right column ── */}
-          <div className="today-right">
+          <div className="today-right" ref={rightRef}>
 
             {/* Mini Calendar */}
             <div className="today-right-section">

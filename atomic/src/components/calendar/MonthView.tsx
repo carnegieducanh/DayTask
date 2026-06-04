@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import { createPortal } from 'react-dom';
 import { format, startOfMonth, startOfWeek, addDays, isSameMonth, isToday } from 'date-fns';
 import { IconClock, IconX } from '@tabler/icons-react';
@@ -252,9 +253,11 @@ export default function MonthView({
   const weeks = generateMonthGrid(currentDate);
   const dow = t.calendar.weekDowShort;
   const mondayFirstDow = [...dow.slice(1), dow[0]];
+  const gridRef = useRef<HTMLDivElement>(null);
+  useSmoothScroll(gridRef);
 
   return (
-    <div className="cal-month-grid">
+    <div className="cal-month-grid" ref={gridRef}>
       <div className="cal-month-dow-row">
         {mondayFirstDow.map((d) => (
           <div key={d} className="cal-month-dow">

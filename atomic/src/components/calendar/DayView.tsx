@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import { format } from "date-fns";
 import { IconTag } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
@@ -118,6 +119,7 @@ export default function DayView({
   const [dragResize, setDragResize] = useState<DragResize | null>(null);
   const [dragDeckTask, setDragDeckTask] = useState<DragDeckTask | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  useSmoothScroll(gridRef);
 
   const [currentTimeMin, setCurrentTimeMin] = useState(() => {
     const now = new Date();
