@@ -2874,6 +2874,29 @@ select {
   overflow: hidden;
 }
 
+.time-custom-row {
+  padding: 6px 6px 4px;
+  border-bottom: 0.5px solid var(--border-1);
+}
+
+.time-custom-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.93rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.12s;
+}
+
+.time-custom-input:focus {
+  border-color: var(--primary);
+}
+
 .time-dropdown-list {
   max-height: 196px;
   overflow-y: auto;
@@ -4043,7 +4066,7 @@ select {
   position: relative;
   min-height: 1728px; /* 24 × 72px */
   border-left: 1px solid var(--border-1);
-  cursor: crosshair;
+  cursor: default;
 }
 
 .day-hour-line {

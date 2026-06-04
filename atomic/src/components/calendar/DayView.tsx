@@ -171,7 +171,7 @@ export default function DayView({
     if (e.button !== 0) return;
     if ((e.target as HTMLElement).closest(".day-task-block")) return;
     const y = getRelY(e.clientY);
-    const startMin = Math.max(0, Math.min(pxToMin(y), 1438));
+    const startMin = Math.round(Math.max(0, Math.min(pxToMin(y), 1425)) / 15) * 15;
     setDragCreate({ startMin, endMin: startMin, startY: e.clientY });
     e.preventDefault();
   }
@@ -225,16 +225,17 @@ export default function DayView({
     (e: MouseEvent) => {
       if (dragCreate) {
         const y = getRelY(e.clientY);
-        const endMin = Math.max(0, Math.min(pxToMin(y), 1440));
+        const endMin = Math.round(Math.max(0, Math.min(pxToMin(y), 1440)) / 15) * 15;
         setDragCreate((prev) =>
-          prev ? { ...prev, endMin: Math.max(endMin, prev.startMin + 1) } : null
+          prev ? { ...prev, endMin: Math.max(endMin, prev.startMin + 15) } : null
         );
       }
       if (dragMove) {
         const dy = Math.abs(e.clientY - dragMove.startClientY);
         const y = getRelY(e.clientY);
         const duration = dragMove.origEndMin - dragMove.origStartMin;
-        const newStartMin = Math.max(0, Math.min(pxToMin(y - dragMove.offsetPx), 1440 - duration));
+        const rawStart = Math.max(0, Math.min(pxToMin(y - dragMove.offsetPx), 1440 - duration));
+        const newStartMin = Math.round(rawStart / 15) * 15;
         setDragMove((prev) =>
           prev
             ? {
@@ -269,7 +270,7 @@ export default function DayView({
         } else {
           // Ghost follows cursor with fixed DEFAULT_DURATION height
           const y = getRelY(e.clientY);
-          const startMin = Math.max(0, Math.min(Math.round(pxToMin(y) / 5) * 5, 1438));
+          const startMin = Math.max(0, Math.min(Math.round(pxToMin(y) / 15) * 15, 1380));
           setDragDeckTask((prev) =>
             prev ? { ...prev, startMin, endMin: Math.min(startMin + DEFAULT_DURATION, 1440) } : null
           );

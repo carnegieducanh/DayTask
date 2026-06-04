@@ -1,0 +1,161 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);background:#111;display:flex;align-items:center;justify-content:center;padding:2rem;min-height:100vh;}
+
+.modal{width:340px;background:#1a1a1a;border:0.5px solid #2e2e2e;border-radius:14px;overflow:hidden;}
+
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:0.5px solid #2a2a2a;}
+.modal-title{font-size:14px;font-weight:500;color:#e0e0e0;}
+.close-btn{width:24px;height:24px;border-radius:50%;background:#2a2a2a;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#888;font-size:13px;}
+
+.modal-body{padding:6px 0;}
+
+.section{padding:4px 0;}
+.section-label{font-size:10px;font-weight:500;color:#555;text-transform:uppercase;letter-spacing:0.6px;padding:8px 16px 4px;}
+.section-divider{height:0.5px;background:#232323;margin:4px 0;}
+
+.row{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;}
+.row-label{font-size:13px;color:#ccc;}
+.row-sub{font-size:11px;color:#555;margin-top:1px;}
+
+/* Segment controls */
+.seg-group{display:flex;gap:4px;}
+.seg-btn{padding:5px 12px;border-radius:7px;border:0.5px solid #2e2e2e;background:#222;font-size:12px;color:#888;cursor:pointer;transition:all 0.15s;}
+.seg-btn.active{border-color:#DA7756;color:#DA7756;background:#2A1A13;}
+
+/* Font size */
+.font-group{display:flex;gap:3px;}
+.font-btn{padding:4px 10px;border-radius:7px;border:0.5px solid #2e2e2e;background:#222;font-size:11px;color:#888;cursor:pointer;text-align:center;min-width:48px;}
+.font-btn .pct{font-size:9px;color:#555;display:block;margin-top:1px;}
+.font-btn.active{border-color:#DA7756;color:#DA7756;background:#2A1A13;}
+.font-btn.active .pct{color:#DA7756;opacity:0.7;}
+
+/* Toggle */
+.toggle{width:36px;height:20px;background:#DA7756;border-radius:99px;position:relative;cursor:pointer;flex-shrink:0;}
+.toggle-off{background:#333;}
+.toggle::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:2px;right:2px;transition:right 0.2s;}
+.toggle-off::after{right:18px;}
+
+/* Accent color */
+.accent-wrap{display:flex;align-items:center;gap:6px;}
+.accent-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;position:relative;flex-shrink:0;transition:transform 0.15s;}
+.accent-swatch:hover{transform:scale(1.1);}
+.accent-swatch.selected::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid #e0e0e0;}
+.accent-swatch.selected::before{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:600;display:flex;align-items:center;justify-content:center;}
+
+/* Tags */
+.tag-count{font-size:11px;color:#555;background:#222;border:0.5px solid #2e2e2e;padding:2px 7px;border-radius:99px;}
+.chevron{font-size:14px;color:#555;}
+
+/* Buttons */
+.action-btn{display:flex;align-items:center;gap:7px;width:100%;padding:8px 12px;border-radius:8px;border:0.5px solid #2e2e2e;background:#222;font-size:12px;color:#aaa;cursor:pointer;margin-bottom:3px;}
+.action-btn i{font-size:14px;color:#666;}
+.action-btn.danger{color:#E24B4A;border-color:#3a1515;}
+.action-btn.danger i{color:#E24B4A;}
+
+.btn-group{padding:4px 16px 12px;}
+
+/* Version */
+.version{text-align:center;font-size:10px;color:#3a3a3a;padding:6px 0 10px;}
+</style>
+
+<div class="modal">
+  <div class="modal-head">
+    <div class="modal-title">Settings</div>
+    <div class="close-btn"><i class="ti ti-x" aria-hidden="true"></i></div>
+  </div>
+
+  <div class="modal-body">
+
+    <!-- Language -->
+    <div class="section">
+      <div class="section-label">Language</div>
+      <div class="row" style="padding-top:4px;padding-bottom:8px;">
+        <div class="seg-group">
+          <div class="seg-btn">Tiếng Việt</div>
+          <div class="seg-btn active">English</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Font size -->
+    <div class="section">
+      <div class="section-label">Font Size</div>
+      <div class="row" style="padding-top:4px;padding-bottom:8px;">
+        <div class="font-group">
+          <div class="font-btn"><span>Small</span><span class="pct">90%</span></div>
+          <div class="font-btn"><span>Normal</span><span class="pct">100%</span></div>
+          <div class="font-btn active"><span>Large</span><span class="pct">110%</span></div>
+          <div class="font-btn"><span>XL</span><span class="pct">125%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Launch at startup -->
+    <div class="section">
+      <div class="row">
+        <div>
+          <div class="row-label">Launch at Startup</div>
+          <div class="row-sub">Open when Windows starts</div>
+        </div>
+        <div class="toggle"></div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Accent color -->
+    <div class="section">
+      <div class="section-label">Accent Color</div>
+      <div class="row" style="padding-top:6px;padding-bottom:10px;">
+        <div class="accent-wrap">
+          <div class="accent-swatch" style="background:#185FA5;" title="Blue"></div>
+          <div class="accent-swatch selected" style="background:#DA7756;" title="Orange"></div>
+          <div class="accent-swatch" style="background:#1D9E75;" title="Green"></div>
+          <div class="accent-swatch" style="background:#7F77DD;" title="Purple"></div>
+          <div class="accent-swatch" style="background:#E24B4A;" title="Red"></div>
+          <div class="accent-swatch" style="background:#EF9F27;" title="Yellow"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="font-size:11px;color:#555;">Custom</div>
+          <div style="width:26px;height:26px;border-radius:50%;border:1.5px dashed #333;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+            <i class="ti ti-plus" style="font-size:12px;color:#555;" aria-hidden="true"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Manage tags -->
+    <div class="section">
+      <div class="row" style="cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="row-label">Manage Tags</div>
+          <span class="tag-count">10</span>
+        </div>
+        <i class="ti ti-chevron-right chevron" aria-hidden="true"></i>
+      </div>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Backup & Restore -->
+    <div class="section">
+      <div class="section-label">Backup & Restore</div>
+      <div class="btn-group">
+        <div class="action-btn"><i class="ti ti-download" aria-hidden="true"></i>Export All Data</div>
+        <div class="action-btn"><i class="ti ti-upload" aria-hidden="true"></i>Import from Backup</div>
+        <div class="action-btn danger"><i class="ti ti-trash" aria-hidden="true"></i>Reset All Data</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="version">Atomic v1.0.0</div>
+</div>
