@@ -43,18 +43,39 @@ function TimeDropdown({
 }) {
   const t = useT();
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const customInputRef = useRef<HTMLInputElement>(null);
   const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({});
   const [customInput, setCustomInput] = useState(value);
+  const customInputLatest = useRef(customInput);
+  const prevOpenRef = useRef(false);
 
+  useEffect(() => { customInputLatest.current = customInput; }, [customInput]);
+
+  // Sync input value and position panel when opening
   useEffect(() => {
     if (open) {
       setCustomInput(value);
-      setTimeout(() => { customInputRef.current?.select(); }, 0);
+      customInputLatest.current = value;
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleClick() {
+  // Apply typed value whenever dropdown closes (any reason)
+  useEffect(() => {
+    if (prevOpenRef.current && !open) {
+      const trimmed = customInputLatest.current.trim();
+      const match = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+      if (match) {
+        const h = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10);
+        if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+          const formatted = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+          if (formatted !== value) onChange(formatted);
+        }
+      }
+    }
+    prevOpenRef.current = open;
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleTriggerClick() {
     if (!open && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       setPanelStyle({
@@ -68,7 +89,7 @@ function TimeDropdown({
     setOpen(!open);
   }
 
-  function applyCustomInput(inputVal: string) {
+  function applyInput(inputVal: string) {
     const trimmed = inputVal.trim();
     if (!trimmed) { onChange(""); setOpen(false); return; }
     const match = trimmed.match(/^(\d{1,2}):(\d{2})$/);
@@ -91,8 +112,9 @@ function TimeDropdown({
         <button
           ref={triggerRef}
           type="button"
-          className={`time-dropdown-trigger${open ? " open" : ""}`}
-          onClick={handleClick}
+          className="time-dropdown-trigger"
+          onClick={handleTriggerClick}
+          style={open ? { visibility: "hidden" } : undefined}
         >
           {value ? (
             <IconClock size={14} className="time-dropdown-icon" />
@@ -102,38 +124,36 @@ function TimeDropdown({
           <span className={`time-dropdown-value${!value ? " placeholder" : ""}`}>
             {value || t.taskModal.noTime}
           </span>
-          <IconChevronDown
-            size={13}
-            className={`cat-dropdown-chevron${open ? " open" : ""}`}
-          />
+          <IconChevronDown size={13} className="cat-dropdown-chevron" />
         </button>
+        {open && (
+          <div className="time-dropdown-trigger-editing">
+            <IconClock size={14} className="time-dropdown-icon" />
+            <input
+              autoFocus
+              type="text"
+              className="time-inline-input"
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); applyInput(customInput); }
+                if (e.key === "Escape") setOpen(false);
+              }}
+              placeholder="HH:MM"
+              spellCheck={false}
+            />
+          </div>
+        )}
         {open && (
           <div
             className="time-dropdown-panel"
             style={panelStyle}
             onMouseDown={(e) => e.preventDefault()}
           >
-            <div className="time-custom-row">
-              <input
-                ref={customInputRef}
-                type="text"
-                className="time-custom-input"
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") { e.preventDefault(); applyCustomInput(customInput); }
-                  if (e.key === "Escape") setOpen(false);
-                }}
-                onBlur={() => applyCustomInput(customInput)}
-                placeholder="HH:MM"
-                spellCheck={false}
-              />
-            </div>
             <div className="time-dropdown-list" ref={listRef}>
               <button
                 type="button"
                 className={`time-option${!value ? " selected" : ""}`}
-                onMouseDown={(e) => e.stopPropagation()}
                 onClick={() => { onChange(""); setOpen(false); }}
               >
                 <IconClockOff size={13} className="time-option-icon" />
@@ -145,7 +165,6 @@ function TimeDropdown({
                   key={time}
                   type="button"
                   className={`time-option${value === time ? " selected" : ""}`}
-                  onMouseDown={(e) => e.stopPropagation()}
                   onClick={() => { onChange(time); setOpen(false); }}
                 >
                   {time}
