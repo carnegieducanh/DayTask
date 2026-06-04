@@ -14,9 +14,10 @@ function hexToRgba(hex: string, alpha: number): string {
 interface Props {
   task: Task;
   onEdit: (task: Task) => void;
+  onToggle?: (id: number) => void;
 }
 
-export default function TaskCard({ task, onEdit }: Props) {
+export default function TaskCard({ task, onEdit, onToggle }: Props) {
   const t = useT();
   const { toggleTask, softDeleteTask, updateTask, categoryColors, taskTimeEntries, saveTimeEntry, deleteTimeEntry, tags, taskTags } = useAppStore();
   const taskTagIds = taskTags[task.id] ?? [];
@@ -106,7 +107,7 @@ export default function TaskCard({ task, onEdit }: Props) {
     >
       <button
         className={`task-check${task.is_done ? ' checked' : ''}`}
-        onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
+        onClick={(e) => { e.stopPropagation(); onToggle ? onToggle(task.id) : toggleTask(task.id); }}
         title={task.is_done ? t.taskCard.markUndone : t.taskCard.markDone}
       >
         <IconCheck size={22} strokeWidth={2.5} />

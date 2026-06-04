@@ -154,7 +154,7 @@ function TimeDropdown({
               <button
                 type="button"
                 className={`time-option${!value ? " selected" : ""}`}
-                onClick={() => { onChange(""); setOpen(false); }}
+                onClick={() => { customInputLatest.current = ""; onChange(""); setOpen(false); }}
               >
                 <IconClockOff size={13} className="time-option-icon" />
                 {t.taskModal.noTime}
@@ -165,7 +165,7 @@ function TimeDropdown({
                   key={time}
                   type="button"
                   className={`time-option${value === time ? " selected" : ""}`}
-                  onClick={() => { onChange(time); setOpen(false); }}
+                  onClick={() => { customInputLatest.current = time; onChange(time); setOpen(false); }}
                 >
                   {time}
                 </button>
@@ -255,7 +255,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
   const [category, setCategory] = useState<Category>("work");
   const [startTime, setStartTime] = useState(() => editTask ? "" : (initialStartTime ?? getDefaultStartTime()));
   const [endTime, setEndTime] = useState(() => editTask ? "" : (initialEndTime ?? getDefaultStartTime()));
-  const [repeatDaily, setRepeatDaily] = useState(!editTask);
+  const [repeatDaily, setRepeatDaily] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [catPanelStyle, setCatPanelStyle] = useState<React.CSSProperties>({});
   const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);

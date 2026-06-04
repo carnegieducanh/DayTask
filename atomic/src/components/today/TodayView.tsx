@@ -27,6 +27,7 @@ export default function TodayView() {
   const [showModal, setShowModal]         = useState(false);
   const [editTask, setEditTask]           = useState<Task | null>(null);
   const [streak, setStreak]               = useState(0);
+  const [pendingCheckIds, setPendingCheckIds] = useState<Set<number>>(new Set());
   const demoPopupShown = useRef(false);
   const mainRef       = useRef<HTMLDivElement>(null);
   const rightRef      = useRef<HTMLDivElement>(null);
@@ -92,8 +93,16 @@ export default function TodayView() {
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.is_done) { toggleTask(taskId); return; }
 
+    setPendingCheckIds((prev) => new Set(prev).add(taskId));
+
     const wrapper = pendingListRef.current?.querySelector<HTMLElement>(`[data-task-id="${taskId}"]`);
-    if (!wrapper) { toggleTask(taskId); return; }
+    if (!wrapper) {
+      setTimeout(() => {
+        toggleTask(taskId);
+        setPendingCheckIds((prev) => { const s = new Set(prev); s.delete(taskId); return s; });
+      }, 400);
+      return;
+    }
 
     const height = wrapper.offsetHeight;
     wrapper.style.maxHeight = `${height}px`;
@@ -112,7 +121,10 @@ export default function TodayView() {
       });
     });
 
-    setTimeout(() => { toggleTask(taskId); }, 640);
+    setTimeout(() => {
+      toggleTask(taskId);
+      setPendingCheckIds((prev) => { const s = new Set(prev); s.delete(taskId); return s; });
+    }, 640);
   }
 
   return (
@@ -177,7 +189,7 @@ export default function TodayView() {
                 <div className="task-list" ref={pendingListRef}>
                   {pending.map((task) => (
                     <div key={task.id} data-task-id={task.id}>
-                      <TaskCard task={task} onEdit={openEdit} />
+                      <TaskCard task={task} onEdit={openEdit} onToggle={handleScheduleToggle} />
                     </div>
                   ))}
                 </div>
@@ -221,7 +233,7 @@ export default function TodayView() {
                   {scheduledTasks.map((task) => {
                     const entry = taskTimeEntries.find((e) => e.task_id === task.id);
                     return (
-                      <div key={task.id} className={`today-schedule-item${task.is_done ? ' done' : ''}`}>
+                      <div key={task.id} className={`today-schedule-item${(task.is_done || pendingCheckIds.has(task.id)) ? ' done' : ''}`}>
                         <div className="today-schedule-time">
                           <div>{entry?.start_time}</div>
                           <div style={{ opacity: 0.6, fontSize: '0.85em' }}>{entry?.end_time}</div>
@@ -231,7 +243,7 @@ export default function TodayView() {
                           <div className="today-schedule-cat">{t.cat[task.category as keyof typeof t.cat] ?? task.category}</div>
                         </div>
                         <button
-                          className={`today-schedule-tick${task.is_done ? ' checked' : ''}`}
+                          className={`today-schedule-tick${(task.is_done || pendingCheckIds.has(task.id)) ? ' checked' : ''}`}
                           onClick={() => handleScheduleToggle(task.id)}
                         >
                           <IconCheck size={12} strokeWidth={3} />
