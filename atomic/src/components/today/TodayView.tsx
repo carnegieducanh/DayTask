@@ -28,8 +28,9 @@ export default function TodayView() {
   const [editTask, setEditTask]           = useState<Task | null>(null);
   const [streak, setStreak]               = useState(0);
   const demoPopupShown = useRef(false);
-  const mainRef  = useRef<HTMLDivElement>(null);
-  const rightRef = useRef<HTMLDivElement>(null);
+  const mainRef       = useRef<HTMLDivElement>(null);
+  const rightRef      = useRef<HTMLDivElement>(null);
+  const pendingListRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(mainRef);
   useSmoothScroll(rightRef);
 
@@ -72,6 +73,7 @@ export default function TodayView() {
   const scheduledTasks = tasks
     .filter((task) => taskTimeEntries.some((e) => e.task_id === task.id))
     .sort((a, b) => {
+      if (a.is_done !== b.is_done) return a.is_done ? 1 : -1;
       const ea = taskTimeEntries.find((e) => e.task_id === a.id);
       const eb = taskTimeEntries.find((e) => e.task_id === b.id);
       return (ea?.start_time ?? '').localeCompare(eb?.start_time ?? '');
@@ -85,6 +87,33 @@ export default function TodayView() {
 
   function openAdd()         { setEditTask(null); setShowModal(true); }
   function openEdit(task: Task) { setEditTask(task); setShowModal(true); }
+
+  function handleScheduleToggle(taskId: number) {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || task.is_done) { toggleTask(taskId); return; }
+
+    const wrapper = pendingListRef.current?.querySelector<HTMLElement>(`[data-task-id="${taskId}"]`);
+    if (!wrapper) { toggleTask(taskId); return; }
+
+    const height = wrapper.offsetHeight;
+    wrapper.style.maxHeight = `${height}px`;
+    wrapper.style.overflow  = 'hidden';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        wrapper.style.transition = [
+          'max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+          'opacity 0.45s ease',
+          'transform 0.55s ease',
+        ].join(', ');
+        wrapper.style.maxHeight = '0px';
+        wrapper.style.opacity   = '0';
+        wrapper.style.transform = 'translateY(10px)';
+      });
+    });
+
+    setTimeout(() => { toggleTask(taskId); }, 640);
+  }
 
   return (
     <>
@@ -145,8 +174,12 @@ export default function TodayView() {
                 <div className="section-label">
                   {t.today.pending} <span style={{ fontWeight: 400 }}>· {pending.length} {t.today.taskUnit}</span>
                 </div>
-                <div className="task-list">
-                  {pending.map((task) => <TaskCard key={task.id} task={task} onEdit={openEdit} />)}
+                <div className="task-list" ref={pendingListRef}>
+                  {pending.map((task) => (
+                    <div key={task.id} data-task-id={task.id}>
+                      <TaskCard task={task} onEdit={openEdit} />
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -199,7 +232,7 @@ export default function TodayView() {
                         </div>
                         <button
                           className={`today-schedule-tick${task.is_done ? ' checked' : ''}`}
-                          onClick={() => toggleTask(task.id)}
+                          onClick={() => handleScheduleToggle(task.id)}
                         >
                           <IconCheck size={12} strokeWidth={3} />
                         </button>

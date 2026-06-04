@@ -4173,6 +4173,20 @@ select {
   margin-top: 2px;
 }
 
+.day-task-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  height: 100%;
+}
+
+.day-task-compact-row .day-task-title {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
 .day-task-time {
   font-size: 0.78rem;
   color: rgba(0, 0, 0, 0.6);

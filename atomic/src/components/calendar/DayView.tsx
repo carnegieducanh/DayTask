@@ -466,9 +466,9 @@ export default function DayView({
                   className="day-resize-handle day-resize-handle-top"
                   onMouseDown={(e) => handleResizeMouseDown(e, item, "top")}
                 />
-                <div className="day-task-title">{item.task.title}</div>
-                {height >= 34 && (
-                  <div className="day-task-meta">
+                {height < 48 ? (
+                  <div className="day-task-compact-row">
+                    <div className="day-task-title">{item.task.title}</div>
                     {item.entry && (
                       <span className="day-task-time">
                         {minToTime(startMin)} – {minToTime(endMin)}
@@ -484,6 +484,28 @@ export default function DayView({
                       </span>
                     ))}
                   </div>
+                ) : (
+                  <>
+                    <div className="day-task-title">{item.task.title}</div>
+                    {height >= 34 && (
+                      <div className="day-task-meta">
+                        {item.entry && (
+                          <span className="day-task-time">
+                            {minToTime(startMin)} – {minToTime(endMin)}
+                          </span>
+                        )}
+                        <span className={`tag tag-${item.task.category}`}>
+                          {t.cat[item.task.category]}
+                        </span>
+                        {taskTagObjects.map((tag) => (
+                          <span key={tag.id} className="task-tag-chip">
+                            <IconTag size={10} style={{ flexShrink: 0 }} />
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
                 {/* Bottom resize handle */}
                 <div

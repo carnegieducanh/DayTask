@@ -21,7 +21,7 @@ export function attachSmoothScroll(el: HTMLElement): () => void {
       if (!s.lastTime) s.lastTime = time;
       const dt = Math.min((time - s.lastTime) / 1000, 0.05);
       s.lastTime = time;
-      const factor = 1 - Math.exp(-dt * 12);
+      const factor = 1 - Math.exp(-dt * 8);
       s.current += (s.target - s.current) * factor;
       if (Math.abs(s.target - s.current) > 0.5) {
         scrollEl.scrollTop = s.current;
@@ -45,9 +45,9 @@ export function attachSmoothScroll(el: HTMLElement): () => void {
 
   function onWheel(e: WheelEvent) {
     const delta =
-      e.deltaMode === 0 ? e.deltaY :
-      e.deltaMode === 1 ? e.deltaY * 40 :
-      e.deltaY * el.clientHeight;
+      e.deltaMode === 0 ? e.deltaY * 0.65 :
+      e.deltaMode === 1 ? e.deltaY * 26 :
+      e.deltaY * el.clientHeight * 0.65;
 
     // Walk up from target — find the innermost scrollable child that can absorb this scroll
     let node = e.target as HTMLElement | null;

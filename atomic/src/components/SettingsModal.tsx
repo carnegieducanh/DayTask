@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react';
+import tauriConf from '../../src-tauri/tauri.conf.json';
+const version = tauriConf.version;
 import { IconX, IconDownload, IconUpload, IconTrash, IconCheck, IconPencil, IconChevronRight } from '@tabler/icons-react';
 import { useAppStore } from '../store/appStore';
 import { useT } from '../i18n';
@@ -286,7 +288,7 @@ export default function SettingsModal() {
 
         </div>
 
-        <div className="settings-version">Atomic v0.1.9</div>
+        <div className="settings-version">Atomic v{version}</div>
 
         <input
           ref={fileInputRef}
