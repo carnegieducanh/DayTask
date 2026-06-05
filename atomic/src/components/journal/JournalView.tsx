@@ -20,8 +20,6 @@ const DOW_SHORT = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 const MONTHS_SHORT = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
 const ACCENT_GRATITUDE = 'var(--primary)';
 const ACCENT_LESSON = 'var(--journal-secondary)';
-const HISTORY_LIMIT = 10;
-
 type JTab = 'gratitude' | 'lesson';
 
 interface TabCfg {
@@ -130,7 +128,7 @@ function AutoTextarea({
 // ─── WriteCard ────────────────────────────────────────────────────────────────
 
 function WriteCard({
-  items, setItems, cfg, dateLabel, onSave, saving, todayEntry, isDirty,
+  items, setItems, cfg, dateLabel, onSave, saving, todayEntry, isDirty, isToday,
 }: {
   items: string[];
   setItems: (items: string[]) => void;
@@ -140,6 +138,7 @@ function WriteCard({
   saving: boolean;
   todayEntry: JournalEntry | null;
   isDirty: boolean;
+  isToday: boolean;
 }) {
   const charCount = items.reduce((s, i) => s + i.length, 0);
   const hasContent = items.some(i => i.trim());
@@ -158,7 +157,7 @@ function WriteCard({
     <div className="jm-write-card">
       <div className="jm-wc-header">
         <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <IconPencil size={13} color="var(--text-secondary)" /> Ghi hôm nay
+          <IconPencil size={13} color="var(--text-secondary)" /> {isToday ? 'Ghi hôm nay' : `Ghi ngày ${dateLabel}`}
         </span>
         {isSaved ? (
           <span style={{ color: cfg.accent, fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -288,15 +287,14 @@ export default function JournalView() {
   const todayStr = getToday();
 
   const [activeType, setActiveType] = useState<JTab>('gratitude');
-  const [todayEntry, setTodayEntry] = useState<JournalEntry | null>(null);
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
+  const [contentKey, setContentKey] = useState(0);
   const [items, setItems] = useState<string[]>(['', '', '']);
   const [showPrompt, setShowPrompt] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [history, setHistory] = useState<JournalEntry[]>([]);
-  const [historyOffset, setHistoryOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const [streak, setStreak] = useState(0);
   const [stats, setStats] = useState<JournalStats>({ gratitudeDays: 0, lessonDays: 0 });
@@ -316,21 +314,20 @@ export default function JournalView() {
 
   const cfg = TABS[activeType];
 
-  // isDirty: true khi items khác với entry đã lưu — dùng để điều khiển trạng thái nút
-  const isDirty = todayEntry
-    ? JSON.stringify(items.filter(i => i.trim())) !== JSON.stringify(todayEntry.items)
+  const isDirty = selectedEntry
+    ? JSON.stringify(items.filter(i => i.trim())) !== JSON.stringify(selectedEntry.items)
     : false;
 
-  const loadAll = useCallback(async (type: JTab) => {
+  const loadAll = useCallback(async (type: JTab, date: string) => {
     const [entry, hist, s, st, dates] = await Promise.all([
-      dbGetJournal(todayStr, type),
-      dbGetJournalHistory(type, todayStr, HISTORY_LIMIT + 1, 0),
+      dbGetJournal(date, type),
+      dbGetJournalHistory(type, date),
       dbGetJournalStreak(),
       dbGetJournalStats(calYear, calMonth),
       dbGetDatesWithEntries(calYear, calMonth),
     ]);
 
-    setTodayEntry(entry);
+    setSelectedEntry(entry);
     if (entry && entry.items.length > 0) {
       setItems([...entry.items]);
       setShowPrompt(false);
@@ -339,14 +336,11 @@ export default function JournalView() {
       setShowPrompt(true);
     }
 
-    const page = hist.slice(0, HISTORY_LIMIT);
-    setHistory(page);
-    setHasMore(hist.length > HISTORY_LIMIT);
-    setHistoryOffset(0);
+    setHistory(hist);
     setStreak(s);
     setStats(st);
     setDatesWithEntries(new Set(dates));
-  }, [todayStr, calYear, calMonth]);
+  }, [calYear, calMonth]);
 
   useEffect(() => {
     async function init() {
@@ -354,7 +348,8 @@ export default function JournalView() {
         await seedJournalIfEmpty();
         seededRef.current = true;
       }
-      loadAll(activeType);
+      await loadAll(activeType, selectedDate);
+      setContentKey(k => k + 1);
       setEditingId(null);
     }
     init();
@@ -371,12 +366,32 @@ export default function JournalView() {
     setDatesWithEntries(new Set(dates));
   }
 
+  async function selectDate(ds: string) {
+    if (ds === selectedDate) return;
+    const [entry, hist] = await Promise.all([
+      dbGetJournal(ds, activeType),
+      dbGetJournalHistory(activeType, ds),
+    ]);
+    setSelectedDate(ds);
+    setSelectedEntry(entry);
+    if (entry && entry.items.length > 0) {
+      setItems([...entry.items]);
+      setShowPrompt(false);
+    } else {
+      setItems(Array(TABS[activeType].defaultCount).fill(''));
+      setShowPrompt(true);
+    }
+    setHistory(hist);
+    setEditingId(null);
+    setContentKey(k => k + 1);
+  }
+
   async function handleSave() {
     const nonEmpty = items.filter(i => i.trim());
     if (!nonEmpty.length) return;
     setSaving(true);
-    const entry = await dbSaveJournal(todayStr, activeType, nonEmpty);
-    setTodayEntry(entry);
+    const entry = await dbSaveJournal(selectedDate, activeType, nonEmpty);
+    setSelectedEntry(entry);
     if (entry) setItems([...entry.items]);
     setSaving(false);
     await refreshSidebar();
@@ -385,8 +400,8 @@ export default function JournalView() {
   async function handleDelete(id: number) {
     if (!window.confirm('Xóa entry này?')) return;
     await dbDeleteJournal(id);
-    if (todayEntry?.id === id) {
-      setTodayEntry(null);
+    if (selectedEntry?.id === id) {
+      setSelectedEntry(null);
       setItems(Array(TABS[activeType].defaultCount).fill(''));
       setShowPrompt(true);
     } else {
@@ -402,16 +417,6 @@ export default function JournalView() {
     setHistory(prev => prev.map(e => e.id === id ? { ...e, items: nonEmpty } : e));
     setEditingId(null);
     await refreshSidebar();
-  }
-
-  async function loadMore() {
-    setLoadingHistory(true);
-    const newOffset = historyOffset + HISTORY_LIMIT;
-    const hist = await dbGetJournalHistory(activeType, todayStr, HISTORY_LIMIT + 1, newOffset);
-    setHistory(prev => [...prev, ...hist.slice(0, HISTORY_LIMIT)]);
-    setHasMore(hist.length > HISTORY_LIMIT);
-    setHistoryOffset(newOffset);
-    setLoadingHistory(false);
   }
 
   // Mini calendar geometry
@@ -451,7 +456,9 @@ export default function JournalView() {
               const day = i + 1;
               const ds = `${calYear}-${String(calMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               const isToday = ds === todayStr;
+              const isSelected = ds === selectedDate;
               const hasEntry = datesWithEntries.has(ds);
+              const isFuture = ds > todayStr;
               return (
                 <div
                   key={day}
@@ -459,14 +466,15 @@ export default function JournalView() {
                   style={{
                     background: isToday ? ACCENT_GRATITUDE : 'transparent',
                     color: isToday ? '#fff' : hasEntry ? ACCENT_GRATITUDE : 'var(--text-secondary)',
-                    cursor: hasEntry && !isToday ? 'pointer' : 'default',
-                    fontWeight: isToday ? 700 : 400,
+                    cursor: isFuture ? 'default' : 'pointer',
+                    fontWeight: isToday || isSelected ? 700 : 400,
+                    outline: isSelected && !isToday ? `1.5px solid ${ACCENT_GRATITUDE}` : 'none',
+                    outlineOffset: '-1px',
+                    opacity: isFuture ? 0.35 : 1,
                   }}
-                  title={hasEntry ? formatDateVI(ds) : undefined}
+                  title={formatDateVI(ds)}
                   onClick={() => {
-                    if (hasEntry && !isToday) {
-                      document.getElementById(`entry-${ds}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
+                    if (!isFuture) selectDate(ds);
                   }}
                 >
                   {day}
@@ -484,6 +492,7 @@ export default function JournalView() {
 
         {/* Stats */}
         <div className="jsc-stats">
+          <div className="jsc-stats-label">Tháng này</div>
           <div className="jsc-stat-row">
             <IconHeart size={13} color={ACCENT_GRATITUDE} style={{ flexShrink: 0 }} />
             <span style={{ color: ACCENT_GRATITUDE, fontSize: '0.78rem' }}>Biết ơn</span>
@@ -503,14 +512,14 @@ export default function JournalView() {
       </aside>
 
       {/* ─── Main ────────────────────────────────────────────────────────── */}
-      <div className="journal-main" ref={mainRef}>
+      <div className="journal-right">
 
-        {/* Journal Head */}
+        {/* Journal Head — ngoài vùng scroll */}
         <div className="jm-head">
           <div className="jm-head-left">
-            <div className="jm-date">{formatDateVI(todayStr)}</div>
+            <div className="jm-date">{formatDateVI(selectedDate)}</div>
             <div className="jm-date-sub">
-              Hôm nay · {todayEntry ? `${todayEntry.items.length} mục` : 'chưa có entry'}
+              {selectedDate === todayStr ? 'Hôm nay' : formatDateShortVI(selectedDate)} · {selectedEntry ? `${selectedEntry.items.length} mục` : 'chưa có ghi chú'}
             </div>
           </div>
           <div className="jm-type-toggle">
@@ -534,6 +543,10 @@ export default function JournalView() {
             </button>
           </div>
         </div>
+
+        <div className="journal-main" ref={mainRef}>
+
+        <div key={contentKey} className="journal-date-content">
 
         {/* Prompt Banner */}
         {showPrompt && (
@@ -560,11 +573,12 @@ export default function JournalView() {
             if (next.some(i => i.length > 0)) setShowPrompt(false);
           }}
           cfg={cfg}
-          dateLabel={formatDateShortVI(todayStr)}
+          dateLabel={formatDateShortVI(selectedDate)}
           onSave={handleSave}
           saving={saving}
-          todayEntry={todayEntry}
+          todayEntry={selectedEntry}
           isDirty={isDirty}
+          isToday={selectedDate === todayStr}
         />
 
         {/* History */}
@@ -591,15 +605,13 @@ export default function JournalView() {
               />
             ))}
 
-            {hasMore && (
-              <button className="jm-load-more" onClick={loadMore} disabled={loadingHistory}>
-                {loadingHistory ? 'Đang tải...' : 'Tải thêm'}
-              </button>
-            )}
           </>
         )}
 
-      </div>
+        </div>{/* end journal-date-content */}
+
+        </div>{/* end journal-main */}
+      </div>{/* end journal-right */}
     </div>
   );
 }

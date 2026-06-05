@@ -68,13 +68,13 @@ export async function dbDeleteJournal(id: number): Promise<void> {
 }
 
 export async function dbGetJournalHistory(
-  type: JournalType, excludeDate: string, limit: number, offset: number
+  type: JournalType, beforeDate: string
 ): Promise<JournalEntry[]> {
   if (!isTauri()) return [];
   const db = await getDb();
   const rows = await db.select<DbRow[]>(
-    'SELECT * FROM journal_entries WHERE type = $1 AND date != $2 ORDER BY date DESC LIMIT $3 OFFSET $4',
-    [type, excludeDate, limit, offset]
+    'SELECT * FROM journal_entries WHERE type = $1 AND date < $2 ORDER BY date DESC LIMIT 50',
+    [type, beforeDate]
   );
   return rows.map(rowToEntry);
 }
