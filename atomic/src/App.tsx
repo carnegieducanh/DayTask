@@ -18,6 +18,7 @@ import KanbanView from './components/kanban/KanbanView';
 import GoalCardOverlay from './components/kanban/GoalCardOverlay';
 import HeatmapView from './components/heatmap/HeatmapView';
 import CalendarView from './components/calendar/CalendarView';
+import JournalView from './components/journal/JournalView';
 import ReminderPopup from './components/ReminderPopup';
 import DeleteToast from './components/DeleteToast';
 import SettingsModal from './components/SettingsModal';
@@ -60,11 +61,21 @@ function App() {
       red:    '#E24B4A',
       yellow: '#EF9F27',
     };
+    // Lighter variant of each accent — used as journal secondary color (Bài học view)
+    const accentSecondaryMap: Record<string, string> = {
+      blue:   '#5B9FD6',
+      orange: '#EFA884',
+      green:  '#52C4A0',
+      purple: '#ABA5EC',
+      red:    '#EF8080',
+      yellow: '#F5C06A',
+    };
     if (accentMap[accentColor]) {
       document.documentElement.style.setProperty('--primary', accentMap[accentColor]);
     } else {
       document.documentElement.style.removeProperty('--primary');
     }
+    document.documentElement.style.setProperty('--journal-secondary', accentSecondaryMap[accentColor] ?? '#5B9FD6');
   }, [accentColor]);
 
   useEffect(() => {
@@ -277,6 +288,7 @@ function App() {
           {activeTab === 'kanban' && <KanbanView liveGoals={liveGoals} />}
           {activeTab === 'heatmap' && <HeatmapView />}
           {activeTab === 'calendar' && <CalendarView />}
+          {activeTab === 'journal' && <JournalView />}
           <ReminderPopup />
           <DeleteToast />
           <SettingsModal />

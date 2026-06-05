@@ -158,6 +158,20 @@ pub fn run() {
               );",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 10,
+            description: "create_journal_entries",
+            sql: "CREATE TABLE IF NOT EXISTS journal_entries (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                date       TEXT NOT NULL,
+                type       TEXT NOT NULL CHECK(type IN ('gratitude','lesson')),
+                items      TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_journal_date ON journal_entries(date, type);",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

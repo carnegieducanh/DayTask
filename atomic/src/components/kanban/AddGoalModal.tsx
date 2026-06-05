@@ -200,6 +200,7 @@ export default function AddGoalModal({
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
               rows={2}
+              spellCheck={false}
               style={{ resize: "vertical" }}
               spellCheck={false}
             />
@@ -389,6 +390,7 @@ export default function AddGoalModal({
                   className="checklist-add-input"
                   value={newItemText}
                   onChange={(e) => setNewItemText(e.target.value)}
+                  spellCheck={false}
                   onKeyDown={handleAddKeyDown}
                   placeholder={t.goalModal.addItemPlaceholder}
                   spellCheck={false}

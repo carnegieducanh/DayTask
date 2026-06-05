@@ -3,6 +3,7 @@ export const vi = {
     today: 'Hôm nay',
     calendar: 'Lịch',
     yearPlan: 'Kế hoạch năm',
+    journal: 'Nhật ký',
     heatmap: 'Heatmap',
     settings: 'Cài đặt',
     prevYear: 'Năm trước',

@@ -192,6 +192,7 @@ export default function SettingsModal() {
                           className="settings-tag-rename-input"
                           value={renameInput}
                           onChange={(e) => setRenameInput(e.target.value)}
+                          spellCheck={false}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               if (renameInput.trim()) updateTag(tag.id, renameInput.trim());
@@ -228,6 +229,7 @@ export default function SettingsModal() {
                       className="settings-tag-rename-input"
                       value={newTagInput}
                       onChange={(e) => setNewTagInput(e.target.value)}
+                      spellCheck={false}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           if (newTagInput.trim()) { addTag(newTagInput.trim()); setNewTagInput(''); setShowNewTagInput(false); }

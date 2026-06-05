@@ -36,13 +36,13 @@ git push origin main && git push origin v0.X.X
 # → GitHub Actions (.github/workflows/release.yml) build + upload artifacts
 ```
 
-## Trạng thái tính năng (tính đến 2026-06-02)
+## Trạng thái tính năng (tính đến 2026-06-05)
 
 | #  | Tính năng                                    | Trạng thái                                              |
 |----|----------------------------------------------|---------------------------------------------------------|
 | 1  | Khởi tạo Tauri + React + TypeScript          | ✅ Xong                                                 |
 | 2  | SQLite schema + Zustand store CRUD           | ✅ Xong                                                 |
-| 3  | App layout + Sidebar 4 tab                   | ✅ Xong                                                 |
+| 3  | App layout + Sidebar 5 tab                   | ✅ Xong                                                 |
 | 4  | TodayView: danh sách task, checkbox          | ✅ Xong                                                 |
 | 5  | AddTaskModal: form nhập task                 | ✅ Xong                                                 |
 | 6  | KanbanView: 4 cột + drag & drop @dnd-kit     | ✅ Xong                                                 |
@@ -62,6 +62,7 @@ git push origin main && git push origin v0.X.X
 | 20 | App icon redesign (SVG source, màu #DA7756)  | ✅ Xong — v0.1.3, xem mục Icon bên dưới                 |
 | 21 | Auto-start khi mở máy (tauri-plugin-autostart)| ✅ Xong — v0.1.4, toggle trong SettingsModal            |
 | 22 | Icon transparent bg + bigger (PNG-in-ICO)    | ✅ Xong — v0.1.6, fix BMP-in-ICO mất alpha → nền đen   |
+| 23 | Tab Journal: Biết ơn + Bài học               | ✅ Xong UI — 2026-06-05, xem mục Journal bên dưới       |
 
 ## Tính năng đã có
 
@@ -105,13 +106,14 @@ atomic/
     ├── App.css           # Tất cả CSS (variables, layout, components, rbc-overrides)
     ├── types/index.ts    # TypeScript interfaces
     ├── store/appStore.ts # Zustand store — state + SQL + pendingDeleteTask
+    ├── store/journalDb.ts # Journal DB functions — không dùng Zustand, self-contained
     ├── hooks/useReminder.ts  # Background reminder check mỗi phút + snooze logic
     ├── i18n/
     │   ├── vi.ts         # Tiếng Việt (source of truth cho type)
     │   ├── en.ts         # English (typeof vi)
     │   └── index.ts      # useT() hook → trả về vi hoặc en theo language state
     └── components/
-        ├── Sidebar.tsx           # Nav với Tabler icons — 4 tab
+        ├── Sidebar.tsx           # Nav với Tabler icons — 5 tab (thêm journal giữa kanban/heatmap)
         ├── ReminderPopup.tsx     # In-app reminder overlay (góc phải màn hình)
         ├── DeleteToast.tsx       # Toast xóa task + nút Hoàn tác (4 giây auto-confirm)
         ├── SettingsModal.tsx     # Font size, language, export/import backup
@@ -131,9 +133,11 @@ atomic/
         ├── heatmap/
         │   ├── HeatmapView.tsx
         │   └── HeatmapGrid.tsx
-        └── calendar/
-            ├── CalendarView.tsx  # Toolbar + toggle Month/Week + load calendarTasks
-            └── WeekView.tsx      # Week view tùy chỉnh — 7 cột, card đồng đều, không time grid
+        ├── calendar/
+        │   ├── CalendarView.tsx  # Toolbar + toggle Month/Week + load calendarTasks
+        │   └── WeekView.tsx      # Week view tùy chỉnh — 7 cột, card đồng đều, không time grid
+        └── journal/
+            └── JournalView.tsx   # Full Journal tab: layout 2 cột, tất cả sub-components nội tuyến
 ```
 
 ## Kiến trúc quan trọng
@@ -181,9 +185,77 @@ Remove-Item export-icons.mjs
 ```
 Dependencies đã có: `sharp`. `.ico` phải có đủ: **16, 32, 48, 64, 128, 256px** (48 bắt buộc cho Windows desktop/taskbar).
 
+## Journal Tab
+
+### Files liên quan
+- `src/components/journal/JournalView.tsx` — toàn bộ UI (layout, sub-components nội tuyến)
+- `src/store/journalDb.ts` — tất cả DB queries (không dùng Zustand)
+- `src-tauri/src/lib.rs` — migration version 10 (`journal_entries` table)
+
+### Schema
+```sql
+CREATE TABLE journal_entries (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  date       TEXT NOT NULL,           -- 'YYYY-MM-DD'
+  type       TEXT NOT NULL CHECK(type IN ('gratitude','lesson')),
+  items      TEXT NOT NULL DEFAULT '[]',  -- JSON array of strings
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_journal_date ON journal_entries(date, type);
+```
+
+### Kiến trúc
+- **Không dùng Zustand** — `JournalView` tự quản lý state local (`useState`)
+- **journalDb.ts** export functions: `dbGetJournal`, `dbSaveJournal`, `dbDeleteJournal`, `dbGetJournalHistory`, `dbGetJournalStreak`, `dbGetJournalStats`, `dbGetDatesWithEntries`
+- Tất cả functions check `isTauri()` — nếu false thì return null/[] (browser mode không có data)
+- `items` field lưu dưới dạng JSON string trong SQLite, parse khi đọc ra
+- `dbGetJournalHistory` nhận `excludeDate` để loại hôm nay khỏi lịch sử
+
+### Màu sắc
+- Biết ơn (gratitude): accent `#DA7756`, prompt bg `#211509`, prompt border `#3D2410`
+- Bài học (lesson): accent `#EF9F27`, prompt bg `#1C1508`, prompt border `#382C0A`
+
+### Trạng thái (2026-06-05)
+- ✅ Tab trong topbar (IconNotebook, giữa Kế hoạch năm và Heatmap)
+- ✅ Layout 2 cột: sidebar 200px + main scrollable
+- ✅ Sidebar: mini calendar tháng, streak counter, stats tháng
+- ✅ Journal Head: date tiếng Việt + toggle Biết ơn/Bài học
+- ✅ Prompt Banner: ẩn khi gõ, ẩn khi bấm X
+- ✅ Write Card: textarea auto-resize, thêm/xóa ô, char count, nút Lưu
+- ✅ SQLite save/load entry hôm nay
+- ✅ Entry Cards: hiển thị lịch sử, edit inline, xóa
+- ✅ Streak counter + stats tháng kết nối DB
+- ✅ Mini calendar highlight ngày có entry
+- ⏳ Seed data giả để test UI (việc tiếp theo — xem Next Steps)
+
 ## Next Steps
 
-Chưa có tính năng tiếp theo được lên kế hoạch.
+**Việc tiếp theo: Thêm seed data giả cho Journal để test UI**
+
+Thêm hàm `seedJournalIfEmpty()` vào `src/store/journalDb.ts`:
+- Check: `SELECT COUNT(*) FROM journal_entries` — nếu = 0 thì seed
+- Seed 14 ngày gần nhất (tính từ hôm nay - 1, không seed hôm nay)
+- Mỗi ngày seed entry cho cả 2 loại: `gratitude` (3 items) và `lesson` (1 item)
+- Dùng nội dung tiếng Việt thực tế, đa dạng (không lặp lại)
+- Gọi hàm này từ `JournalView.tsx` trong `useEffect` mount, TRƯỚC `loadAll()`
+- Pattern tương tự `seedMockData` trong `appStore.ts`
+
+```typescript
+// journalDb.ts — thêm hàm này
+export async function seedJournalIfEmpty(): Promise<void> {
+  if (!isTauri()) return;
+  const db = await getDb();
+  const rows = await db.select<{ c: number }[]>('SELECT COUNT(*) as c FROM journal_entries');
+  if (rows[0].c > 0) return;
+  // seed 14 ngày...
+}
+
+// JournalView.tsx — trong useEffect mount
+useEffect(() => {
+  seedJournalIfEmpty().then(() => loadAll(activeType));
+}, []);
+```
 
 ## Lưu ý quan trọng
 

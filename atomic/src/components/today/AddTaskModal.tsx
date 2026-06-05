@@ -135,6 +135,7 @@ function TimeDropdown({
               className="time-inline-input"
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value)}
+              spellCheck={false}
               onKeyDown={(e) => {
                 if (e.key === "Enter") { e.preventDefault(); applyInput(customInput); }
                 if (e.key === "Escape") setOpen(false);
@@ -450,6 +451,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
               onChange={(e) => setDesc(e.target.value)}
               placeholder={t.taskModal.descPlaceholder}
               rows={2}
+              spellCheck={false}
               style={{ resize: "vertical" }}
               spellCheck={false}
             />
@@ -589,6 +591,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                                   className="tag-dropdown-rename-input"
                                   value={renameInput}
                                   onChange={(e) => setRenameInput(e.target.value)}
+                                  spellCheck={false}
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") {
                                       if (renameInput.trim()) updateTag(tag.id, renameInput.trim());
@@ -650,6 +653,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                             className="tag-picker-input"
                             value={newTagInput}
                             onChange={(e) => setNewTagInput(e.target.value)}
+                            spellCheck={false}
                             onKeyDown={handleNewTagKeyDown}
                             placeholder={t.tags.addPlaceholder}
                             autoFocus

@@ -5,6 +5,7 @@ export const en: typeof vi = {
     today: 'Today',
     calendar: 'Calendar',
     yearPlan: 'Year Plan',
+    journal: 'Journal',
     heatmap: 'Heatmap',
     settings: 'Settings',
     prevYear: 'Previous Year',

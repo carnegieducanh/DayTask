@@ -42,6 +42,17 @@
   --cat-finance-bg: #fef3c7;
   --cat-finance-text: #78350f;
 
+  /* Journal accent tints — auto-follow --primary and --journal-secondary */
+  --journal-secondary: #5B9FD6;
+  --journal-gratitude-tint-bg: color-mix(in srgb, var(--primary) 7%, transparent);
+  --journal-gratitude-tint-border: color-mix(in srgb, var(--primary) 25%, transparent);
+  --journal-gratitude-write-border: color-mix(in srgb, var(--primary) 16%, transparent);
+  --journal-gratitude-active-bg: color-mix(in srgb, var(--primary) 10%, transparent);
+  --journal-lesson-tint-bg: color-mix(in srgb, var(--journal-secondary) 7%, transparent);
+  --journal-lesson-tint-border: color-mix(in srgb, var(--journal-secondary) 25%, transparent);
+  --journal-lesson-write-border: color-mix(in srgb, var(--journal-secondary) 16%, transparent);
+  --journal-lesson-active-bg: color-mix(in srgb, var(--journal-secondary) 10%, transparent);
+
   /* Priority */
   --pri-high: #d94f4f;
   --pri-mid: #e09b3d;
@@ -87,6 +98,17 @@
   --col-done-bg: #1a1a1a;
   --col-done-badge: #2e2e2e;
   --col-done-title: #80b85a;
+
+  /* Journal accent tints on dark bg */
+  --journal-secondary: #5B9FD6;
+  --journal-gratitude-tint-bg: color-mix(in srgb, var(--primary) 18%, #111111);
+  --journal-gratitude-tint-border: color-mix(in srgb, var(--primary) 32%, transparent);
+  --journal-gratitude-write-border: color-mix(in srgb, var(--primary) 22%, transparent);
+  --journal-gratitude-active-bg: color-mix(in srgb, var(--primary) 22%, #111111);
+  --journal-lesson-tint-bg: color-mix(in srgb, var(--journal-secondary) 18%, #111111);
+  --journal-lesson-tint-border: color-mix(in srgb, var(--journal-secondary) 32%, transparent);
+  --journal-lesson-write-border: color-mix(in srgb, var(--journal-secondary) 22%, transparent);
+  --journal-lesson-active-bg: color-mix(in srgb, var(--journal-secondary) 22%, #111111);
 }
 
 /* ── Reset ── */
@@ -4585,3 +4607,443 @@ select {
   margin: 3px 4px;
   flex-shrink: 0;
 }
+
+/* ═══════════════════════════════════════════════
+   Journal Tab
+   ═══════════════════════════════════════════════ */
+
+.journal-view {
+  display: flex;
+  height: 100%;
+  background: var(--bg-primary);
+  overflow: hidden;
+}
+
+/* ─── Sidebar ─── */
+
+.journal-sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: var(--bg-secondary);
+  border-right: 0.5px solid var(--border-1);
+  overflow-y: auto;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.jsc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.jsc-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.jsc-cal-title {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.jsc-nav-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px 3px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  border-radius: 3px;
+}
+
+.jsc-nav-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.jsc-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+.jsc-cal-dow {
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 0.64rem;
+  padding: 2px 0;
+}
+
+.jsc-cal-day {
+  text-align: center;
+  font-size: 0.68rem;
+  line-height: 18px;
+  border-radius: 3px;
+  transition: background 0.1s;
+}
+
+.jsc-streak {
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border-1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jsc-streak-num {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.2;
+}
+
+.jsc-streak-label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.jsc-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.jsc-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jsc-stat-val {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* ─── Main ─── */
+
+.journal-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.journal-main > * {
+  flex-shrink: 0;
+}
+
+.jm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 0.5px solid var(--border-1);
+}
+
+.jm-head-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.jm-date {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.jm-date-sub {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.jm-type-toggle {
+  display: flex;
+  background: var(--bg-hover);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.jm-tt-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+/* ─── Prompt Banner ─── */
+
+.jm-prompt {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border: 0.5px solid;
+  border-radius: 8px;
+  padding: 12px 14px;
+  gap: 10px;
+}
+
+.jm-prompt-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+}
+
+.jm-prompt-text {
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+
+.jm-prompt-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ─── Write Card ─── */
+
+.jm-write-card {
+  background: var(--bg-primary);
+  border: 0.5px solid;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.jm-wc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  border-bottom: 0.5px solid var(--border-1);
+}
+
+.jm-wc-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.jm-wc-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 0.5px solid var(--border-1);
+  position: relative;
+}
+
+.jm-wc-item:hover .jm-wc-del { opacity: 1; }
+
+.jm-wc-num {
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 14px;
+  padding-top: 3px;
+  flex-shrink: 0;
+}
+
+.jm-wc-ta {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-family: inherit;
+  line-height: 1.55;
+  min-height: 22px;
+}
+
+.jm-wc-ta::placeholder { color: var(--border-2); }
+
+.jm-wc-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+  flex-shrink: 0;
+  margin-top: 3px;
+  border-radius: 3px;
+}
+
+.jm-wc-del:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.jm-wc-add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 7px 14px;
+  border-bottom: 0.5px solid var(--border-1);
+  width: 100%;
+  font-family: inherit;
+}
+
+.jm-wc-add:hover { color: var(--text-primary); }
+
+.jm-wc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+}
+
+.jm-wc-char {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.jm-wc-save {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 5px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: opacity 0.15s;
+  font-family: inherit;
+}
+
+.jm-wc-save:disabled { opacity: 0.35; cursor: default; }
+
+/* ─── Divider ─── */
+
+.jm-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jm-divider-line {
+  flex: 1;
+  height: 0.5px;
+  background: var(--border-1);
+}
+
+.jm-divider-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ─── Entry Card ─── */
+
+.jm-entry-card {
+  background: var(--bg-primary);
+  border: 0.5px solid;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.jm-ec-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  border-bottom: 0.5px solid var(--border-1);
+}
+
+.jm-ec-date {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.jm-ec-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.jm-ec-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.jm-ec-btn:hover { background: var(--bg-hover); }
+
+.jm-ec-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.jm-ec-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 0.5px solid var(--border-1);
+}
+
+.jm-ec-item:last-child { border-bottom: none; }
+
+.jm-ec-num {
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 14px;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.jm-ec-text {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  line-height: 1.55;
+}
+
+/* ─── Load More ─── */
+
+.jm-load-more {
+  background: none;
+  border: 0.5px solid var(--border-1);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  padding: 8px;
+  cursor: pointer;
+  width: 100%;
+  font-family: inherit;
+}
+
+.jm-load-more:hover { color: var(--text-primary); border-color: var(--border-2); }
+.jm-load-more:disabled { opacity: 0.5; cursor: default; }

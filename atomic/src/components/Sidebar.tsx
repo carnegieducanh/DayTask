@@ -3,6 +3,7 @@ import {
   IconCalendarStats,
   IconChartDots,
   IconCalendar,
+  IconNotebook,
   IconChevronLeft,
   IconChevronRight,
   IconSettings,
@@ -29,6 +30,7 @@ export default function Sidebar() {
   const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "today",    label: t.nav.today,    icon: <IconSun size={16} /> },
     { id: "calendar", label: t.nav.calendar, icon: <IconCalendar size={16} /> },
+    { id: "journal",  label: t.nav.journal,  icon: <IconNotebook size={16} /> },
     { id: "kanban",   label: t.nav.yearPlan, icon: <IconCalendarStats size={16} /> },
     { id: "heatmap",  label: t.nav.heatmap,  icon: <IconChartDots size={16} /> },
   ];

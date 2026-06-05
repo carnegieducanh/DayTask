@@ -95,7 +95,23 @@ export interface Tag {
   created_at: string;
 }
 
-export type Tab = 'today' | 'kanban' | 'heatmap' | 'calendar';
+export type Tab = 'today' | 'kanban' | 'heatmap' | 'calendar' | 'journal';
+
+export type JournalType = 'gratitude' | 'lesson';
+
+export interface JournalEntry {
+  id: number;
+  date: string;
+  type: JournalType;
+  items: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JournalStats {
+  gratitudeDays: number;
+  lessonDays: number;
+}
 export type Theme = 'light' | 'dark';
 export type Language = 'vi' | 'en';
 export type AccentColor = 'blue' | 'orange' | 'green' | 'purple' | 'red' | 'yellow';
