@@ -201,7 +201,6 @@ export default function SettingsModal() {
                             if (e.key === 'Escape') setRenamingTagId(null);
                           }}
                           autoFocus
-                          spellCheck={false}
                         />
                         <button className="settings-tag-action-btn" title={t.tags.save}
                           onClick={() => { if (renameInput.trim()) updateTag(tag.id, renameInput.trim()); setRenamingTagId(null); }}>
@@ -238,7 +237,6 @@ export default function SettingsModal() {
                       }}
                       placeholder={t.tags.addPlaceholder}
                       autoFocus
-                      spellCheck={false}
                     />
                     <button
                       className="icon-btn"

@@ -141,7 +141,6 @@ function TimeDropdown({
                 if (e.key === "Escape") setOpen(false);
               }}
               placeholder="HH:MM"
-              spellCheck={false}
             />
           </div>
         )}
@@ -453,7 +452,6 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
               rows={2}
               spellCheck={false}
               style={{ resize: "vertical" }}
-              spellCheck={false}
             />
           </div>
 
@@ -601,7 +599,6 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                                   }}
                                   onClick={(e) => e.stopPropagation()}
                                   autoFocus
-                                  spellCheck={false}
                                 />
                                 <button
                                   type="button"
@@ -657,7 +654,6 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                             onKeyDown={handleNewTagKeyDown}
                             placeholder={t.tags.addPlaceholder}
                             autoFocus
-                            spellCheck={false}
                           />
                           <button type="button" className="tag-picker-confirm" onClick={handleCreateTag}>
                             <IconCheck size={12} strokeWidth={3} />

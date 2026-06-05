@@ -202,7 +202,6 @@ export default function AddGoalModal({
               rows={2}
               spellCheck={false}
               style={{ resize: "vertical" }}
-              spellCheck={false}
             />
           </div>
 
@@ -393,7 +392,6 @@ export default function AddGoalModal({
                   spellCheck={false}
                   onKeyDown={handleAddKeyDown}
                   placeholder={t.goalModal.addItemPlaceholder}
-                  spellCheck={false}
                 />
                 <button
                   type="button"
