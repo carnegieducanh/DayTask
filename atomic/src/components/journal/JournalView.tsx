@@ -155,7 +155,7 @@ function WriteCard({
   function addItem() { setItems([...items, '']); }
 
   return (
-    <div className="jm-write-card" style={{ borderColor: cfg.borderWrite }}>
+    <div className="jm-write-card">
       <div className="jm-wc-header">
         <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 5 }}>
           <IconPencil size={13} color="var(--text-secondary)" /> Ghi hôm nay
@@ -228,7 +228,7 @@ function EntryCard({
   onDelete: () => void;
 }) {
   return (
-    <div className="jm-entry-card" id={`entry-${entry.date}`} style={{ borderColor: cfg.borderWrite }}>
+    <div className="jm-entry-card" id={`entry-${entry.date}`}>
       <div className="jm-ec-header">
         <span className="jm-ec-date">{formatDateVI(entry.date)}</span>
         <div className="jm-ec-actions">

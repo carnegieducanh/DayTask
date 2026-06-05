@@ -4828,7 +4828,6 @@ select {
 
 .jm-write-card {
   background: var(--bg-primary);
-  border: 0.5px solid;
   border-radius: 10px;
   overflow: hidden;
 }
@@ -4964,7 +4963,6 @@ select {
 
 .jm-entry-card {
   background: var(--bg-primary);
-  border: 0.5px solid;
   border-radius: 10px;
   overflow: hidden;
 }
