@@ -5,6 +5,7 @@ import {
   IconChevronLeft, IconChevronRight,
 } from '@tabler/icons-react';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
+import { useT } from '../../i18n';
 import type { JournalEntry, JournalStats } from '../../types';
 import {
   dbGetJournal, dbSaveJournal, dbDeleteJournal,
@@ -15,9 +16,6 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const DOW_FULL = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
-const DOW_SHORT = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-const MONTHS_SHORT = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
 const ACCENT_GRATITUDE = 'var(--primary)';
 const ACCENT_LESSON = 'var(--journal-secondary)';
 type JTab = 'gratitude' | 'lesson';
@@ -30,9 +28,7 @@ interface TabCfg {
   activeBg: string;
   saveBg: string;
   saveColor: string;
-  promptLines: string[];
   defaultCount: number;
-  placeholder: string;
 }
 
 const TABS: Record<JTab, TabCfg> = {
@@ -44,13 +40,7 @@ const TABS: Record<JTab, TabCfg> = {
     activeBg: 'var(--journal-gratitude-active-bg)',
     saveBg: 'var(--primary)',
     saveColor: '#fff',
-    promptLines: [
-      'Hôm nay điều gì khiến bạn cảm thấy biết ơn?',
-      'Có thể là một người, một khoảnh khắc nhỏ,',
-      'hay điều gì đó bạn thường bỏ qua.',
-    ],
     defaultCount: 3,
-    placeholder: 'Tôi biết ơn vì...',
   },
   lesson: {
     accent: ACCENT_LESSON,
@@ -60,13 +50,7 @@ const TABS: Record<JTab, TabCfg> = {
     activeBg: 'var(--journal-lesson-active-bg)',
     saveBg: 'var(--journal-secondary)',
     saveColor: '#1a1a1a',
-    promptLines: [
-      'Hôm nay bạn học được điều gì?',
-      'Có thể từ sách, từ một sai lầm,',
-      'từ cuộc trò chuyện hay từ chính bản thân mình.',
-    ],
     defaultCount: 1,
-    placeholder: 'Bài học tôi ngộ ra hôm nay là...',
   },
 };
 
@@ -76,14 +60,21 @@ function getToday() {
   return new Date().toISOString().split('T')[0];
 }
 
-function formatDateVI(dateStr: string) {
+function fmtDate(
+  dateStr: string,
+  dowFull: string[],
+  formatFn: (dow: string, day: number, month: number) => string,
+) {
   const d = new Date(dateStr + 'T00:00:00');
-  return `${DOW_FULL[d.getDay()]}, ${d.getDate()} tháng ${d.getMonth() + 1}`;
+  return formatFn(dowFull[d.getDay()], d.getDate(), d.getMonth() + 1);
 }
 
-function formatDateShortVI(dateStr: string) {
+function fmtDateShort(
+  dateStr: string,
+  formatFn: (day: number, month: number, year: number) => string,
+) {
   const d = new Date(dateStr + 'T00:00:00');
-  return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  return formatFn(d.getDate(), d.getMonth() + 1, d.getFullYear());
 }
 
 function formatSavedTime(updatedAt: string): string {
@@ -128,7 +119,7 @@ function AutoTextarea({
 // ─── WriteCard ────────────────────────────────────────────────────────────────
 
 function WriteCard({
-  items, setItems, cfg, dateLabel, onSave, saving, todayEntry, isDirty, isToday,
+  items, setItems, cfg, dateLabel, onSave, saving, todayEntry, isDirty, isToday, placeholder,
 }: {
   items: string[];
   setItems: (items: string[]) => void;
@@ -139,7 +130,9 @@ function WriteCard({
   todayEntry: JournalEntry | null;
   isDirty: boolean;
   isToday: boolean;
+  placeholder: string;
 }) {
+  const { journal: jt } = useT();
   const charCount = items.reduce((s, i) => s + i.length, 0);
   const hasContent = items.some(i => i.trim());
   const isSaved = !!todayEntry && !isDirty;
@@ -156,15 +149,15 @@ function WriteCard({
   return (
     <div className="jm-write-card">
       <div className="jm-wc-header">
-        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <IconPencil size={13} color="var(--text-secondary)" /> {isToday ? 'Ghi hôm nay' : `Ghi ngày ${dateLabel}`}
+        <span style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 5 }}>
+          <IconPencil size={13} color="var(--text-secondary)" /> {isToday ? jt.writeToday : jt.writeDate(dateLabel)}
         </span>
         {isSaved ? (
-          <span style={{ color: cfg.accent, fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 3 }}>
-            <IconCheck size={12} color={cfg.accent} /> Đã lưu {formatSavedTime(todayEntry!.updated_at)}
+          <span style={{ color: cfg.accent, fontSize: '0.79rem', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <IconCheck size={12} color={cfg.accent} /> {jt.savedAt(formatSavedTime(todayEntry!.updated_at))}
           </span>
         ) : (
-          <span style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{dateLabel}</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{dateLabel}</span>
         )}
       </div>
 
@@ -175,10 +168,10 @@ function WriteCard({
             <AutoTextarea
               value={val}
               onChange={v => updateItem(idx, v)}
-              placeholder={cfg.placeholder}
+              placeholder={placeholder}
               className="jm-wc-ta"
             />
-            <button className="jm-wc-del" onClick={() => removeItem(idx)} title="Xóa ô này">
+            <button className="jm-wc-del" onClick={() => removeItem(idx)} title={jt.deleteItem}>
               <IconX size={11} />
             </button>
           </div>
@@ -186,11 +179,11 @@ function WriteCard({
       </div>
 
       <button className="jm-wc-add" onClick={addItem}>
-        <IconPlus size={12} /> Thêm ý
+        <IconPlus size={12} /> {jt.addItem}
       </button>
 
       <div className="jm-wc-footer">
-        <span className="jm-wc-char">{charCount} ký tự</span>
+        <span className="jm-wc-char">{jt.charCount(charCount)}</span>
         <button
           className="jm-wc-save"
           style={{ background: cfg.saveBg, color: cfg.saveColor }}
@@ -198,12 +191,12 @@ function WriteCard({
           onClick={onSave}
         >
           {saving
-            ? 'Đang lưu...'
+            ? jt.saving
             : isSaved
-              ? <><IconCheck size={13} /> Đã lưu</>
+              ? <><IconCheck size={13} /> {jt.saved}</>
               : todayEntry
-                ? 'Cập nhật'
-                : 'Lưu hôm nay'}
+                ? jt.update
+                : jt.saveToday}
         </button>
       </div>
     </div>
@@ -226,26 +219,28 @@ function EntryCard({
   onEditCancel: () => void;
   onDelete: () => void;
 }) {
+  const { journal: jt } = useT();
+
   return (
     <div className="jm-entry-card" id={`entry-${entry.date}`}>
       <div className="jm-ec-header">
-        <span className="jm-ec-date">{formatDateVI(entry.date)}</span>
+        <span className="jm-ec-date">{fmtDate(entry.date, jt.dowFull, jt.formatDate)}</span>
         <div className="jm-ec-actions">
           {isEditing ? (
             <>
-              <button className="jm-ec-btn" onClick={onEditSave} title="Lưu">
+              <button className="jm-ec-btn" onClick={onEditSave} title={jt.tooltipSave}>
                 <IconCheck size={13} color={cfg.accent} />
               </button>
-              <button className="jm-ec-btn" onClick={onEditCancel} title="Hủy">
+              <button className="jm-ec-btn" onClick={onEditCancel} title={jt.tooltipCancel}>
                 <IconX size={13} color="var(--text-secondary)" />
               </button>
             </>
           ) : (
             <>
-              <button className="jm-ec-btn" onClick={onEdit} title="Sửa">
+              <button className="jm-ec-btn" onClick={onEdit} title={jt.tooltipEdit}>
                 <IconPencil size={13} color="var(--text-secondary)" />
               </button>
-              <button className="jm-ec-btn" onClick={onDelete} title="Xóa">
+              <button className="jm-ec-btn" onClick={onDelete} title={jt.tooltipDelete}>
                 <IconTrash size={13} color="var(--text-secondary)" />
               </button>
             </>
@@ -283,6 +278,7 @@ function EntryCard({
 // ─── JournalView (main) ───────────────────────────────────────────────────────
 
 export default function JournalView() {
+  const { journal: jt } = useT();
   const now = new Date();
   const todayStr = getToday();
 
@@ -305,10 +301,16 @@ export default function JournalView() {
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editItems, setEditItems] = useState<string[]>([]);
+  const [pendingDelete, setPendingDelete] = useState<{
+    entry: JournalEntry;
+    wasSelected: boolean;
+    prevItems: string[];
+  } | null>(null);
 
   const seededRef = useRef(false);
   const mainRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useSmoothScroll(mainRef);
   useSmoothScroll(sidebarRef);
 
@@ -341,6 +343,10 @@ export default function JournalView() {
     setStats(st);
     setDatesWithEntries(new Set(dates));
   }, [calYear, calMonth]);
+
+  useEffect(() => {
+    return () => { if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current); };
+  }, []);
 
   useEffect(() => {
     async function init() {
@@ -398,16 +404,49 @@ export default function JournalView() {
   }
 
   async function handleDelete(id: number) {
-    if (!window.confirm('Xóa entry này?')) return;
-    await dbDeleteJournal(id);
+    if (pendingDelete) {
+      if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+      await dbDeleteJournal(pendingDelete.entry.id);
+    }
+
+    let entryToDelete: JournalEntry | null = null;
+    let wasSelected = false;
+    let prevItems: string[] = [];
+
     if (selectedEntry?.id === id) {
+      entryToDelete = selectedEntry;
+      wasSelected = true;
+      prevItems = [...items];
       setSelectedEntry(null);
       setItems(Array(TABS[activeType].defaultCount).fill(''));
       setShowPrompt(true);
     } else {
+      entryToDelete = history.find(e => e.id === id) ?? null;
+      if (!entryToDelete) return;
       setHistory(prev => prev.filter(e => e.id !== id));
     }
-    await refreshSidebar();
+
+    setPendingDelete({ entry: entryToDelete, wasSelected, prevItems });
+
+    deleteTimerRef.current = setTimeout(async () => {
+      await dbDeleteJournal(id);
+      await refreshSidebar();
+      setPendingDelete(null);
+    }, 4000);
+  }
+
+  function undoDeleteEntry() {
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    if (!pendingDelete) return;
+    const { entry, wasSelected, prevItems } = pendingDelete;
+    if (wasSelected) {
+      setSelectedEntry(entry);
+      setItems(prevItems);
+      setShowPrompt(false);
+    } else {
+      setHistory(prev => [...prev, entry].sort((a, b) => b.date.localeCompare(a.date)));
+    }
+    setPendingDelete(null);
   }
 
   async function handleEditSave(id: number, date: string) {
@@ -432,6 +471,10 @@ export default function JournalView() {
     else setCalMonth(m => m + 1);
   }
 
+  const activePromptLines = activeType === 'gratitude' ? jt.gratitudePrompt : jt.lessonPrompt;
+  const activePlaceholder = activeType === 'gratitude' ? jt.gratitudePlaceholder : jt.lessonPlaceholder;
+  const dateLabel = fmtDateShort(selectedDate, jt.formatDateShort);
+
   return (
     <div className="journal-view">
 
@@ -444,13 +487,13 @@ export default function JournalView() {
             <button className="jsc-nav-btn" onClick={calPrev}>
               <IconChevronLeft size={13} />
             </button>
-            <span className="jsc-cal-title">{MONTHS_SHORT[calMonth - 1]} {calYear}</span>
+            <span className="jsc-cal-title">{jt.monthsShort[calMonth - 1]} {calYear}</span>
             <button className="jsc-nav-btn" onClick={calNext}>
               <IconChevronRight size={13} />
             </button>
           </div>
           <div className="jsc-cal-grid">
-            {DOW_SHORT.map(d => <div key={d} className="jsc-cal-dow">{d}</div>)}
+            {jt.dowShort.map(d => <div key={d} className="jsc-cal-dow">{d}</div>)}
             {Array(calFirstDow).fill(null).map((_, i) => <div key={`pad-${i}`} />)}
             {Array(calDaysInMonth).fill(null).map((_, i) => {
               const day = i + 1;
@@ -472,7 +515,7 @@ export default function JournalView() {
                     outlineOffset: '-1px',
                     opacity: isFuture ? 0.35 : 1,
                   }}
-                  title={formatDateVI(ds)}
+                  title={fmtDate(ds, jt.dowFull, jt.formatDate)}
                   onClick={() => {
                     if (!isFuture) selectDate(ds);
                   }}
@@ -487,24 +530,24 @@ export default function JournalView() {
         {/* Streak */}
         <div className="jsc-streak">
           <span className="jsc-streak-num">🔥 {streak}</span>
-          <span className="jsc-streak-label">ngày liên tiếp</span>
+          <span className="jsc-streak-label">{jt.streakLabel}</span>
         </div>
 
         {/* Stats */}
         <div className="jsc-stats">
-          <div className="jsc-stats-label">Tháng này</div>
+          <div className="jsc-stats-label">{jt.thisMonth}</div>
           <div className="jsc-stat-row">
             <IconHeart size={13} color={ACCENT_GRATITUDE} style={{ flexShrink: 0 }} />
-            <span style={{ color: ACCENT_GRATITUDE, fontSize: '0.78rem' }}>Biết ơn</span>
+            <span style={{ color: ACCENT_GRATITUDE, fontSize: '0.82rem' }}>{jt.gratitudeTab}</span>
             <span className="jsc-stat-val" style={{ color: ACCENT_GRATITUDE }}>
-              {stats.gratitudeDays} ngày
+              {stats.gratitudeDays} {jt.days}
             </span>
           </div>
           <div className="jsc-stat-row">
             <IconBulb size={13} color={ACCENT_LESSON} style={{ flexShrink: 0 }} />
-            <span style={{ color: ACCENT_LESSON, fontSize: '0.78rem' }}>Bài học</span>
+            <span style={{ color: ACCENT_LESSON, fontSize: '0.82rem' }}>{jt.lessonTab}</span>
             <span className="jsc-stat-val" style={{ color: ACCENT_LESSON }}>
-              {stats.lessonDays} ngày
+              {stats.lessonDays} {jt.days}
             </span>
           </div>
         </div>
@@ -517,9 +560,9 @@ export default function JournalView() {
         {/* Journal Head — ngoài vùng scroll */}
         <div className="jm-head">
           <div className="jm-head-left">
-            <div className="jm-date">{formatDateVI(selectedDate)}</div>
+            <div className="jm-date">{fmtDate(selectedDate, jt.dowFull, jt.formatDate)}</div>
             <div className="jm-date-sub">
-              {selectedDate === todayStr ? 'Hôm nay' : formatDateShortVI(selectedDate)} · {selectedEntry ? `${selectedEntry.items.length} mục` : 'chưa có ghi chú'}
+              {selectedDate === todayStr ? jt.todayLabel : dateLabel} · {selectedEntry ? jt.itemCount(selectedEntry.items.length) : jt.noNotes}
             </div>
           </div>
           <div className="jm-type-toggle">
@@ -528,18 +571,18 @@ export default function JournalView() {
               style={activeType === 'gratitude'
                 ? { background: TABS.gratitude.activeBg, color: TABS.gratitude.accent, fontWeight: 500 }
                 : {}}
-              onClick={() => setActiveType('gratitude')}
+              onClick={() => { setActiveType('gratitude'); mainRef.current?.scrollTo({ top: 0 }); }}
             >
-              <IconHeart size={13} /> Biết ơn
+              <IconHeart size={13} /> {jt.gratitudeTab}
             </button>
             <button
               className="jm-tt-btn"
               style={activeType === 'lesson'
                 ? { background: TABS.lesson.activeBg, color: TABS.lesson.accent, fontWeight: 500 }
                 : {}}
-              onClick={() => setActiveType('lesson')}
+              onClick={() => { setActiveType('lesson'); mainRef.current?.scrollTo({ top: 0 }); }}
             >
-              <IconBulb size={13} /> Bài học
+              <IconBulb size={13} /> {jt.lessonTab}
             </button>
           </div>
         </div>
@@ -556,7 +599,7 @@ export default function JournalView() {
                 ? <IconHeart size={18} color={cfg.accent} style={{ flexShrink: 0, marginTop: 1 }} />
                 : <IconBulb size={18} color={cfg.accent} style={{ flexShrink: 0, marginTop: 1 }} />}
               <div className="jm-prompt-text" style={{ color: cfg.accent }}>
-                {cfg.promptLines.map((line, i) => <div key={i}>{line}</div>)}
+                {activePromptLines.map((line, i) => <div key={i}>{line}</div>)}
               </div>
             </div>
             <button className="jm-prompt-close" onClick={() => setShowPrompt(false)}>
@@ -573,12 +616,13 @@ export default function JournalView() {
             if (next.some(i => i.length > 0)) setShowPrompt(false);
           }}
           cfg={cfg}
-          dateLabel={formatDateShortVI(selectedDate)}
+          dateLabel={dateLabel}
           onSave={handleSave}
           saving={saving}
           todayEntry={selectedEntry}
           isDirty={isDirty}
           isToday={selectedDate === todayStr}
+          placeholder={activePlaceholder}
         />
 
         {/* History */}
@@ -586,7 +630,7 @@ export default function JournalView() {
           <>
             <div className="jm-divider">
               <div className="jm-divider-line" />
-              <span className="jm-divider-label">Trước đó</span>
+              <span className="jm-divider-label">{jt.dividerEarlier}</span>
               <div className="jm-divider-line" />
             </div>
 
@@ -612,6 +656,17 @@ export default function JournalView() {
 
         </div>{/* end journal-main */}
       </div>{/* end journal-right */}
+
+      {pendingDelete && (
+        <div className="delete-toast" role="status">
+          <span className="delete-toast-msg">
+            {jt.deletedEntry(fmtDate(pendingDelete.entry.date, jt.dowFull, jt.formatDate))}
+          </span>
+          <button className="delete-toast-undo" onClick={undoDeleteEntry}>
+            {jt.undo}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

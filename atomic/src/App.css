@@ -1357,15 +1357,11 @@ select {
   gap: 5px;
   padding: 7px 12px 7px 0;
   margin-right: 12px;
-  border-right: 0.5px solid var(--border-1);
   font-size: 0.93rem;
   color: var(--text-secondary);
   white-space: nowrap;
 }
 
-.kanban-stat-item:last-child {
-  border-right: none;
-}
 
 .kanban-stat-dot {
   width: 7px;
@@ -4613,6 +4609,7 @@ select {
    ═══════════════════════════════════════════════ */
 
 .journal-view {
+  position: relative;
   display: flex;
   height: 100%;
   background: var(--bg-primary);
@@ -4646,7 +4643,7 @@ select {
 }
 
 .jsc-cal-title {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 500;
   color: var(--text-secondary);
 }
@@ -4674,13 +4671,13 @@ select {
 .jsc-cal-dow {
   color: var(--text-secondary);
   text-align: center;
-  font-size: 0.64rem;
+  font-size: 0.70rem;
   padding: 2px 0;
 }
 
 .jsc-cal-day {
   text-align: center;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   line-height: 18px;
   border-radius: 3px;
   transition: background 0.1s;
@@ -4703,7 +4700,7 @@ select {
 }
 
 .jsc-streak-label {
-  font-size: 0.72rem;
+  font-size: 0.79rem;
   color: var(--text-secondary);
 }
 
@@ -4715,7 +4712,7 @@ select {
 }
 
 .jsc-stats-label {
-  font-size: 0.65rem;
+  font-size: 0.71rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--text-secondary);
@@ -4731,7 +4728,7 @@ select {
 
 .jsc-stat-val {
   margin-left: auto;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 500;
 }
 
@@ -4788,13 +4785,13 @@ select {
 }
 
 .jm-date {
-  font-size: 1rem;
+  font-size: 1.07rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .jm-date-sub {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
 }
 
@@ -4812,7 +4809,7 @@ select {
   gap: 5px;
   padding: 5px 14px;
   border-radius: 6px;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   border: none;
   background: transparent;
   color: var(--text-secondary);
@@ -4841,7 +4838,7 @@ select {
 }
 
 .jm-prompt-text {
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   line-height: 1.7;
 }
 
@@ -4886,7 +4883,7 @@ select {
 .jm-wc-item:hover .jm-wc-del { opacity: 1; }
 
 .jm-wc-num {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
   min-width: 14px;
   padding-top: 3px;
@@ -4899,7 +4896,7 @@ select {
   border: none;
   outline: none;
   color: var(--text-primary);
-  font-size: 0.85rem;
+  font-size: 0.93rem;
   font-family: inherit;
   line-height: 1.55;
   min-height: 22px;
@@ -4929,7 +4926,7 @@ select {
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   cursor: pointer;
   padding: 7px 14px;
   width: 100%;
@@ -4946,12 +4943,12 @@ select {
 }
 
 .jm-wc-char {
-  font-size: 0.75rem;
+  font-size: 0.79rem;
   color: var(--text-secondary);
 }
 
 .jm-wc-save {
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   font-weight: 500;
   padding: 5px 16px;
   border-radius: 6px;
@@ -4981,7 +4978,7 @@ select {
 }
 
 .jm-divider-label {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -5003,7 +5000,7 @@ select {
 }
 
 .jm-ec-date {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
   font-weight: 500;
 }
@@ -5040,7 +5037,7 @@ select {
 }
 
 .jm-ec-num {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
   min-width: 14px;
   flex-shrink: 0;
@@ -5048,7 +5045,7 @@ select {
 }
 
 .jm-ec-text {
-  font-size: 0.85rem;
+  font-size: 0.93rem;
   color: var(--text-primary);
   line-height: 1.55;
 }

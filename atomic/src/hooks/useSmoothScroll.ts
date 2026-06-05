@@ -75,7 +75,17 @@ export function attachSmoothScroll(el: HTMLElement): () => void {
 
   function onScroll() {
     const s = getState(el);
-    if (!s.rafId) {
+    if (s.rafId) {
+      // If scrollTop differs significantly from the animation's current position,
+      // it was an external programmatic scroll — cancel animation and sync.
+      if (Math.abs(el.scrollTop - s.current) > 1.5) {
+        cancelAnimationFrame(s.rafId);
+        s.rafId = 0;
+        s.lastTime = 0;
+        s.current = el.scrollTop;
+        s.target = el.scrollTop;
+      }
+    } else {
       s.current = el.scrollTop;
       s.target = el.scrollTop;
     }
