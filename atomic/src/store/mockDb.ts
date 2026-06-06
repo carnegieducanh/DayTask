@@ -13,16 +13,16 @@ const today = format(new Date(), 'yyyy-MM-dd');
 // ---------- seed tasks ----------
 
 export const mockTasks: Task[] = [
-  { id: 1, title: 'Họp team sprint planning', description: 'Discuss sprint goals and assign tickets', category: 'work', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
-  { id: 2, title: 'Đọc sách 30 phút', description: 'Atomic Habits — chương 7', category: 'personal', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
-  { id: 3, title: 'Tập thể dục buổi sáng', description: 'Chạy bộ 5km + stretch', category: 'health', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
-  { id: 4, title: 'Review code pull request', description: 'PR #42 — refactor auth module', category: 'work', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
-  { id: 5, title: 'Gửi báo cáo tuần', description: 'Tổng kết KPI tuần, gửi cho manager', category: 'work', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
-  { id: 6, title: 'Viết blog post kỹ thuật', description: 'Chủ đề: Zustand vs Redux — so sánh thực tế', category: 'creative', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
+  { id: 1, title: 'Họp team sprint planning', description: 'Discuss sprint goals and assign tickets', category: 'work', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null },
+  { id: 2, title: 'Đọc sách 30 phút', description: 'Atomic Habits — chương 7', category: 'personal', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null },
+  { id: 3, title: 'Tập thể dục buổi sáng', description: 'Chạy bộ 5km + stretch', category: 'health', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null },
+  { id: 4, title: 'Review code pull request', description: 'PR #42 — refactor auth module', category: 'work', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null },
+  { id: 5, title: 'Gửi báo cáo tuần', description: 'Tổng kết KPI tuần, gửi cho manager', category: 'work', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null },
+  { id: 6, title: 'Viết blog post kỹ thuật', description: 'Chủ đề: Zustand vs Redux — so sánh thực tế', category: 'creative', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null },
   // Template for recurring task — series_id = null means it IS the template
-  { id: 7, title: 'Thiền buổi sáng', description: 'Thở sâu + body scan 15 phút', category: 'mindfulness', date: today, is_done: 1, repeat_daily: 1, series_id: null, repeat_end_date: null, created_at: today },
-  { id: 8, title: 'Lên kế hoạch sprint Q3', description: 'Roadmap tính năng, ước tính effort từng item', category: 'work', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
-  { id: 9, title: 'Học tiếng Anh 1 tiếng', description: 'Luyện nghe IELTS Listening test 3', category: 'learn', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today },
+  { id: 7, title: 'Thiền buổi sáng', description: 'Thở sâu + body scan 15 phút', category: 'mindfulness', date: today, is_done: 1, repeat_daily: 1, series_id: null, repeat_end_date: null, created_at: today, color: null },
+  { id: 8, title: 'Lên kế hoạch sprint Q3', description: 'Roadmap tính năng, ước tính effort từng item', category: 'work', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null },
+  { id: 9, title: 'Học tiếng Anh 1 tiếng', description: 'Luyện nghe IELTS Listening test 3', category: 'learn', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null },
 ];
 
 const MOCK_TIME_ENTRIES_KEY = 'mock_time_entries_v3';
@@ -70,6 +70,7 @@ for (let i = 1; i <= 90; i++) {
       series_id: null,
       repeat_end_date: null,
       created_at: dateStr,
+      color: null,
     });
   }
 }
@@ -142,6 +143,7 @@ export function dbGetTasks(date: string): Task[] {
         series_id: tpl.id,
         repeat_end_date: null,
         created_at: tpl.created_at,
+        color: null,
       };
       mockTasks.push(instance);
       const tplTags = mockTaskTags[tpl.id];

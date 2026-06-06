@@ -182,6 +182,7 @@ interface AppState {
   softDeleteTask: (id: number) => void;
   undoDeleteTask: () => void;
   confirmDeleteTask: (task: Task) => Promise<void>;
+  updateTaskColor: (id: number, color: string | null) => Promise<void>;
 
   loadCategoryColors: () => Promise<void>;
   updateCategoryColor: (category: Category, color: string) => Promise<void>;
@@ -493,7 +494,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     const tasks = await db.select<Task[]>(
-      `SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at
+      `SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color
        FROM tasks WHERE date = $1 ORDER BY is_done ASC, created_at ASC`,
       [date]
     );
@@ -525,7 +526,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     const db = await getDb();
     const tasks = await db.select<Task[]>(
-      'SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at FROM tasks WHERE is_done = 1 AND date >= $1 AND date <= $2 ORDER BY date ASC',
+      'SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color FROM tasks WHERE is_done = 1 AND date >= $1 AND date <= $2 ORDER BY date ASC',
       [startDate, endDate]
     );
     const calendarTimeEntries = await db.select<TaskTimeEntry[]>(
@@ -794,6 +795,17 @@ export const useAppStore = create<AppState>((set, get) => ({
       await db.execute('DELETE FROM task_tags WHERE task_id = $1', [task.id]);
       await db.execute('DELETE FROM tasks WHERE id = $1', [task.id]);
     }
+  },
+
+  updateTaskColor: async (id, color) => {
+    const mapper = (t: Task) => t.id === id ? { ...t, color } : t;
+    set({
+      tasks: get().tasks.map(mapper),
+      calendarTasks: get().calendarTasks.map(mapper),
+    });
+    if (!isTauri()) return;
+    const db = await getDb();
+    await db.execute('UPDATE tasks SET color = $1 WHERE id = $2', [color, id]);
   },
 
   // --- Category Colors ---

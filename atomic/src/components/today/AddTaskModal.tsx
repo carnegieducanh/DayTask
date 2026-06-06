@@ -256,6 +256,8 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
     { value: "finance",      label: t.cat.finance },
   ];
 
+  const taskColor = editTask?.color ?? null;
+
   const [title, setTitle] = useState("");
   const [description, setDesc] = useState("");
   const [category, setCategory] = useState<Category>("work");
@@ -499,7 +501,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                     setColorPickerFor(null);
                   }}
                 >
-                  <span className="cat-color-dot" style={{ background: categoryColors[category] }} />
+                  <span className="cat-color-dot" style={{ background: taskColor ?? categoryColors[category] }} />
                   <span className="cat-dropdown-label">
                     {CATEGORIES.find((c) => c.value === category)?.label}
                   </span>
@@ -520,7 +522,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                           className="cat-dropdown-item-btn"
                           onClick={() => { setCategory(cat.value); setDropdownOpen(false); setColorPickerFor(null); }}
                         >
-                          <span className="cat-color-dot" style={{ background: categoryColors[cat.value] }} />
+                          <span className="cat-color-dot" style={{ background: cat.value === category ? (taskColor ?? categoryColors[cat.value]) : categoryColors[cat.value] }} />
                           <span>{cat.label}</span>
                         </button>
                         <button
@@ -552,12 +554,12 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                               <button
                                 key={color}
                                 type="button"
-                                className={`color-swatch${categoryColors[cat.value] === color ? " color-swatch-active" : ""}`}
+                                className={`color-swatch${(cat.value === category ? (taskColor ?? categoryColors[cat.value]) : categoryColors[cat.value]) === color ? " color-swatch-active" : ""}`}
                                 style={{ background: color }}
                                 onClick={(e) => { e.stopPropagation(); updateCategoryColor(cat.value, color); }}
                                 title={color}
                               >
-                                {categoryColors[cat.value] === color && (
+                                {(cat.value === category ? (taskColor ?? categoryColors[cat.value]) : categoryColors[cat.value]) === color && (
                                   <IconCheck size={10} strokeWidth={3} color="#fff" />
                                 )}
                               </button>

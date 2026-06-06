@@ -88,7 +88,7 @@ function DayPopover({
           </div>
         ) : (
           tasks.map((task) => {
-            const color = categoryColors[task.category] ?? '#7DD3FC';
+            const color = task.color ?? categoryColors[task.category] ?? '#7DD3FC';
             return (
               <div
                 key={task.id}

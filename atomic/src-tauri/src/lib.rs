@@ -172,6 +172,12 @@ pub fn run() {
             CREATE INDEX IF NOT EXISTS idx_journal_date ON journal_entries(date, type);",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 11,
+            description: "add_color_to_tasks",
+            sql: "ALTER TABLE tasks ADD COLUMN color TEXT DEFAULT NULL;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

@@ -2,10 +2,18 @@ import { useState, useRef, useEffect } from 'react';
 import { attachSmoothScroll } from '../../hooks/useSmoothScroll';
 import { createPortal } from 'react-dom';
 import { startOfWeek, addDays, format, isSameDay } from 'date-fns';
-import { IconClock } from '@tabler/icons-react';
+import { IconClock, IconTrash, IconCheck } from '@tabler/icons-react';
 import { useT } from '../../i18n';
 import type { Task, CategoryColors, TaskTimeEntry } from '../../types';
+import { useAppStore } from '../../store/appStore';
 import { calcDayStats, formatMins, type DayStat } from './calendarUtils';
+
+const TASK_COLOR_PALETTE: string[] = [
+  '#C05476', '#E3683E', '#D8BE5E', '#489160', '#6E72C3', '#A75ABA',
+  '#D85675', '#DD7835', '#BCC256', '#429A8E', '#828BC2', '#957367',
+  '#DA5234', '#E0963C', '#82AA57', '#4B99D2', '#AE9CCE', '#7C7C7C',
+  '#D38179', '#E4B751', '#54AD7F', '#6489DF', '#A277AF', '#A3978B',
+];
 
 function calcDuration(start: string, end: string): string {
   const [sh, sm] = start.split(':').map(Number);
@@ -149,6 +157,7 @@ export default function WeekView({
   timeEntries,
 }: WeekViewProps) {
   const t = useT();
+  const { softDeleteTask, updateTaskColor } = useAppStore();
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
@@ -161,6 +170,39 @@ export default function WeekView({
       .map(attachSmoothScroll);
     return () => cleanups.forEach((fn) => fn());
   }, []);
+
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; task: Task } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    function handleClose(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setContextMenu(null);
+    }
+    window.addEventListener('mousedown', handleClose);
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      window.removeEventListener('mousedown', handleClose);
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [contextMenu]);
+
+  function handleTaskContextMenu(e: React.MouseEvent, task: Task) {
+    e.preventDefault();
+    e.stopPropagation();
+    const MENU_W = 180;
+    const MENU_H = 170;
+    let x = e.clientX;
+    let y = e.clientY;
+    if (x + MENU_W > window.innerWidth) x = window.innerWidth - MENU_W - 8;
+    if (y + MENU_H > window.innerHeight) y = window.innerHeight - MENU_H - 8;
+    setContextMenu({ x, y, task });
+  }
 
   return (
     <div className="cal-week-grid">
@@ -181,7 +223,7 @@ export default function WeekView({
             </div>
             <div className="cal-week-tasks" ref={(el) => { taskAreaRefs.current[i] = el; }}>
               {dayTasks.map((task) => {
-                const color = categoryColors[task.category] ?? '#7DD3FC';
+                const color = task.color ?? categoryColors[task.category] ?? '#7DD3FC';
                 const entry = timeEntries.find((e) => e.task_id === task.id && e.date === dateStr);
                 const duration = entry ? calcDuration(entry.start_time, entry.end_time) : null;
                 return (
@@ -190,6 +232,7 @@ export default function WeekView({
                     className="cal-week-task-card"
                     style={{ backgroundColor: color }}
                     onClick={() => onTaskClick(task)}
+                    onContextMenu={(e) => handleTaskContextMenu(e, task)}
                   >
                     <span className="cal-week-task-title">{task.title}</span>
                     {task.description && (
@@ -214,6 +257,38 @@ export default function WeekView({
           </div>
         );
       })}
+      {contextMenu && createPortal(
+        <div
+          ref={menuRef}
+          className="task-context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="day-context-item day-context-item-danger"
+            onClick={() => { softDeleteTask(contextMenu.task.id); setContextMenu(null); }}
+          >
+            <IconTrash size={16} />
+            {t.taskCard.delete}
+          </button>
+          <div className="task-context-divider" />
+          <div className="task-context-colors">
+            {TASK_COLOR_PALETTE.map((color) => (
+              <button
+                key={color}
+                className="task-context-color-btn"
+                style={{ backgroundColor: color }}
+                onClick={() => { updateTaskColor(contextMenu.task.id, contextMenu.task.color === color ? null : color); setContextMenu(null); }}
+                title={color}
+              >
+                {contextMenu.task.color === color && <IconCheck size={12} color="white" strokeWidth={3} />}
+              </button>
+            ))}
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

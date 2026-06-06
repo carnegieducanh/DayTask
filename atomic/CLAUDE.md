@@ -63,6 +63,7 @@ git push origin main && git push origin v0.X.X
 | 21 | Auto-start khi mở máy (tauri-plugin-autostart)| ✅ Xong — v0.1.4, toggle trong SettingsModal            |
 | 22 | Icon transparent bg + bigger (PNG-in-ICO)    | ✅ Xong — v0.1.6, fix BMP-in-ICO mất alpha → nền đen   |
 | 23 | Tab Journal: Biết ơn + Bài học               | ✅ Xong UI — 2026-06-05, xem mục Journal bên dưới       |
+| 24 | Right-click TaskCard: xóa + đổi màu task     | ✅ Xong — 2026-06-06, xem mục Task Color bên dưới       |
 
 ## Tính năng đã có
 
@@ -79,6 +80,7 @@ git push origin main && git push origin v0.X.X
 - **Undo delete toast**: xóa task → toast 4 giây có nút "Hoàn tác", tự confirm sau 4s
 - **Auto-update**: check khi khởi động, UpdateDialog hiện progress bar download
 - **UI Scale**: `document.documentElement.style.fontSize = ${14 * uiScale}px` — tất cả rem/em tự scale
+- **Right-click context menu trên TaskCard**: xóa task (có undo toast) + chọn màu riêng cho task (24 màu, override màu category)
 
 ## Bảng màu danh mục — COLOR_PALETTE
 
@@ -184,6 +186,46 @@ node export-icons.mjs
 Remove-Item export-icons.mjs
 ```
 Dependencies đã có: `sharp`. `.ico` phải có đủ: **16, 32, 48, 64, 128, 256px** (48 bắt buộc cho Windows desktop/taskbar).
+
+## Task Color (Right-click Context Menu)
+
+### Mô tả
+Right-click vào TaskCard → popup nhỏ xuất hiện tại vị trí chuột (tự điều chỉnh nếu gần mép màn hình) gồm:
+- Nút **Delete** (IconTrash) → gọi `softDeleteTask` → hiện undo toast 4 giây như bình thường
+- Divider
+- Grid 24 màu (4 hàng × 6 cột) — màu đang chọn hiện dấu ✓ trắng; click lại màu đang chọn → reset về `null` (quay lại màu category)
+
+### Data model
+`tasks` table có thêm column `color TEXT DEFAULT NULL` (migration v11 trong `lib.rs`).
+`Task` interface (`types/index.ts`) có field `color: string | null`.
+`TaskUpdate` interface có `color?: string | null`.
+
+### Store
+`updateTaskColor(id, color)` trong `appStore.ts`:
+- Update đồng thời `tasks` và `calendarTasks` trong Zustand state (để calendar re-render ngay)
+- Chạy `UPDATE tasks SET color = $1 WHERE id = $2` vào SQLite
+
+### Màu hiệu quả (effective color)
+Mọi nơi render màu task đều dùng pattern: `task.color ?? categoryColors[task.category]`
+- `TaskCard.tsx` — `cardBg`
+- `WeekView.tsx`, `MonthView.tsx` (2 chỗ: cell + popover), `DayView.tsx` (3 chỗ: deck, block, drag preview)
+- `AddTaskModal.tsx` — dot trong trigger và item đang chọn của category dropdown
+
+### CSS
+Classes trong `App.css`: `.task-context-menu`, `.task-context-divider`, `.task-context-colors`, `.task-context-color-btn`
+Reuse `.day-context-item` và `.day-context-item-danger` từ DayView context menu.
+
+### Files đã sửa
+- `src-tauri/src/lib.rs` — migration v11
+- `src/types/index.ts` — Task + TaskUpdate
+- `src/store/appStore.ts` — updateTaskColor (interface + implement), SELECT queries
+- `src/store/mockDb.ts` — `color: null` trên mọi mock task
+- `src/components/today/TaskCard.tsx` — context menu + effective color
+- `src/components/calendar/WeekView.tsx` — effective color
+- `src/components/calendar/MonthView.tsx` — effective color (2 chỗ)
+- `src/components/calendar/DayView.tsx` — effective color (3 chỗ)
+- `src/components/today/AddTaskModal.tsx` — effective color trên dot
+- `src/App.css` — CSS context menu
 
 ## Journal Tab
 

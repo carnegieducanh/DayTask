@@ -14,6 +14,7 @@ export interface Task {
   series_id: number | null;
   repeat_end_date: string | null;
   created_at: string;
+  color: string | null;
 }
 
 export interface NewTask {
@@ -31,6 +32,7 @@ export interface TaskUpdate {
   is_done?: number;
   repeat_daily?: number;
   repeat_end_date?: string | null;
+  color?: string | null;
 }
 
 export interface TaskTimeEntry {

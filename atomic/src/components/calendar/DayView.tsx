@@ -1,8 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import { format } from "date-fns";
-import { IconTag, IconTrash } from "@tabler/icons-react";
+import { IconTag, IconTrash, IconCheck } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
+
+const TASK_COLOR_PALETTE: string[] = [
+  '#C05476', '#E3683E', '#D8BE5E', '#489160', '#6E72C3', '#A75ABA',
+  '#D85675', '#DD7835', '#BCC256', '#429A8E', '#828BC2', '#957367',
+  '#DA5234', '#E0963C', '#82AA57', '#4B99D2', '#AE9CCE', '#7C7C7C',
+  '#D38179', '#E4B751', '#54AD7F', '#6489DF', '#A277AF', '#A3978B',
+];
 import { useT } from "../../i18n";
 import AddTaskModal from "../today/AddTaskModal";
 import type { Task, TaskTimeEntry } from "../../types";
@@ -111,7 +118,7 @@ export default function DayView({
   onTaskClick: (task: Task) => void;
 }) {
   const t = useT();
-  const { tasks, taskTimeEntries, saveTimeEntry, softDeleteTask, categoryColors, tags, taskTags } = useAppStore();
+  const { tasks, taskTimeEntries, saveTimeEntry, softDeleteTask, updateTaskColor, categoryColors, tags, taskTags } = useAppStore();
   const [creating, setCreating] = useState<{ startTime: string; endTime: string } | null>(null);
   const [pendingCreate, setPendingCreate] = useState<{ startMin: number; endMin: number } | null>(null);
   const [dragCreate, setDragCreate] = useState<DragCreate | null>(null);
@@ -163,13 +170,30 @@ export default function DayView({
     gridRef.current.scrollTop = minToPx(targetMin);
   }, [dateStr]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Close context menu on outside click
+  // Close context menu on outside click or Escape
   useEffect(() => {
     if (!contextMenu) return;
     function close() { setContextMenu(null); }
+    function handleKey(e: KeyboardEvent) { if (e.key === 'Escape') setContextMenu(null); }
     window.addEventListener("mousedown", close);
-    return () => window.removeEventListener("mousedown", close);
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("mousedown", close);
+      window.removeEventListener("keydown", handleKey);
+    };
   }, [contextMenu]);
+
+  function handleTaskContextMenu(e: React.MouseEvent, task: Task) {
+    e.preventDefault();
+    e.stopPropagation();
+    const MENU_W = 180;
+    const MENU_H = 170;
+    let x = e.clientX;
+    let y = e.clientY;
+    if (x + MENU_W > window.innerWidth) x = window.innerWidth - MENU_W - 8;
+    if (y + MENU_H > window.innerHeight) y = window.innerHeight - MENU_H - 8;
+    setContextMenu({ taskId: task.id, task, x, y });
+  }
 
   function getRelY(clientY: number): number {
     if (!gridRef.current) return 0;
@@ -371,7 +395,7 @@ export default function DayView({
           <div className="day-deck-gutter-spacer" />
           <div className="day-deck-events-area" style={{ height: deckHeight }}>
             {visibleDeckTasks.map((task, i) => {
-              const color = categoryColors[task.category];
+              const color = task.color ?? categoryColors[task.category];
               return (
                 <div
                   key={task.id}
@@ -383,6 +407,7 @@ export default function DayView({
                     borderLeft: `3px solid ${color}`,
                   }}
                   onMouseDown={(e) => handleDeckCardMouseDown(e, task)}
+                  onContextMenu={(e) => handleTaskContextMenu(e, task)}
                 >
                   <div className="day-task-title">{task.title}</div>
                 </div>
@@ -450,7 +475,7 @@ export default function DayView({
               : item.endMin;
             const top = minToPx(startMin);
             const height = Math.max(minToPx(endMin - startMin), 22);
-            const color = categoryColors[item.task.category];
+            const color = item.task.color ?? categoryColors[item.task.category];
             const tagIds = taskTags[item.task.id] ?? [];
             const taskTagObjects = tags.filter((t) => tagIds.includes(t.id));
 
@@ -469,7 +494,7 @@ export default function DayView({
                   zIndex: isMoving || isResizing ? 50 : item.zIndex,
                 }}
                 onMouseDown={(e) => handleTaskMouseDown(e, item)}
-                onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ taskId: item.task.id, task: item.task, x: e.clientX, y: e.clientY }); }}
+                onContextMenu={(e) => handleTaskContextMenu(e, item.task)}
               >
                 {/* Top resize handle */}
                 <div
@@ -535,8 +560,8 @@ export default function DayView({
                 height: Math.max(minToPx(dragDeckTask.endMin - dragDeckTask.startMin), 22),
                 left: "0.5%",
                 width: "98%",
-                backgroundColor: categoryColors[dragDeckTask.task.category],
-                borderLeft: `3px solid ${categoryColors[dragDeckTask.task.category]}`,
+                backgroundColor: dragDeckTask.task.color ?? categoryColors[dragDeckTask.task.category],
+                borderLeft: `3px solid ${dragDeckTask.task.color ?? categoryColors[dragDeckTask.task.category]}`,
                 opacity: 0.8,
                 zIndex: 100,
                 cursor: "grabbing",
@@ -597,17 +622,32 @@ export default function DayView({
 
       {contextMenu && (
         <div
-          className="day-context-menu"
+          className="task-context-menu"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           <button
             className="day-context-item day-context-item-danger"
             onClick={() => { softDeleteTask(contextMenu.taskId); setContextMenu(null); }}
           >
             <IconTrash size={16} />
-            {t.calendar.removeFromCalendar}
+            {t.taskCard.delete}
           </button>
+          <div className="task-context-divider" />
+          <div className="task-context-colors">
+            {TASK_COLOR_PALETTE.map((color) => (
+              <button
+                key={color}
+                className="task-context-color-btn"
+                style={{ backgroundColor: color }}
+                onClick={() => { updateTaskColor(contextMenu.taskId, contextMenu.task.color === color ? null : color); setContextMenu(null); }}
+                title={color}
+              >
+                {contextMenu.task.color === color && <IconCheck size={12} color="white" strokeWidth={3} />}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
