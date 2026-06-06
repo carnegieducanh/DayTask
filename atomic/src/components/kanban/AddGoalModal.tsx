@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { attachSmoothScroll } from "../../hooks/useSmoothScroll";
 import {
   IconX,
   IconPlus,
@@ -11,7 +12,6 @@ import { useT } from "../../i18n";
 import type {
   Goal,
   Category,
-  Priority,
   Quarter,
   GoalStatus,
 } from "../../types";
@@ -64,7 +64,7 @@ export default function AddGoalModal({
     toggleChecklistItem,
     deleteChecklistItem,
     categoryColors,
-    updateCategoryColor,
+    updateTaskColor,
   } = useAppStore();
 
   const CATEGORIES: { value: Category; label: string }[] = [
@@ -75,12 +75,6 @@ export default function AddGoalModal({
     { value: "creative",     label: t.cat.creative },
     { value: "mindfulness",  label: t.cat.mindfulness },
     { value: "finance",      label: t.cat.finance },
-  ];
-
-  const PRIORITIES: { value: Priority; label: string }[] = [
-    { value: "high", label: t.priority.high },
-    { value: "mid",  label: t.priority.mid },
-    { value: "low",  label: t.priority.low },
   ];
 
   const QUARTERS: { value: Quarter; label: string }[] = [
@@ -94,12 +88,19 @@ export default function AddGoalModal({
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [category, setCategory] = useState<Category>("work");
-  const [priority, setPriority] = useState<Priority>("mid");
   const [quarter, setQuarter] = useState<Quarter>("Q1");
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);
+  const [colorPickerPos, setColorPickerPos] = useState<{ top: number; left: number } | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const smoothCleanup = useRef<(() => void) | null>(null);
+  const panelRef = useCallback((el: HTMLDivElement | null) => {
+    smoothCleanup.current?.();
+    smoothCleanup.current = el ? attachSmoothScroll(el) : null;
+  }, []);
   const [newItemText, setNewItemText] = useState("");
   const addInputRef = useRef<HTMLInputElement>(null);
 
@@ -108,7 +109,6 @@ export default function AddGoalModal({
       setTitle(editGoal.title);
       setDesc(editGoal.description ?? "");
       setCategory(editGoal.category);
-      setPriority(editGoal.priority);
       setQuarter(editGoal.quarter);
     }
   }, [editGoal]);
@@ -120,7 +120,9 @@ export default function AddGoalModal({
         !dropdownRef.current.contains(e.target as Node)
       ) {
         setDropdownOpen(false);
+        setDropdownPos(null);
         setColorPickerFor(null);
+        setColorPickerPos(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -136,7 +138,6 @@ export default function AddGoalModal({
         title: title.trim(),
         description: desc.trim() || undefined,
         category,
-        priority,
         quarter,
       });
     } else {
@@ -144,7 +145,6 @@ export default function AddGoalModal({
         title: title.trim(),
         description: desc.trim() || undefined,
         category,
-        priority,
         quarter,
         year: selectedYear,
         status: defaultStatus,
@@ -210,11 +210,20 @@ export default function AddGoalModal({
               <label className="form-label">{t.goalModal.categoryLabel}</label>
               <div className="cat-dropdown" ref={dropdownRef}>
                 <button
+                  ref={triggerRef}
                   type="button"
                   className="cat-dropdown-trigger"
                   onClick={() => {
+                    const isOpening = !dropdownOpen;
+                    if (isOpening && triggerRef.current) {
+                      const r = triggerRef.current.getBoundingClientRect();
+                      setDropdownPos({ top: r.bottom + 4, left: r.left, width: r.width });
+                    } else {
+                      setDropdownPos(null);
+                    }
                     setDropdownOpen((v) => !v);
                     setColorPickerFor(null);
+                    setColorPickerPos(null);
                   }}
                 >
                   <span
@@ -229,8 +238,12 @@ export default function AddGoalModal({
                     className={`cat-dropdown-chevron${dropdownOpen ? " open" : ""}`}
                   />
                 </button>
-                {dropdownOpen && (
-                  <div className="cat-dropdown-panel">
+                {dropdownOpen && dropdownPos && (
+                  <div
+                    className="cat-dropdown-panel"
+                    ref={panelRef}
+                    style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}
+                  >
                     {CATEGORIES.map((cat) => (
                       <div
                         key={cat.value}
@@ -242,7 +255,9 @@ export default function AddGoalModal({
                           onClick={() => {
                             setCategory(cat.value);
                             setDropdownOpen(false);
+                            setDropdownPos(null);
                             setColorPickerFor(null);
+                            setColorPickerPos(null);
                           }}
                         >
                           <span
@@ -257,6 +272,13 @@ export default function AddGoalModal({
                           onMouseDown={(e) => e.stopPropagation()}
                           onClick={(e) => {
                             e.stopPropagation();
+                            const isOpening = colorPickerFor !== cat.value;
+                            if (isOpening) {
+                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                              setColorPickerPos({ top: rect.top, left: rect.right + 8 });
+                            } else {
+                              setColorPickerPos(null);
+                            }
                             setColorPickerFor((prev) =>
                               prev === cat.value ? null : cat.value,
                             );
@@ -265,9 +287,10 @@ export default function AddGoalModal({
                         >
                           <IconDotsVertical size={16} />
                         </button>
-                        {colorPickerFor === cat.value && (
+                        {colorPickerFor === cat.value && colorPickerPos && (
                           <div
                             className="cat-color-popup"
+                            style={{ position: 'fixed', top: colorPickerPos.top, left: colorPickerPos.left }}
                             onMouseDown={(e) => e.stopPropagation()}
                           >
                             {COLOR_PALETTE.map((color) => (
@@ -278,7 +301,7 @@ export default function AddGoalModal({
                                 style={{ background: color }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  updateCategoryColor(cat.value, color);
+                                  updateTaskColor(cat.value, color);
                                 }}
                                 title={color}
                               >
@@ -300,34 +323,19 @@ export default function AddGoalModal({
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label">{t.goalModal.priorityLabel}</label>
+              <label className="form-label">{t.goalModal.quarterLabel}</label>
               <select
                 className="form-input"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as Priority)}
+                value={quarter}
+                onChange={(e) => setQuarter(e.target.value as Quarter)}
               >
-                {PRIORITIES.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
+                {QUARTERS.map((q) => (
+                  <option key={q.value} value={q.value}>
+                    {q.label}
                   </option>
                 ))}
               </select>
             </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">{t.goalModal.quarterLabel}</label>
-            <select
-              className="form-input"
-              value={quarter}
-              onChange={(e) => setQuarter(e.target.value as Quarter)}
-            >
-              {QUARTERS.map((q) => (
-                <option key={q.value} value={q.value}>
-                  {q.label}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Checklist section — chỉ hiện khi đang edit goal đã có */}
@@ -363,7 +371,7 @@ export default function AddGoalModal({
                     <button
                       type="button"
                       className={`checklist-checkbox${item.is_done ? " checked" : ""}`}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); toggleChecklistItem(item.id, editGoal.id); }}
                       title={item.is_done ? t.goalModal.markUndone : t.goalModal.markDone}
                     >
                       {!!item.is_done && (
