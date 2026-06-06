@@ -60,7 +60,7 @@ export interface NewGoal {
   title: string;
   description?: string;
   category: Category;
-  priority: Priority;
+  priority?: Priority;
   year: number;
   quarter: Quarter;
   status?: GoalStatus;
