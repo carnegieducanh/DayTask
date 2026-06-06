@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type React from "react";
+import { attachSmoothScroll } from "../../hooks/useSmoothScroll";
 import {
   IconChevronDown,
   IconDotsVertical,
@@ -49,6 +50,11 @@ function TimeDropdown({
   const prevOpenRef = useRef(false);
 
   useEffect(() => { customInputLatest.current = customInput; }, [customInput]);
+
+  useEffect(() => {
+    if (!open || !listRef.current) return;
+    return attachSmoothScroll(listRef.current);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync input value and position panel when opening
   useEffect(() => {
@@ -259,6 +265,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [catPanelStyle, setCatPanelStyle] = useState<React.CSSProperties>({});
   const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);
+  const [colorPickerPos, setColorPickerPos] = useState<{ top: number; left: number } | null>(null);
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
   const [timeError, setTimeError] = useState("");
@@ -279,6 +286,18 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
   const endRef = useRef<HTMLDivElement>(null);
   const startListRef = useRef<HTMLDivElement>(null);
   const endListRef = useRef<HTMLDivElement>(null);
+  const catPanelRef = useRef<HTMLDivElement>(null);
+  const tagListRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!dropdownOpen || !catPanelRef.current) return;
+    return attachSmoothScroll(catPanelRef.current);
+  }, [dropdownOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!tagDropdownOpen || !tagListRef.current) return;
+    return attachSmoothScroll(tagListRef.current);
+  }, [tagDropdownOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Only lock the toggle for instances (series_id != null); templates can still turn off repeat
   const isSeriesInstance = !!(editTask && editTask.series_id != null);
@@ -305,6 +324,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
         setColorPickerFor(null);
+        setColorPickerPos(null);
       }
       if (tagDropRef.current && !tagDropRef.current.contains(e.target as Node)) {
         setTagDropdownOpen(false);
@@ -325,13 +345,13 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
   useEffect(() => {
     if (!startOpen || !startListRef.current) return;
     const selected = startListRef.current.querySelector(".time-option.selected") as HTMLElement | null;
-    if (selected) selected.scrollIntoView({ block: "center" });
+    if (selected) selected.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [startOpen]);
 
   useEffect(() => {
     if (!endOpen || !endListRef.current) return;
     const selected = endListRef.current.querySelector(".time-option.selected") as HTMLElement | null;
-    if (selected) selected.scrollIntoView({ block: "center" });
+    if (selected) selected.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [endOpen]);
 
   function validateTimes(): boolean {
@@ -489,7 +509,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                   />
                 </button>
                 {dropdownOpen && (
-                  <div className="cat-dropdown-panel" style={catPanelStyle}>
+                  <div className="cat-dropdown-panel" style={catPanelStyle} ref={catPanelRef}>
                     {CATEGORIES.map((cat) => (
                       <div
                         key={cat.value}
@@ -509,14 +529,25 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                           onMouseDown={(e) => e.stopPropagation()}
                           onClick={(e) => {
                             e.stopPropagation();
+                            const isOpening = colorPickerFor !== cat.value;
+                            if (isOpening) {
+                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                              setColorPickerPos({ top: rect.top, left: rect.right + 8 });
+                            } else {
+                              setColorPickerPos(null);
+                            }
                             setColorPickerFor((prev) => prev === cat.value ? null : cat.value);
                           }}
                           title={t.taskModal.changeColor}
                         >
                           <IconDotsVertical size={16} />
                         </button>
-                        {colorPickerFor === cat.value && (
-                          <div className="cat-color-popup" onMouseDown={(e) => e.stopPropagation()}>
+                        {colorPickerFor === cat.value && colorPickerPos && (
+                          <div
+                            className="cat-color-popup"
+                            style={{ position: 'fixed', top: colorPickerPos.top, left: colorPickerPos.left }}
+                            onMouseDown={(e) => e.stopPropagation()}
+                          >
                             {COLOR_PALETTE.map((color) => (
                               <button
                                 key={color}
@@ -572,7 +603,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                 </button>
                 {tagDropdownOpen && (
                   <div className="tag-dropdown-panel" style={tagPanelStyle}>
-                    <div className="tag-dropdown-list">
+                    <div className="tag-dropdown-list" ref={tagListRef}>
                       {tags.length === 0 && (
                         <div className="tag-dropdown-empty">{t.tags.noTags}</div>
                       )}
