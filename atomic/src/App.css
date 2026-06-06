@@ -5062,3 +5062,127 @@ select {
   line-height: 1.55;
 }
 
+/* ─── Lesson Group (multiple lessons per day) ─── */
+
+.jm-lesson-group + .jm-lesson-group {
+  padding-top: 2px;
+}
+
+.jm-lesson-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px 0;
+}
+
+.jm-lesson-group-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.jm-lesson-group-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.75rem;
+  font-family: inherit;
+}
+
+.jm-lesson-group-del:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+/* ─── Lesson Fields (Write Card) ─── */
+
+.jm-lesson-field {
+  padding: 6px 14px 8px;
+}
+
+.jm-lesson-field:first-child { padding-top: 4px; }
+
+.jm-lesson-field-header {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.jm-lesson-field-num {
+  font-size: 0.82rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.jm-lesson-field-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.jm-lesson-field-prompt {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.jm-lesson-field-ta {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 0.93rem;
+  font-family: inherit;
+  line-height: 1.55;
+  min-height: 22px;
+  resize: none;
+  overflow: hidden;
+}
+
+.jm-lesson-field-ta::placeholder { color: var(--border-2); }
+
+/* ─── Lesson Group (Entry Card) ─── */
+
+.jm-ec-lesson-group + .jm-ec-lesson-group {
+  padding-top: 2px;
+}
+
+.jm-ec-lesson-group-header {
+  padding: 6px 14px 0;
+}
+
+.jm-ec-lesson-group-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ─── Lesson Fields (Entry Card) ─── */
+
+.jm-ec-lesson-field {
+  padding: 6px 14px 8px;
+}
+
+.jm-ec-lesson-field:first-child { padding-top: 8px; }
+
+.jm-ec-lesson-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.jm-ec-lesson-value {
+  font-size: 0.93rem;
+  color: var(--text-primary);
+  line-height: 1.55;
+}
+

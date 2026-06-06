@@ -45,7 +45,7 @@ export async function dbSaveJournal(
 ): Promise<JournalEntry | null> {
   if (!isTauri()) return null;
   const db = await getDb();
-  const itemsJson = JSON.stringify(items.filter(i => i.trim()));
+  const itemsJson = JSON.stringify(items);
   const existing = await dbGetJournal(date, type);
   if (existing) {
     await db.execute(
@@ -150,21 +150,77 @@ export async function seedJournalIfEmpty(): Promise<void> {
     ['Có deadline rõ ràng giúp mình tập trung', 'Buổi sáng không kẹt xe', 'Người thân khỏe mạnh'],
   ];
 
-  const LESSON_POOL: string[] = [
-    'Khi tập trung vào 1 việc thay vì multitask, năng suất tăng hẳn.',
-    'Nói "không" đúng lúc giúp tiết kiệm rất nhiều năng lượng.',
-    'Bắt đầu ngay dù chưa sẵn sàng còn tốt hơn là chờ thời điểm hoàn hảo.',
-    'Nghỉ ngơi đúng cách không phải lãng phí — đó là đầu tư cho hiệu suất.',
-    'Đặt câu hỏi sớm hơn giúp tránh đi sai hướng mãi sau mới phát hiện.',
-    'Viết ra vấn đề thường giúp nhìn thấy giải pháp rõ hơn là chỉ nghĩ trong đầu.',
-    'Cảm xúc tiêu cực mà không được nhận ra sẽ ảnh hưởng đến quyết định.',
-    'Giao việc và tin tưởng người khác tốt hơn là ôm hết mọi việc một mình.',
-    'Sự đơn giản thường là giải pháp tốt nhất — phức tạp chỉ tạo thêm điểm lỗi.',
-    'Giải thích vấn đề cho người khác giúp mình hiểu rõ hơn gấp đôi.',
-    'Thói quen nhỏ mỗi ngày tích lũy thành thay đổi lớn sau vài tháng.',
-    'Ăn no và ngủ đủ không phải điều hiển nhiên — cần chủ động đảm bảo.',
-    'Phản hồi chân thành, dù khó nghe, có giá trị hơn lời khen xã giao.',
-    'Dành thời gian lập kế hoạch tiết kiệm nhiều thời gian thực hiện hơn.',
+  const LESSON_POOL: [string, string, string][] = [
+    [
+      'Dành 2 tiếng debug một lỗi logic sai kết quả tính toán.',
+      'Tôi đã quá tin vào giả định đầu tiên mà không kiểm tra lại.',
+      'Nhiều vấn đề khó không phải vì bản thân chúng khó, mà vì mình đang nhìn sai hướng.',
+    ],
+    [
+      'Cuộc họp kéo dài hơn dự kiến vì thiếu agenda rõ ràng từ đầu.',
+      'Khi không có mục tiêu cụ thể, mọi người dễ đi lạc vào chi tiết không cần thiết.',
+      'Chuẩn bị agenda trước 5 phút tiết kiệm được 30 phút trong cuộc họp.',
+    ],
+    [
+      'Thử giải thích một vấn đề kỹ thuật cho người không chuyên.',
+      'Tôi nhận ra mình không thực sự hiểu rõ phần mình không giải thích được.',
+      'Nếu không thể giải thích đơn giản, nghĩa là mình chưa hiểu đủ sâu.',
+    ],
+    [
+      'Nhận được phản hồi thẳng thắn về cách trình bày của mình.',
+      'Dù khó nghe nhưng đó chính xác là điều tôi cần để cải thiện.',
+      'Phản hồi chân thành, dù khó chịu, có giá trị hơn sự im lặng lịch sự.',
+    ],
+    [
+      'Cố gắng làm nhiều việc cùng lúc và kết quả tất cả đều nửa vời.',
+      'Khi chuyển đổi liên tục, não cần thời gian "khởi động lại" cho từng việc.',
+      'Tập trung hoàn toàn vào một việc hiệu quả hơn multitask gấp nhiều lần.',
+    ],
+    [
+      'Trì hoãn một quyết định nhỏ vì "chưa có đủ thông tin".',
+      'Tôi nhận ra mình đang tìm kiếm sự chắc chắn tuyệt đối — thứ không bao giờ tồn tại.',
+      'Quyết định tốt không cần thông tin hoàn hảo, chỉ cần đủ để hành động.',
+    ],
+    [
+      'Đọc lại code mình viết 3 tháng trước và không hiểu tại sao lại làm vậy.',
+      'Ngay lúc viết, mọi thứ rõ ràng trong đầu — nhưng code không mang theo ngữ cảnh đó.',
+      'Viết code cho người đọc sau, không phải cho mình lúc đang hiểu.',
+    ],
+    [
+      'Nhận lời giúp đỡ một việc không thuộc chuyên môn mình vì không muốn từ chối.',
+      'Kết quả mất nhiều thời gian hơn và chất lượng cũng không tốt như kỳ vọng.',
+      'Nói không đúng lúc là tôn trọng cả hai bên — bản thân và người nhờ.',
+    ],
+    [
+      'Giải pháp đầu tiên nghĩ ra có vẻ phức tạp nhưng vẫn cứ làm theo.',
+      'Khi đơn giản hóa lại, mọi thứ gọn hơn và ít lỗi hơn hẳn.',
+      'Sự phức tạp không phải dấu hiệu của sự tinh tế — thường là ngược lại.',
+    ],
+    [
+      'Bỏ qua phần lập kế hoạch và bắt tay làm ngay vì "tưởng đơn giản".',
+      'Đến giữa chừng mới phát hiện thiếu thông tin quan trọng, phải làm lại từ đầu.',
+      'Dành 10 phút lập kế hoạch có thể tiết kiệm vài giờ làm lại.',
+    ],
+    [
+      'Một thói quen nhỏ — đọc 10 trang sách mỗi tối — đã duy trì được 3 tuần.',
+      'Không cần áp lực lớn, chỉ cần đủ nhỏ để không có lý do từ chối.',
+      'Thay đổi bền vững đến từ hành động nhỏ lặp đi lặp lại, không phải nỗ lực bùng nổ.',
+    ],
+    [
+      'Cảm thấy mệt mỏi và khó tập trung suốt cả buổi chiều.',
+      'Nhớ lại mình đã bỏ bữa trưa và ngủ ít hơn bình thường tối qua.',
+      'Hiệu suất tinh thần phụ thuộc trực tiếp vào nền tảng thể chất — ăn, ngủ, nghỉ.',
+    ],
+    [
+      'Viết ra toàn bộ vấn đề đang loay hoay thay vì chỉ nghĩ trong đầu.',
+      'Ngay khi viết xong, giải pháp bắt đầu hiện ra rõ hơn hẳn.',
+      'Đưa vấn đề ra khỏi đầu và vào giấy giúp não nhìn thấy nó khách quan hơn.',
+    ],
+    [
+      'Nhờ một người tin tưởng đảm nhận phần việc mình hay ôm một mình.',
+      'Kết quả không những tốt mà còn giúp họ phát triển thêm kỹ năng.',
+      'Giao việc và tin tưởng không phải bỏ trách nhiệm — đó là nhân lên sức mạnh.',
+    ],
   ];
 
   const today = new Date();
@@ -178,7 +234,7 @@ export async function seedJournalIfEmpty(): Promise<void> {
     );
     await db.execute(
       'INSERT INTO journal_entries (date, type, items) VALUES ($1, $2, $3)',
-      [dateStr, 'lesson', JSON.stringify([LESSON_POOL[i - 1]])]
+      [dateStr, 'lesson', JSON.stringify(LESSON_POOL[i - 1])]
     );
   }
 }

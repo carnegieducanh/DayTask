@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IconHeart, IconBulb, IconPencil,
   IconTrash, IconX, IconPlus, IconCheck,
-  IconChevronLeft, IconChevronRight,
+  IconChevronLeft, IconChevronRight, IconFlame,
 } from '@tabler/icons-react';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import { useT } from '../../i18n';
@@ -14,7 +14,7 @@ import {
   seedJournalIfEmpty,
 } from '../../store/journalDb';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// â"€â"€â"€ Constants â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 const ACCENT_GRATITUDE = 'var(--primary)';
 const ACCENT_LESSON = 'var(--journal-secondary)';
@@ -53,11 +53,11 @@ const TABS: Record<JTab, TabCfg> = {
     activeBg: 'var(--journal-lesson-active-bg)',
     saveBg: 'var(--journal-secondary)',
     saveColor: '#1a1a1a',
-    defaultCount: 1,
+    defaultCount: 3,
   },
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â"€â"€â"€ Helpers â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function getToday() {
   return new Date().toISOString().split('T')[0];
@@ -81,7 +81,7 @@ function fmtDateShort(
 }
 
 function formatSavedTime(updatedAt: string): string {
-  // SQLite datetime('now') trả về UTC: "2026-06-05 08:30:00"
+  // SQLite datetime('now') tráº£ vá» UTC: "2026-06-05 08:30:00"
   const d = new Date(updatedAt.replace(' ', 'T') + 'Z');
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
@@ -92,7 +92,22 @@ function autoResize(el: HTMLTextAreaElement | null) {
   el.style.height = el.scrollHeight + 'px';
 }
 
-// ─── AutoTextarea ─────────────────────────────────────────────────────────────
+function ensureLessonItems(items: string[]): string[] {
+  if (items.length === 0) return ['', '', ''];
+  const extra = items.length % 3;
+  return extra === 0 ? items : [...items, ...Array(3 - extra).fill('')];
+}
+
+function chunkLessons(items: string[]): string[][] {
+  if (items.length === 0) return [['', '', '']];
+  const groups: string[][] = [];
+  for (let i = 0; i < items.length; i += 3) {
+    groups.push([items[i] ?? '', items[i + 1] ?? '', items[i + 2] ?? '']);
+  }
+  return groups;
+}
+
+// â"€â"€â"€ AutoTextarea â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function AutoTextarea({
   value, onChange, placeholder, className,
@@ -119,7 +134,7 @@ function AutoTextarea({
   );
 }
 
-// ─── WriteCard ────────────────────────────────────────────────────────────────
+// â"€â"€â"€ WriteCard â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function WriteCard({
   items, setItems, cfg, dateLabel, onSave, saving, todayEntry, isDirty, isToday, placeholder,
@@ -206,7 +221,216 @@ function WriteCard({
   );
 }
 
-// ─── EntryCard ────────────────────────────────────────────────────────────────
+// â"€â"€â"€ LessonWriteCard â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+
+function LessonWriteCard({
+  items, setItems, cfg, dateLabel, onSave, saving, todayEntry, isDirty, isToday,
+}: {
+  items: string[];
+  setItems: (items: string[]) => void;
+  cfg: TabCfg;
+  dateLabel: string;
+  onSave: () => void;
+  saving: boolean;
+  todayEntry: JournalEntry | null;
+  isDirty: boolean;
+  isToday: boolean;
+}) {
+  const { journal: jt } = useT();
+  const groups = chunkLessons(items);
+  const charCount = items.reduce((s, i) => s + i.length, 0);
+  const hasContent = items.some(i => i.trim());
+  const isSaved = !!todayEntry && !isDirty;
+
+  function updateField(groupIdx: number, fieldIdx: number, val: string) {
+    const next = [...items];
+    next[groupIdx * 3 + fieldIdx] = val;
+    setItems(next);
+  }
+  function addGroup() { setItems([...items, '', '', '']); }
+  function removeGroup(groupIdx: number) {
+    const next = [...items];
+    next.splice(groupIdx * 3, 3);
+    setItems(next.length ? next : ['', '', '']);
+  }
+
+  return (
+    <div className="jm-write-card">
+      <div className="jm-wc-header">
+        <span style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 5 }}>
+          <IconPencil size={13} color="var(--text-secondary)" /> {isToday ? jt.writeToday : jt.writeDate(dateLabel)}
+        </span>
+        {isSaved ? (
+          <span style={{ color: cfg.accent, fontSize: '0.79rem', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <IconCheck size={12} color={cfg.accent} /> {jt.savedAt(formatSavedTime(todayEntry!.updated_at))}
+          </span>
+        ) : (
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{dateLabel}</span>
+        )}
+      </div>
+
+      <div className="jm-wc-items">
+        {groups.map((group, groupIdx) => (
+          <div key={groupIdx} className="jm-lesson-group">
+            {groups.length > 1 && (
+              <div className="jm-lesson-group-header">
+                <span className="jm-lesson-group-label" style={{ color: cfg.accent }}>
+                  {jt.lessonGroup(groupIdx + 1)}
+                </span>
+                <button className="jm-lesson-group-del" onClick={() => removeGroup(groupIdx)} title={jt.deleteLesson}>
+                  <IconX size={11} />
+                </button>
+              </div>
+            )}
+            {jt.lessonFields.map((field, fieldIdx) => (
+              <div key={fieldIdx} className="jm-lesson-field">
+                <div className="jm-lesson-field-header">
+                  <span className="jm-lesson-field-num" style={{ color: cfg.accent }}>{fieldIdx + 1}.</span>
+                  <span className="jm-lesson-field-label">{field.label}</span>
+                  <span className="jm-lesson-field-prompt">{field.prompt}</span>
+                </div>
+                <AutoTextarea
+                  value={group[fieldIdx] ?? ''}
+                  onChange={v => updateField(groupIdx, fieldIdx, v)}
+                  placeholder={field.placeholder}
+                  className="jm-lesson-field-ta"
+                />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      <button className="jm-wc-add" onClick={addGroup}>
+        <IconPlus size={12} /> {jt.addLesson}
+      </button>
+
+      <div className="jm-wc-footer">
+        <span className="jm-wc-char">{jt.charCount(charCount)}</span>
+        <button
+          className="jm-wc-save"
+          style={{ background: cfg.saveBg, color: cfg.saveColor }}
+          disabled={saving || isSaved || !hasContent}
+          onClick={onSave}
+        >
+          {saving
+            ? jt.saving
+            : isSaved
+              ? <><IconCheck size={13} /> {jt.saved}</>
+              : todayEntry
+                ? jt.update
+                : jt.saveToday}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// â"€â"€â"€ LessonEntryCard â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+
+function LessonEntryCard({
+  entry, cfg, isEditing, editItems, setEditItems,
+  onEdit, onEditSave, onEditCancel, onDelete,
+}: {
+  entry: JournalEntry;
+  cfg: TabCfg;
+  isEditing: boolean;
+  editItems: string[];
+  setEditItems: (items: string[]) => void;
+  onEdit: () => void;
+  onEditSave: () => void;
+  onEditCancel: () => void;
+  onDelete: () => void;
+}) {
+  const { journal: jt } = useT();
+
+  return (
+    <div className="jm-entry-card" id={`entry-${entry.date}`}>
+      <div className="jm-ec-header">
+        <span className="jm-ec-date">{fmtDate(entry.date, jt.dowFull, jt.formatDate)}</span>
+        <div className="jm-ec-actions">
+          {isEditing ? (
+            <>
+              <button className="jm-ec-btn" onClick={onEditSave} title={jt.tooltipSave}>
+                <IconCheck size={13} color={cfg.accent} />
+              </button>
+              <button className="jm-ec-btn" onClick={onEditCancel} title={jt.tooltipCancel}>
+                <IconX size={13} color="var(--text-secondary)" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="jm-ec-btn" onClick={onEdit} title={jt.tooltipEdit}>
+                <IconPencil size={13} color="var(--text-secondary)" />
+              </button>
+              <button className="jm-ec-btn" onClick={onDelete} title={jt.tooltipDelete}>
+                <IconTrash size={13} color="var(--text-secondary)" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="jm-ec-items">
+        {isEditing ? (
+          chunkLessons(editItems).map((group, groupIdx) => (
+            <div key={groupIdx} className="jm-ec-lesson-group">
+              {chunkLessons(editItems).length > 1 && (
+                <div className="jm-ec-lesson-group-header">
+                  <span className="jm-ec-lesson-group-label" style={{ color: cfg.accent }}>
+                    {jt.lessonGroup(groupIdx + 1)}
+                  </span>
+                </div>
+              )}
+              {jt.lessonFields.map((field, fieldIdx) => (
+                <div key={fieldIdx} className="jm-ec-lesson-field">
+                  <div className="jm-ec-lesson-label" style={{ color: cfg.accent }}>
+                    {fieldIdx + 1}. {field.label}
+                  </div>
+                  <AutoTextarea
+                    value={group[fieldIdx] ?? ''}
+                    onChange={v => {
+                      const next = [...editItems];
+                      next[groupIdx * 3 + fieldIdx] = v;
+                      setEditItems(next);
+                    }}
+                    className="jm-wc-ta"
+                  />
+                </div>
+              ))}
+            </div>
+          ))
+        ) : (
+          chunkLessons(entry.items).map((group, groupIdx) => (
+            <div key={groupIdx} className="jm-ec-lesson-group">
+              {chunkLessons(entry.items).length > 1 && (
+                <div className="jm-ec-lesson-group-header">
+                  <span className="jm-ec-lesson-group-label" style={{ color: cfg.accent }}>
+                    {jt.lessonGroup(groupIdx + 1)}
+                  </span>
+                </div>
+              )}
+              {jt.lessonFields.map((field, fieldIdx) => (
+                <div key={fieldIdx} className="jm-ec-lesson-field">
+                  <div className="jm-ec-lesson-label" style={{ color: cfg.accent }}>
+                    {fieldIdx + 1}. {field.label}
+                  </div>
+                  {group[fieldIdx] ? (
+                    <div className="jm-ec-lesson-value">{group[fieldIdx]}</div>
+                  ) : (
+                    <div className="jm-ec-lesson-value" style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '0.82rem' }}>—</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// â"€â"€â"€ EntryCard â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function EntryCard({
   entry, cfg, isEditing, editItems, setEditItems,
@@ -278,7 +502,7 @@ function EntryCard({
   );
 }
 
-// ─── JournalView (main) ───────────────────────────────────────────────────────
+// â"€â"€â"€ JournalView (main) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 export default function JournalView() {
   const { journal: jt } = useT();
@@ -320,7 +544,9 @@ export default function JournalView() {
   const cfg = TABS[activeType];
 
   const isDirty = selectedEntry
-    ? JSON.stringify(items.filter(i => i.trim())) !== JSON.stringify(selectedEntry.items)
+    ? activeType === 'lesson'
+      ? JSON.stringify(items) !== JSON.stringify(ensureLessonItems(selectedEntry.items))
+      : JSON.stringify(items.filter(i => i.trim())) !== JSON.stringify(selectedEntry.items)
     : false;
 
   const loadAll = useCallback(async (type: JTab, date: string) => {
@@ -333,11 +559,11 @@ export default function JournalView() {
     ]);
 
     setSelectedEntry(entry);
-    if (entry && entry.items.length > 0) {
-      setItems([...entry.items]);
+    if (entry && entry.items.some(i => i.trim())) {
+      setItems(type === 'lesson' ? ensureLessonItems(entry.items) : [...entry.items]);
       setShowPrompt(false);
     } else {
-      setItems(Array(TABS[type].defaultCount).fill(''));
+      setItems(type === 'lesson' ? ['', '', ''] : Array(TABS[type].defaultCount).fill(''));
       setShowPrompt(true);
     }
 
@@ -383,11 +609,11 @@ export default function JournalView() {
     ]);
     setSelectedDate(ds);
     setSelectedEntry(entry);
-    if (entry && entry.items.length > 0) {
-      setItems([...entry.items]);
+    if (entry && entry.items.some(i => i.trim())) {
+      setItems(activeType === 'lesson' ? ensureLessonItems(entry.items) : [...entry.items]);
       setShowPrompt(false);
     } else {
-      setItems(Array(TABS[activeType].defaultCount).fill(''));
+      setItems(activeType === 'lesson' ? ['', '', ''] : Array(TABS[activeType].defaultCount).fill(''));
       setShowPrompt(true);
     }
     setHistory(hist);
@@ -396,13 +622,22 @@ export default function JournalView() {
   }
 
   async function handleSave() {
-    const nonEmpty = items.filter(i => i.trim());
-    if (!nonEmpty.length) return;
+    let toSave: string[];
+    if (activeType === 'lesson') {
+      const nonEmptyGroups = chunkLessons(items).filter(g => g.some(f => f.trim()));
+      toSave = nonEmptyGroups.flat();
+    } else {
+      toSave = items.filter(i => i.trim());
+    }
+    if (!toSave.length) return;
     setSaving(true);
-    const entry = await dbSaveJournal(selectedDate, activeType, nonEmpty);
+    const entry = await dbSaveJournal(selectedDate, activeType, toSave);
     setSelectedEntry(entry);
-    if (entry) setItems([...entry.items]);
+    if (entry) {
+      setItems(activeType === 'lesson' ? ensureLessonItems(entry.items) : [...entry.items]);
+    }
     setSaving(false);
+    setShowPrompt(false);
     await refreshSidebar();
   }
 
@@ -421,7 +656,7 @@ export default function JournalView() {
       wasSelected = true;
       prevItems = [...items];
       setSelectedEntry(null);
-      setItems(Array(TABS[activeType].defaultCount).fill(''));
+      setItems(activeType === 'lesson' ? ['', '', ''] : Array(TABS[activeType].defaultCount).fill(''));
       setShowPrompt(true);
     } else {
       entryToDelete = history.find(e => e.id === id) ?? null;
@@ -453,10 +688,16 @@ export default function JournalView() {
   }
 
   async function handleEditSave(id: number, date: string) {
-    const nonEmpty = editItems.filter(i => i.trim());
-    if (!nonEmpty.length) return;
-    await dbSaveJournal(date, activeType, nonEmpty);
-    setHistory(prev => prev.map(e => e.id === id ? { ...e, items: nonEmpty } : e));
+    let toSave: string[];
+    if (activeType === 'lesson') {
+      const nonEmptyGroups = chunkLessons(editItems).filter(g => g.some(f => f.trim()));
+      toSave = nonEmptyGroups.flat();
+    } else {
+      toSave = editItems.filter(i => i.trim());
+    }
+    if (!toSave.length) return;
+    await dbSaveJournal(date, activeType, toSave);
+    setHistory(prev => prev.map(e => e.id === id ? { ...e, items: toSave } : e));
     setEditingId(null);
     await refreshSidebar();
   }
@@ -481,7 +722,7 @@ export default function JournalView() {
   return (
     <div className="journal-view">
 
-      {/* ─── Sidebar ─────────────────────────────────────────────────────── */}
+      {/* â"€â"€â"€ Sidebar â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
       <aside className="journal-sidebar" ref={sidebarRef}>
 
         {/* Mini Calendar */}
@@ -532,7 +773,9 @@ export default function JournalView() {
 
         {/* Streak */}
         <div className="jsc-streak">
-          <span className="jsc-streak-num">🔥 {streak}</span>
+          <span className="jsc-streak-num" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <IconFlame size={20} color="var(--primary)" /> {streak}
+          </span>
           <span className="jsc-streak-label">{jt.streakLabel}</span>
         </div>
 
@@ -557,15 +800,19 @@ export default function JournalView() {
 
       </aside>
 
-      {/* ─── Main ────────────────────────────────────────────────────────── */}
+      {/* â"€â"€â"€ Main â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
       <div className="journal-right">
 
-        {/* Journal Head — ngoài vùng scroll */}
+        {/* Journal Head â€" ngoÃ i vÃ¹ng scroll */}
         <div className="jm-head">
           <div className="jm-head-left">
             <div className="jm-date">{fmtDate(selectedDate, jt.dowFull, jt.formatDate)}</div>
             <div className="jm-date-sub">
-              {selectedDate === todayStr ? jt.todayLabel : dateLabel} · {selectedEntry ? jt.itemCount(selectedEntry.items.length) : jt.noNotes}
+              {selectedDate === todayStr ? jt.todayLabel : dateLabel} · {selectedEntry
+                ? jt.itemCount(activeType === 'lesson'
+                    ? Math.ceil(selectedEntry.items.length / 3)
+                    : selectedEntry.items.length)
+                : jt.noNotes}
             </div>
           </div>
           <div className="jm-type-toggle">
@@ -612,21 +859,32 @@ export default function JournalView() {
         )}
 
         {/* Write Card */}
-        <WriteCard
-          items={items}
-          setItems={(next) => {
-            setItems(next);
-            if (next.some(i => i.length > 0)) setShowPrompt(false);
-          }}
-          cfg={cfg}
-          dateLabel={dateLabel}
-          onSave={handleSave}
-          saving={saving}
-          todayEntry={selectedEntry}
-          isDirty={isDirty}
-          isToday={selectedDate === todayStr}
-          placeholder={activePlaceholder}
-        />
+        {activeType === 'lesson' ? (
+          <LessonWriteCard
+            items={items}
+            setItems={setItems}
+            cfg={cfg}
+            dateLabel={dateLabel}
+            onSave={handleSave}
+            saving={saving}
+            todayEntry={selectedEntry}
+            isDirty={isDirty}
+            isToday={selectedDate === todayStr}
+          />
+        ) : (
+          <WriteCard
+            items={items}
+            setItems={setItems}
+            cfg={cfg}
+            dateLabel={dateLabel}
+            onSave={handleSave}
+            saving={saving}
+            todayEntry={selectedEntry}
+            isDirty={isDirty}
+            isToday={selectedDate === todayStr}
+            placeholder={activePlaceholder}
+          />
+        )}
 
         {/* History */}
         {history.length > 0 && (
@@ -638,18 +896,33 @@ export default function JournalView() {
             </div>
 
             {history.map(entry => (
-              <EntryCard
-                key={entry.id}
-                entry={entry}
-                cfg={TABS[entry.type as JTab]}
-                isEditing={editingId === entry.id}
-                editItems={editItems}
-                setEditItems={setEditItems}
-                onEdit={() => { setEditingId(entry.id); setEditItems([...entry.items]); }}
-                onEditSave={() => handleEditSave(entry.id, entry.date)}
-                onEditCancel={() => setEditingId(null)}
-                onDelete={() => handleDelete(entry.id)}
-              />
+              entry.type === 'lesson' ? (
+                <LessonEntryCard
+                  key={entry.id}
+                  entry={entry}
+                  cfg={TABS[entry.type as JTab]}
+                  isEditing={editingId === entry.id}
+                  editItems={editItems}
+                  setEditItems={setEditItems}
+                  onEdit={() => { setEditingId(entry.id); setEditItems(ensureLessonItems(entry.items)); }}
+                  onEditSave={() => handleEditSave(entry.id, entry.date)}
+                  onEditCancel={() => setEditingId(null)}
+                  onDelete={() => handleDelete(entry.id)}
+                />
+              ) : (
+                <EntryCard
+                  key={entry.id}
+                  entry={entry}
+                  cfg={TABS[entry.type as JTab]}
+                  isEditing={editingId === entry.id}
+                  editItems={editItems}
+                  setEditItems={setEditItems}
+                  onEdit={() => { setEditingId(entry.id); setEditItems([...entry.items]); }}
+                  onEditSave={() => handleEditSave(entry.id, entry.date)}
+                  onEditCancel={() => setEditingId(null)}
+                  onDelete={() => handleDelete(entry.id)}
+                />
+              )
             ))}
 
           </>
