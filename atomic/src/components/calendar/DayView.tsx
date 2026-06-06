@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import { format } from "date-fns";
-import { IconTag, IconTrash, IconCheck } from "@tabler/icons-react";
+import { IconTag, IconTrash, IconCheck, IconCalendarMinus } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 
 const COLOR_PALETTE: string[] = [
@@ -118,7 +118,7 @@ export default function DayView({
   onTaskClick: (task: Task) => void;
 }) {
   const t = useT();
-  const { tasks, taskTimeEntries, saveTimeEntry, softDeleteTask, updateTaskColor, categoryColors, tags, taskTags } = useAppStore();
+  const { tasks, taskTimeEntries, saveTimeEntry, deleteTimeEntry, softDeleteTask, updateTaskColor, categoryColors, tags, taskTags } = useAppStore();
   const [creating, setCreating] = useState<{ startTime: string; endTime: string } | null>(null);
   const [pendingCreate, setPendingCreate] = useState<{ startMin: number; endMin: number } | null>(null);
   const [dragCreate, setDragCreate] = useState<DragCreate | null>(null);
@@ -653,6 +653,15 @@ export default function DayView({
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
+          {taskTimeEntries.some(e => e.date === dateStr && e.task_id === contextMenu.taskId) && (
+            <button
+              className="day-context-item"
+              onClick={() => { deleteTimeEntry(contextMenu.taskId, dateStr); setContextMenu(null); }}
+            >
+              <IconCalendarMinus size={16} />
+              {t.calendar.removeFromCalendar}
+            </button>
+          )}
           <button
             className="day-context-item day-context-item-danger"
             onClick={() => { softDeleteTask(contextMenu.taskId); setContextMenu(null); }}
