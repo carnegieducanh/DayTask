@@ -2,8 +2,8 @@ import { useMemo, useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
-
-type Period = 'morning' | 'noon' | 'afternoon' | 'evening' | 'night';
+import { loadGreetings } from '../../store/greetingsStore';
+import type { Period } from '../../store/greetingsStore';
 
 function getPeriod(hour: number): Period {
   if (hour >= 5 && hour < 11) return 'morning';
@@ -24,7 +24,6 @@ export default function DailyGreeting({ pendingCount, isToday }: Props) {
   const [visible, setVisible] = useState(false);
   const period = getPeriod(new Date().getHours());
 
-  // Re-compute when language changes (sessionStorage key includes language)
   const message = useMemo(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
     const sessionKey = `atomic_greeting_session_${language}_${period}`;
@@ -33,26 +32,34 @@ export default function DailyGreeting({ pendingCount, isToday }: Props) {
     const sessionMsg = sessionStorage.getItem(sessionKey);
     if (sessionMsg) return sessionMsg;
 
-    const messages = t.greeting[period];
+    const store = loadGreetings();
+    const items = store[period] ?? [];
+    const fixedItem = items.find(item => item.isFixed);
+    const randomItems = items.filter(item => !item.isFixed);
+    const lang = language as 'vi' | 'en';
+
     let msg: string;
     if (!localStorage.getItem(localKey)) {
-      msg = messages.fixed;
+      msg = fixedItem?.[lang] ?? randomItems[0]?.[lang] ?? '';
       localStorage.setItem(localKey, '1');
     } else {
-      const list = messages.random;
-      const queueKey = `atomic_greeting_queue_${language}_${period}`;
-      let queue: number[] = JSON.parse(localStorage.getItem(queueKey) || '[]');
-      // Reset if queue is empty or list size changed
-      if (queue.length === 0 || queue.some((i) => i >= list.length)) {
-        queue = Array.from({ length: list.length }, (_, i) => i);
-        for (let i = queue.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [queue[i], queue[j]] = [queue[j], queue[i]];
+      const list = randomItems.map(g => g[lang]).filter(Boolean);
+      if (list.length === 0) {
+        msg = fixedItem?.[lang] ?? '';
+      } else {
+        const queueKey = `atomic_greeting_queue_${language}_${period}`;
+        let queue: number[] = JSON.parse(localStorage.getItem(queueKey) || '[]');
+        if (queue.length === 0 || queue.some((i) => i >= list.length)) {
+          queue = Array.from({ length: list.length }, (_, i) => i);
+          for (let i = queue.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [queue[i], queue[j]] = [queue[j], queue[i]];
+          }
         }
+        const idx = queue.shift()!;
+        localStorage.setItem(queueKey, JSON.stringify(queue));
+        msg = list[idx];
       }
-      const idx = queue.shift()!;
-      localStorage.setItem(queueKey, JSON.stringify(queue));
-      msg = list[idx];
     }
 
     sessionStorage.setItem(sessionKey, msg);
