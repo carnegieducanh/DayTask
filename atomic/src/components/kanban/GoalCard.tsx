@@ -1,9 +1,17 @@
+import { useState, useRef, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { IconTrash, IconCalendarEvent } from "@tabler/icons-react";
+import { IconTrash, IconCalendarEvent, IconCheck } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 import type { Goal, GoalStatus } from "../../types";
+
+const COLOR_PALETTE: string[] = [
+  '#C05476', '#E3683E', '#D8BE5E', '#489160', '#6E72C3', '#A75ABA',
+  '#D85675', '#DD7835', '#BCC256', '#429A8E', '#828BC2', '#957367',
+  '#DA5234', '#E0963C', '#82AA57', '#4B99D2', '#AE9CCE', '#7C7C7C',
+  '#D38179', '#E4B751', '#54AD7F', '#6489DF', '#A277AF', '#A3978B',
+];
 
 const PROGRESS_COLOR: Record<GoalStatus, string> = {
   todo: "#888780",
@@ -27,7 +35,40 @@ function hexToRgba(hex: string, alpha: number): string {
 
 export default function GoalCard({ goal, onEdit, status }: Props) {
   const t = useT();
-  const { softDeleteGoal, checklistItems, categoryColors } = useAppStore();
+  const { softDeleteGoal, checklistItems, categoryColors, updateTaskColor } = useAppStore();
+
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    function handleClose(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setContextMenu(null);
+    }
+    window.addEventListener('mousedown', handleClose);
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      window.removeEventListener('mousedown', handleClose);
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [contextMenu]);
+
+  function handleContextMenu(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const MENU_W = 180;
+    const MENU_H = 170;
+    let x = e.clientX;
+    let y = e.clientY;
+    if (x + MENU_W > window.innerWidth) x = window.innerWidth - MENU_W - 8;
+    if (y + MENU_H > window.innerHeight) y = window.innerHeight - MENU_H - 8;
+    setContextMenu({ x, y });
+  }
 
   const {
     attributes,
@@ -57,6 +98,7 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
       style={{ ...style, backgroundColor: cardBg }}
       className={`goal-card goal-card--colored${isDragging ? " goal-card-ghost" : ""}`}
       data-card-id={goal.id}
+      onContextMenu={handleContextMenu}
       {...listeners}
       {...attributes}
     >
@@ -114,6 +156,41 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
           <IconTrash size={14} />
         </button>
       </div>
+
+      {contextMenu && (
+        <div
+          ref={menuRef}
+          className="task-context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.stopPropagation()}
+        >
+          <button
+            className="day-context-item day-context-item-danger"
+            onClick={() => { softDeleteGoal(goal.id); setContextMenu(null); }}
+          >
+            <IconTrash size={16} />
+            {t.kanban.deleteGoal}
+          </button>
+          <div className="task-context-divider" />
+          <div className="task-context-colors">
+            {COLOR_PALETTE.map((color) => (
+              <button
+                key={color}
+                className="task-context-color-btn"
+                style={{ backgroundColor: color }}
+                onClick={() => { updateTaskColor(goal.category, color); setContextMenu(null); }}
+                title={color}
+              >
+                {categoryColors[goal.category] === color && (
+                  <IconCheck size={12} color="white" strokeWidth={3} />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
