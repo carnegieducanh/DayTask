@@ -22,6 +22,7 @@ type JTab = 'gratitude' | 'lesson';
 
 interface TabCfg {
   accent: string;
+  promptColor: string;
   bgPrompt: string;
   borderPrompt: string;
   borderWrite: string;
@@ -34,6 +35,7 @@ interface TabCfg {
 const TABS: Record<JTab, TabCfg> = {
   gratitude: {
     accent: ACCENT_GRATITUDE,
+    promptColor: 'var(--journal-prompt-text-g)',
     bgPrompt: 'var(--journal-gratitude-tint-bg)',
     borderPrompt: 'var(--journal-gratitude-tint-border)',
     borderWrite: 'var(--journal-gratitude-write-border)',
@@ -44,6 +46,7 @@ const TABS: Record<JTab, TabCfg> = {
   },
   lesson: {
     accent: ACCENT_LESSON,
+    promptColor: 'var(--journal-prompt-text-l)',
     bgPrompt: 'var(--journal-lesson-tint-bg)',
     borderPrompt: 'var(--journal-lesson-tint-border)',
     borderWrite: 'var(--journal-lesson-write-border)',
@@ -567,7 +570,7 @@ export default function JournalView() {
           </div>
           <div className="jm-type-toggle">
             <button
-              className="jm-tt-btn"
+              className={`jm-tt-btn${activeType === 'gratitude' ? ' jm-tt-btn--active' : ''}`}
               style={activeType === 'gratitude'
                 ? { background: TABS.gratitude.activeBg, color: TABS.gratitude.accent, fontWeight: 500 }
                 : {}}
@@ -576,7 +579,7 @@ export default function JournalView() {
               <IconHeart size={13} /> {jt.gratitudeTab}
             </button>
             <button
-              className="jm-tt-btn"
+              className={`jm-tt-btn${activeType === 'lesson' ? ' jm-tt-btn--active' : ''}`}
               style={activeType === 'lesson'
                 ? { background: TABS.lesson.activeBg, color: TABS.lesson.accent, fontWeight: 500 }
                 : {}}
@@ -596,9 +599,9 @@ export default function JournalView() {
           <div className="jm-prompt" style={{ background: cfg.bgPrompt, borderColor: cfg.borderPrompt }}>
             <div className="jm-prompt-inner">
               {activeType === 'gratitude'
-                ? <IconHeart size={18} color={cfg.accent} style={{ flexShrink: 0, marginTop: 1 }} />
-                : <IconBulb size={18} color={cfg.accent} style={{ flexShrink: 0, marginTop: 1 }} />}
-              <div className="jm-prompt-text" style={{ color: cfg.accent }}>
+                ? <IconHeart size={18} color={cfg.promptColor} style={{ flexShrink: 0, marginTop: 1 }} />
+                : <IconBulb size={18} color={cfg.promptColor} style={{ flexShrink: 0, marginTop: 1 }} />}
+              <div className="jm-prompt-text" style={{ color: cfg.promptColor, fontWeight: 500 }}>
                 {activePromptLines.map((line, i) => <div key={i}>{line}</div>)}
               </div>
             </div>

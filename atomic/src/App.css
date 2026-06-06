@@ -44,14 +44,17 @@
 
   /* Journal accent tints — auto-follow --primary and --journal-secondary */
   --journal-secondary: #5B9FD6;
-  --journal-gratitude-tint-bg: color-mix(in srgb, var(--primary) 7%, transparent);
-  --journal-gratitude-tint-border: color-mix(in srgb, var(--primary) 25%, transparent);
-  --journal-gratitude-write-border: color-mix(in srgb, var(--primary) 16%, transparent);
-  --journal-gratitude-active-bg: color-mix(in srgb, var(--primary) 10%, transparent);
-  --journal-lesson-tint-bg: color-mix(in srgb, var(--journal-secondary) 7%, transparent);
-  --journal-lesson-tint-border: color-mix(in srgb, var(--journal-secondary) 25%, transparent);
-  --journal-lesson-write-border: color-mix(in srgb, var(--journal-secondary) 16%, transparent);
-  --journal-lesson-active-bg: color-mix(in srgb, var(--journal-secondary) 10%, transparent);
+  --journal-gratitude-tint-bg: color-mix(in srgb, var(--primary) 18%, var(--bg-primary));
+  --journal-gratitude-tint-border: color-mix(in srgb, var(--primary) 40%, transparent);
+  --journal-gratitude-write-border: color-mix(in srgb, var(--primary) 28%, transparent);
+  --journal-gratitude-active-bg: #ffffff;
+  --journal-lesson-tint-bg: color-mix(in srgb, var(--journal-secondary) 18%, var(--bg-primary));
+  --journal-lesson-tint-border: color-mix(in srgb, var(--journal-secondary) 40%, transparent);
+  --journal-lesson-write-border: color-mix(in srgb, var(--journal-secondary) 28%, transparent);
+  --journal-lesson-active-bg: #ffffff;
+  /* Darker text variants for prompt banner — better contrast on light tinted bg */
+  --journal-prompt-text-g: color-mix(in srgb, var(--primary) 100%, #000 0%);
+  --journal-prompt-text-l: color-mix(in srgb, var(--journal-secondary) 55%, #000 45%);
 
   /* Priority */
   --pri-high: #d94f4f;
@@ -109,6 +112,8 @@
   --journal-lesson-tint-border: color-mix(in srgb, var(--journal-secondary) 32%, transparent);
   --journal-lesson-write-border: color-mix(in srgb, var(--journal-secondary) 22%, transparent);
   --journal-lesson-active-bg: color-mix(in srgb, var(--journal-secondary) 22%, #111111);
+  --journal-prompt-text-g: var(--primary);
+  --journal-prompt-text-l: var(--journal-secondary);
 }
 
 /* ── Reset ── */
@@ -4798,6 +4803,7 @@ select {
 .jm-type-toggle {
   display: flex;
   background: var(--bg-hover);
+  border: 0.5px solid var(--border-2);
   border-radius: 8px;
   padding: 3px;
   gap: 2px;
@@ -4816,6 +4822,10 @@ select {
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   white-space: nowrap;
+}
+
+.jm-tt-btn--active {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
 }
 
 /* ─── Prompt Banner ─── */
@@ -4856,6 +4866,7 @@ select {
 
 .jm-write-card {
   background: var(--bg-primary);
+  border: 0.5px solid var(--border-2);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -4988,6 +4999,7 @@ select {
 
 .jm-entry-card {
   background: var(--bg-primary);
+  border: 0.5px solid var(--border-2);
   border-radius: 10px;
   overflow: hidden;
 }
