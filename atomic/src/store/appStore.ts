@@ -182,7 +182,7 @@ interface AppState {
   softDeleteTask: (id: number) => void;
   undoDeleteTask: () => void;
   confirmDeleteTask: (task: Task) => Promise<void>;
-  updateTaskColor: (id: number, color: string | null) => Promise<void>;
+  updateTaskColor: (category: Category, color: string) => Promise<void>;
 
   loadCategoryColors: () => Promise<void>;
   updateCategoryColor: (category: Category, color: string) => Promise<void>;
@@ -615,7 +615,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const newTask = dbAddTask({
         title: task.title, description: task.description ?? null, category: task.category,
         date: task.date, is_done: 0, repeat_daily: task.repeat_daily ?? 0,
-        series_id: null, repeat_end_date: null,
+        series_id: null, repeat_end_date: null, color: null,
       });
       if (timeEntry) dbSaveTimeEntry(newTask.id, task.date, timeEntry.startTime, timeEntry.endTime);
       if (tagIds?.length) dbSetTaskTags(newTask.id, tagIds);
@@ -803,15 +803,24 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  updateTaskColor: async (id, color) => {
-    const mapper = (t: Task) => t.id === id ? { ...t, color } : t;
+  updateTaskColor: async (category, color) => {
+    const mapper = (t: Task) => t.category === category ? { ...t, color } : t;
+    const newCategoryColors = { ...get().categoryColors, [category]: color };
     set({
       tasks: get().tasks.map(mapper),
       calendarTasks: get().calendarTasks.map(mapper),
+      categoryColors: newCategoryColors,
     });
-    if (!isTauri()) return;
+    if (!isTauri()) {
+      localStorage.setItem('categoryColors', JSON.stringify(newCategoryColors));
+      return;
+    }
     const db = await getDb();
-    await db.execute('UPDATE tasks SET color = $1 WHERE id = $2', [color, id]);
+    await db.execute('UPDATE tasks SET color = $1 WHERE category = $2', [color, category]);
+    await db.execute(
+      'INSERT OR REPLACE INTO category_colors (category, color) VALUES ($1, $2)',
+      [category, color]
+    );
   },
 
   // --- Category Colors ---

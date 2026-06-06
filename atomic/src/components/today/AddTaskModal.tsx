@@ -234,7 +234,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
     addTask,
     updateTask,
     categoryColors,
-    updateCategoryColor,
+    updateTaskColor,
     taskTimeEntries,
     saveTimeEntry,
     deleteTimeEntry,
@@ -556,7 +556,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                                 type="button"
                                 className={`color-swatch${(cat.value === category ? (taskColor ?? categoryColors[cat.value]) : categoryColors[cat.value]) === color ? " color-swatch-active" : ""}`}
                                 style={{ background: color }}
-                                onClick={(e) => { e.stopPropagation(); updateCategoryColor(cat.value, color); }}
+                                onClick={(e) => { e.stopPropagation(); updateTaskColor(cat.value, color); }}
                                 title={color}
                               >
                                 {(cat.value === category ? (taskColor ?? categoryColors[cat.value]) : categoryColors[cat.value]) === color && (

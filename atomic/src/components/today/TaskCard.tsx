@@ -4,7 +4,7 @@ import type { Task } from '../../types';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
 
-const TASK_COLOR_PALETTE: string[] = [
+const COLOR_PALETTE: string[] = [
   '#C05476', '#E3683E', '#D8BE5E', '#489160', '#6E72C3', '#A75ABA',
   '#D85675', '#DD7835', '#BCC256', '#429A8E', '#828BC2', '#957367',
   '#DA5234', '#E0963C', '#82AA57', '#4B99D2', '#AE9CCE', '#7C7C7C',
@@ -246,15 +246,15 @@ export default function TaskCard({ task, onEdit, onToggle }: Props) {
           </button>
           <div className="task-context-divider" />
           <div className="task-context-colors">
-            {TASK_COLOR_PALETTE.map((color) => (
+            {COLOR_PALETTE.map((color) => (
               <button
                 key={color}
                 className="task-context-color-btn"
                 style={{ backgroundColor: color }}
-                onClick={() => { updateTaskColor(task.id, task.color === color ? null : color); setContextMenu(null); }}
+                onClick={() => { if ((task.color ?? categoryColors[task.category]) !== color) { updateTaskColor(task.category, color); } setContextMenu(null); }}
                 title={color}
               >
-                {task.color === color && <IconCheck size={12} color="white" strokeWidth={3} />}
+                {(task.color ?? categoryColors[task.category]) === color && <IconCheck size={12} color="white" strokeWidth={3} />}
               </button>
             ))}
           </div>

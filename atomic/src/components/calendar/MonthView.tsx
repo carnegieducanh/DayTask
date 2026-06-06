@@ -1,11 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
+import type React from 'react';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import { createPortal } from 'react-dom';
 import { format, startOfMonth, startOfWeek, addDays, isSameMonth, isToday } from 'date-fns';
-import { IconClock, IconX } from '@tabler/icons-react';
+import { IconClock, IconX, IconTrash, IconCheck } from '@tabler/icons-react';
 import { useT } from '../../i18n';
 import type { Task, CategoryColors, TaskTimeEntry } from '../../types';
+import { useAppStore } from '../../store/appStore';
 import { calcDayStats, formatMins } from './calendarUtils';
+
+const COLOR_PALETTE: string[] = [
+  '#C05476', '#E3683E', '#D8BE5E', '#489160', '#6E72C3', '#A75ABA',
+  '#D85675', '#DD7835', '#BCC256', '#429A8E', '#828BC2', '#957367',
+  '#DA5234', '#E0963C', '#82AA57', '#4B99D2', '#AE9CCE', '#7C7C7C',
+  '#D38179', '#E4B751', '#54AD7F', '#6489DF', '#A277AF', '#A3978B',
+];
 
 export interface MonthViewProps {
   tasks: Task[];
@@ -54,6 +63,7 @@ function DayPopover({
   categoryColors,
   pos,
   onTaskClick,
+  onTaskContextMenu,
   onClose,
   language,
 }: {
@@ -62,6 +72,7 @@ function DayPopover({
   categoryColors: CategoryColors;
   pos: PopoverPos;
   onTaskClick: (task: Task) => void;
+  onTaskContextMenu: (e: React.MouseEvent, task: Task) => void;
   onClose: () => void;
   language: string;
 }) {
@@ -94,6 +105,7 @@ function DayPopover({
                 key={task.id}
                 className="cal-day-popover-task"
                 onClick={() => { onClose(); onTaskClick(task); }}
+                onContextMenu={(e) => onTaskContextMenu(e, task)}
               >
                 <span className="cal-month-dot" style={{ background: color }} />
                 <span className="cal-day-popover-task-title">{task.title}</span>
@@ -124,12 +136,47 @@ function MonthDayCell({
   onTaskClick: (task: Task) => void;
   language: string;
 }) {
+  const { softDeleteTask, updateTaskColor } = useAppStore();
+  const t = useT();
+
   const [maxVisible, setMaxVisible] = useState(99);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [popoverPos, setPopoverPos] = useState<PopoverPos>({ top: 0, left: 0 });
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; task: Task } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   const eventsRef = useRef<HTMLDivElement>(null);
   const dayTasksLenRef = useRef(0);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    function handleClose(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setContextMenu(null);
+    }
+    window.addEventListener('mousedown', handleClose);
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      window.removeEventListener('mousedown', handleClose);
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [contextMenu]);
+
+  function handleTaskContextMenu(e: React.MouseEvent, task: Task) {
+    e.preventDefault();
+    e.stopPropagation();
+    const MENU_W = 180;
+    const MENU_H = 170;
+    let x = e.clientX;
+    let y = e.clientY;
+    if (x + MENU_W > window.innerWidth) x = window.innerWidth - MENU_W - 8;
+    if (y + MENU_H > window.innerHeight) y = window.innerHeight - MENU_H - 8;
+    setContextMenu({ x, y, task });
+  }
 
   const dateStr = format(date, 'yyyy-MM-dd');
   const dayTasks = tasks.filter((task) => task.date === dateStr);
@@ -202,12 +249,13 @@ function MonthDayCell({
       </div>
       <div ref={eventsRef} className="cal-month-day-events">
         {visibleTasks.map((task) => {
-          const color = categoryColors[task.category] ?? '#7DD3FC';
+          const color = task.color ?? categoryColors[task.category] ?? '#7DD3FC';
           return (
             <div
               key={task.id}
               className="cal-month-event"
               onClick={(e) => { e.stopPropagation(); onTaskClick(task); }}
+              onContextMenu={(e) => handleTaskContextMenu(e, task)}
             >
               <span className="cal-month-dot" style={{ background: color }} />
               <span className="cal-month-title">{task.title}</span>
@@ -233,9 +281,41 @@ function MonthDayCell({
           categoryColors={categoryColors}
           pos={popoverPos}
           onTaskClick={onTaskClick}
+          onTaskContextMenu={handleTaskContextMenu}
           onClose={() => setPopoverOpen(false)}
           language={language}
         />
+      )}
+      {contextMenu && (
+        <div
+          ref={menuRef}
+          className="task-context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="day-context-item day-context-item-danger"
+            onClick={() => { softDeleteTask(contextMenu.task.id); setContextMenu(null); }}
+          >
+            <IconTrash size={16} />
+            {t.taskCard.delete}
+          </button>
+          <div className="task-context-divider" />
+          <div className="task-context-colors">
+            {COLOR_PALETTE.map((color) => (
+              <button
+                key={color}
+                className="task-context-color-btn"
+                style={{ backgroundColor: color }}
+                onClick={() => { if ((contextMenu.task.color ?? categoryColors[contextMenu.task.category]) !== color) { updateTaskColor(contextMenu.task.category, color); } setContextMenu(null); }}
+                title={color}
+              >
+                {(contextMenu.task.color ?? categoryColors[contextMenu.task.category]) === color && <IconCheck size={12} color="white" strokeWidth={3} />}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
