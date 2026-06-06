@@ -4319,7 +4319,7 @@ select {
   right: 0;
   height: 2px;
   background: #ea4335;
-  z-index: 5;
+  z-index: 20;
   pointer-events: none;
 }
 

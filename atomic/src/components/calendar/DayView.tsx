@@ -452,13 +452,6 @@ export default function DayView({
             <div key={`hh-${h}`} className="day-half-line" style={{ top: minToPx(h * 60 + 30) }} />
           ))}
 
-          {/* Current-time indicator */}
-          {isToday && (
-            <div className="day-now-line" style={{ top: minToPx(currentTimeMin) }}>
-              <div className="day-now-dot" />
-            </div>
-          )}
-
           {/* Task blocks */}
           {layoutItems.map((item) => {
             const isMoving = dragMove?.taskId === item.task.id && dragMove.moved;
@@ -643,6 +636,13 @@ export default function DayView({
               </div>
             );
           })()}
+
+          {/* Current-time indicator — rendered last so it always appears above task blocks */}
+          {isToday && (
+            <div className="day-now-line" style={{ top: minToPx(currentTimeMin) }}>
+              <div className="day-now-dot" />
+            </div>
+          )}
         </div>
       </div>
 
