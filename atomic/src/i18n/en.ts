@@ -210,7 +210,6 @@ export const en: typeof vi = {
     filterNoTime: '',
     noTitle: '(No title)',
     removeFromCalendar: 'Remove from calendar',
-    removedFromCalendar: (title: string) => `Removed "${title}" from calendar`,
   },
   update: {
     title: 'New update available',

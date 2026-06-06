@@ -111,7 +111,7 @@ export default function DayView({
   onTaskClick: (task: Task) => void;
 }) {
   const t = useT();
-  const { tasks, taskTimeEntries, saveTimeEntry, deleteTimeEntry, categoryColors, tags, taskTags } = useAppStore();
+  const { tasks, taskTimeEntries, saveTimeEntry, softDeleteTask, categoryColors, tags, taskTags } = useAppStore();
   const [creating, setCreating] = useState<{ startTime: string; endTime: string } | null>(null);
   const [pendingCreate, setPendingCreate] = useState<{ startMin: number; endMin: number } | null>(null);
   const [dragCreate, setDragCreate] = useState<DragCreate | null>(null);
@@ -170,12 +170,6 @@ export default function DayView({
     window.addEventListener("mousedown", close);
     return () => window.removeEventListener("mousedown", close);
   }, [contextMenu]);
-
-  function showRemoveToast(title: string) {
-    if (removeToastTimer.current) clearTimeout(removeToastTimer.current);
-    setRemoveToast(title);
-    removeToastTimer.current = setTimeout(() => setRemoveToast(null), 3000);
-  }
 
   function getRelY(clientY: number): number {
     if (!gridRef.current) return 0;
@@ -609,17 +603,11 @@ export default function DayView({
         >
           <button
             className="day-context-item day-context-item-danger"
-            onClick={() => { deleteTimeEntry(contextMenu.taskId, dateStr); showRemoveToast(contextMenu.task.title); setContextMenu(null); }}
+            onClick={() => { softDeleteTask(contextMenu.taskId); setContextMenu(null); }}
           >
             <IconTrash size={16} />
             {t.calendar.removeFromCalendar}
           </button>
-        </div>
-      )}
-
-      {removeToast && (
-        <div className="delete-toast" role="status">
-          <span className="delete-toast-msg">{t.calendar.removedFromCalendar(removeToast)}</span>
         </div>
       )}
 

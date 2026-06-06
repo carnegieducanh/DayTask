@@ -197,7 +197,6 @@ export const vi = {
     filterNoTime: '',
     noTitle: '(Chưa đặt tên)',
     removeFromCalendar: 'Xóa khỏi lịch',
-    removedFromCalendar: (title: string) => `Đã xóa "${title}" khỏi lịch`,
   },
   update: {
     title: 'Có bản cập nhật mới',
