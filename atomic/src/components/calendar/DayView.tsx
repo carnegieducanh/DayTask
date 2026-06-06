@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import { format } from "date-fns";
-import { IconTag } from "@tabler/icons-react";
+import { IconTag, IconTrash } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 import AddTaskModal from "../today/AddTaskModal";
@@ -111,13 +111,14 @@ export default function DayView({
   onTaskClick: (task: Task) => void;
 }) {
   const t = useT();
-  const { tasks, taskTimeEntries, saveTimeEntry, categoryColors, tags, taskTags } = useAppStore();
+  const { tasks, taskTimeEntries, saveTimeEntry, deleteTimeEntry, categoryColors, tags, taskTags } = useAppStore();
   const [creating, setCreating] = useState<{ startTime: string; endTime: string } | null>(null);
   const [pendingCreate, setPendingCreate] = useState<{ startMin: number; endMin: number } | null>(null);
   const [dragCreate, setDragCreate] = useState<DragCreate | null>(null);
   const [dragMove, setDragMove] = useState<DragMove | null>(null);
   const [dragResize, setDragResize] = useState<DragResize | null>(null);
   const [dragDeckTask, setDragDeckTask] = useState<DragDeckTask | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ taskId: number; task: Task; x: number; y: number } | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(gridRef);
 
@@ -161,6 +162,20 @@ export default function DayView({
     const targetMin = isToday ? Math.max(0, currentTimeMin - 60) : 8 * 60;
     gridRef.current.scrollTop = minToPx(targetMin);
   }, [dateStr]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Close context menu on outside click
+  useEffect(() => {
+    if (!contextMenu) return;
+    function close() { setContextMenu(null); }
+    window.addEventListener("mousedown", close);
+    return () => window.removeEventListener("mousedown", close);
+  }, [contextMenu]);
+
+  function showRemoveToast(title: string) {
+    if (removeToastTimer.current) clearTimeout(removeToastTimer.current);
+    setRemoveToast(title);
+    removeToastTimer.current = setTimeout(() => setRemoveToast(null), 3000);
+  }
 
   function getRelY(clientY: number): number {
     if (!gridRef.current) return 0;
@@ -460,6 +475,7 @@ export default function DayView({
                   zIndex: isMoving || isResizing ? 50 : item.zIndex,
                 }}
                 onMouseDown={(e) => handleTaskMouseDown(e, item)}
+                onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ taskId: item.task.id, task: item.task, x: e.clientX, y: e.clientY }); }}
               >
                 {/* Top resize handle */}
                 <div
@@ -584,6 +600,28 @@ export default function DayView({
           })()}
         </div>
       </div>
+
+      {contextMenu && (
+        <div
+          className="day-context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <button
+            className="day-context-item day-context-item-danger"
+            onClick={() => { deleteTimeEntry(contextMenu.taskId, dateStr); showRemoveToast(contextMenu.task.title); setContextMenu(null); }}
+          >
+            <IconTrash size={16} />
+            {t.calendar.removeFromCalendar}
+          </button>
+        </div>
+      )}
+
+      {removeToast && (
+        <div className="delete-toast" role="status">
+          <span className="delete-toast-msg">{t.calendar.removedFromCalendar(removeToast)}</span>
+        </div>
+      )}
 
       {creating && (
         <AddTaskModal

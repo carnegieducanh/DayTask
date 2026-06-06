@@ -4047,6 +4047,7 @@ select {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  position: relative;
 }
 
 .day-grid {
@@ -4146,6 +4147,53 @@ select {
 
 .day-task-block:hover {
   filter: brightness(0.93);
+}
+
+.day-context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  min-width: 160px;
+}
+
+[data-theme="dark"] .day-context-menu {
+  background: var(--bg-secondary);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.day-context-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 5px;
+  font-size: 0.92rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.day-context-item:hover {
+  background: var(--bg-hover);
+}
+
+.day-context-item-danger {
+  color: #e05252;
+}
+
+[data-theme="dark"] .day-context-item-danger {
+  color: #f07070;
+}
+
+.day-context-item-danger:hover {
+  background: rgba(224, 82, 82, 0.1);
 }
 
 .day-task-block.dragging {
