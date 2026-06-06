@@ -43,6 +43,8 @@ function pxToMin(px: number): number {
   return (px / HOUR_HEIGHT) * 60;
 }
 
+const OVERLAP_OFFSET = 18; // px offset per overlap level
+
 interface LayoutItem {
   task: Task;
   entry: TaskTimeEntry | null;
@@ -50,6 +52,7 @@ interface LayoutItem {
   endMin: number;
   zIndex: number;
   hasOverlapAbove: boolean;
+  overlapLevel: number;
 }
 
 function computeLayout(tasks: Task[], entries: TaskTimeEntry[], date: string): LayoutItem[] {
@@ -65,12 +68,23 @@ function computeLayout(tasks: Task[], entries: TaskTimeEntry[], date: string): L
   // Sort by startMin; use task.id as stable tiebreaker
   const sorted = [...items].sort((a, b) => a.startMin - b.startMin || a.task.id - b.task.id);
 
+  // Compute overlapLevel: each task gets level = max(level of overlapping predecessors) + 1
+  const levels: number[] = new Array(sorted.length).fill(0);
+  for (let i = 1; i < sorted.length; i++) {
+    let maxPred = -1;
+    for (let j = 0; j < i; j++) {
+      if (sorted[j].startMin < sorted[i].endMin && sorted[i].startMin < sorted[j].endMin) {
+        maxPred = Math.max(maxPred, levels[j]);
+      }
+    }
+    levels[i] = maxPred >= 0 ? maxPred + 1 : 0;
+  }
+
   return sorted.map((item, i) => {
-    // Overlaps with any earlier item → needs border-top separator
     const hasOverlapAbove = sorted
       .slice(0, i)
       .some((prev) => prev.startMin < item.endMin && item.startMin < prev.endMin);
-    return { ...item, zIndex: i + 1, hasOverlapAbove };
+    return { ...item, zIndex: i + 1, hasOverlapAbove, overlapLevel: levels[i] };
   });
 }
 
@@ -108,6 +122,9 @@ interface DragDeckTask {
   task: Task;
   startMin: number; // -1 = cursor not yet on timeline
   endMin: number;
+  cursorX: number;
+  cursorY: number;
+  cardWidth: number;
 }
 
 export default function DayView({
@@ -252,7 +269,8 @@ export default function DayView({
     if (e.button !== 0) return;
     e.stopPropagation();
     e.preventDefault();
-    setDragDeckTask({ taskId: task.id, task, startMin: -1, endMin: -1 });
+    const cardWidth = (e.currentTarget as HTMLElement).getBoundingClientRect().width;
+    setDragDeckTask({ taskId: task.id, task, startMin: -1, endMin: -1, cursorX: e.clientX, cursorY: e.clientY, cardWidth });
   }
 
   // ── Global mouse-move and mouse-up handlers (window-level) ──
@@ -297,17 +315,21 @@ export default function DayView({
         const rect = gridRef.current?.getBoundingClientRect();
         if (!rect) return;
         const viewportY = e.clientY - rect.top;
+        const cursorX = e.clientX;
+        const cursorY = e.clientY;
         if (viewportY < 0) {
-          // Cursor back above the grid (deck area) — reset placement
-          setDragDeckTask((prev) =>
-            prev && prev.startMin !== -1 ? { ...prev, startMin: -1, endMin: -1 } : prev
-          );
+          // Cursor back above the grid (deck area) — reset placement, keep cursor pos
+          setDragDeckTask((prev) => {
+            if (!prev) return null;
+            const next = { ...prev, cursorX, cursorY };
+            return prev.startMin !== -1 ? { ...next, startMin: -1, endMin: -1 } : next;
+          });
         } else {
           // Ghost follows cursor with fixed DEFAULT_DURATION height
           const y = getRelY(e.clientY);
           const startMin = Math.max(0, Math.min(Math.round(pxToMin(y) / 15) * 15, 1380));
           setDragDeckTask((prev) =>
-            prev ? { ...prev, startMin, endMin: Math.min(startMin + DEFAULT_DURATION, 1440) } : null
+            prev ? { ...prev, startMin, endMin: Math.min(startMin + DEFAULT_DURATION, 1440), cursorX, cursorY } : null
           );
         }
       }
@@ -472,6 +494,10 @@ export default function DayView({
             const tagIds = taskTags[item.task.id] ?? [];
             const taskTagObjects = tags.filter((t) => tagIds.includes(t.id));
 
+            const isDragging = isMoving || isResizing;
+            const level = isDragging ? 0 : item.overlapLevel;
+            const leftPx = level * OVERLAP_OFFSET;
+
             return (
               <div
                 key={item.task.id}
@@ -479,11 +505,10 @@ export default function DayView({
                 style={{
                   top,
                   height,
-                  left: "0.5%",
-                  width: "97%",
+                  left: `calc(0.5% + ${leftPx}px)`,
+                  width: `calc(97% - ${leftPx}px)`,
                   backgroundColor: color,
                   borderLeft: `3px solid ${color}`,
-                  borderTop: item.hasOverlapAbove ? "2px solid rgba(255,255,255,0.25)" : undefined,
                   zIndex: isMoving || isResizing ? 50 : item.zIndex,
                 }}
                 onMouseDown={(e) => handleTaskMouseDown(e, item)}
@@ -645,6 +670,34 @@ export default function DayView({
           )}
         </div>
       </div>
+
+      {/* Floating cursor ghost — visible while dragging a deck card over the deck area */}
+      {dragDeckTask && dragDeckTask.startMin === -1 && (
+        <div
+          style={{
+            position: 'fixed',
+            left: dragDeckTask.cursorX - 10,
+            top: dragDeckTask.cursorY - 14,
+            width: dragDeckTask.cardWidth,
+            height: CARD_HEIGHT,
+            borderRadius: 4,
+            padding: '3px 6px',
+            fontSize: '0.88rem',
+            overflow: 'hidden',
+            boxSizing: 'border-box',
+            userSelect: 'none',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.32)',
+            backgroundColor: dragDeckTask.task.color ?? categoryColors[dragDeckTask.task.category],
+            borderLeft: `3px solid ${dragDeckTask.task.color ?? categoryColors[dragDeckTask.task.category]}`,
+            opacity: 0.92,
+            pointerEvents: 'none',
+            zIndex: 9999,
+            transform: 'rotate(-2deg) scale(1.03)',
+          }}
+        >
+          <div className="day-task-title">{dragDeckTask.task.title}</div>
+        </div>
+      )}
 
       {contextMenu && (
         <div

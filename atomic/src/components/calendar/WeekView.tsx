@@ -79,6 +79,10 @@ function DayStatsSection({ stats }: { stats: DayStat[] }) {
   const t = useT();
   const [hovered, setHovered] = useState(false);
   const [popPos, setPopPos] = useState({ top: 0, left: 0 });
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (scrollRef.current) return attachSmoothScroll(scrollRef.current);
+  }, []);
 
   const handleMouseEnter = (e: React.MouseEvent) => {
     if (!stats.length) return;
@@ -107,6 +111,7 @@ function DayStatsSection({ stats }: { stats: DayStat[] }) {
   return (
     <>
       <div
+        ref={scrollRef}
         className="cal-week-stats"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={() => setHovered(false)}

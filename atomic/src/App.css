@@ -4342,6 +4342,7 @@ select {
   overflow: hidden;
   z-index: 1;
   box-sizing: border-box;
+  outline: 1.5px solid rgba(0, 0, 0, 0.18);
   transition: filter 0.1s;
 }
 
