@@ -105,6 +105,9 @@ export const vi = {
     importData: "Nhập từ file backup",
     importing: "Đang nhập...",
     importSuccess: "Nhập dữ liệu thành công!",
+    exportSuccess: "Đã xuất file backup thành công!",
+    exportError: "Xuất dữ liệu thất bại",
+    exporting: "Đang xuất...",
     backupHint: "File backup bao gồm tasks, mục tiêu, checklist, khung giờ, màu danh mục và tags.",
     language: "Ngôn ngữ",
     importConfirm:

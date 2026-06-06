@@ -32,6 +32,8 @@ export default function SettingsModal() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('general');
   const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [importError, setImportError] = useState('');
+  const [exportStatus, setExportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [exportError, setExportError] = useState('');
 
   // Tags state
   const [newTagInput, setNewTagInput] = useState('');
@@ -128,6 +130,19 @@ export default function SettingsModal() {
     } catch (err) {
       setImportError(err instanceof Error ? err.message : t.settings.unknownError);
       setImportStatus('error');
+    }
+  }
+
+  async function handleExport() {
+    setExportStatus('loading');
+    setExportError('');
+    try {
+      await exportAllData();
+      setExportStatus('success');
+      setTimeout(() => setExportStatus('idle'), 4000);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : t.settings.unknownError);
+      setExportStatus('error');
     }
   }
 
@@ -574,9 +589,9 @@ export default function SettingsModal() {
               <div className="settings-section">
                 <div className="settings-section-label">{t.settings.backup}</div>
                 <div className="settings-action-group">
-                  <button className="settings-action-btn" onClick={() => exportAllData()}>
+                  <button className="settings-action-btn" onClick={handleExport} disabled={exportStatus === 'loading'}>
                     <IconDownload size={14} />
-                    {t.settings.exportData}
+                    {exportStatus === 'loading' ? t.settings.exporting : t.settings.exportData}
                   </button>
                   <button className="settings-action-btn" onClick={handleImportClick} disabled={importStatus === 'loading'}>
                     <IconUpload size={14} />
@@ -584,6 +599,12 @@ export default function SettingsModal() {
                   </button>
                 </div>
                 <p className="settings-backup-hint">{t.settings.backupHint}</p>
+                {exportStatus === 'success' && (
+                  <div className="settings-backup-msg settings-backup-ok" style={{ margin: '0 16px 8px' }}>{t.settings.exportSuccess}</div>
+                )}
+                {exportStatus === 'error' && (
+                  <div className="settings-backup-msg settings-backup-err" style={{ margin: '0 16px 8px' }}>{t.settings.exportError}: {exportError}</div>
+                )}
                 {importStatus === 'success' && (
                   <div className="settings-backup-msg settings-backup-ok" style={{ margin: '0 16px 8px' }}>{t.settings.importSuccess}</div>
                 )}

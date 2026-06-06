@@ -4,9 +4,7 @@
 }
 
 [data-lang="en"] {
-  --font:
-    "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, "Helvetica Neue",
-    Arial, sans-serif;
+  --font: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
 }
 
 :root {
@@ -18,6 +16,7 @@
   --bg-hover: #edeae5;
   --text-primary: #1a1a1a;
   --text-secondary: #717171;
+  --text-muted: #a0a09a;
   --border-1: #e8e6e0;
   --border-2: #d0cdc4;
   --toggle-track: #c4c0bb;
@@ -43,7 +42,7 @@
   --cat-finance-text: #78350f;
 
   /* Journal accent tints — auto-follow --primary and --journal-secondary */
-  --journal-secondary: #5B9FD6;
+  --journal-secondary: #5b9fd6;
   --journal-gratitude-tint-bg: color-mix(in srgb, var(--primary) 18%, var(--bg-primary));
   --journal-gratitude-tint-border: color-mix(in srgb, var(--primary) 40%, transparent);
   --journal-gratitude-write-border: color-mix(in srgb, var(--primary) 28%, transparent);
@@ -82,6 +81,7 @@
   --bg-hover: #242424;
   --text-primary: #f0eeeb;
   --text-secondary: #888888;
+  --text-muted: #666666;
   --border-1: #333333;
   --border-2: #444444;
   --toggle-track: #666666;
@@ -103,7 +103,7 @@
   --col-done-title: #80b85a;
 
   /* Journal accent tints on dark bg */
-  --journal-secondary: #5B9FD6;
+  --journal-secondary: #5b9fd6;
   --journal-gratitude-tint-bg: color-mix(in srgb, var(--primary) 18%, #111111);
   --journal-gratitude-tint-border: color-mix(in srgb, var(--primary) 32%, transparent);
   --journal-gratitude-write-border: color-mix(in srgb, var(--primary) 22%, transparent);
@@ -1367,7 +1367,6 @@ select {
   white-space: nowrap;
 }
 
-
 .kanban-stat-dot {
   width: 7px;
   height: 7px;
@@ -2411,7 +2410,9 @@ select {
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
   margin-bottom: -0.5px;
   white-space: nowrap;
 }
@@ -2433,8 +2434,14 @@ select {
 }
 
 @keyframes settings-tab-enter {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .settings-tab-panel {
@@ -2446,7 +2453,6 @@ select {
   display: grid;
   grid-template-columns: 1fr 1fr;
 }
-
 
 .settings-section {
   padding: 4px 0;
@@ -2496,10 +2502,13 @@ select {
   border-radius: 7px;
   border: none;
   background: var(--bg-secondary);
-  font-size: 0.75rem;
-  color: var(--text-secondary);
+  font-size: 0.8rem;
+  color: var(--text-primary);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
 }
 
 .settings-seg-btn:hover {
@@ -2522,16 +2531,19 @@ select {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4px 10px;
+  padding: 5px 10px;
   border-radius: 7px;
   border: none;
   background: var(--bg-secondary);
-  font-size: 0.6875rem;
-  color: var(--text-secondary);
+  font-size: 0.8rem;
+  color: var(--text-primary);
   cursor: pointer;
   text-align: center;
   min-width: 48px;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
 }
 
 .settings-font-btn:hover {
@@ -2539,7 +2551,7 @@ select {
 }
 
 .settings-font-pct {
-  font-size: 9px;
+  font-size: 0.7rem;
   color: var(--text-muted);
   display: block;
   margin-top: 1px;
@@ -2624,12 +2636,12 @@ select {
 
 .settings-tags-dropdown > .settings-tags-list {
   overflow: hidden;
-  padding-top: 0;
+  padding: 0 16px;
   transition: padding-top 0.38s ease;
 }
 
 .settings-tags-dropdown.open > .settings-tags-list {
-  padding-top: 6px;
+  padding: 6px 16px 8px;
 }
 
 /* Action buttons (backup section) */
@@ -2678,12 +2690,8 @@ select {
 }
 
 .settings-backup-ok {
-  background: color-mix(in srgb, #33b679 12%, transparent);
-  color: #0b8043;
-}
-
-.dark .settings-backup-ok {
-  color: #33b679;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
 }
 
 .settings-backup-err {
@@ -2694,10 +2702,9 @@ select {
 /* Version footer */
 .settings-version {
   text-align: center;
-  font-size: 10px;
-  color: var(--text-muted);
-  padding: 6px 0 10px;
-  opacity: 0.6;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  padding: 8px 0 12px;
   border-top: 0.5px solid var(--border-1);
 }
 
@@ -3635,11 +3642,7 @@ select {
   transition: background 0.15s;
 }
 .cal-week-header:not(.today):hover {
-  background: color-mix(
-    in srgb,
-    var(--text-secondary) 10%,
-    var(--bg-secondary)
-  );
+  background: color-mix(in srgb, var(--text-secondary) 10%, var(--bg-secondary));
 }
 .cal-week-header:not(.today):hover .cal-week-header-day,
 .cal-week-header:not(.today):hover .cal-week-header-date {
@@ -4155,7 +4158,9 @@ select {
   cursor: pointer;
   padding: 2px 4px;
   border-radius: var(--radius-sm);
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
 }
 .cal-filter-reset:hover {
   color: var(--text-primary);
@@ -4516,7 +4521,6 @@ select {
   white-space: nowrap;
 }
 
-
 .day-task-block-pending {
   pointer-events: none;
 }
@@ -4788,7 +4792,9 @@ select {
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
 }
 
 .tp-btn:hover {
@@ -4824,7 +4830,9 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.15s, transform 0.1s;
+  transition:
+    border-color 0.15s,
+    transform 0.1s;
   flex-shrink: 0;
 }
 
@@ -4882,12 +4890,12 @@ select {
 }
 
 .tcm-item-quit {
-  color: #DA7756;
+  color: #da7756;
 }
 
 .tcm-item-quit:hover {
   background: rgba(218, 119, 86, 0.1);
-  color: #DA7756;
+  color: #da7756;
 }
 
 .tcm-divider {
@@ -4953,7 +4961,10 @@ select {
   border-radius: 3px;
 }
 
-.jsc-nav-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.jsc-nav-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
 
 .jsc-cal-grid {
   display: grid;
@@ -4964,7 +4975,7 @@ select {
 .jsc-cal-dow {
   color: var(--text-secondary);
   text-align: center;
-  font-size: 0.70rem;
+  font-size: 0.7rem;
   padding: 2px 0;
 }
 
@@ -5035,8 +5046,14 @@ select {
 }
 
 @keyframes journalFadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ─── Main ─── */
@@ -5108,7 +5125,9 @@ select {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   white-space: nowrap;
 }
 
@@ -5179,7 +5198,9 @@ select {
   position: relative;
 }
 
-.jm-wc-item:hover .jm-wc-del { opacity: 1; }
+.jm-wc-item:hover .jm-wc-del {
+  opacity: 1;
+}
 
 .jm-wc-num {
   font-size: 0.82rem;
@@ -5201,7 +5222,9 @@ select {
   min-height: 22px;
 }
 
-.jm-wc-ta::placeholder { color: var(--border-2); }
+.jm-wc-ta::placeholder {
+  color: var(--border-2);
+}
 
 .jm-wc-del {
   background: none;
@@ -5216,7 +5239,10 @@ select {
   border-radius: 3px;
 }
 
-.jm-wc-del:hover { color: var(--text-primary); background: var(--bg-hover); }
+.jm-wc-del:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
 
 .jm-wc-add {
   display: flex;
@@ -5232,7 +5258,9 @@ select {
   font-family: inherit;
 }
 
-.jm-wc-add:hover { color: var(--text-primary); }
+.jm-wc-add:hover {
+  color: var(--text-primary);
+}
 
 .jm-wc-footer {
   display: flex;
@@ -5260,7 +5288,10 @@ select {
   font-family: inherit;
 }
 
-.jm-wc-save:disabled { opacity: 0.35; cursor: default; }
+.jm-wc-save:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
 
 /* ─── Divider ─── */
 
@@ -5322,7 +5353,9 @@ select {
   align-items: center;
 }
 
-.jm-ec-btn:hover { background: var(--bg-hover); }
+.jm-ec-btn:hover {
+  background: var(--bg-hover);
+}
 
 .jm-ec-items {
   display: flex;
@@ -5385,7 +5418,10 @@ select {
   font-family: inherit;
 }
 
-.jm-lesson-group-del:hover { color: var(--text-primary); background: var(--bg-hover); }
+.jm-lesson-group-del:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
 
 /* ─── Lesson Fields (Write Card) ─── */
 
@@ -5393,7 +5429,9 @@ select {
   padding: 6px 14px 8px;
 }
 
-.jm-lesson-field:first-child { padding-top: 4px; }
+.jm-lesson-field:first-child {
+  padding-top: 4px;
+}
 
 .jm-lesson-field-header {
   display: flex;
@@ -5434,7 +5472,9 @@ select {
   overflow: hidden;
 }
 
-.jm-lesson-field-ta::placeholder { color: var(--border-2); }
+.jm-lesson-field-ta::placeholder {
+  color: var(--border-2);
+}
 
 /* ─── Lesson Group (Entry Card) ─── */
 
@@ -5460,7 +5500,9 @@ select {
   padding: 6px 14px 8px;
 }
 
-.jm-ec-lesson-field:first-child { padding-top: 8px; }
+.jm-ec-lesson-field:first-child {
+  padding-top: 8px;
+}
 
 .jm-ec-lesson-label {
   font-size: 0.78rem;
@@ -5473,4 +5515,3 @@ select {
   color: var(--text-primary);
   line-height: 1.55;
 }
-
