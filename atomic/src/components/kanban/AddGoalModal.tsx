@@ -129,6 +129,14 @@ export default function AddGoalModal({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;

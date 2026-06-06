@@ -40,7 +40,19 @@ export default function DailyGreeting({ pendingCount, isToday }: Props) {
       localStorage.setItem(localKey, '1');
     } else {
       const list = messages.random;
-      msg = list[Math.floor(Math.random() * list.length)];
+      const queueKey = `atomic_greeting_queue_${language}_${period}`;
+      let queue: number[] = JSON.parse(localStorage.getItem(queueKey) || '[]');
+      // Reset if queue is empty or list size changed
+      if (queue.length === 0 || queue.some((i) => i >= list.length)) {
+        queue = Array.from({ length: list.length }, (_, i) => i);
+        for (let i = queue.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [queue[i], queue[j]] = [queue[j], queue[i]];
+        }
+      }
+      const idx = queue.shift()!;
+      localStorage.setItem(queueKey, JSON.stringify(queue));
+      msg = list[idx];
     }
 
     sessionStorage.setItem(sessionKey, msg);

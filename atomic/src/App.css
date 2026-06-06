@@ -3906,6 +3906,13 @@ select {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+}
+.cal-day-popover-task-duration {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .cal-day-popover-empty {
   padding: 14px 10px;
@@ -4153,7 +4160,7 @@ select {
   right: 0;
   height: 2px;
   background: #ea4335;
-  z-index: 200;
+  z-index: 5;
   pointer-events: none;
 }
 
@@ -4192,6 +4199,8 @@ select {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   padding: 4px;
   min-width: 160px;
+  animation: cal-pop-in 0.14s ease both;
+  transform-origin: top left;
 }
 
 [data-theme="dark"] .day-context-menu {
@@ -4239,6 +4248,8 @@ select {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   padding: 4px;
   width: 180px;
+  animation: cal-pop-in 0.14s ease both;
+  transform-origin: top left;
 }
 
 [data-theme="dark"] .task-context-menu {
@@ -4345,18 +4356,6 @@ select {
   white-space: nowrap;
 }
 
-.day-drag-ghost {
-  position: absolute;
-  left: 0.5%;
-  right: 0.5%;
-  border-radius: 4px;
-  background: var(--primary);
-  opacity: 0.18;
-  border: 2px dashed var(--primary);
-  z-index: 5;
-  pointer-events: none;
-  box-sizing: border-box;
-}
 
 .day-task-block-pending {
   pointer-events: none;

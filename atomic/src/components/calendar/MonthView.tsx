@@ -61,6 +61,7 @@ function DayPopover({
   date,
   tasks,
   categoryColors,
+  timeEntries,
   pos,
   onTaskClick,
   onTaskContextMenu,
@@ -70,12 +71,14 @@ function DayPopover({
   date: Date;
   tasks: Task[];
   categoryColors: CategoryColors;
+  timeEntries: TaskTimeEntry[];
   pos: PopoverPos;
   onTaskClick: (task: Task) => void;
   onTaskContextMenu: (e: React.MouseEvent, task: Task) => void;
   onClose: () => void;
   language: string;
 }) {
+  const dateStr = format(date, 'yyyy-MM-dd');
   const dateLabel = language === 'vi'
     ? format(date, 'dd/MM/yyyy')
     : format(date, 'MMM d, yyyy');
@@ -100,6 +103,14 @@ function DayPopover({
         ) : (
           tasks.map((task) => {
             const color = task.color ?? categoryColors[task.category] ?? '#7DD3FC';
+            const entry = timeEntries.find((e) => e.task_id === task.id && e.date === dateStr);
+            const duration = entry ? formatMins(
+              (() => {
+                const [sh, sm] = entry.start_time.split(':').map(Number);
+                const [eh, em] = entry.end_time.split(':').map(Number);
+                return Math.max(0, eh * 60 + em - (sh * 60 + sm));
+              })()
+            ) : '';
             return (
               <div
                 key={task.id}
@@ -109,6 +120,9 @@ function DayPopover({
               >
                 <span className="cal-month-dot" style={{ background: color }} />
                 <span className="cal-day-popover-task-title">{task.title}</span>
+                {duration && (
+                  <span className="cal-day-popover-task-duration">{duration}</span>
+                )}
               </div>
             );
           })
@@ -201,7 +215,7 @@ function MonthDayCell({
     setMaxVisible(computeMaxVisible(el.clientHeight, dayTasks.length));
   }, [dayTasks.length]);
 
-  // Close popover on outside click
+  // Close popover on outside click or Escape
   useEffect(() => {
     if (!popoverOpen) return;
     const close = (e: MouseEvent) => {
@@ -209,8 +223,15 @@ function MonthDayCell({
         setPopoverOpen(false);
       }
     };
+    const closeOnEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPopoverOpen(false);
+    };
     document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
+    document.addEventListener('keydown', closeOnEsc);
+    return () => {
+      document.removeEventListener('click', close);
+      document.removeEventListener('keydown', closeOnEsc);
+    };
   }, [popoverOpen]);
 
   const openPopover = (e: React.MouseEvent) => {
@@ -279,6 +300,7 @@ function MonthDayCell({
           date={date}
           tasks={dayTasks}
           categoryColors={categoryColors}
+          timeEntries={timeEntries}
           pos={popoverPos}
           onTaskClick={onTaskClick}
           onTaskContextMenu={handleTaskContextMenu}

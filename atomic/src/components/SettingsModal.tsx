@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import tauriConf from '../../src-tauri/tauri.conf.json';
 const version = tauriConf.version;
 import { IconX, IconDownload, IconUpload, IconTrash, IconCheck, IconPencil, IconChevronRight } from '@tabler/icons-react';
@@ -46,6 +46,15 @@ export default function SettingsModal() {
     { value: 'red',    label: t.settings.red,    color: '#E24B4A' },
     { value: 'yellow', label: t.settings.yellow, color: '#EF9F27' },
   ];
+
+  useEffect(() => {
+    if (!openSettingsModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenSettingsModal(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [openSettingsModal, setOpenSettingsModal]);
 
   if (!openSettingsModal) return null;
 

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { IconDownload, IconX, IconRefresh } from '@tabler/icons-react';
 import { useT } from '../i18n';
 
@@ -11,6 +12,15 @@ interface Props {
 
 export default function UpdateDialog({ version, downloading, progress, onConfirm, onDismiss }: Props) {
   const t = useT();
+
+  useEffect(() => {
+    if (downloading) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onDismiss();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [downloading, onDismiss]);
 
   return (
     <div className="update-overlay">

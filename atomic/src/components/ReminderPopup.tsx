@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { IconBellRinging, IconX } from '@tabler/icons-react';
 import { useAppStore } from '../store/appStore';
 import { useT } from '../i18n';
@@ -5,6 +6,15 @@ import { useT } from '../i18n';
 export default function ReminderPopup() {
   const t = useT();
   const { reminderPopup, taskTimeEntries, dismissReminder, snoozeReminder, setActiveTab } = useAppStore();
+
+  useEffect(() => {
+    if (!reminderPopup) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') dismissReminder();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [reminderPopup, dismissReminder]);
 
   if (!reminderPopup) return null;
 

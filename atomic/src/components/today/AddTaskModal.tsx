@@ -236,6 +236,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
     categoryColors,
     updateTaskColor,
     taskTimeEntries,
+    calendarTimeEntries,
     saveTimeEntry,
     deleteTimeEntry,
     tags,
@@ -301,6 +302,14 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
     return attachSmoothScroll(tagListRef.current);
   }, [tagDropdownOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   // Only lock the toggle for instances (series_id != null); templates can still turn off repeat
   const isSeriesInstance = !!(editTask && editTask.series_id != null);
 
@@ -311,9 +320,9 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
       setCategory(editTask.category);
       setRepeatDaily(editTask.repeat_daily === 1 || editTask.series_id != null);
       setSelectedTagIds(taskTags[editTask.id] ?? []);
-      const entry = taskTimeEntries.find(
-        (e) => e.task_id === editTask.id && e.date === editTask.date,
-      );
+      const entry =
+        taskTimeEntries.find((e) => e.task_id === editTask.id && e.date === editTask.date) ??
+        calendarTimeEntries.find((e) => e.task_id === editTask.id && e.date === editTask.date);
       if (entry) {
         setStartTime(entry.start_time);
         setEndTime(entry.end_time);

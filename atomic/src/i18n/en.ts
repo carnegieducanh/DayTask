@@ -293,6 +293,8 @@ export const en: typeof vi = {
         'Take a deep breath and get started.',
         'Today belongs to you.',
         'Every morning is a fresh start.',
+        'Coffee and Atomic time?',
+        'Hey there, Clazure Huy',
       ],
     },
     noon: {

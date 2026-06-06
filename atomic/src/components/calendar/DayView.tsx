@@ -578,12 +578,38 @@ export default function DayView({
           )}
 
           {/* Drag-create ghost */}
-          {dragCreate && dragCreate.endMin - dragCreate.startMin >= 2 && (
-            <div
-              className="day-drag-ghost"
-              style={{ top: ghostTop, height: ghostHeight }}
-            />
-          )}
+          {dragCreate && dragCreate.endMin - dragCreate.startMin >= 2 && (() => {
+            const ghostColor = categoryColors["work"];
+            const h = ghostHeight;
+            return (
+              <div
+                className="day-task-block"
+                style={{
+                  top: ghostTop,
+                  height: Math.max(h, 22),
+                  left: "0.5%",
+                  width: "98%",
+                  backgroundColor: ghostColor,
+                  borderLeft: `3px solid ${ghostColor}`,
+                  opacity: 0.75,
+                  zIndex: 5,
+                  cursor: "ns-resize",
+                  pointerEvents: "none",
+                }}
+              >
+                <div className="day-task-title" style={{ fontStyle: "italic" }}>
+                  {t.calendar.noTitle}
+                </div>
+                {h >= 34 && (
+                  <div className="day-task-meta">
+                    <span className="day-task-time">
+                      {minToTime(dragCreate.startMin)} – {minToTime(dragCreate.endMin)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Pending-create preview block (shown while modal is open) */}
           {pendingCreate && (() => {
