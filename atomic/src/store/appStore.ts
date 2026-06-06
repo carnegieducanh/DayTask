@@ -562,13 +562,19 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   saveTimeEntry: async (taskId, date, startTime, endTime) => {
     const newEntry: TaskTimeEntry = { task_id: taskId, date, start_time: startTime, end_time: endTime };
+    const optimisticTaskEntries = [
+      ...get().taskTimeEntries.filter((e) => !(e.task_id === taskId && e.date === date)),
+      newEntry,
+    ];
     const updatedCalendarEntries = [
       ...get().calendarTimeEntries.filter((e) => !(e.task_id === taskId && e.date === date)),
       newEntry,
     ];
+    // Optimistic update — move task to scheduled position immediately,
+    // before the async Tauri IPC + SQLite round-trip completes.
+    set({ taskTimeEntries: optimisticTaskEntries, calendarTimeEntries: updatedCalendarEntries });
     if (!isTauri()) {
       dbSaveTimeEntry(taskId, date, startTime, endTime);
-      set({ taskTimeEntries: dbGetTimeEntries(date), calendarTimeEntries: updatedCalendarEntries });
       return;
     }
     const db = await getDb();
