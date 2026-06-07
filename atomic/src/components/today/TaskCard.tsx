@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { IconCheck, IconClock, IconTrash, IconTag } from '@tabler/icons-react';
 import type { Task } from '../../types';
 import { useAppStore } from '../../store/appStore';
@@ -229,7 +230,7 @@ export default function TaskCard({ task, onEdit, onToggle }: Props) {
         <IconTrash size={20} />
       </button>
 
-      {contextMenu && (
+      {contextMenu && createPortal(
         <div
           ref={menuRef}
           className="task-context-menu"
@@ -258,7 +259,8 @@ export default function TaskCard({ task, onEdit, onToggle }: Props) {
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
