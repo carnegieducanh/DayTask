@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type React from "react";
 import { attachSmoothScroll } from "../../hooks/useSmoothScroll";
+import { useModalClose } from "../../hooks/useModalClose";
 import {
   IconChevronDown,
   IconDotsVertical,
@@ -229,6 +230,7 @@ interface Props {
 
 export default function AddTaskModal({ editTask, onClose, initialStartTime, initialEndTime }: Props) {
   const t = useT();
+  const overlayHandlers = useModalClose(onClose);
   const {
     selectedDate,
     addTask,
@@ -453,7 +455,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
   return (
     <div
       className="modal-overlay"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      {...overlayHandlers}
     >
       <div className="modal">
         <div className="modal-title">

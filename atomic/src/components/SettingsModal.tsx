@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { attachSmoothScroll } from '../hooks/useSmoothScroll';
+import { useModalClose } from '../hooks/useModalClose';
 import tauriConf from '../../src-tauri/tauri.conf.json';
 const version = tauriConf.version;
 import { IconX, IconDownload, IconUpload, IconTrash, IconCheck, IconPencil, IconChevronRight } from '@tabler/icons-react';
@@ -24,6 +25,7 @@ export default function SettingsModal() {
   const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const overlayHandlers = useModalClose(() => setOpenSettingsModal(false));
   useEffect(() => {
     if (!openSettingsModal || !bodyRef.current) return;
     return attachSmoothScroll(bodyRef.current);
@@ -234,7 +236,7 @@ export default function SettingsModal() {
   }
 
   return (
-    <div className="modal-overlay" onClick={() => setOpenSettingsModal(false)}>
+    <div className="modal-overlay" {...overlayHandlers}>
       <div className="modal modal-settings" onClick={(e) => e.stopPropagation()}>
 
         <div className="settings-head">

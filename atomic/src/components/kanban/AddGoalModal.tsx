@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { attachSmoothScroll } from "../../hooks/useSmoothScroll";
+import { useModalClose } from "../../hooks/useModalClose";
 import {
   IconX,
   IconPlus,
@@ -55,6 +56,7 @@ export default function AddGoalModal({
   onClose,
 }: Props) {
   const t = useT();
+  const overlayHandlers = useModalClose(onClose);
   const {
     selectedYear,
     addGoal,
@@ -181,7 +183,7 @@ export default function AddGoalModal({
   return (
     <div
       className="modal-overlay"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      {...overlayHandlers}
     >
       <div className="modal modal-goal-detail">
         <div className="modal-title">
