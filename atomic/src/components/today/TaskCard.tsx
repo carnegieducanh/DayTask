@@ -173,7 +173,17 @@ export default function TaskCard({ task, onEdit, onToggle }: Props) {
             onDoubleClick={startEdit}
             title={t.taskCard.clickHint}
           >
-            {task.title}
+            <span
+              className="task-name-text"
+              style={task.description ? { maxWidth: '65%' } : undefined}
+            >
+              {task.title}
+            </span>
+            {task.description && (
+              <span className="task-desc-preview">
+                <span className="task-desc-sep">›</span>{task.description}
+              </span>
+            )}
           </div>
         )}
 

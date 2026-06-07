@@ -887,6 +887,34 @@ select {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: baseline;
+}
+
+.task-name-text {
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-desc-preview {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.83rem;
+  color: rgba(0, 0, 0, 0.5);
+  font-style: italic;
+  margin-left: 6px;
+}
+
+.task-desc-sep {
+  font-size: 1.1rem;
+  font-style: normal;
+  margin-right: 5px;
+  opacity: 0.65;
 }
 
 .task-item.done .task-name {
