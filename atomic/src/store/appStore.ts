@@ -189,7 +189,7 @@ interface AppState {
   updateCategoryColor: (category: Category, color: string) => Promise<void>;
 
   loadGoals: (year: number) => Promise<void>;
-  addGoal: (goal: NewGoal) => Promise<void>;
+  addGoal: (goal: NewGoal) => Promise<number>;
   updateGoal: (id: number, updates: GoalUpdate) => Promise<void>;
   reorderGoal: (activeId: number, newStatus: Goal['status'], newIndex: number) => Promise<void>;
   deleteGoal: (id: number) => Promise<void>;
@@ -906,17 +906,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   addGoal: async (goal) => {
     const priority = goal.priority ?? 'mid';
     if (!isTauri()) {
-      dbAddGoal({ title: goal.title, description: goal.description ?? null, category: goal.category, priority, year: goal.year, quarter: goal.quarter, status: goal.status ?? 'todo', progress: 0, position: dbGetGoals(goal.year).filter(g => g.status === (goal.status ?? 'todo')).length });
+      const g = dbAddGoal({ title: goal.title, description: goal.description ?? null, category: goal.category, priority, year: goal.year, quarter: goal.quarter, status: goal.status ?? 'todo', progress: 0, position: dbGetGoals(goal.year).filter(g => g.status === (goal.status ?? 'todo')).length });
       set({ goals: dbGetGoals(get().selectedYear) });
-      return;
+      return g.id;
     }
     const db = await getDb();
-    await db.execute(
+    const result = await db.execute(
       `INSERT INTO goals (title, description, category, priority, year, quarter, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [goal.title, goal.description ?? null, goal.category, priority, goal.year, goal.quarter, goal.status ?? 'todo']
     );
+    const newId = result.lastInsertId!;
     await get().loadGoals(get().selectedYear);
+    return newId;
   },
 
   updateGoal: async (id, updates) => {

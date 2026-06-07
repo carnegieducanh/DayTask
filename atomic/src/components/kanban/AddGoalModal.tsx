@@ -117,6 +117,8 @@ export default function AddGoalModal({
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
   const editInputRef = useRef<HTMLInputElement>(null);
+  const [pendingItems, setPendingItems] = useState<{ id: number; text: string }[]>([]);
+  const nextPendingId = useRef(0);
 
   useEffect(() => {
     if (editGoal) {
@@ -163,7 +165,7 @@ export default function AddGoalModal({
         quarter,
       });
     } else {
-      await addGoal({
+      const newId = await addGoal({
         title: title.trim(),
         description: desc.trim() || undefined,
         category,
@@ -171,13 +173,20 @@ export default function AddGoalModal({
         year: selectedYear,
         status: defaultStatus,
       });
+      for (const item of pendingItems) {
+        await addChecklistItem(newId, item.text);
+      }
     }
     onClose();
   }
 
   async function handleAddItem() {
-    if (!editGoal || !newItemText.trim()) return;
-    await addChecklistItem(editGoal.id, newItemText.trim());
+    if (!newItemText.trim()) return;
+    if (editGoal) {
+      await addChecklistItem(editGoal.id, newItemText.trim());
+    } else {
+      setPendingItems((prev) => [...prev, { id: nextPendingId.current++, text: newItemText.trim() }]);
+    }
     setNewItemText("");
     addInputRef.current?.focus();
     setTimeout(() => {
@@ -200,9 +209,15 @@ export default function AddGoalModal({
   }
 
   async function commitEditItem() {
-    if (!editGoal || editingItemId === null) return;
+    if (editingItemId === null) return;
     const trimmed = editingText.trim();
-    if (trimmed) await updateChecklistItem(editingItemId, editGoal.id, trimmed);
+    if (trimmed) {
+      if (editGoal) {
+        await updateChecklistItem(editingItemId, editGoal.id, trimmed);
+      } else {
+        setPendingItems((prev) => prev.map((item) => item.id === editingItemId ? { ...item, text: trimmed } : item));
+      }
+    }
     setEditingItemId(null);
     setEditingText("");
   }
@@ -383,102 +398,140 @@ export default function AddGoalModal({
             </div>
           </div>
 
-          {/* Checklist section — chỉ hiện khi đang edit goal đã có */}
-          {editGoal && (
-            <div className="checklist-section">
-              <div className="checklist-header">
-                <span className="checklist-title">{t.goalModal.checklistTitle}</span>
-                {items.length > 0 && (
-                  <span className="checklist-count">
-                    {doneCount}/{items.length}
-                  </span>
-                )}
-              </div>
-
-              {items.length > 0 && (
-                <div className="checklist-progress-bar">
-                  <div
-                    className="checklist-progress-fill"
-                    style={{
-                      width: `${Math.round((doneCount / items.length) * 100)}%`,
-                    }}
-                  />
-                </div>
+          {/* Checklist section — hiện cả khi add mới lẫn edit */}
+          <div className="checklist-section">
+            <div className="checklist-header">
+              <span className="checklist-title">{t.goalModal.checklistTitle}</span>
+              {editGoal ? (
+                items.length > 0 && (
+                  <span className="checklist-count">{doneCount}/{items.length}</span>
+                )
+              ) : (
+                pendingItems.length > 0 && (
+                  <span className="checklist-count">{pendingItems.length}</span>
+                )
               )}
-
-              <div className="checklist-items" ref={checklistItemsRef}>
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`checklist-item${item.is_done ? " checklist-item-done" : ""}${editingItemId === item.id ? " checklist-item-editing" : ""}`}
-                    onClick={() => editingItemId !== item.id && toggleChecklistItem(item.id, editGoal.id)}
-                  >
-                    <button
-                      type="button"
-                      className={`checklist-checkbox${item.is_done ? " checked" : ""}`}
-                      onClick={(e) => { e.stopPropagation(); toggleChecklistItem(item.id, editGoal.id); }}
-                      title={item.is_done ? t.goalModal.markUndone : t.goalModal.markDone}
-                    >
-                      {!!item.is_done && (
-                        <IconCheck size={11} strokeWidth={3} />
-                      )}
-                    </button>
-                    {editingItemId === item.id ? (
-                      <input
-                        ref={editInputRef}
-                        className="checklist-item-edit-input"
-                        value={editingText}
-                        onChange={(e) => setEditingText(e.target.value)}
-                        onBlur={commitEditItem}
-                        onKeyDown={handleEditKeyDown}
-                        onClick={(e) => e.stopPropagation()}
-                        spellCheck={false}
-                      />
-                    ) : (
-                      <span className="checklist-item-text">{item.text}</span>
-                    )}
-                    <button
-                      type="button"
-                      className="checklist-item-edit"
-                      onClick={(e) => { e.stopPropagation(); startEditItem(item.id, item.text); }}
-                      title={t.goalModal.editItem}
-                    >
-                      <IconPencil size={11} />
-                    </button>
-                    <button
-                      type="button"
-                      className="checklist-item-delete"
-                      onClick={(e) => { e.stopPropagation(); softDeleteChecklistItem(item.id, editGoal.id); }}
-                      title={t.goalModal.delete}
-                    >
-                      <IconX size={11} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="checklist-add-row">
-                <input
-                  ref={addInputRef}
-                  className="checklist-add-input"
-                  value={newItemText}
-                  onChange={(e) => setNewItemText(e.target.value)}
-                  spellCheck={false}
-                  onKeyDown={handleAddKeyDown}
-                  placeholder={t.goalModal.addItemPlaceholder}
-                />
-                <button
-                  type="button"
-                  className="checklist-add-btn"
-                  onClick={handleAddItem}
-                  disabled={!newItemText.trim()}
-                  title={t.goalModal.add}
-                >
-                  <IconPlus size={14} />
-                </button>
-              </div>
             </div>
-          )}
+
+            {editGoal && items.length > 0 && (
+              <div className="checklist-progress-bar">
+                <div
+                  className="checklist-progress-fill"
+                  style={{ width: `${Math.round((doneCount / items.length) * 100)}%` }}
+                />
+              </div>
+            )}
+
+            <div className="checklist-items" ref={checklistItemsRef}>
+              {editGoal
+                ? items.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`checklist-item${item.is_done ? " checklist-item-done" : ""}${editingItemId === item.id ? " checklist-item-editing" : ""}`}
+                      onClick={() => editingItemId !== item.id && toggleChecklistItem(item.id, editGoal.id)}
+                    >
+                      <button
+                        type="button"
+                        className={`checklist-checkbox${item.is_done ? " checked" : ""}`}
+                        onClick={(e) => { e.stopPropagation(); toggleChecklistItem(item.id, editGoal.id); }}
+                        title={item.is_done ? t.goalModal.markUndone : t.goalModal.markDone}
+                      >
+                        {!!item.is_done && <IconCheck size={11} strokeWidth={3} />}
+                      </button>
+                      {editingItemId === item.id ? (
+                        <input
+                          ref={editInputRef}
+                          className="checklist-item-edit-input"
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          onBlur={commitEditItem}
+                          onKeyDown={handleEditKeyDown}
+                          onClick={(e) => e.stopPropagation()}
+                          spellCheck={false}
+                        />
+                      ) : (
+                        <span className="checklist-item-text">{item.text}</span>
+                      )}
+                      <button
+                        type="button"
+                        className="checklist-item-edit"
+                        onClick={(e) => { e.stopPropagation(); startEditItem(item.id, item.text); }}
+                        title={t.goalModal.editItem}
+                      >
+                        <IconPencil size={11} />
+                      </button>
+                      <button
+                        type="button"
+                        className="checklist-item-delete"
+                        onClick={(e) => { e.stopPropagation(); softDeleteChecklistItem(item.id, editGoal.id); }}
+                        title={t.goalModal.delete}
+                      >
+                        <IconX size={11} />
+                      </button>
+                    </div>
+                  ))
+                : pendingItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`checklist-item${editingItemId === item.id ? " checklist-item-editing" : ""}`}
+                    >
+                      <button type="button" className="checklist-checkbox" disabled />
+                      {editingItemId === item.id ? (
+                        <input
+                          ref={editInputRef}
+                          className="checklist-item-edit-input"
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          onBlur={commitEditItem}
+                          onKeyDown={handleEditKeyDown}
+                          onClick={(e) => e.stopPropagation()}
+                          spellCheck={false}
+                        />
+                      ) : (
+                        <span className="checklist-item-text">{item.text}</span>
+                      )}
+                      <button
+                        type="button"
+                        className="checklist-item-edit"
+                        onClick={(e) => { e.stopPropagation(); startEditItem(item.id, item.text); }}
+                        title={t.goalModal.editItem}
+                      >
+                        <IconPencil size={11} />
+                      </button>
+                      <button
+                        type="button"
+                        className="checklist-item-delete"
+                        onClick={(e) => { e.stopPropagation(); setPendingItems((prev) => prev.filter((i) => i.id !== item.id)); }}
+                        title={t.goalModal.delete}
+                      >
+                        <IconX size={11} />
+                      </button>
+                    </div>
+                  ))
+              }
+            </div>
+
+            <div className="checklist-add-row">
+              <input
+                ref={addInputRef}
+                className="checklist-add-input"
+                value={newItemText}
+                onChange={(e) => setNewItemText(e.target.value)}
+                spellCheck={false}
+                onKeyDown={handleAddKeyDown}
+                placeholder={t.goalModal.addItemPlaceholder}
+              />
+              <button
+                type="button"
+                className="checklist-add-btn"
+                onClick={handleAddItem}
+                disabled={!newItemText.trim()}
+                title={t.goalModal.add}
+              >
+                <IconPlus size={14} />
+              </button>
+            </div>
+          </div>
 
           <div className="form-actions">
             <button type="button" className="btn btn-ghost" onClick={onClose}>
