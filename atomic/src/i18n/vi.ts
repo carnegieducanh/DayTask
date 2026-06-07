@@ -73,6 +73,7 @@ export const vi = {
     addItemPlaceholder: "Thêm việc cần làm...",
     markDone: "Đánh dấu hoàn thành",
     markUndone: "Đánh dấu chưa xong",
+    editItem: "Sửa",
     delete: "Xóa",
     cancel: "Hủy",
     save: "Lưu thay đổi",

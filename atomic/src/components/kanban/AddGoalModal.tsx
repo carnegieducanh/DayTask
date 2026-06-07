@@ -5,6 +5,7 @@ import {
   IconX,
   IconPlus,
   IconCheck,
+  IconPencil,
   IconDotsVertical,
   IconChevronDown,
 } from "@tabler/icons-react";
@@ -64,7 +65,8 @@ export default function AddGoalModal({
     checklistItems,
     addChecklistItem,
     toggleChecklistItem,
-    deleteChecklistItem,
+    updateChecklistItem,
+    softDeleteChecklistItem,
     categoryColors,
     updateTaskColor,
   } = useAppStore();
@@ -103,8 +105,18 @@ export default function AddGoalModal({
     smoothCleanup.current?.();
     smoothCleanup.current = el ? attachSmoothScroll(el) : null;
   }, []);
+  const modalSmoothCleanup = useRef<(() => void) | null>(null);
+  const setModalRef = useCallback((el: HTMLDivElement | null) => {
+    modalSmoothCleanup.current?.();
+    modalSmoothCleanup.current = el ? attachSmoothScroll(el) : null;
+  }, []);
+
   const [newItemText, setNewItemText] = useState("");
   const addInputRef = useRef<HTMLInputElement>(null);
+  const checklistItemsRef = useRef<HTMLDivElement>(null);
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (editGoal) {
@@ -168,6 +180,10 @@ export default function AddGoalModal({
     await addChecklistItem(editGoal.id, newItemText.trim());
     setNewItemText("");
     addInputRef.current?.focus();
+    setTimeout(() => {
+      const el = checklistItemsRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    }, 0);
   }
 
   function handleAddKeyDown(e: React.KeyboardEvent) {
@@ -175,6 +191,25 @@ export default function AddGoalModal({
       e.preventDefault();
       handleAddItem();
     }
+  }
+
+  function startEditItem(id: number, text: string) {
+    setEditingItemId(id);
+    setEditingText(text);
+    setTimeout(() => editInputRef.current?.focus(), 0);
+  }
+
+  async function commitEditItem() {
+    if (!editGoal || editingItemId === null) return;
+    const trimmed = editingText.trim();
+    if (trimmed) await updateChecklistItem(editingItemId, editGoal.id, trimmed);
+    setEditingItemId(null);
+    setEditingText("");
+  }
+
+  function handleEditKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") { e.preventDefault(); commitEditItem(); }
+    if (e.key === "Escape") { setEditingItemId(null); setEditingText(""); }
   }
 
   const items = editGoal ? (checklistItems[editGoal.id] ?? []) : [];
@@ -185,7 +220,7 @@ export default function AddGoalModal({
       className="modal-overlay"
       {...overlayHandlers}
     >
-      <div className="modal modal-goal-detail">
+      <div className="modal modal-goal-detail" ref={setModalRef}>
         <div className="modal-title">
           {editGoal ? t.goalModal.editTitle : t.goalModal.addTitle}
         </div>
@@ -371,12 +406,12 @@ export default function AddGoalModal({
                 </div>
               )}
 
-              <div className="checklist-items">
+              <div className="checklist-items" ref={checklistItemsRef}>
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className={`checklist-item${item.is_done ? " checklist-item-done" : ""}`}
-                    onClick={() => toggleChecklistItem(item.id, editGoal.id)}
+                    className={`checklist-item${item.is_done ? " checklist-item-done" : ""}${editingItemId === item.id ? " checklist-item-editing" : ""}`}
+                    onClick={() => editingItemId !== item.id && toggleChecklistItem(item.id, editGoal.id)}
                   >
                     <button
                       type="button"
@@ -388,11 +423,32 @@ export default function AddGoalModal({
                         <IconCheck size={11} strokeWidth={3} />
                       )}
                     </button>
-                    <span className="checklist-item-text">{item.text}</span>
+                    {editingItemId === item.id ? (
+                      <input
+                        ref={editInputRef}
+                        className="checklist-item-edit-input"
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        onBlur={commitEditItem}
+                        onKeyDown={handleEditKeyDown}
+                        onClick={(e) => e.stopPropagation()}
+                        spellCheck={false}
+                      />
+                    ) : (
+                      <span className="checklist-item-text">{item.text}</span>
+                    )}
+                    <button
+                      type="button"
+                      className="checklist-item-edit"
+                      onClick={(e) => { e.stopPropagation(); startEditItem(item.id, item.text); }}
+                      title={t.goalModal.editItem}
+                    >
+                      <IconPencil size={11} />
+                    </button>
                     <button
                       type="button"
                       className="checklist-item-delete"
-                      onClick={(e) => { e.stopPropagation(); deleteChecklistItem(item.id, editGoal.id); }}
+                      onClick={(e) => { e.stopPropagation(); softDeleteChecklistItem(item.id, editGoal.id); }}
                       title={t.goalModal.delete}
                     >
                       <IconX size={11} />

@@ -1993,6 +1993,38 @@ select {
   color: var(--danger);
 }
 
+.checklist-item-edit {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 3px;
+  transition:
+    opacity 0.1s,
+    color 0.1s;
+}
+
+.checklist-item:hover .checklist-item-edit {
+  opacity: 1;
+}
+.checklist-item-edit:hover {
+  color: var(--text-primary);
+}
+
+.checklist-item-edit-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.93rem;
+  padding: 1px 5px;
+  outline: none;
+}
+
 .checklist-add-row {
   display: flex;
   gap: 6px;

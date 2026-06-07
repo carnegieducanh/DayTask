@@ -293,6 +293,11 @@ export function dbToggleChecklistItem(id: number): void {
   if (item) item.is_done = item.is_done ? 0 : 1;
 }
 
+export function dbUpdateChecklistItem(id: number, text: string): void {
+  const item = mockChecklist.find((i) => i.id === id);
+  if (item) item.text = text;
+}
+
 export function dbDeleteChecklistItem(id: number): void {
   const idx = mockChecklist.findIndex((i) => i.id === id);
   if (idx !== -1) mockChecklist.splice(idx, 1);

@@ -72,6 +72,7 @@ export const en: typeof vi = {
     addItemPlaceholder: 'Add item...',
     markDone: 'Mark as done',
     markUndone: 'Mark as not done',
+    editItem: 'Edit',
     delete: 'Delete',
     cancel: 'Cancel',
     save: 'Save Changes',

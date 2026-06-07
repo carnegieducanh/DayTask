@@ -7,7 +7,7 @@ import {
   mockTasks, mockGoals, mockChecklist, mockTags, mockTaskTags, mockTimeEntries,
   dbGetTasks, dbAddTask, dbUpdateTask, dbDeleteTask,
   dbGetGoals, dbAddGoal, dbUpdateGoal, dbDeleteGoal,
-  dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
+  dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbUpdateChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
   dbGetHeatmap, dbGetStreak, dbGetCalendarTasks,
   dbGetTimeEntries, dbGetCalendarTimeEntries, dbSaveTimeEntry, dbDeleteTimeEntry,
   dbGetTags, dbAddTag, dbUpdateTag, dbDeleteTag, dbGetTaskTagsForDate, dbSetTaskTags, dbGetCalendarTaskTags,
@@ -139,6 +139,7 @@ interface AppState {
   pendingDeleteTask: Task | null;
   pendingDeleteGoal: Goal | null;
   pendingDeleteTag: Tag | null;
+  pendingDeleteChecklistItem: { item: GoalChecklistItem; goalId: number } | null;
   autostart: boolean;
   accentColor: AccentColor;
   tags: Tag[];
@@ -198,6 +199,10 @@ interface AppState {
 
   addChecklistItem: (goalId: number, text: string) => Promise<void>;
   toggleChecklistItem: (itemId: number, goalId: number) => Promise<void>;
+  updateChecklistItem: (itemId: number, goalId: number, text: string) => Promise<void>;
+  softDeleteChecklistItem: (itemId: number, goalId: number) => void;
+  undoDeleteChecklistItem: () => void;
+  confirmDeleteChecklistItem: (itemId: number, goalId: number) => Promise<void>;
   deleteChecklistItem: (itemId: number, goalId: number) => Promise<void>;
 
   loadHeatmap: (year: number) => Promise<void>;
@@ -234,6 +239,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   pendingDeleteTask: null,
   pendingDeleteGoal: null,
   pendingDeleteTag: null,
+  pendingDeleteChecklistItem: null,
   autostart: true,
   accentColor: (localStorage.getItem('accentColor') as AccentColor) ?? 'blue',
   tags: [],
@@ -1071,6 +1077,47 @@ export const useAppStore = create<AppState>((set, get) => ({
       i.id === itemId ? { ...i, is_done: i.is_done ? 0 : 1 } : i
     );
     set({ checklistItems: { ...get().checklistItems, [goalId]: items } });
+  },
+
+  updateChecklistItem: async (itemId, goalId, text) => {
+    if (!isTauri()) {
+      dbUpdateChecklistItem(itemId, text);
+      const items = (get().checklistItems[goalId] ?? []).map((i) =>
+        i.id === itemId ? { ...i, text } : i
+      );
+      set({ checklistItems: { ...get().checklistItems, [goalId]: items } });
+      return;
+    }
+    const db = await getDb();
+    await db.execute('UPDATE goal_checklist_items SET text = $1 WHERE id = $2', [text, itemId]);
+    const items = (get().checklistItems[goalId] ?? []).map((i) =>
+      i.id === itemId ? { ...i, text } : i
+    );
+    set({ checklistItems: { ...get().checklistItems, [goalId]: items } });
+  },
+
+  softDeleteChecklistItem: (itemId, goalId) => {
+    const item = (get().checklistItems[goalId] ?? []).find((i) => i.id === itemId);
+    if (!item) return;
+    const prev = get().pendingDeleteChecklistItem;
+    if (prev) get().confirmDeleteChecklistItem(prev.item.id, prev.goalId);
+    const items = (get().checklistItems[goalId] ?? []).filter((i) => i.id !== itemId);
+    set({ checklistItems: { ...get().checklistItems, [goalId]: items }, pendingDeleteChecklistItem: { item, goalId } });
+  },
+
+  undoDeleteChecklistItem: () => {
+    const pending = get().pendingDeleteChecklistItem;
+    if (!pending) return;
+    const prev = get().checklistItems[pending.goalId] ?? [];
+    const restored = [...prev, pending.item].sort((a, b) => a.position - b.position);
+    set({ checklistItems: { ...get().checklistItems, [pending.goalId]: restored }, pendingDeleteChecklistItem: null });
+  },
+
+  confirmDeleteChecklistItem: async (itemId, _goalId) => {
+    set({ pendingDeleteChecklistItem: null });
+    if (!isTauri()) { dbDeleteChecklistItem(itemId); return; }
+    const db = await getDb();
+    await db.execute('DELETE FROM goal_checklist_items WHERE id = $1', [itemId]);
   },
 
   deleteChecklistItem: async (itemId, goalId) => {
