@@ -123,7 +123,7 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
               </div>
               <span
                 className="goal-progress-xy"
-                style={{ color: progressColor }}
+                style={{ color: "rgba(0,0,0,0.6)" }}
               >
                 {doneItems}/{totalItems}
               </span>

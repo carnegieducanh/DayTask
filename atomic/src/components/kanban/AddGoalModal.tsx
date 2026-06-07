@@ -119,6 +119,7 @@ export default function AddGoalModal({
   const editInputRef = useRef<HTMLInputElement>(null);
   const [pendingItems, setPendingItems] = useState<{ id: number; text: string }[]>([]);
   const nextPendingId = useRef(0);
+  const [localDoneMap, setLocalDoneMap] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (editGoal) {
@@ -128,6 +129,16 @@ export default function AddGoalModal({
       setQuarter(editGoal.quarter);
     }
   }, [editGoal]);
+
+  useEffect(() => {
+    if (!editGoal) return;
+    const map: Record<number, boolean> = {};
+    (checklistItems[editGoal.id] ?? []).forEach(item => {
+      map[item.id] = !!item.is_done;
+    });
+    setLocalDoneMap(map);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editGoal?.id]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -153,6 +164,10 @@ export default function AddGoalModal({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
+  function handleLocalToggle(itemId: number) {
+    setLocalDoneMap(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
@@ -164,6 +179,14 @@ export default function AddGoalModal({
         category,
         quarter,
       });
+      const originalItems = checklistItems[editGoal.id] ?? [];
+      for (const item of originalItems) {
+        const wasDone = !!item.is_done;
+        const isDoneNow = localDoneMap[item.id] ?? wasDone;
+        if (isDoneNow !== wasDone) {
+          await toggleChecklistItem(item.id, editGoal.id);
+        }
+      }
     } else {
       const newId = await addGoal({
         title: title.trim(),
@@ -228,7 +251,7 @@ export default function AddGoalModal({
   }
 
   const items = editGoal ? (checklistItems[editGoal.id] ?? []) : [];
-  const doneCount = items.filter((i) => i.is_done).length;
+  const doneCount = items.filter(i => localDoneMap[i.id] ?? !!i.is_done).length;
 
   return (
     <div
@@ -427,16 +450,16 @@ export default function AddGoalModal({
                 ? items.map((item) => (
                     <div
                       key={item.id}
-                      className={`checklist-item${item.is_done ? " checklist-item-done" : ""}${editingItemId === item.id ? " checklist-item-editing" : ""}`}
-                      onClick={() => editingItemId !== item.id && toggleChecklistItem(item.id, editGoal.id)}
+                      className={`checklist-item${(localDoneMap[item.id] ?? !!item.is_done) ? " checklist-item-done" : ""}${editingItemId === item.id ? " checklist-item-editing" : ""}`}
+                      onClick={() => editingItemId !== item.id && handleLocalToggle(item.id)}
                     >
                       <button
                         type="button"
-                        className={`checklist-checkbox${item.is_done ? " checked" : ""}`}
-                        onClick={(e) => { e.stopPropagation(); toggleChecklistItem(item.id, editGoal.id); }}
-                        title={item.is_done ? t.goalModal.markUndone : t.goalModal.markDone}
+                        className={`checklist-checkbox${(localDoneMap[item.id] ?? !!item.is_done) ? " checked" : ""}`}
+                        onClick={(e) => { e.stopPropagation(); handleLocalToggle(item.id); }}
+                        title={(localDoneMap[item.id] ?? !!item.is_done) ? t.goalModal.markUndone : t.goalModal.markDone}
                       >
-                        {!!item.is_done && <IconCheck size={11} strokeWidth={3} />}
+                        {(localDoneMap[item.id] ?? !!item.is_done) && <IconCheck size={11} strokeWidth={3} />}
                       </button>
                       {editingItemId === item.id ? (
                         <input

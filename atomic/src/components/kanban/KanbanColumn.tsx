@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -11,6 +12,7 @@ import {
   IconPlus,
 } from "@tabler/icons-react";
 import { useT } from "../../i18n";
+import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import GoalCard from "./GoalCard";
 import type { Goal, GoalStatus } from "../../types";
 
@@ -68,8 +70,12 @@ export default function KanbanColumn({
   const cfg = COL_STYLE[status];
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
+  const columnRef = useRef<HTMLDivElement>(null);
+  useSmoothScroll(columnRef);
+
   return (
     <div
+      ref={columnRef}
       className="kanban-column"
       style={{ outline: isOver ? `2px solid var(--primary)` : undefined }}
     >
