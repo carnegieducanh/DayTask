@@ -1,26 +1,43 @@
-import { useRef, useState, useEffect } from 'react';
-import { attachSmoothScroll } from '../hooks/useSmoothScroll';
-import { useModalClose } from '../hooks/useModalClose';
-import tauriConf from '../../src-tauri/tauri.conf.json';
+import { useRef, useState, useEffect } from "react";
+import { attachSmoothScroll } from "../hooks/useSmoothScroll";
+import { useModalClose } from "../hooks/useModalClose";
+import tauriConf from "../../src-tauri/tauri.conf.json";
 const version = tauriConf.version;
-import { IconX, IconDownload, IconUpload, IconTrash, IconCheck, IconPencil, IconChevronRight } from '@tabler/icons-react';
-import { useAppStore } from '../store/appStore';
-import { useT } from '../i18n';
-import { loadGreetings, saveGreetings, resetGreetings } from '../store/greetingsStore';
-import type { Period, GreetingItem, GreetingsStore } from '../store/greetingsStore';
-import type { Language, AccentColor } from '../types';
+import {
+  IconX,
+  IconDownload,
+  IconUpload,
+  IconTrash,
+  IconCheck,
+  IconPencil,
+  IconChevronRight,
+} from "@tabler/icons-react";
+import { useAppStore } from "../store/appStore";
+import { useT } from "../i18n";
+import { loadGreetings, saveGreetings, resetGreetings } from "../store/greetingsStore";
+import type { Period, GreetingItem, GreetingsStore } from "../store/greetingsStore";
+import type { Language, AccentColor } from "../types";
 
-type ActiveTab = 'general' | 'greeting' | 'data';
+type ActiveTab = "general" | "greeting" | "data";
 
 export default function SettingsModal() {
   const {
-    openSettingsModal, setOpenSettingsModal,
-    uiScale, setUiScale,
-    language, setLanguage,
-    accentColor, setAccentColor,
-    exportAllData, importAllData,
-    autostart, setAutostart,
-    tags, addTag, updateTag, softDeleteTag,
+    openSettingsModal,
+    setOpenSettingsModal,
+    uiScale,
+    setUiScale,
+    language,
+    setLanguage,
+    accentColor,
+    setAccentColor,
+    exportAllData,
+    importAllData,
+    autostart,
+    setAutostart,
+    tags,
+    addTag,
+    updateTag,
+    softDeleteTag,
   } = useAppStore();
   const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,150 +48,158 @@ export default function SettingsModal() {
     return attachSmoothScroll(bodyRef.current);
   }, [openSettingsModal]);
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>('general');
-  const [importStatus, setImportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [importError, setImportError] = useState('');
-  const [exportStatus, setExportStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [exportError, setExportError] = useState('');
+  const [activeTab, setActiveTab] = useState<ActiveTab>("general");
+  const [importStatus, setImportStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [importError, setImportError] = useState("");
+  const [exportStatus, setExportStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [exportError, setExportError] = useState("");
 
   // Tags state
-  const [newTagInput, setNewTagInput] = useState('');
+  const [newTagInput, setNewTagInput] = useState("");
   const [showNewTagInput, setShowNewTagInput] = useState(false);
   const [renamingTagId, setRenamingTagId] = useState<number | null>(null);
-  const [renameInput, setRenameInput] = useState('');
+  const [renameInput, setRenameInput] = useState("");
   const [tagSectionOpen, setTagSectionOpen] = useState(false);
 
   // Greeting state
   const [greetingsStore, setGreetingsStore] = useState<GreetingsStore>(() => loadGreetings());
   const [openPeriod, setOpenPeriod] = useState<Period | null>(null);
   const [addingPeriod, setAddingPeriod] = useState<Period | null>(null);
-  const [newVI, setNewVI] = useState('');
-  const [newEN, setNewEN] = useState('');
+  const [newVI, setNewVI] = useState("");
+  const [newEN, setNewEN] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editVI, setEditVI] = useState('');
-  const [editEN, setEditEN] = useState('');
-  const [pendingDeleteGreeting, setPendingDeleteGreeting] = useState<{ period: Period; item: GreetingItem; index: number } | null>(null);
+  const [editVI, setEditVI] = useState("");
+  const [editEN, setEditEN] = useState("");
+  const [pendingDeleteGreeting, setPendingDeleteGreeting] = useState<{
+    period: Period;
+    item: GreetingItem;
+    index: number;
+  } | null>(null);
   const deleteGTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showResetToast, setShowResetToast] = useState(false);
   const resetToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const SCALE_OPTIONS: { label: string; value: number; desc: string }[] = [
-    { label: t.settings.small,      value: 0.9,  desc: '90%' },
-    { label: t.settings.normal,     value: 1.0,  desc: '100%' },
-    { label: t.settings.large,      value: 1.1,  desc: '110%' },
-    { label: t.settings.extraLarge, value: 1.25, desc: '125%' },
+    { label: t.settings.small, value: 0.9, desc: "90%" },
+    { label: t.settings.normal, value: 1.0, desc: "100%" },
+    { label: t.settings.large, value: 1.1, desc: "110%" },
+    { label: t.settings.extraLarge, value: 1.25, desc: "125%" },
   ];
 
   const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
-    { value: 'vi', label: 'Tiếng Việt' },
-    { value: 'en', label: 'English' },
+    { value: "vi", label: "Tiếng Việt" },
+    { value: "en", label: "English" },
   ];
 
   const ACCENT_OPTIONS: { value: AccentColor; label: string; color: string }[] = [
-    { value: 'blue',   label: t.settings.blue,   color: '#185FA5' },
-    { value: 'orange', label: t.settings.orange, color: '#DA7756' },
-    { value: 'green',  label: t.settings.green,  color: '#1D9E75' },
-    { value: 'purple', label: t.settings.purple, color: '#7F77DD' },
-    { value: 'red',    label: t.settings.red,    color: '#E24B4A' },
-    { value: 'yellow', label: t.settings.yellow, color: '#EF9F27' },
+    { value: "blue", label: t.settings.blue, color: "#185FA5" },
+    { value: "orange", label: t.settings.orange, color: "#DA7756" },
+    { value: "green", label: t.settings.green, color: "#1D9E75" },
+    { value: "purple", label: t.settings.purple, color: "#7F77DD" },
+    { value: "red", label: t.settings.red, color: "#E24B4A" },
+    { value: "yellow", label: t.settings.yellow, color: "#EF9F27" },
   ];
 
   const PERIODS: { key: Period; label: string }[] = [
-    { key: 'morning',   label: t.settings.greetingMorning },
-    { key: 'noon',      label: t.settings.greetingNoon },
-    { key: 'afternoon', label: t.settings.greetingAfternoon },
-    { key: 'evening',   label: t.settings.greetingEvening },
-    { key: 'night',     label: t.settings.greetingNight },
+    { key: "morning", label: t.settings.greetingMorning },
+    { key: "noon", label: t.settings.greetingNoon },
+    { key: "afternoon", label: t.settings.greetingAfternoon },
+    { key: "evening", label: t.settings.greetingEvening },
+    { key: "night", label: t.settings.greetingNight },
   ];
 
   useEffect(() => {
     if (!openSettingsModal) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpenSettingsModal(false);
+      if (e.key === "Escape") setOpenSettingsModal(false);
     };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [openSettingsModal, setOpenSettingsModal]);
 
   useEffect(() => {
     if (deleteGTimerRef.current) clearTimeout(deleteGTimerRef.current);
     if (!pendingDeleteGreeting) return;
     deleteGTimerRef.current = setTimeout(() => setPendingDeleteGreeting(null), 4000);
-    return () => { if (deleteGTimerRef.current) clearTimeout(deleteGTimerRef.current); };
+    return () => {
+      if (deleteGTimerRef.current) clearTimeout(deleteGTimerRef.current);
+    };
   }, [pendingDeleteGreeting]);
 
   useEffect(() => {
     if (resetToastTimerRef.current) clearTimeout(resetToastTimerRef.current);
     if (!showResetToast) return;
     resetToastTimerRef.current = setTimeout(() => setShowResetToast(false), 3000);
-    return () => { if (resetToastTimerRef.current) clearTimeout(resetToastTimerRef.current); };
+    return () => {
+      if (resetToastTimerRef.current) clearTimeout(resetToastTimerRef.current);
+    };
   }, [showResetToast]);
 
   if (!openSettingsModal) return null;
 
   // ── Import/Export ──
   function handleImportClick() {
-    setImportStatus('idle');
-    setImportError('');
+    setImportStatus("idle");
+    setImportError("");
     fileInputRef.current?.click();
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    e.target.value = '';
+    e.target.value = "";
     const ok = window.confirm(t.settings.importConfirm);
     if (!ok) return;
-    setImportStatus('loading');
+    setImportStatus("loading");
     try {
       await importAllData(file);
-      setImportStatus('success');
+      setImportStatus("success");
     } catch (err) {
       setImportError(err instanceof Error ? err.message : t.settings.unknownError);
-      setImportStatus('error');
+      setImportStatus("error");
     }
   }
 
   async function handleExport() {
-    setExportStatus('loading');
-    setExportError('');
+    setExportStatus("loading");
+    setExportError("");
     try {
       await exportAllData();
-      setExportStatus('success');
-      setTimeout(() => setExportStatus('idle'), 4000);
+      setExportStatus("success");
+      setTimeout(() => setExportStatus("idle"), 4000);
     } catch (err) {
       setExportError(err instanceof Error ? err.message : t.settings.unknownError);
-      setExportStatus('error');
+      setExportStatus("error");
     }
   }
 
   // ── Greeting: Add ──
   function handleAddGreeting(period: Period) {
-    if (!newVI.trim() && !newEN.trim()) { cancelAdd(); return; }
+    if (!newVI.trim() && !newEN.trim()) {
+      cancelAdd();
+      return;
+    }
     const updated = { ...greetingsStore };
-    updated[period] = [
-      ...updated[period],
-      { id: Date.now().toString(), vi: newVI.trim(), en: newEN.trim() },
-    ];
+    updated[period] = [...updated[period], { id: Date.now().toString(), vi: newVI.trim(), en: newEN.trim() }];
     setGreetingsStore(updated);
     saveGreetings(updated);
-    setNewVI('');
-    setNewEN('');
+    setNewVI("");
+    setNewEN("");
     setAddingPeriod(null);
   }
 
   function cancelAdd() {
     setAddingPeriod(null);
-    setNewVI('');
-    setNewEN('');
+    setNewVI("");
+    setNewEN("");
   }
 
   function startAdding(period: Period) {
     cancelEdit();
     setAddingPeriod(period);
     setOpenPeriod(period);
-    setNewVI('');
-    setNewEN('');
+    setNewVI("");
+    setNewEN("");
   }
 
   // ── Greeting: Edit ──
@@ -188,8 +213,8 @@ export default function SettingsModal() {
   function handleSaveEdit(period: Period) {
     if (!editingId) return;
     const updated = { ...greetingsStore };
-    updated[period] = updated[period].map(g =>
-      g.id === editingId ? { ...g, vi: editVI.trim(), en: editEN.trim() } : g
+    updated[period] = updated[period].map((g) =>
+      g.id === editingId ? { ...g, vi: editVI.trim(), en: editEN.trim() } : g,
     );
     setGreetingsStore(updated);
     saveGreetings(updated);
@@ -198,16 +223,16 @@ export default function SettingsModal() {
 
   function cancelEdit() {
     setEditingId(null);
-    setEditVI('');
-    setEditEN('');
+    setEditVI("");
+    setEditEN("");
   }
 
   // ── Greeting: Delete ──
   function handleDeleteGreeting(period: Period, g: GreetingItem) {
     if (deleteGTimerRef.current) clearTimeout(deleteGTimerRef.current);
-    const index = greetingsStore[period].findIndex(item => item.id === g.id);
+    const index = greetingsStore[period].findIndex((item) => item.id === g.id);
     const updated = { ...greetingsStore };
-    updated[period] = updated[period].filter(item => item.id !== g.id);
+    updated[period] = updated[period].filter((item) => item.id !== g.id);
     setGreetingsStore(updated);
     saveGreetings(updated);
     setPendingDeleteGreeting({ period, item: g, index });
@@ -238,7 +263,6 @@ export default function SettingsModal() {
   return (
     <div className="modal-overlay" {...overlayHandlers}>
       <div className="modal modal-settings" onClick={(e) => e.stopPropagation()}>
-
         <div className="settings-head">
           <span className="settings-head-title">{t.settings.title}</span>
           <button className="settings-close-btn" onClick={() => setOpenSettingsModal(false)}>
@@ -248,110 +272,109 @@ export default function SettingsModal() {
 
         <div className="settings-tabs">
           <button
-            className={`settings-tab-btn${activeTab === 'general' ? ' active' : ''}`}
-            onClick={() => setActiveTab('general')}
+            className={`settings-tab-btn${activeTab === "general" ? " active" : ""}`}
+            onClick={() => setActiveTab("general")}
           >
             {t.settings.generalTab}
           </button>
           <button
-            className={`settings-tab-btn${activeTab === 'greeting' ? ' active' : ''}`}
-            onClick={() => setActiveTab('greeting')}
+            className={`settings-tab-btn${activeTab === "greeting" ? " active" : ""}`}
+            onClick={() => setActiveTab("greeting")}
           >
             {t.settings.greetingTab}
           </button>
           <button
-            className={`settings-tab-btn${activeTab === 'data' ? ' active' : ''}`}
-            onClick={() => setActiveTab('data')}
+            className={`settings-tab-btn${activeTab === "data" ? " active" : ""}`}
+            onClick={() => setActiveTab("data")}
           >
             {t.settings.dataTab}
           </button>
         </div>
 
         <div className="settings-body" ref={bodyRef}>
-
           {/* ── Tab: Chung ── */}
-          {activeTab === 'general' && (
+          {activeTab === "general" && (
             <div className="settings-tab-panel">
               <div className="settings-general-grid">
-              <div className="settings-general-col settings-general-col--left">
-                <div className="settings-section">
-                  <div className="settings-section-label">{t.settings.language}</div>
-                  <div className="settings-row" style={{ paddingTop: '4px', paddingBottom: '10px' }}>
-                    <div className="settings-seg-group">
-                      {LANGUAGE_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.value}
-                          className={`settings-seg-btn${language === opt.value ? ' active' : ''}`}
-                          onClick={() => setLanguage(opt.value)}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
+                <div className="settings-general-col settings-general-col--left">
+                  <div className="settings-section">
+                    <div className="settings-section-label">{t.settings.language}</div>
+                    <div className="settings-row" style={{ paddingTop: "4px", paddingBottom: "10px" }}>
+                      <div className="settings-seg-group">
+                        {LANGUAGE_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            className={`settings-seg-btn${language === opt.value ? " active" : ""}`}
+                            onClick={() => setLanguage(opt.value)}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="settings-divider" />
+
+                  <div className="settings-section">
+                    <div className="settings-section-label">{t.settings.fontSize}</div>
+                    <div className="settings-row" style={{ paddingTop: "4px", paddingBottom: "10px" }}>
+                      <div className="settings-font-group">
+                        {SCALE_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            className={`settings-font-btn${uiScale === opt.value ? " active" : ""}`}
+                            onClick={() => setUiScale(opt.value)}
+                          >
+                            <span>{opt.label}</span>
+                            <span className="settings-font-pct">{opt.desc}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="settings-divider" />
+                <div className="settings-general-col">
+                  <div className="settings-section">
+                    <div className="settings-section-label">{t.settings.accentColor}</div>
+                    <div className="settings-row" style={{ paddingTop: "6px", paddingBottom: "12px" }}>
+                      <div className="settings-accent-row">
+                        {ACCENT_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            className={`settings-accent-swatch${accentColor === opt.value ? " active" : ""}`}
+                            title={opt.label}
+                            style={{ background: opt.color }}
+                            onClick={() => setAccentColor(opt.value)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="settings-section">
-                  <div className="settings-section-label">{t.settings.fontSize}</div>
-                  <div className="settings-row" style={{ paddingTop: '4px', paddingBottom: '10px' }}>
-                    <div className="settings-font-group">
-                      {SCALE_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.value}
-                          className={`settings-font-btn${uiScale === opt.value ? ' active' : ''}`}
-                          onClick={() => setUiScale(opt.value)}
-                        >
-                          <span>{opt.label}</span>
-                          <span className="settings-font-pct">{opt.desc}</span>
-                        </button>
-                      ))}
+                  <div className="settings-divider" />
+
+                  <div className="settings-section">
+                    <div className="settings-row">
+                      <div>
+                        <div className="settings-row-label">{t.settings.autostart}</div>
+                        <div className="settings-row-sub">{t.settings.autostartDesc}</div>
+                      </div>
+                      <button
+                        className={`settings-toggle${autostart ? " active" : ""}`}
+                        onClick={() => setAutostart(!autostart)}
+                        aria-label={t.settings.autostart}
+                      />
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="settings-general-col">
-                <div className="settings-section">
-                  <div className="settings-section-label">{t.settings.accentColor}</div>
-                  <div className="settings-row" style={{ paddingTop: '6px', paddingBottom: '12px' }}>
-                    <div className="settings-accent-row">
-                      {ACCENT_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.value}
-                          className={`settings-accent-swatch${accentColor === opt.value ? ' active' : ''}`}
-                          title={opt.label}
-                          style={{ background: opt.color }}
-                          onClick={() => setAccentColor(opt.value)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="settings-divider" />
-
-                <div className="settings-section">
-                  <div className="settings-row">
-                    <div>
-                      <div className="settings-row-label">{t.settings.autostart}</div>
-                      <div className="settings-row-sub">{t.settings.autostartDesc}</div>
-                    </div>
-                    <button
-                      className={`settings-toggle${autostart ? ' active' : ''}`}
-                      onClick={() => setAutostart(!autostart)}
-                      aria-label={t.settings.autostart}
-                    />
-                  </div>
-                </div>
-              </div>
               </div>
             </div>
           )}
 
           {/* ── Tab: Lời chào ── */}
-          {activeTab === 'greeting' && (
+          {activeTab === "greeting" && (
             <div className="settings-tab-panel">
               <div className="settings-greeting-toolbar">
                 <button className="settings-greeting-reset-btn" onClick={handleReset}>
@@ -368,34 +391,38 @@ export default function SettingsModal() {
                       className="settings-row settings-tags-row"
                       onClick={() => setOpenPeriod(isOpen ? null : key)}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span className="settings-row-label">{label}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span className="settings-row-label" style={{ minWidth: "4.5rem" }}>
+                          {label}
+                        </span>
                         <span className="settings-tag-count">{items.length}</span>
                       </div>
                       <IconChevronRight
                         size={14}
                         style={{
-                          color: 'var(--text-secondary)',
-                          transition: 'transform 0.2s',
-                          transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                          color: "var(--text-secondary)",
+                          transition: "transform 0.2s",
+                          transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
                           flexShrink: 0,
                         }}
                       />
                     </button>
 
-                    <div className={`settings-tags-dropdown${isOpen ? ' open' : ''}`}>
+                    <div className={`settings-tags-dropdown${isOpen ? " open" : ""}`}>
                       <div className="settings-tags-list">
-                        {items.map(g => (
+                        {items.map((g) =>
                           editingId === g.id ? (
                             <div key={g.id} className="settings-greeting-row settings-greeting-row--editing">
-                              {g.isFixed && <span className="settings-greeting-fixed-dot" title={t.settings.greetingFixedHint} />}
+                              {g.isFixed && (
+                                <span className="settings-greeting-fixed-dot" title={t.settings.greetingFixedHint} />
+                              )}
                               <input
                                 className="settings-greeting-input"
                                 value={editVI}
-                                onChange={e => setEditVI(e.target.value)}
-                                onKeyDown={e => {
-                                  if (e.key === 'Enter') handleSaveEdit(key);
-                                  if (e.key === 'Escape') cancelEdit();
+                                onChange={(e) => setEditVI(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") handleSaveEdit(key);
+                                  if (e.key === "Escape") cancelEdit();
                                 }}
                                 spellCheck={false}
                                 autoFocus
@@ -403,10 +430,10 @@ export default function SettingsModal() {
                               <input
                                 className="settings-greeting-input"
                                 value={editEN}
-                                onChange={e => setEditEN(e.target.value)}
-                                onKeyDown={e => {
-                                  if (e.key === 'Enter') handleSaveEdit(key);
-                                  if (e.key === 'Escape') cancelEdit();
+                                onChange={(e) => setEditEN(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") handleSaveEdit(key);
+                                  if (e.key === "Escape") cancelEdit();
                                 }}
                                 spellCheck={false}
                               />
@@ -419,10 +446,12 @@ export default function SettingsModal() {
                             </div>
                           ) : (
                             <div key={g.id} className="settings-greeting-row">
-                              {g.isFixed && <span className="settings-greeting-fixed-dot" title={t.settings.greetingFixedHint} />}
-                              <span className="settings-greeting-vi">{g.vi || '—'}</span>
+                              {g.isFixed && (
+                                <span className="settings-greeting-fixed-dot" title={t.settings.greetingFixedHint} />
+                              )}
+                              <span className="settings-greeting-vi">{g.vi || "—"}</span>
                               <span className="settings-greeting-sep">·</span>
-                              <span className="settings-greeting-en">{g.en || '—'}</span>
+                              <span className="settings-greeting-en">{g.en || "—"}</span>
                               <button
                                 className="settings-tag-action-btn"
                                 title={t.tags.renameTag}
@@ -438,8 +467,8 @@ export default function SettingsModal() {
                                 <IconTrash size={12} />
                               </button>
                             </div>
-                          )
-                        ))}
+                          ),
+                        )}
 
                         {addingPeriod === key ? (
                           <div className="settings-greeting-add-row">
@@ -447,10 +476,10 @@ export default function SettingsModal() {
                               className="settings-greeting-input"
                               placeholder={t.settings.greetingPlaceholderVI}
                               value={newVI}
-                              onChange={e => setNewVI(e.target.value)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') handleAddGreeting(key);
-                                if (e.key === 'Escape') cancelAdd();
+                              onChange={(e) => setNewVI(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleAddGreeting(key);
+                                if (e.key === "Escape") cancelAdd();
                               }}
                               spellCheck={false}
                               autoFocus
@@ -459,10 +488,10 @@ export default function SettingsModal() {
                               className="settings-greeting-input"
                               placeholder={t.settings.greetingPlaceholderEN}
                               value={newEN}
-                              onChange={e => setNewEN(e.target.value)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') handleAddGreeting(key);
-                                if (e.key === 'Escape') cancelAdd();
+                              onChange={(e) => setNewEN(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleAddGreeting(key);
+                                if (e.key === "Escape") cancelAdd();
                               }}
                               spellCheck={false}
                             />
@@ -474,10 +503,7 @@ export default function SettingsModal() {
                             </button>
                           </div>
                         ) : (
-                          <button
-                            className="settings-tag-add-btn"
-                            onClick={() => startAdding(key)}
-                          >
+                          <button className="settings-tag-add-btn" onClick={() => startAdding(key)}>
                             {t.settings.greetingAdd}
                           </button>
                         )}
@@ -490,29 +516,27 @@ export default function SettingsModal() {
           )}
 
           {/* ── Tab: Dữ liệu ── */}
-          {activeTab === 'data' && (
+          {activeTab === "data" && (
             <div className="settings-tab-panel">
               <div className="settings-section">
-                <button
-                  className="settings-row settings-tags-row"
-                  onClick={() => setTagSectionOpen((o) => !o)}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button className="settings-row settings-tags-row" onClick={() => setTagSectionOpen((o) => !o)}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <span className="settings-row-label">{t.tags.sectionTitle}</span>
-                    {tags.length > 0 && (
-                      <span className="settings-tag-count">{tags.length}</span>
-                    )}
+                    {tags.length > 0 && <span className="settings-tag-count">{tags.length}</span>}
                   </div>
                   <IconChevronRight
                     size={14}
-                    style={{ color: 'var(--text-secondary)', transition: 'transform 0.2s', transform: tagSectionOpen ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }}
+                    style={{
+                      color: "var(--text-secondary)",
+                      transition: "transform 0.2s",
+                      transform: tagSectionOpen ? "rotate(90deg)" : "rotate(0deg)",
+                      flexShrink: 0,
+                    }}
                   />
                 </button>
-                <div className={`settings-tags-dropdown${tagSectionOpen ? ' open' : ''}`}>
+                <div className={`settings-tags-dropdown${tagSectionOpen ? " open" : ""}`}>
                   <div className="settings-tags-list">
-                    {tags.length === 0 && (
-                      <div className="settings-tags-empty">{t.tags.noTags}</div>
-                    )}
+                    {tags.length === 0 && <div className="settings-tags-empty">{t.tags.noTags}</div>}
                     {tags.map((tag) => (
                       <div key={tag.id} className="settings-tag-chip-row">
                         {renamingTagId === tag.id ? (
@@ -523,28 +547,43 @@ export default function SettingsModal() {
                               onChange={(e) => setRenameInput(e.target.value)}
                               spellCheck={false}
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
+                                if (e.key === "Enter") {
                                   if (renameInput.trim()) updateTag(tag.id, renameInput.trim());
                                   setRenamingTagId(null);
                                 }
-                                if (e.key === 'Escape') setRenamingTagId(null);
+                                if (e.key === "Escape") setRenamingTagId(null);
                               }}
                               autoFocus
                             />
-                            <button className="settings-tag-action-btn" title={t.tags.save}
-                              onClick={() => { if (renameInput.trim()) updateTag(tag.id, renameInput.trim()); setRenamingTagId(null); }}>
+                            <button
+                              className="settings-tag-action-btn"
+                              title={t.tags.save}
+                              onClick={() => {
+                                if (renameInput.trim()) updateTag(tag.id, renameInput.trim());
+                                setRenamingTagId(null);
+                              }}
+                            >
                               <IconCheck size={12} />
                             </button>
                           </div>
                         ) : (
                           <div className="settings-tag-chip">
                             <span className="settings-tag-name">{tag.name}</span>
-                            <button className="settings-tag-action-btn" title={t.tags.renameTag}
-                              onClick={() => { setRenamingTagId(tag.id); setRenameInput(tag.name); }}>
+                            <button
+                              className="settings-tag-action-btn"
+                              title={t.tags.renameTag}
+                              onClick={() => {
+                                setRenamingTagId(tag.id);
+                                setRenameInput(tag.name);
+                              }}
+                            >
                               <IconPencil size={12} />
                             </button>
-                            <button className="settings-tag-action-btn settings-tag-action-delete" title={t.tags.deleteTag}
-                              onClick={() => softDeleteTag(tag.id)}>
+                            <button
+                              className="settings-tag-action-btn settings-tag-action-delete"
+                              title={t.tags.deleteTag}
+                              onClick={() => softDeleteTag(tag.id)}
+                            >
                               <IconTrash size={12} />
                             </button>
                           </div>
@@ -559,21 +598,40 @@ export default function SettingsModal() {
                           onChange={(e) => setNewTagInput(e.target.value)}
                           spellCheck={false}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              if (newTagInput.trim()) { addTag(newTagInput.trim()); setNewTagInput(''); setShowNewTagInput(false); }
+                            if (e.key === "Enter") {
+                              if (newTagInput.trim()) {
+                                addTag(newTagInput.trim());
+                                setNewTagInput("");
+                                setShowNewTagInput(false);
+                              }
                             }
-                            if (e.key === 'Escape') { setShowNewTagInput(false); setNewTagInput(''); }
+                            if (e.key === "Escape") {
+                              setShowNewTagInput(false);
+                              setNewTagInput("");
+                            }
                           }}
                           placeholder={t.tags.addPlaceholder}
                           autoFocus
                         />
-                        <button className="icon-btn"
+                        <button
+                          className="icon-btn"
                           onClick={() => {
-                            if (newTagInput.trim()) { addTag(newTagInput.trim()); setNewTagInput(''); setShowNewTagInput(false); }
-                          }}>
+                            if (newTagInput.trim()) {
+                              addTag(newTagInput.trim());
+                              setNewTagInput("");
+                              setShowNewTagInput(false);
+                            }
+                          }}
+                        >
                           <IconCheck size={14} />
                         </button>
-                        <button className="icon-btn" onClick={() => { setShowNewTagInput(false); setNewTagInput(''); }}>
+                        <button
+                          className="icon-btn"
+                          onClick={() => {
+                            setShowNewTagInput(false);
+                            setNewTagInput("");
+                          }}
+                        >
                           <IconX size={14} />
                         </button>
                       </div>
@@ -591,32 +649,43 @@ export default function SettingsModal() {
               <div className="settings-section">
                 <div className="settings-section-label">{t.settings.backup}</div>
                 <div className="settings-action-group">
-                  <button className="settings-action-btn" onClick={handleExport} disabled={exportStatus === 'loading'}>
+                  <button className="settings-action-btn" onClick={handleExport} disabled={exportStatus === "loading"}>
                     <IconDownload size={14} />
-                    {exportStatus === 'loading' ? t.settings.exporting : t.settings.exportData}
+                    {exportStatus === "loading" ? t.settings.exporting : t.settings.exportData}
                   </button>
-                  <button className="settings-action-btn" onClick={handleImportClick} disabled={importStatus === 'loading'}>
+                  <button
+                    className="settings-action-btn"
+                    onClick={handleImportClick}
+                    disabled={importStatus === "loading"}
+                  >
                     <IconUpload size={14} />
-                    {importStatus === 'loading' ? t.settings.importing : t.settings.importData}
+                    {importStatus === "loading" ? t.settings.importing : t.settings.importData}
                   </button>
                 </div>
                 <p className="settings-backup-hint">{t.settings.backupHint}</p>
-                {exportStatus === 'success' && (
-                  <div className="settings-backup-msg settings-backup-ok" style={{ margin: '0 16px 8px' }}>{t.settings.exportSuccess}</div>
+                {exportStatus === "success" && (
+                  <div className="settings-backup-msg settings-backup-ok" style={{ margin: "0 16px 8px" }}>
+                    {t.settings.exportSuccess}
+                  </div>
                 )}
-                {exportStatus === 'error' && (
-                  <div className="settings-backup-msg settings-backup-err" style={{ margin: '0 16px 8px' }}>{t.settings.exportError}: {exportError}</div>
+                {exportStatus === "error" && (
+                  <div className="settings-backup-msg settings-backup-err" style={{ margin: "0 16px 8px" }}>
+                    {t.settings.exportError}: {exportError}
+                  </div>
                 )}
-                {importStatus === 'success' && (
-                  <div className="settings-backup-msg settings-backup-ok" style={{ margin: '0 16px 8px' }}>{t.settings.importSuccess}</div>
+                {importStatus === "success" && (
+                  <div className="settings-backup-msg settings-backup-ok" style={{ margin: "0 16px 8px" }}>
+                    {t.settings.importSuccess}
+                  </div>
                 )}
-                {importStatus === 'error' && (
-                  <div className="settings-backup-msg settings-backup-err" style={{ margin: '0 16px 8px' }}>{importError}</div>
+                {importStatus === "error" && (
+                  <div className="settings-backup-msg settings-backup-err" style={{ margin: "0 16px 8px" }}>
+                    {importError}
+                  </div>
                 )}
               </div>
             </div>
           )}
-
         </div>
 
         <div className="settings-version">Atomic v{version}</div>
@@ -625,7 +694,7 @@ export default function SettingsModal() {
           ref={fileInputRef}
           type="file"
           accept=".json,application/json"
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
           onChange={handleFileChange}
         />
       </div>
@@ -639,9 +708,7 @@ export default function SettingsModal() {
       {pendingDeleteGreeting && (
         <div className="delete-toast" role="status" onClick={(e) => e.stopPropagation()}>
           <span className="delete-toast-msg">
-            {t.toast.deleted(
-              pendingDeleteGreeting.item.vi || pendingDeleteGreeting.item.en || '—'
-            )}
+            {t.toast.deleted(pendingDeleteGreeting.item.vi || pendingDeleteGreeting.item.en || "—")}
           </span>
           <button className="delete-toast-undo" onClick={handleUndoDeleteGreeting}>
             {t.toast.undo}
