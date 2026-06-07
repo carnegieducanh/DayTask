@@ -643,7 +643,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   updateTask: async (id, updates) => {
-    const task = get().tasks.find((t) => t.id === id);
+    const task = get().tasks.find((t) => t.id === id) ?? get().calendarTasks.find((t) => t.id === id);
     if (!task) return;
 
     const isSeriesTask = task.repeat_daily === 1 || task.series_id != null;
@@ -744,24 +744,34 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   softDeleteTask: (id) => {
-    const task = get().tasks.find((t) => t.id === id);
+    const task = get().tasks.find((t) => t.id === id) ?? get().calendarTasks.find((t) => t.id === id);
     if (!task) return;
     // If there's already a pending delete, confirm it immediately before queuing new one
     const prev = get().pendingDeleteTask;
     if (prev) {
       get().confirmDeleteTask(prev);
     }
-    set({ tasks: get().tasks.filter((t) => t.id !== id), pendingDeleteTask: task });
+    set({
+      tasks: get().tasks.filter((t) => t.id !== id),
+      calendarTasks: get().calendarTasks.filter((t) => t.id !== id),
+      pendingDeleteTask: task,
+    });
   },
 
   undoDeleteTask: () => {
     const task = get().pendingDeleteTask;
     if (!task) return;
     // Re-insert in original position (by created_at order)
-    const tasks = [...get().tasks, task].sort((a, b) =>
+    const calendarTasks = [...get().calendarTasks, task].sort((a, b) =>
       a.created_at && b.created_at ? a.created_at.localeCompare(b.created_at) : 0
     );
-    set({ tasks, pendingDeleteTask: null });
+    let tasks = get().tasks;
+    if (task.date === get().selectedDate) {
+      tasks = [...tasks, task].sort((a, b) =>
+        a.created_at && b.created_at ? a.created_at.localeCompare(b.created_at) : 0
+      );
+    }
+    set({ tasks, calendarTasks, pendingDeleteTask: null });
   },
 
   confirmDeleteTask: async (task) => {
