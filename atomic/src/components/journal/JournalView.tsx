@@ -137,13 +137,14 @@ function AutoTextarea({
 // â"€â"€â"€ WriteCard â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function WriteCard({
-  items, setItems, cfg, dateLabel, onSave, saving, todayEntry, isDirty, isToday, placeholder,
+  items, setItems, cfg, dateLabel, onSave, onClear, saving, todayEntry, isDirty, isToday, placeholder,
 }: {
   items: string[];
   setItems: (items: string[]) => void;
   cfg: TabCfg;
   dateLabel: string;
   onSave: () => void;
+  onClear: () => void;
   saving: boolean;
   todayEntry: JournalEntry | null;
   isDirty: boolean;
@@ -159,8 +160,9 @@ function WriteCard({
     const next = [...items]; next[idx] = val; setItems(next);
   }
   function removeItem(idx: number) {
-    if (items.length <= 1) { setItems(['']); return; }
-    setItems(items.filter((_, i) => i !== idx));
+    const next = items.length <= 1 ? [''] : items.filter((_, i) => i !== idx);
+    setItems(next);
+    if (todayEntry && !next.some(i => i.trim())) onClear();
   }
   function addItem() { setItems([...items, '']); }
 
@@ -205,7 +207,7 @@ function WriteCard({
         <button
           className="jm-wc-save"
           style={{ background: cfg.saveBg, color: cfg.saveColor }}
-          disabled={saving || isSaved || !hasContent}
+          disabled={saving || isSaved || (!hasContent && !(!!todayEntry && isDirty))}
           onClick={onSave}
         >
           {saving
@@ -224,13 +226,14 @@ function WriteCard({
 // â"€â"€â"€ LessonWriteCard â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function LessonWriteCard({
-  items, setItems, cfg, dateLabel, onSave, saving, todayEntry, isDirty, isToday,
+  items, setItems, cfg, dateLabel, onSave, onClear, saving, todayEntry, isDirty, isToday,
 }: {
   items: string[];
   setItems: (items: string[]) => void;
   cfg: TabCfg;
   dateLabel: string;
   onSave: () => void;
+  onClear: () => void;
   saving: boolean;
   todayEntry: JournalEntry | null;
   isDirty: boolean;
@@ -251,7 +254,9 @@ function LessonWriteCard({
   function removeGroup(groupIdx: number) {
     const next = [...items];
     next.splice(groupIdx * 3, 3);
-    setItems(next.length ? next : ['', '', '']);
+    const result = next.length ? next : ['', '', ''];
+    setItems(result);
+    if (todayEntry && !result.some(i => i.trim())) onClear();
   }
 
   return (
@@ -310,7 +315,7 @@ function LessonWriteCard({
         <button
           className="jm-wc-save"
           style={{ background: cfg.saveBg, color: cfg.saveColor }}
-          disabled={saving || isSaved || !hasContent}
+          disabled={saving || isSaved || (!hasContent && !(!!todayEntry && isDirty))}
           onClick={onSave}
         >
           {saving
@@ -533,11 +538,16 @@ export default function JournalView() {
     wasSelected: boolean;
     prevItems: string[];
   } | null>(null);
+  const [pendingClear, setPendingClear] = useState<{
+    entry: JournalEntry;
+    prevItems: string[];
+  } | null>(null);
 
   const seededRef = useRef(false);
   const mainRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useSmoothScroll(mainRef);
   useSmoothScroll(sidebarRef);
 
@@ -574,7 +584,10 @@ export default function JournalView() {
   }, [calYear, calMonth]);
 
   useEffect(() => {
-    return () => { if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current); };
+    return () => {
+      if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -621,6 +634,34 @@ export default function JournalView() {
     setContentKey(k => k + 1);
   }
 
+  async function handleClear() {
+    if (!selectedEntry) return;
+    if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    if (pendingClear) setPendingClear(null);
+    const prevItems = [...items];
+    const clearedEntry = selectedEntry;
+    await dbDeleteJournal(clearedEntry.id);
+    setSelectedEntry(null);
+    setShowPrompt(true);
+    await refreshSidebar();
+    setPendingClear({ entry: clearedEntry, prevItems });
+    clearTimerRef.current = setTimeout(() => {
+      setPendingClear(null);
+    }, 4000);
+  }
+
+  async function undoClear() {
+    if (clearTimerRef.current) clearTimeout(clearTimerRef.current);
+    if (!pendingClear) return;
+    const { entry, prevItems } = pendingClear;
+    const restored = await dbSaveJournal(entry.date, entry.type as JournalType, prevItems);
+    setSelectedEntry(restored);
+    setItems(prevItems);
+    setShowPrompt(false);
+    setPendingClear(null);
+    await refreshSidebar();
+  }
+
   async function handleSave() {
     let toSave: string[];
     if (activeType === 'lesson') {
@@ -629,7 +670,15 @@ export default function JournalView() {
     } else {
       toSave = items.filter(i => i.trim());
     }
-    if (!toSave.length) return;
+    if (!toSave.length) {
+      if (selectedEntry) {
+        await dbDeleteJournal(selectedEntry.id);
+        setSelectedEntry(null);
+        setShowPrompt(true);
+        await refreshSidebar();
+      }
+      return;
+    }
     setSaving(true);
     const entry = await dbSaveJournal(selectedDate, activeType, toSave);
     setSelectedEntry(entry);
@@ -866,6 +915,7 @@ export default function JournalView() {
             cfg={cfg}
             dateLabel={dateLabel}
             onSave={handleSave}
+            onClear={handleClear}
             saving={saving}
             todayEntry={selectedEntry}
             isDirty={isDirty}
@@ -878,6 +928,7 @@ export default function JournalView() {
             cfg={cfg}
             dateLabel={dateLabel}
             onSave={handleSave}
+            onClear={handleClear}
             saving={saving}
             todayEntry={selectedEntry}
             isDirty={isDirty}
@@ -939,6 +990,14 @@ export default function JournalView() {
             {jt.deletedEntry(fmtDate(pendingDelete.entry.date, jt.dowFull, jt.formatDate))}
           </span>
           <button className="delete-toast-undo" onClick={undoDeleteEntry}>
+            {jt.undo}
+          </button>
+        </div>
+      )}
+      {pendingClear && (
+        <div className="delete-toast" role="status">
+          <span className="delete-toast-msg">{jt.clearedEntry}</span>
+          <button className="delete-toast-undo" onClick={undoClear}>
             {jt.undo}
           </button>
         </div>

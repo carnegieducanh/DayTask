@@ -292,6 +292,7 @@ export const en: typeof vi = {
     thisMonth: 'This month',
     days: 'days',
     deletedEntry: (date: string) => `Deleted · ${date}`,
+    clearedEntry: "Cleared today's entry",
     undo: 'Undo',
   },
   reminder: {

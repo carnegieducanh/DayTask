@@ -9,6 +9,40 @@ const CONTEXT_W: f64 = 170.0;
 const CONTEXT_H: f64 = 90.0;
 
 pub fn setup_tray(app: &App) -> tauri::Result<()> {
+    // Pre-warm both tray windows hidden at startup so the webview and data are
+    // ready before the user first clicks the tray icon, preventing visible flicker.
+    let _ = tauri::WebviewWindowBuilder::new(
+        app,
+        "tray-popup",
+        tauri::WebviewUrl::App("index.html".into()),
+    )
+    .title("Atomic")
+    .inner_size(POPUP_W, POPUP_H)
+    .position(-2000.0, -2000.0)
+    .decorations(false)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .resizable(false)
+    .shadow(true)
+    .visible(false)
+    .build();
+
+    let _ = tauri::WebviewWindowBuilder::new(
+        app,
+        "tray-context",
+        tauri::WebviewUrl::App("index.html".into()),
+    )
+    .title("Atomic")
+    .inner_size(CONTEXT_W, CONTEXT_H)
+    .position(-2000.0, -2000.0)
+    .decorations(false)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .resizable(false)
+    .shadow(true)
+    .visible(false)
+    .build();
+
     TrayIconBuilder::new()
         .icon(app.default_window_icon().unwrap().clone())
         .show_menu_on_left_click(false)
@@ -38,7 +72,6 @@ pub fn setup_tray(app: &App) -> tauri::Result<()> {
                         let x = (cx - POPUP_W / 2.0).max(4.0);
                         let y = (cy - POPUP_H - 8.0).max(4.0);
 
-                        // Hide context menu if open
                         if let Some(ctx) = app.get_webview_window("tray-context") {
                             let _ = ctx.hide();
                         }
@@ -51,29 +84,12 @@ pub fn setup_tray(app: &App) -> tauri::Result<()> {
                                 let _ = popup.show();
                                 let _ = popup.set_focus();
                             }
-                        } else if let Ok(popup) = tauri::WebviewWindowBuilder::new(
-                            app,
-                            "tray-popup",
-                            tauri::WebviewUrl::App("index.html".into()),
-                        )
-                        .title("Atomic")
-                        .inner_size(POPUP_W, POPUP_H)
-                        .position(x, y)
-                        .decorations(false)
-                        .always_on_top(true)
-                        .skip_taskbar(true)
-                        .resizable(false)
-                        .shadow(true)
-                        .build()
-                        {
-                            let _ = popup.set_focus();
                         }
                     }
                     MouseButton::Right => {
                         let x = (cx - CONTEXT_W / 2.0).max(4.0);
                         let y = (cy - CONTEXT_H - 8.0).max(4.0);
 
-                        // Hide left-click popup if open
                         if let Some(popup) = app.get_webview_window("tray-popup") {
                             let _ = popup.hide();
                         }
@@ -86,22 +102,6 @@ pub fn setup_tray(app: &App) -> tauri::Result<()> {
                                 let _ = ctx.show();
                                 let _ = ctx.set_focus();
                             }
-                        } else if let Ok(ctx) = tauri::WebviewWindowBuilder::new(
-                            app,
-                            "tray-context",
-                            tauri::WebviewUrl::App("index.html".into()),
-                        )
-                        .title("Atomic")
-                        .inner_size(CONTEXT_W, CONTEXT_H)
-                        .position(x, y)
-                        .decorations(false)
-                        .always_on_top(true)
-                        .skip_taskbar(true)
-                        .resizable(false)
-                        .shadow(true)
-                        .build()
-                        {
-                            let _ = ctx.set_focus();
                         }
                     }
                     _ => {}

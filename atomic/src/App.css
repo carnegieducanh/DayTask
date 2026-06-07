@@ -5575,3 +5575,8 @@ select {
   color: var(--text-primary);
   line-height: 1.55;
 }
+
+.jm-ec-lesson-field .jm-wc-ta {
+  width: 100%;
+  box-sizing: border-box;
+}

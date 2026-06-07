@@ -285,6 +285,7 @@ export const vi = {
     thisMonth: "Tháng này",
     days: "ngày",
     deletedEntry: (date: string) => `Đã xóa · ${date}`,
+    clearedEntry: "Đã xóa nội dung hôm nay",
     undo: "Hoàn tác",
   },
   reminder: {

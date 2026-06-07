@@ -299,6 +299,27 @@ useEffect(() => {
 }, []);
 ```
 
+## Known Patterns & Fixes
+
+### Tray Popup Flickering — Pre-warm Window
+
+**Hiện tượng:** Click system tray icon lần đầu có hiệu ứng nháy/giật vì window được tạo mới → webview load → React mount → data fetch → render, tất cả diễn ra khi window đã visible.
+
+**Fix:** Tạo cả 2 window ẩn (`visible(false)`) ngay trong `setup_tray()` lúc app khởi động. Click handler chỉ cần `set_position()` + `show()`.
+
+```rust
+// Trong setup_tray(), TRƯỚC TrayIconBuilder:
+let _ = tauri::WebviewWindowBuilder::new(app, "tray-popup", ...)
+    .position(-2000.0, -2000.0)
+    .visible(false)   // ← key: tạo ẩn
+    .build();
+// Click handler: chỉ cần show(), không tạo window mới
+```
+
+**Áp dụng cho:** Mọi Tauri app có tray popup cần load data.
+
+---
+
 ## Lưu ý quan trọng
 
 - **Icons:** Dùng `@tabler/icons-react` — KHÔNG dùng webfont hay emoji
