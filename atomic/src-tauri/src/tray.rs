@@ -4,7 +4,7 @@ use tauri::{
 };
 
 const POPUP_W: f64 = 300.0;
-const POPUP_H: f64 = 232.0;
+const POPUP_H: f64 = 220.0;
 const CONTEXT_W: f64 = 170.0;
 const CONTEXT_H: f64 = 90.0;
 
