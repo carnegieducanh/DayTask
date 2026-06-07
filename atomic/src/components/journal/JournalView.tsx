@@ -6,7 +6,7 @@ import {
 } from '@tabler/icons-react';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import { useT } from '../../i18n';
-import type { JournalEntry, JournalStats } from '../../types';
+import type { JournalEntry, JournalStats, JournalType } from '../../types';
 import {
   dbGetJournal, dbSaveJournal, dbDeleteJournal,
   dbGetJournalHistory, dbGetJournalStreak,
