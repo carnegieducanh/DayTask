@@ -3615,12 +3615,42 @@ select {
   margin-bottom: 14px;
   flex-wrap: wrap;
 }
+.cal-toolbar-views {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cal-toolbar-nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.cal-nav-arrow {
+  font-size: 2rem;
+  font-weight: 400;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none !important;
+  border-radius: 50% !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  vertical-align: middle;
+}
+.cal-nav-arrow:hover {
+  background: var(--border-1) !important;
+}
+.cal-toolbar-nav .cal-nav-arrow + .cal-nav-arrow {
+  margin-left: -15px;
+}
 .cal-toolbar-label {
   font-size: 1.07rem;
   font-weight: 600;
   color: var(--text-primary);
-  flex: 1;
-  text-align: center;
+  white-space: nowrap;
 }
 .cal-toolbar-btn {
   background: transparent;
@@ -3629,7 +3659,7 @@ select {
   border-radius: var(--radius-md);
   padding: 5px 11px;
   font-family: var(--font);
-  font-size: 0.93rem;
+  /* font-size: 0.93rem; */
   cursor: pointer;
   transition:
     background 0.1s,

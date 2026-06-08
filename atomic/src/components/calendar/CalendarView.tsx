@@ -66,33 +66,37 @@ function CalToolbar({
 
   return (
     <div className="cal-toolbar">
-      <button
-        className={`cal-toolbar-btn cal-view-btn${view === "day" ? " active" : ""}`}
-        onClick={() => setView("day")}
-      >
-        {t.calendar.day}
-      </button>
-      <button
-        className={`cal-toolbar-btn cal-view-btn${view === "week" ? " active" : ""}`}
-        onClick={() => setView("week")}
-      >
-        {t.calendar.week}
-      </button>
-      <button
-        className={`cal-toolbar-btn cal-view-btn${view === "month" ? " active" : ""}`}
-        onClick={() => setView("month")}
-      >
-        {t.calendar.month}
-      </button>
-      <span className="cal-toolbar-label">{label}</span>
-      <button
-        className="cal-toolbar-btn"
-        onClick={() => setCurrentDate(new Date())}
-      >
-        {t.calendar.today}
-      </button>
-      <button className="cal-toolbar-btn" onClick={handlePrev}>‹</button>
-      <button className="cal-toolbar-btn" onClick={handleNext}>›</button>
+      <div className="cal-toolbar-views">
+        <button
+          className={`cal-toolbar-btn cal-view-btn${view === "day" ? " active" : ""}`}
+          onClick={() => setView("day")}
+        >
+          {t.calendar.day}
+        </button>
+        <button
+          className={`cal-toolbar-btn cal-view-btn${view === "week" ? " active" : ""}`}
+          onClick={() => setView("week")}
+        >
+          {t.calendar.week}
+        </button>
+        <button
+          className={`cal-toolbar-btn cal-view-btn${view === "month" ? " active" : ""}`}
+          onClick={() => setView("month")}
+        >
+          {t.calendar.month}
+        </button>
+      </div>
+      <div className="cal-toolbar-nav">
+        <button className="cal-toolbar-btn cal-nav-arrow" onClick={handlePrev}>‹</button>
+        <button className="cal-toolbar-btn cal-nav-arrow" onClick={handleNext}>›</button>
+        <span className="cal-toolbar-label">{label}</span>
+        <button
+          className="cal-toolbar-btn cal-today-btn"
+          onClick={() => setCurrentDate(new Date())}
+        >
+          {t.calendar.today}
+        </button>
+      </div>
     </div>
   );
 }
