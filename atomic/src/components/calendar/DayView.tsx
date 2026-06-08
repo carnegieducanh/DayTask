@@ -143,6 +143,7 @@ export default function DayView({
   const [dragResize, setDragResize] = useState<DragResize | null>(null);
   const [dragDeckTask, setDragDeckTask] = useState<DragDeckTask | null>(null);
   const [contextMenu, setContextMenu] = useState<{ taskId: number; task: Task; x: number; y: number } | null>(null);
+  const [deckExpanded, setDeckExpanded] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(gridRef);
 
@@ -164,12 +165,13 @@ export default function DayView({
 
   const layoutItems = computeLayout(scheduledTasks, taskTimeEntries, dateStr);
 
-  const visibleDeckTasks = unscheduledTasks.slice(-MAX_DECK);
-  const hiddenCount = Math.max(0, unscheduledTasks.length - MAX_DECK);
+  const visibleDeckTasks = deckExpanded ? unscheduledTasks : unscheduledTasks.slice(-MAX_DECK);
+  const hiddenCount = deckExpanded ? 0 : Math.max(0, unscheduledTasks.length - MAX_DECK);
   const deckHeight =
     visibleDeckTasks.length > 0
       ? CARD_HEIGHT + (visibleDeckTasks.length - 1) * DECK_OFFSET
       : 0;
+  const hasBadge = hiddenCount > 0 || (deckExpanded && unscheduledTasks.length > MAX_DECK);
 
   // Update current-time indicator every minute
   useEffect(() => {
@@ -403,6 +405,9 @@ export default function DayView({
     };
   }, [dragCreate, dragMove, dragResize, dragDeckTask, handleWindowMouseMove, handleWindowMouseUp]);
 
+  const tzOffset = -new Date().getTimezoneOffset() / 60;
+  const tzLabel = `GMT${tzOffset >= 0 ? "+" : ""}${tzOffset}`;
+
   const HOURS = Array.from({ length: 24 }, (_, i) => i);
   const ghostTop = dragCreate ? minToPx(Math.min(dragCreate.startMin, dragCreate.endMin)) : 0;
   const ghostHeight = dragCreate
@@ -413,8 +418,10 @@ export default function DayView({
     <div className="day-view">
       {/* Unscheduled task deck — fixed row above the scrollable grid */}
       {visibleDeckTasks.length > 0 && (
-        <div className="day-deck-row" style={{ height: deckHeight + (hiddenCount > 0 ? 22 : 0) }}>
-          <div className="day-deck-gutter-spacer" />
+        <div className="day-deck-row" style={{ height: deckHeight + (hasBadge ? 22 : 0) }}>
+          <div className="day-deck-gutter-spacer">
+            <span className="day-tz-label">{tzLabel}</span>
+          </div>
           <div className="day-deck-events-area" style={{ height: deckHeight }}>
             {visibleDeckTasks.map((task, i) => {
               const color = task.color ?? categoryColors[task.category];
@@ -436,8 +443,13 @@ export default function DayView({
               );
             })}
             {hiddenCount > 0 && (
-              <div className="day-deck-badge" style={{ top: deckHeight + 4 }}>
+              <div className="day-deck-badge" style={{ top: deckHeight + 4 }} onClick={() => setDeckExpanded(true)}>
                 +{hiddenCount}
+              </div>
+            )}
+            {deckExpanded && unscheduledTasks.length > MAX_DECK && (
+              <div className="day-deck-badge" style={{ top: deckHeight + 4 }} onClick={() => setDeckExpanded(false)}>
+                −
               </div>
             )}
           </div>
