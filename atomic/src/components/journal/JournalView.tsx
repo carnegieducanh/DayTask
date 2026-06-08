@@ -293,6 +293,7 @@ function LessonWriteCard({
                 <div className="jm-lesson-field-header">
                   <span className="jm-lesson-field-num" style={{ color: cfg.accent }}>{fieldIdx + 1}.</span>
                   <span className="jm-lesson-field-label">{field.label}</span>
+                  <IconChevronRight size={10} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
                   <span className="jm-lesson-field-prompt">{field.prompt}</span>
                 </div>
                 <AutoTextarea

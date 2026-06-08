@@ -5579,7 +5579,7 @@ select {
 
 .jm-lesson-field-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 5px;
   margin-bottom: 4px;
 }
