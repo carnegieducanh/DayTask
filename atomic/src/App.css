@@ -3627,10 +3627,8 @@ select {
   gap: 15px;
 }
 .cal-nav-arrow {
-  font-size: 2rem;
-  font-weight: 400;
-  width: 2rem;
-  height: 2rem;
+  width: 2.6rem;
+  height: 2.6rem;
   padding: 0;
   border: none !important;
   border-radius: 50% !important;
@@ -3651,6 +3649,8 @@ select {
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
+  min-width: 13rem;
+  text-align: center;
 }
 .cal-toolbar-btn {
   background: transparent;
@@ -3659,7 +3659,6 @@ select {
   border-radius: var(--radius-md);
   padding: 5px 11px;
   font-family: var(--font);
-  /* font-size: 0.93rem; */
   cursor: pointer;
   transition:
     background 0.1s,

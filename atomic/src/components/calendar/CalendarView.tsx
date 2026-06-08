@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import {
   format,
   startOfMonth,
@@ -87,8 +88,8 @@ function CalToolbar({
         </button>
       </div>
       <div className="cal-toolbar-nav">
-        <button className="cal-toolbar-btn cal-nav-arrow" onClick={handlePrev}>‹</button>
-        <button className="cal-toolbar-btn cal-nav-arrow" onClick={handleNext}>›</button>
+        <button className="cal-toolbar-btn cal-nav-arrow" onClick={handlePrev}><IconChevronLeft size={32} stroke={3} /></button>
+        <button className="cal-toolbar-btn cal-nav-arrow" onClick={handleNext}><IconChevronRight size={32} stroke={3} /></button>
         <span className="cal-toolbar-label">{label}</span>
         <button
           className="cal-toolbar-btn cal-today-btn"
