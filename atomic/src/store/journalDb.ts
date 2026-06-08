@@ -227,7 +227,7 @@ export async function seedJournalIfEmpty(): Promise<void> {
   for (let i = 1; i <= 14; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     await db.execute(
       'INSERT INTO journal_entries (date, type, items) VALUES ($1, $2, $3)',
       [dateStr, 'gratitude', JSON.stringify(GRATITUDE_POOL[i - 1])]

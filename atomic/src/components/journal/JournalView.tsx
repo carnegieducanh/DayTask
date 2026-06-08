@@ -60,7 +60,8 @@ const TABS: Record<JTab, TabCfg> = {
 // â"€â"€â"€ Helpers â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
 function getToday() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function fmtDate(
@@ -548,6 +549,9 @@ export default function JournalView() {
   const sidebarRef = useRef<HTMLElement>(null);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastKnownTodayRef = useRef(todayStr);
+  const activeTypeRef = useRef(activeType);
+  const loadAllRef = useRef<((type: JTab, date: string) => Promise<void>) | null>(null);
   useSmoothScroll(mainRef);
   useSmoothScroll(sidebarRef);
 
@@ -582,6 +586,25 @@ export default function JournalView() {
     setStats(st);
     setDatesWithEntries(new Set(dates));
   }, [calYear, calMonth]);
+
+  useEffect(() => { activeTypeRef.current = activeType; }, [activeType]);
+  useEffect(() => { loadAllRef.current = loadAll; }, [loadAll]);
+
+  // Reset to today when window regains visibility after being hidden overnight (e.g., tray app)
+  useEffect(() => {
+    function onVisible() {
+      if (document.hidden) return;
+      const today = getToday();
+      if (today === lastKnownTodayRef.current) return;
+      lastKnownTodayRef.current = today;
+      setSelectedDate(today);
+      setEditingId(null);
+      const la = loadAllRef.current;
+      if (la) la(activeTypeRef.current, today).then(() => setContentKey(k => k + 1));
+    }
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
 
   useEffect(() => {
     return () => {
