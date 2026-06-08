@@ -21,6 +21,7 @@ import WeekView from "./WeekView";
 import MonthView from "./MonthView";
 import DayView from "./DayView";
 import CalendarFilterSidebar from "./CalendarFilterSidebar";
+import MiniCalendar from "../today/MiniCalendar";
 
 type CalViewType = "day" | "week" | "month";
 
@@ -142,6 +143,16 @@ export default function CalendarView() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Sync selectedDate → currentDate when MiniCalendar is clicked in Day view
+  useEffect(() => {
+    if (view !== "day") return;
+    const d = new Date(selectedDate + "T00:00:00");
+    if (format(d, "yyyy-MM-dd") !== format(currentDate, "yyyy-MM-dd")) {
+      setCurrentDate(d);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate]);
+
   // When switching to Day view, sync currentDate → selectedDate so tasks are loaded
   function handleSetView(v: CalViewType) {
     setView(v);
@@ -219,7 +230,11 @@ export default function CalendarView() {
         setCurrentDate={handleSetCurrentDate}
       />
       <div className="cal-body">
-        {view !== "day" && (
+        {view === "day" ? (
+          <div className="cal-day-sidebar">
+            <MiniCalendar />
+          </div>
+        ) : (
           <CalendarFilterSidebar
             tasks={calendarTasks}
             timeEntries={calendarTimeEntries}

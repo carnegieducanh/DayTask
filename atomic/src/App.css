@@ -4208,6 +4208,18 @@ select {
   min-height: 0;
 }
 
+/* ── Calendar Day Sidebar (MiniCalendar) ── */
+.cal-day-sidebar {
+  width: 168px;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border: 0.5px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 10px 8px 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 /* ── Calendar Filter Sidebar ── */
 .cal-filter-sidebar {
   width: 168px;
