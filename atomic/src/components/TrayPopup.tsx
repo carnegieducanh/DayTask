@@ -118,9 +118,13 @@ export default function TrayPopup() {
               </span>
             </div>
           </>
-        ) : (
+        ) : done === total && total > 0 ? (
           <span className="tp-next-done">
             {language === 'vi' ? 'Tất cả đã xong!' : 'All done!'}
+          </span>
+        ) : (
+          <span className="tp-next-fresh">
+            {language === 'vi' ? 'Ngày mới, khởi đầu mới!' : 'New day, fresh start!'}
           </span>
         )}
       </div>

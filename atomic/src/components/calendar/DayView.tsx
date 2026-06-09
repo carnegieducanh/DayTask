@@ -199,6 +199,8 @@ export default function DayView({
   const hiddenCount = deckExpanded ? 0 : Math.max(0, unscheduledTasks.length - MAX_DECK);
   const deckHeight = visibleDeckTasks.length > 0 ? CARD_HEIGHT + (visibleDeckTasks.length - 1) * DECK_OFFSET : 0;
   const hasBadge = hiddenCount > 0 || (deckExpanded && unscheduledTasks.length > MAX_DECK);
+  const pendingCount = unscheduledTasks.length;
+  const hasBottomRow = hasBadge || pendingCount > 0;
 
   // Update current-time indicator every minute
   useEffect(() => {
@@ -444,8 +446,8 @@ export default function DayView({
   return (
     <div className="day-view">
       {/* Unscheduled task deck — fixed row above the scrollable grid */}
-      {visibleDeckTasks.length > 0 && (
-        <div className="day-deck-row" style={{ height: deckHeight + (hasBadge ? 30 : 0) }}>
+      {(visibleDeckTasks.length > 0 || pendingCount > 0) && (
+        <div className="day-deck-row" style={{ height: deckHeight + (hasBottomRow ? 30 : 0) }}>
           <div className="day-deck-gutter-spacer">
             <span className="day-tz-label">{tzLabel}</span>
           </div>
@@ -469,6 +471,12 @@ export default function DayView({
                 </div>
               );
             })}
+            {pendingCount > 0 && (
+              <div className="day-pending-count" style={{ top: deckHeight + 3 }}>
+                <span className="day-pending-dot" />
+                {t.calendar.pendingTasks(pendingCount)}
+              </div>
+            )}
             {hiddenCount > 0 && (
               <div className="day-deck-badge" style={{ top: deckHeight + 4 }} onClick={() => setDeckExpanded(true)}>
                 +{hiddenCount}

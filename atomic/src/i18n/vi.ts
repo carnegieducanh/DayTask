@@ -219,6 +219,7 @@ export const vi = {
     filterNoTime: "",
     noTitle: "(Chưa đặt tên)",
     removeFromCalendar: "Xóa khỏi lịch",
+    pendingTasks: (n: number) => `${n} task chưa hoàn thành`,
   },
   update: {
     title: "Có bản cập nhật mới",
