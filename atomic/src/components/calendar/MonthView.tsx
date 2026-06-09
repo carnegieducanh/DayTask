@@ -141,6 +141,9 @@ function MonthDayCell({
   timeEntries,
   onTaskClick,
   language,
+  isPopoverOpen,
+  onPopoverOpen,
+  onPopoverClose,
 }: {
   date: Date;
   currentMonth: Date;
@@ -149,12 +152,14 @@ function MonthDayCell({
   timeEntries: TaskTimeEntry[];
   onTaskClick: (task: Task) => void;
   language: string;
+  isPopoverOpen: boolean;
+  onPopoverOpen: (dateStr: string) => void;
+  onPopoverClose: () => void;
 }) {
   const { softDeleteTask, updateTaskColor } = useAppStore();
   const t = useT();
 
   const [maxVisible, setMaxVisible] = useState(99);
-  const [popoverOpen, setPopoverOpen] = useState(false);
   const [popoverPos, setPopoverPos] = useState<PopoverPos>({ top: 0, left: 0 });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; task: Task } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -215,27 +220,12 @@ function MonthDayCell({
     setMaxVisible(computeMaxVisible(el.clientHeight, dayTasks.length));
   }, [dayTasks.length]);
 
-  // Close popover on outside click or Escape
-  useEffect(() => {
-    if (!popoverOpen) return;
-    const close = (e: MouseEvent) => {
-      if (!(e.target as Element).closest('.cal-day-popover')) {
-        setPopoverOpen(false);
-      }
-    };
-    const closeOnEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setPopoverOpen(false);
-    };
-    document.addEventListener('click', close);
-    document.addEventListener('keydown', closeOnEsc);
-    return () => {
-      document.removeEventListener('click', close);
-      document.removeEventListener('keydown', closeOnEsc);
-    };
-  }, [popoverOpen]);
-
   const openPopover = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isPopoverOpen) {
+      onPopoverClose();
+      return;
+    }
     const cell = cellRef.current;
     if (!cell) return;
     const rect = cell.getBoundingClientRect();
@@ -247,7 +237,7 @@ function MonthDayCell({
     if (left + popW > window.innerWidth - 16) left = window.innerWidth - popW - 16;
     if (left < 8) left = 8;
     setPopoverPos({ top, left });
-    setPopoverOpen(true);
+    onPopoverOpen(dateStr);
   };
 
   const visibleTasks = dayTasks.slice(0, maxVisible);
@@ -295,7 +285,7 @@ function MonthDayCell({
           <span className="cal-month-stat-total-val">{formatMins(total)}</span>
         </div>
       )}
-      {popoverOpen && (
+      {isPopoverOpen && (
         <DayPopover
           date={date}
           tasks={dayTasks}
@@ -304,7 +294,7 @@ function MonthDayCell({
           pos={popoverPos}
           onTaskClick={onTaskClick}
           onTaskContextMenu={handleTaskContextMenu}
-          onClose={() => setPopoverOpen(false)}
+          onClose={onPopoverClose}
           language={language}
         />
       )}
@@ -358,6 +348,26 @@ export default function MonthView({
   const gridRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(gridRef);
 
+  const [openDateStr, setOpenDateStr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!openDateStr) return;
+    const close = (e: MouseEvent) => {
+      if (!(e.target as Element).closest('.cal-day-popover')) {
+        setOpenDateStr(null);
+      }
+    };
+    const closeOnEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenDateStr(null);
+    };
+    document.addEventListener('click', close);
+    document.addEventListener('keydown', closeOnEsc);
+    return () => {
+      document.removeEventListener('click', close);
+      document.removeEventListener('keydown', closeOnEsc);
+    };
+  }, [openDateStr]);
+
   return (
     <div className="cal-month-grid" ref={gridRef}>
       <div className="cal-month-dow-row">
@@ -369,18 +379,24 @@ export default function MonthView({
       </div>
       {weeks.map((week, wi) => (
         <div key={wi} className="cal-month-week-row">
-          {week.map((date, di) => (
-            <MonthDayCell
-              key={di}
-              date={date}
-              currentMonth={currentDate}
-              tasks={tasks}
-              categoryColors={categoryColors}
-              timeEntries={timeEntries}
-              onTaskClick={onTaskClick}
-              language={language}
-            />
-          ))}
+          {week.map((date, di) => {
+            const ds = format(date, 'yyyy-MM-dd');
+            return (
+              <MonthDayCell
+                key={di}
+                date={date}
+                currentMonth={currentDate}
+                tasks={tasks}
+                categoryColors={categoryColors}
+                timeEntries={timeEntries}
+                onTaskClick={onTaskClick}
+                language={language}
+                isPopoverOpen={openDateStr === ds}
+                onPopoverOpen={(dateStr) => setOpenDateStr(dateStr)}
+                onPopoverClose={() => setOpenDateStr(null)}
+              />
+            );
+          })}
         </div>
       ))}
     </div>

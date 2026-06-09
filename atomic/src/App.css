@@ -4654,7 +4654,8 @@ select {
 .day-deck-events-area {
   flex: 1;
   position: relative;
-  border-left: 1px solid var(--border-1);
+  /* border-left: 1px solid var(--border-1); */
+  margin-top: 3px;
 }
 
 .day-deck-card {

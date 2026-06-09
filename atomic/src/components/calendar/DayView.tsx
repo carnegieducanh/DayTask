@@ -5,10 +5,30 @@ import { IconTag, IconTrash, IconCheck, IconCalendarMinus } from "@tabler/icons-
 import { useAppStore } from "../../store/appStore";
 
 const COLOR_PALETTE: string[] = [
-  '#C05476', '#E3683E', '#D8BE5E', '#489160', '#6E72C3', '#A75ABA',
-  '#D85675', '#DD7835', '#BCC256', '#429A8E', '#828BC2', '#957367',
-  '#DA5234', '#E0963C', '#82AA57', '#4B99D2', '#AE9CCE', '#7C7C7C',
-  '#D38179', '#E4B751', '#54AD7F', '#6489DF', '#A277AF', '#A3978B',
+  "#C05476",
+  "#E3683E",
+  "#D8BE5E",
+  "#489160",
+  "#6E72C3",
+  "#A75ABA",
+  "#D85675",
+  "#DD7835",
+  "#BCC256",
+  "#429A8E",
+  "#828BC2",
+  "#957367",
+  "#DA5234",
+  "#E0963C",
+  "#82AA57",
+  "#4B99D2",
+  "#AE9CCE",
+  "#7C7C7C",
+  "#D38179",
+  "#E4B751",
+  "#54AD7F",
+  "#6489DF",
+  "#A277AF",
+  "#A3978B",
 ];
 import { useT } from "../../i18n";
 import AddTaskModal from "../today/AddTaskModal";
@@ -135,7 +155,17 @@ export default function DayView({
   onTaskClick: (task: Task) => void;
 }) {
   const t = useT();
-  const { tasks, taskTimeEntries, saveTimeEntry, deleteTimeEntry, softDeleteTask, updateTaskColor, categoryColors, tags, taskTags } = useAppStore();
+  const {
+    tasks,
+    taskTimeEntries,
+    saveTimeEntry,
+    deleteTimeEntry,
+    softDeleteTask,
+    updateTaskColor,
+    categoryColors,
+    tags,
+    taskTags,
+  } = useAppStore();
   const [creating, setCreating] = useState<{ startTime: string; endTime: string } | null>(null);
   const [pendingCreate, setPendingCreate] = useState<{ startMin: number; endMin: number } | null>(null);
   const [dragCreate, setDragCreate] = useState<DragCreate | null>(null);
@@ -160,17 +190,14 @@ export default function DayView({
   const scheduledTaskIds = new Set(dateEntries.map((e) => e.task_id));
   const scheduledTasks = tasks.filter((t) => scheduledTaskIds.has(t.id));
   const unscheduledTasks = tasks.filter(
-    (t) => !scheduledTaskIds.has(t.id) && t.is_done === 0 && t.id !== dragDeckTask?.taskId
+    (t) => !scheduledTaskIds.has(t.id) && t.is_done === 0 && t.id !== dragDeckTask?.taskId,
   );
 
   const layoutItems = computeLayout(scheduledTasks, taskTimeEntries, dateStr);
 
   const visibleDeckTasks = deckExpanded ? unscheduledTasks : unscheduledTasks.slice(-MAX_DECK);
   const hiddenCount = deckExpanded ? 0 : Math.max(0, unscheduledTasks.length - MAX_DECK);
-  const deckHeight =
-    visibleDeckTasks.length > 0
-      ? CARD_HEIGHT + (visibleDeckTasks.length - 1) * DECK_OFFSET
-      : 0;
+  const deckHeight = visibleDeckTasks.length > 0 ? CARD_HEIGHT + (visibleDeckTasks.length - 1) * DECK_OFFSET : 0;
   const hasBadge = hiddenCount > 0 || (deckExpanded && unscheduledTasks.length > MAX_DECK);
 
   // Update current-time indicator every minute
@@ -192,8 +219,12 @@ export default function DayView({
   // Close context menu on outside click or Escape
   useEffect(() => {
     if (!contextMenu) return;
-    function close() { setContextMenu(null); }
-    function handleKey(e: KeyboardEvent) { if (e.key === 'Escape') setContextMenu(null); }
+    function close() {
+      setContextMenu(null);
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setContextMenu(null);
+    }
     window.addEventListener("mousedown", close);
     window.addEventListener("keydown", handleKey);
     return () => {
@@ -272,7 +303,15 @@ export default function DayView({
     e.stopPropagation();
     e.preventDefault();
     const cardWidth = (e.currentTarget as HTMLElement).getBoundingClientRect().width;
-    setDragDeckTask({ taskId: task.id, task, startMin: -1, endMin: -1, cursorX: e.clientX, cursorY: e.clientY, cardWidth });
+    setDragDeckTask({
+      taskId: task.id,
+      task,
+      startMin: -1,
+      endMin: -1,
+      cursorX: e.clientX,
+      cursorY: e.clientY,
+      cardWidth,
+    });
   }
 
   // ── Global mouse-move and mouse-up handlers (window-level) ──
@@ -281,9 +320,7 @@ export default function DayView({
       if (dragCreate) {
         const y = getRelY(e.clientY);
         const endMin = Math.round(Math.max(0, Math.min(pxToMin(y), 1440)) / 15) * 15;
-        setDragCreate((prev) =>
-          prev ? { ...prev, endMin: Math.max(endMin, prev.startMin + 15) } : null
-        );
+        setDragCreate((prev) => (prev ? { ...prev, endMin: Math.max(endMin, prev.startMin + 15) } : null));
       }
       if (dragMove) {
         const dy = Math.abs(e.clientY - dragMove.startClientY);
@@ -299,7 +336,7 @@ export default function DayView({
                 newEndMin: newStartMin + duration,
                 moved: prev.moved || dy > DRAG_MOVE_THRESHOLD,
               }
-            : null
+            : null,
         );
       }
       if (dragResize) {
@@ -307,10 +344,10 @@ export default function DayView({
         const rawMin = Math.round(pxToMin(y) / 5) * 5; // snap to 5-min grid
         if (dragResize.direction === "bottom") {
           const newEndMin = Math.max(dragResize.newStartMin + MIN_RESIZE_DURATION, Math.min(rawMin, 1440));
-          setDragResize((prev) => prev ? { ...prev, newEndMin } : null);
+          setDragResize((prev) => (prev ? { ...prev, newEndMin } : null));
         } else {
           const newStartMin = Math.min(dragResize.newEndMin - MIN_RESIZE_DURATION, Math.max(rawMin, 0));
-          setDragResize((prev) => prev ? { ...prev, newStartMin } : null);
+          setDragResize((prev) => (prev ? { ...prev, newStartMin } : null));
         }
       }
       if (dragDeckTask) {
@@ -331,12 +368,12 @@ export default function DayView({
           const y = getRelY(e.clientY);
           const startMin = Math.max(0, Math.min(Math.round(pxToMin(y) / 15) * 15, 1380));
           setDragDeckTask((prev) =>
-            prev ? { ...prev, startMin, endMin: Math.min(startMin + DEFAULT_DURATION, 1440), cursorX, cursorY } : null
+            prev ? { ...prev, startMin, endMin: Math.min(startMin + DEFAULT_DURATION, 1440), cursorX, cursorY } : null,
           );
         }
       }
     },
-    [dragCreate, dragMove, dragResize, dragDeckTask] // eslint-disable-line react-hooks/exhaustive-deps
+    [dragCreate, dragMove, dragResize, dragDeckTask], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const handleWindowMouseUp = useCallback(async () => {
@@ -355,12 +392,7 @@ export default function DayView({
     if (dragMove) {
       if (dragMove.moved) {
         if (dragMove.newStartMin !== dragMove.origStartMin) {
-          await saveTimeEntry(
-            dragMove.taskId,
-            dateStr,
-            minToTime(dragMove.newStartMin),
-            minToTime(dragMove.newEndMin)
-          );
+          await saveTimeEntry(dragMove.taskId, dateStr, minToTime(dragMove.newStartMin), minToTime(dragMove.newEndMin));
         }
       } else {
         onTaskClick(dragMove.task);
@@ -368,15 +400,12 @@ export default function DayView({
       setDragMove(null);
     }
     if (dragResize) {
-      if (
-        dragResize.newStartMin !== dragResize.origStartMin ||
-        dragResize.newEndMin !== dragResize.origEndMin
-      ) {
+      if (dragResize.newStartMin !== dragResize.origStartMin || dragResize.newEndMin !== dragResize.origEndMin) {
         await saveTimeEntry(
           dragResize.taskId,
           dateStr,
           minToTime(dragResize.newStartMin),
-          minToTime(dragResize.newEndMin)
+          minToTime(dragResize.newEndMin),
         );
       }
       setDragResize(null);
@@ -387,7 +416,7 @@ export default function DayView({
           dragDeckTask.taskId,
           dateStr,
           minToTime(dragDeckTask.startMin),
-          minToTime(dragDeckTask.endMin)
+          minToTime(dragDeckTask.endMin),
         );
       }
       // else: card returns to deck naturally (dragDeckTask cleared)
@@ -410,15 +439,13 @@ export default function DayView({
 
   const HOURS = Array.from({ length: 24 }, (_, i) => i);
   const ghostTop = dragCreate ? minToPx(Math.min(dragCreate.startMin, dragCreate.endMin)) : 0;
-  const ghostHeight = dragCreate
-    ? Math.max(minToPx(Math.abs(dragCreate.endMin - dragCreate.startMin)), 4)
-    : 0;
+  const ghostHeight = dragCreate ? Math.max(minToPx(Math.abs(dragCreate.endMin - dragCreate.startMin)), 4) : 0;
 
   return (
     <div className="day-view">
       {/* Unscheduled task deck — fixed row above the scrollable grid */}
       {visibleDeckTasks.length > 0 && (
-        <div className="day-deck-row" style={{ height: deckHeight + (hasBadge ? 22 : 0) }}>
+        <div className="day-deck-row" style={{ height: deckHeight + (hasBadge ? 30 : 0) }}>
           <div className="day-deck-gutter-spacer">
             <span className="day-tz-label">{tzLabel}</span>
           </div>
@@ -459,24 +486,27 @@ export default function DayView({
       <div
         className="day-grid"
         ref={gridRef}
-        style={{ cursor: dragCreate ? "ns-resize" : dragMove?.moved || dragDeckTask ? "grabbing" : dragResize ? "ns-resize" : "default" }}
+        style={{
+          cursor: dragCreate
+            ? "ns-resize"
+            : dragMove?.moved || dragDeckTask
+              ? "grabbing"
+              : dragResize
+                ? "ns-resize"
+                : "default",
+        }}
       >
         {/* Time gutter */}
         <div className="day-gutter">
           {HOURS.map((h) => (
             <div key={h} className="day-gutter-slot">
-              {h > 0 && (
-                <span className="day-hour-label">{`${String(h).padStart(2, "0")}:00`}</span>
-              )}
+              {h > 0 && <span className="day-hour-label">{`${String(h).padStart(2, "0")}:00`}</span>}
             </div>
           ))}
         </div>
 
         {/* Events column */}
-        <div
-          className="day-events-col"
-          onMouseDown={handleGridMouseDown}
-        >
+        <div className="day-events-col" onMouseDown={handleGridMouseDown}>
           {/* Hour lines */}
           {HOURS.map((h) => (
             <div key={h} className="day-hour-line" style={{ top: minToPx(h * 60) }} />
@@ -490,16 +520,8 @@ export default function DayView({
           {layoutItems.map((item) => {
             const isMoving = dragMove?.taskId === item.task.id && dragMove.moved;
             const isResizing = dragResize?.taskId === item.task.id;
-            const startMin = isMoving
-              ? dragMove!.newStartMin
-              : isResizing
-              ? dragResize!.newStartMin
-              : item.startMin;
-            const endMin = isMoving
-              ? dragMove!.newEndMin
-              : isResizing
-              ? dragResize!.newEndMin
-              : item.endMin;
+            const startMin = isMoving ? dragMove!.newStartMin : isResizing ? dragResize!.newStartMin : item.startMin;
+            const endMin = isMoving ? dragMove!.newEndMin : isResizing ? dragResize!.newEndMin : item.endMin;
             const top = minToPx(startMin);
             const height = Math.max(minToPx(endMin - startMin), 22);
             const color = item.task.color ?? categoryColors[item.task.category];
@@ -539,9 +561,7 @@ export default function DayView({
                         {minToTime(startMin)} – {minToTime(endMin)}
                       </span>
                     )}
-                    <span className={`tag tag-${item.task.category}`}>
-                      {t.cat[item.task.category]}
-                    </span>
+                    <span className={`tag tag-${item.task.category}`}>{t.cat[item.task.category]}</span>
                     {taskTagObjects.map((tag) => (
                       <span key={tag.id} className="task-tag-chip">
                         <IconTag size={10} style={{ flexShrink: 0 }} />
@@ -559,9 +579,7 @@ export default function DayView({
                             {minToTime(startMin)} – {minToTime(endMin)}
                           </span>
                         )}
-                        <span className={`tag tag-${item.task.category}`}>
-                          {t.cat[item.task.category]}
-                        </span>
+                        <span className={`tag tag-${item.task.category}`}>{t.cat[item.task.category]}</span>
                         {taskTagObjects.map((tag) => (
                           <span key={tag.id} className="task-tag-chip">
                             <IconTag size={10} style={{ flexShrink: 0 }} />
@@ -608,71 +626,74 @@ export default function DayView({
           )}
 
           {/* Drag-create ghost */}
-          {dragCreate && dragCreate.endMin - dragCreate.startMin >= 2 && (() => {
-            const ghostColor = categoryColors["work"];
-            const h = ghostHeight;
-            return (
-              <div
-                className="day-task-block"
-                style={{
-                  top: ghostTop,
-                  height: Math.max(h, 22),
-                  left: "0.5%",
-                  width: "98%",
-                  backgroundColor: ghostColor,
-                  borderLeft: `3px solid ${ghostColor}`,
-                  opacity: 0.75,
-                  zIndex: 5,
-                  cursor: "ns-resize",
-                  pointerEvents: "none",
-                }}
-              >
-                <div className="day-task-title" style={{ fontStyle: "italic" }}>
-                  {t.calendar.noTitle}
-                </div>
-                {h >= 34 && (
-                  <div className="day-task-meta">
-                    <span className="day-task-time">
-                      {minToTime(dragCreate.startMin)} – {minToTime(dragCreate.endMin)}
-                    </span>
+          {dragCreate &&
+            dragCreate.endMin - dragCreate.startMin >= 2 &&
+            (() => {
+              const ghostColor = categoryColors["work"];
+              const h = ghostHeight;
+              return (
+                <div
+                  className="day-task-block"
+                  style={{
+                    top: ghostTop,
+                    height: Math.max(h, 22),
+                    left: "0.5%",
+                    width: "98%",
+                    backgroundColor: ghostColor,
+                    borderLeft: `3px solid ${ghostColor}`,
+                    opacity: 0.75,
+                    zIndex: 5,
+                    cursor: "ns-resize",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <div className="day-task-title" style={{ fontStyle: "italic" }}>
+                    {t.calendar.noTitle}
                   </div>
-                )}
-              </div>
-            );
-          })()}
+                  {h >= 34 && (
+                    <div className="day-task-meta">
+                      <span className="day-task-time">
+                        {minToTime(dragCreate.startMin)} – {minToTime(dragCreate.endMin)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
           {/* Pending-create preview block (shown while modal is open) */}
-          {pendingCreate && (() => {
-            const color = categoryColors["work"];
-            const h = minToPx(pendingCreate.endMin - pendingCreate.startMin);
-            return (
-              <div
-                className="day-task-block day-task-block-pending"
-                style={{
-                  top: minToPx(pendingCreate.startMin),
-                  height: Math.max(h, 22),
-                  left: "0.5%",
-                  width: "98%",
-                  backgroundColor: color,
-                  borderLeft: `3px solid ${color}`,
-                  opacity: 0.85,
-                  cursor: "default",
-                  zIndex: 6,
-                }}
-              >
-                <div className="day-task-title" style={{ fontStyle: "italic" }}>
-                  {t.calendar.noTitle}
-                </div>
-                {h >= 34 && (
-                  <div className="day-task-meta">
-                    <span className="day-task-time">
-                      {minToTime(pendingCreate.startMin)} – {minToTime(pendingCreate.endMin)}
-                    </span>
+          {pendingCreate &&
+            (() => {
+              const color = categoryColors["work"];
+              const h = minToPx(pendingCreate.endMin - pendingCreate.startMin);
+              return (
+                <div
+                  className="day-task-block day-task-block-pending"
+                  style={{
+                    top: minToPx(pendingCreate.startMin),
+                    height: Math.max(h, 22),
+                    left: "0.5%",
+                    width: "98%",
+                    backgroundColor: color,
+                    borderLeft: `3px solid ${color}`,
+                    opacity: 0.85,
+                    cursor: "default",
+                    zIndex: 6,
+                  }}
+                >
+                  <div className="day-task-title" style={{ fontStyle: "italic" }}>
+                    {t.calendar.noTitle}
                   </div>
-                )}
-              </div>
-            );
-          })()}
+                  {h >= 34 && (
+                    <div className="day-task-meta">
+                      <span className="day-task-time">
+                        {minToTime(pendingCreate.startMin)} – {minToTime(pendingCreate.endMin)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
           {/* Current-time indicator — rendered last so it always appears above task blocks */}
           {isToday && (
@@ -687,24 +708,24 @@ export default function DayView({
       {dragDeckTask && dragDeckTask.startMin === -1 && (
         <div
           style={{
-            position: 'fixed',
+            position: "fixed",
             left: dragDeckTask.cursorX - 10,
             top: dragDeckTask.cursorY - 14,
             width: dragDeckTask.cardWidth,
             height: CARD_HEIGHT,
             borderRadius: 4,
-            padding: '3px 6px',
-            fontSize: '0.88rem',
-            overflow: 'hidden',
-            boxSizing: 'border-box',
-            userSelect: 'none',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.32)',
+            padding: "3px 6px",
+            fontSize: "0.88rem",
+            overflow: "hidden",
+            boxSizing: "border-box",
+            userSelect: "none",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.32)",
             backgroundColor: dragDeckTask.task.color ?? categoryColors[dragDeckTask.task.category],
             borderLeft: `3px solid ${dragDeckTask.task.color ?? categoryColors[dragDeckTask.task.category]}`,
             opacity: 0.92,
-            pointerEvents: 'none',
+            pointerEvents: "none",
             zIndex: 9999,
-            transform: 'rotate(-2deg) scale(1.03)',
+            transform: "rotate(-2deg) scale(1.03)",
           }}
         >
           <div className="day-task-title">{dragDeckTask.task.title}</div>
@@ -718,10 +739,13 @@ export default function DayView({
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-          {taskTimeEntries.some(e => e.date === dateStr && e.task_id === contextMenu.taskId) && (
+          {taskTimeEntries.some((e) => e.date === dateStr && e.task_id === contextMenu.taskId) && (
             <button
               className="day-context-item"
-              onClick={() => { deleteTimeEntry(contextMenu.taskId, dateStr); setContextMenu(null); }}
+              onClick={() => {
+                deleteTimeEntry(contextMenu.taskId, dateStr);
+                setContextMenu(null);
+              }}
             >
               <IconCalendarMinus size={16} />
               {t.calendar.removeFromCalendar}
@@ -729,7 +753,10 @@ export default function DayView({
           )}
           <button
             className="day-context-item day-context-item-danger"
-            onClick={() => { softDeleteTask(contextMenu.taskId); setContextMenu(null); }}
+            onClick={() => {
+              softDeleteTask(contextMenu.taskId);
+              setContextMenu(null);
+            }}
           >
             <IconTrash size={16} />
             {t.taskCard.delete}
@@ -741,10 +768,17 @@ export default function DayView({
                 key={color}
                 className="task-context-color-btn"
                 style={{ backgroundColor: color }}
-                onClick={() => { if ((contextMenu.task.color ?? categoryColors[contextMenu.task.category]) !== color) { updateTaskColor(contextMenu.task.category, color); } setContextMenu(null); }}
+                onClick={() => {
+                  if ((contextMenu.task.color ?? categoryColors[contextMenu.task.category]) !== color) {
+                    updateTaskColor(contextMenu.task.category, color);
+                  }
+                  setContextMenu(null);
+                }}
                 title={color}
               >
-                {(contextMenu.task.color ?? categoryColors[contextMenu.task.category]) === color && <IconCheck size={12} color="white" strokeWidth={3} />}
+                {(contextMenu.task.color ?? categoryColors[contextMenu.task.category]) === color && (
+                  <IconCheck size={12} color="white" strokeWidth={3} />
+                )}
               </button>
             ))}
           </div>
@@ -753,7 +787,10 @@ export default function DayView({
 
       {creating && (
         <AddTaskModal
-          onClose={() => { setCreating(null); setPendingCreate(null); }}
+          onClose={() => {
+            setCreating(null);
+            setPendingCreate(null);
+          }}
           initialStartTime={creating.startTime}
           initialEndTime={creating.endTime}
         />
