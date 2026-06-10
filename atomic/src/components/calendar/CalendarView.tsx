@@ -257,7 +257,10 @@ export default function CalendarView() {
               currentDate={currentDate}
               categoryColors={categoryColors}
               onTaskClick={(task) => setEditingTask(task)}
-              onDayClick={(date) => setSelectedDate(date)}
+              onDayClick={(dateStr) => {
+                setCurrentDate(new Date(dateStr + 'T00:00:00'));
+                setView('week');
+              }}
               timeEntries={calendarTimeEntries}
               language={language}
             />

@@ -4055,11 +4055,29 @@ select {
   text-align: center;
   padding: 4px 4px 2px;
   flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.cal-month-day-date:hover {
+  background: var(--bg-hover);
 }
 .cal-month-day-num {
   font-size: 0.82rem;
   font-weight: 500;
   color: var(--text-primary);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border: 1.5px solid transparent;
+  transition: border-color 0.15s;
+}
+.cal-month-day-date:hover .cal-month-day-num {
+  border-color: #E3683E;
 }
 .cal-month-day-num.today {
   background: var(--primary);

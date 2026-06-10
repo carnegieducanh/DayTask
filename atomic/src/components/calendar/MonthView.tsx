@@ -144,6 +144,7 @@ function MonthDayCell({
   isPopoverOpen,
   onPopoverOpen,
   onPopoverClose,
+  onDateHeaderClick,
 }: {
   date: Date;
   currentMonth: Date;
@@ -155,6 +156,7 @@ function MonthDayCell({
   isPopoverOpen: boolean;
   onPopoverOpen: (dateStr: string) => void;
   onPopoverClose: () => void;
+  onDateHeaderClick: (dateStr: string) => void;
 }) {
   const { softDeleteTask, updateTaskColor } = useAppStore();
   const t = useT();
@@ -198,7 +200,16 @@ function MonthDayCell({
   }
 
   const dateStr = format(date, 'yyyy-MM-dd');
-  const dayTasks = tasks.filter((task) => task.date === dateStr);
+  const dayTasks = tasks
+    .filter((task) => task.date === dateStr)
+    .sort((a, b) => {
+      const ea = timeEntries.find((e) => e.task_id === a.id && e.date === dateStr);
+      const eb = timeEntries.find((e) => e.task_id === b.id && e.date === dateStr);
+      if (!ea && !eb) return 0;
+      if (!ea) return 1;
+      if (!eb) return -1;
+      return ea.start_time.localeCompare(eb.start_time);
+    });
   dayTasksLenRef.current = dayTasks.length;
 
   // ResizeObserver: recalculate when container height changes
@@ -253,7 +264,10 @@ function MonthDayCell({
       className={`cal-month-day-cell${!inMonth ? ' off-range' : ''}${today ? ' is-today' : ''}`}
       onClick={openPopover}
     >
-      <div className="cal-month-day-date">
+      <div
+        className="cal-month-day-date"
+        onClick={(e) => { e.stopPropagation(); onDateHeaderClick(dateStr); }}
+      >
         <span className={`cal-month-day-num${today ? ' today' : ''}`}>
           {date.getDate()}
         </span>
@@ -338,6 +352,7 @@ export default function MonthView({
   currentDate,
   categoryColors,
   onTaskClick,
+  onDayClick,
   timeEntries,
   language,
 }: MonthViewProps) {
@@ -394,6 +409,7 @@ export default function MonthView({
                 isPopoverOpen={openDateStr === ds}
                 onPopoverOpen={(dateStr) => setOpenDateStr(dateStr)}
                 onPopoverClose={() => setOpenDateStr(null)}
+                onDateHeaderClick={onDayClick}
               />
             );
           })}

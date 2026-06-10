@@ -214,7 +214,16 @@ export default function WeekView({
     <div className="cal-week-grid">
       {days.map((day, i) => {
         const dateStr = format(day, 'yyyy-MM-dd');
-        const dayTasks = tasks.filter((task) => task.date === dateStr);
+        const dayTasks = tasks
+          .filter((task) => task.date === dateStr)
+          .sort((a, b) => {
+            const ea = timeEntries.find((e) => e.task_id === a.id && e.date === dateStr);
+            const eb = timeEntries.find((e) => e.task_id === b.id && e.date === dateStr);
+            if (!ea && !eb) return 0;
+            if (!ea) return 1;
+            if (!eb) return -1;
+            return ea.start_time.localeCompare(eb.start_time);
+          });
         const isToday = isSameDay(day, today);
         const stats = calcDayStats(tasks, timeEntries, dateStr, categoryColors);
 
