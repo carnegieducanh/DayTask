@@ -96,7 +96,7 @@ export default function KanbanColumn({
           className="kanban-col-badge"
           style={{ background: cfg.badgeBg, color: cfg.badgeColor }}
         >
-          {goals.length}
+          {goals.length > 9 ? "9+" : goals.length}
         </span>
       </div>
 

@@ -284,9 +284,15 @@ select {
   background: var(--primary);
   color: #fff;
   font-size: 0.79rem;
-  padding: 1px 5px;
-  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
   font-weight: 500;
+  box-sizing: border-box;
 }
 
 .sidebar-footer {
@@ -638,7 +644,7 @@ select {
 
 .today-layout {
   display: grid;
-  grid-template-columns: 270px 1fr 260px;
+  grid-template-columns: 270px 1fr 230px;
   height: 100%;
   overflow: hidden;
 }
@@ -1169,8 +1175,14 @@ select {
 .kanban-col-badge {
   font-size: 0.86rem;
   font-weight: 500;
-  padding: 2px 8px;
-  border-radius: 99px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  box-sizing: border-box;
   color: var(--text-primary);
 }
 
@@ -3780,6 +3792,19 @@ select {
 .cal-week-header.today:hover .cal-week-header-day {
   color: var(--primary);
 }
+.cal-week-header.highlighted:not(.today) .cal-week-header-date {
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  color: var(--primary);
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.cal-week-header.highlighted:not(.today) .cal-week-header-day {
+  color: var(--primary);
+}
 .cal-week-tasks {
   padding: 4px;
   display: flex;
@@ -4077,7 +4102,8 @@ select {
   transition: border-color 0.15s;
 }
 .cal-month-day-date:hover .cal-month-day-num {
-  border-color: #E3683E;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 .cal-month-day-num.today {
   background: var(--primary);
@@ -4891,11 +4917,16 @@ select {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-primary);
+  background: rgba(18, 18, 22, 0.82);
   color: var(--text-primary);
   font-family: var(--font);
   overflow: hidden;
   user-select: none;
+  border-radius: var(--radius-lg);
+}
+
+[data-theme="light"] .tp {
+  background: rgba(248, 246, 242, 0.82);
 }
 
 .tp-header {
@@ -5139,12 +5170,17 @@ select {
   flex-direction: column;
   justify-content: center;
   padding: 5px;
-  background: var(--bg-primary);
+  background: rgba(18, 18, 22, 0.82);
   color: var(--text-primary);
   font-family: var(--font);
   box-sizing: border-box;
   overflow: hidden;
   user-select: none;
+  border-radius: var(--radius-lg);
+}
+
+[data-theme="light"] .tcm {
+  background: rgba(248, 246, 242, 0.82);
 }
 
 .tcm-item {
@@ -5261,11 +5297,18 @@ select {
 }
 
 .jsc-cal-day {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.72rem;
-  line-height: 18px;
-  border-radius: 3px;
-  transition: background 0.1s;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  transition:
+    background 0.1s,
+    border-color 0.1s;
+  margin: 0 auto;
 }
 
 .jsc-streak {

@@ -824,12 +824,11 @@ export default function JournalView() {
                   key={day}
                   className="jsc-cal-day"
                   style={{
-                    background: isToday ? ACCENT_GRATITUDE : 'transparent',
-                    color: isToday ? '#fff' : hasEntry ? ACCENT_GRATITUDE : 'var(--text-secondary)',
+                    background: isSelected ? ACCENT_GRATITUDE : 'transparent',
+                    color: isSelected ? '#fff' : (isToday || hasEntry) ? ACCENT_GRATITUDE : 'var(--text-secondary)',
                     cursor: isFuture ? 'default' : 'pointer',
-                    fontWeight: isToday || isSelected ? 700 : 400,
-                    outline: isSelected && !isToday ? `1.5px solid ${ACCENT_GRATITUDE}` : 'none',
-                    outlineOffset: '-1px',
+                    fontWeight: isSelected || isToday ? 700 : 400,
+                    borderColor: isToday && !isSelected ? ACCENT_GRATITUDE : 'transparent',
                     opacity: isFuture ? 0.35 : 1,
                   }}
                   title={fmtDate(ds, jt.dowFull, jt.formatDate)}

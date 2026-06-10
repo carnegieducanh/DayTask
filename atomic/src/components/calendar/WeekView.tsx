@@ -35,6 +35,7 @@ interface WeekViewProps {
   onTaskClick: (task: Task) => void;
   onDayClick: (date: string) => void;
   timeEntries: TaskTimeEntry[];
+  highlightDate?: string;
 }
 
 function StatsPopover({ stats, pos }: { stats: DayStat[]; pos: { top: number; left: number } }) {
@@ -161,6 +162,7 @@ export default function WeekView({
   onTaskClick,
   onDayClick,
   timeEntries,
+  highlightDate,
 }: WeekViewProps) {
   const t = useT();
   const { softDeleteTask, updateTaskColor } = useAppStore();
@@ -230,7 +232,7 @@ export default function WeekView({
         return (
           <div key={dateStr} className="cal-week-col">
             <div
-              className={`cal-week-header${isToday ? ' today' : ''}`}
+              className={`cal-week-header${isToday ? ' today' : ''}${highlightDate === dateStr ? ' highlighted' : ''}`}
               onClick={() => onDayClick(dateStr)}
             >
               <div className="cal-week-header-day">{t.calendar.weekDowShort[day.getDay()]}</div>

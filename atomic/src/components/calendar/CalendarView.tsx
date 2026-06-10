@@ -121,6 +121,7 @@ export default function CalendarView() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loadedYear, setLoadedYear] = useState<number | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [highlightDate, setHighlightDate] = useState<string | null>(null);
   const [activeCategories, setActiveCategories] = useState<Set<Category>>(new Set());
   const [activeTags, setActiveTags] = useState<Set<number>>(new Set());
 
@@ -259,6 +260,7 @@ export default function CalendarView() {
               onTaskClick={(task) => setEditingTask(task)}
               onDayClick={(dateStr) => {
                 setCurrentDate(new Date(dateStr + 'T00:00:00'));
+                setHighlightDate(dateStr);
                 setView('week');
               }}
               timeEntries={calendarTimeEntries}
@@ -276,6 +278,7 @@ export default function CalendarView() {
                 setActiveTab("today");
               }}
               timeEntries={calendarTimeEntries}
+              highlightDate={highlightDate ?? undefined}
             />
           )}
           {view === "day" && (

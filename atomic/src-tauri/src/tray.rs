@@ -11,7 +11,7 @@ const CONTEXT_H: f64 = 90.0;
 pub fn setup_tray(app: &App) -> tauri::Result<()> {
     // Pre-warm both tray windows hidden at startup so the webview and data are
     // ready before the user first clicks the tray icon, preventing visible flicker.
-    let _ = tauri::WebviewWindowBuilder::new(
+    let popup = tauri::WebviewWindowBuilder::new(
         app,
         "tray-popup",
         tauri::WebviewUrl::App("index.html".into()),
@@ -20,6 +20,7 @@ pub fn setup_tray(app: &App) -> tauri::Result<()> {
     .inner_size(POPUP_W, POPUP_H)
     .position(-2000.0, -2000.0)
     .decorations(false)
+    .transparent(true)
     .always_on_top(true)
     .skip_taskbar(true)
     .resizable(false)
@@ -27,7 +28,12 @@ pub fn setup_tray(app: &App) -> tauri::Result<()> {
     .visible(false)
     .build();
 
-    let _ = tauri::WebviewWindowBuilder::new(
+    #[cfg(target_os = "windows")]
+    if let Ok(ref w) = popup {
+        window_vibrancy::apply_acrylic(w, Some((12, 12, 15, 210))).ok();
+    }
+
+    let ctx = tauri::WebviewWindowBuilder::new(
         app,
         "tray-context",
         tauri::WebviewUrl::App("index.html".into()),
@@ -36,12 +42,18 @@ pub fn setup_tray(app: &App) -> tauri::Result<()> {
     .inner_size(CONTEXT_W, CONTEXT_H)
     .position(-2000.0, -2000.0)
     .decorations(false)
+    .transparent(true)
     .always_on_top(true)
     .skip_taskbar(true)
     .resizable(false)
     .shadow(true)
     .visible(false)
     .build();
+
+    #[cfg(target_os = "windows")]
+    if let Ok(ref w) = ctx {
+        window_vibrancy::apply_acrylic(w, Some((12, 12, 15, 210))).ok();
+    }
 
     TrayIconBuilder::new()
         .icon(app.default_window_icon().unwrap().clone())

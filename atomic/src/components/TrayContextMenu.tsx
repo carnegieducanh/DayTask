@@ -8,6 +8,8 @@ export default function TrayContextMenu() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.style.fontSize = '14px';
+    document.documentElement.style.background = 'transparent';
+    document.body.style.background = 'transparent';
   }, [theme]);
 
   useEffect(() => {

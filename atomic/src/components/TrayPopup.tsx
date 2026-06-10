@@ -59,6 +59,8 @@ export default function TrayPopup() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.style.fontSize = '14px';
+    document.documentElement.style.background = 'transparent';
+    document.body.style.background = 'transparent';
 
     const refresh = () => {
       const date = format(new Date(), 'yyyy-MM-dd');

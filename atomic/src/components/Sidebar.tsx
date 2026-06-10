@@ -61,7 +61,7 @@ export default function Sidebar() {
             <span className="nav-icon">{item.icon}</span>
             {item.label}
             {item.id === "today" && pendingCount > 0 && (
-              <span className="nav-badge">{pendingCount}</span>
+              <span className="nav-badge">{pendingCount > 9 ? "9+" : pendingCount}</span>
             )}
           </button>
         ))}
