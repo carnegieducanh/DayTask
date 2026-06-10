@@ -149,7 +149,7 @@ export const en: typeof vi = {
     taskUnit: 'task',
     emptyState: 'New day — start adding your first task!',
     todaySchedule: "Today's Schedule",
-
+    noScheduled: 'No schedule for today',
     activityTitle: 'Activity (last 3 months)',
     backToToday: 'Today',
   },

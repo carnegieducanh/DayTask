@@ -29,11 +29,13 @@ export default function TodayView() {
   const [streak, setStreak]               = useState(0);
   const [pendingCheckIds, setPendingCheckIds] = useState<Set<number>>(new Set());
   const demoPopupShown = useRef(false);
-  const mainRef       = useRef<HTMLDivElement>(null);
-  const rightRef      = useRef<HTMLDivElement>(null);
+  const mainRef        = useRef<HTMLDivElement>(null);
+  const rightRef       = useRef<HTMLDivElement>(null);
+  const scheduleRef    = useRef<HTMLDivElement>(null);
   const pendingListRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(mainRef);
   useSmoothScroll(rightRef);
+  useSmoothScroll(scheduleRef);
 
   useEffect(() => {
     getStreak().then(setStreak);
@@ -156,36 +158,6 @@ export default function TodayView() {
               <MiniCalendar />
             </div>
 
-            {/* Schedule */}
-            {scheduledTasks.length > 0 && (
-              <div className="today-sidebar-section">
-                <div className="section-label">{t.today.todaySchedule}</div>
-                <div className="today-schedule">
-                  {scheduledTasks.map((task) => {
-                    const entry = taskTimeEntries.find((e) => e.task_id === task.id);
-                    return (
-                      <div key={task.id} className={`today-schedule-item${(task.is_done || pendingCheckIds.has(task.id)) ? ' done' : ''}`}>
-                        <div className="today-schedule-time">
-                          <div>{entry?.start_time}</div>
-                          <div style={{ opacity: 0.6, fontSize: '0.85em' }}>{entry?.end_time}</div>
-                        </div>
-                        <div className="today-schedule-body">
-                          <div className="today-schedule-title">{task.title}</div>
-                          <div className="today-schedule-cat">{t.cat[task.category as keyof typeof t.cat] ?? task.category}</div>
-                        </div>
-                        <button
-                          className={`today-schedule-tick${(task.is_done || pendingCheckIds.has(task.id)) ? ' checked' : ''}`}
-                          onClick={() => handleScheduleToggle(task.id)}
-                        >
-                          <IconCheck size={12} strokeWidth={3} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
             {/* Heatmap */}
             <div className="today-sidebar-section">
               <div className="section-label">{t.today.activityTitle}</div>
@@ -194,7 +166,7 @@ export default function TodayView() {
 
           </div>
 
-          {/* ── Right column ── */}
+          {/* ── Middle column ── */}
           <div className="today-main" ref={mainRef}>
             {/* Stat cards */}
             <div className="stats-row">
@@ -262,6 +234,43 @@ export default function TodayView() {
               </div>
             )}
           </div>
+
+          {/* ── Right column ── */}
+          <div className="today-right" ref={scheduleRef}>
+            <div className="today-sidebar-section">
+              <div className="section-label">{t.today.todaySchedule}</div>
+              {scheduledTasks.length > 0 ? (
+                <div className="today-schedule">
+                  {scheduledTasks.map((task) => {
+                    const entry = taskTimeEntries.find((e) => e.task_id === task.id);
+                    return (
+                      <div key={task.id} className={`today-schedule-item${(task.is_done || pendingCheckIds.has(task.id)) ? ' done' : ''}`}>
+                        <div className="today-schedule-time">
+                          <div>{entry?.start_time}</div>
+                          <div style={{ opacity: 0.6, fontSize: '0.85em' }}>{entry?.end_time}</div>
+                        </div>
+                        <div className="today-schedule-body">
+                          <div className="today-schedule-title">{task.title}</div>
+                          <div className="today-schedule-cat">{t.cat[task.category as keyof typeof t.cat] ?? task.category}</div>
+                        </div>
+                        <button
+                          className={`today-schedule-tick${(task.is_done || pendingCheckIds.has(task.id)) ? ' checked' : ''}`}
+                          onClick={() => handleScheduleToggle(task.id)}
+                        >
+                          <IconCheck size={12} strokeWidth={3} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  {t.today.noScheduled}
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
 

@@ -151,6 +151,7 @@ export const vi = {
     taskUnit: "task",
     emptyState: "Ngày mới, bắt đầu thêm task đầu tiên!",
     todaySchedule: "Lịch hôm nay",
+    noScheduled: "Chưa có lịch hôm nay",
     activityTitle: "Hoạt động 3 tháng qua",
     backToToday: "Hôm nay",
   },

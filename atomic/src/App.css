@@ -638,7 +638,7 @@ select {
 
 .today-layout {
   display: grid;
-  grid-template-columns: 288px 1fr;
+  grid-template-columns: 270px 1fr 260px;
   height: 100%;
   overflow: hidden;
 }
@@ -652,6 +652,17 @@ select {
 }
 
 .today-sidebar {
+  overflow-y: auto;
+  padding: 16px 14px;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  gap: 20px;
+  border-right: 0.5px solid var(--border-1);
+  background: var(--bg-secondary);
+}
+
+.today-right {
   overflow-y: auto;
   padding: 16px 14px;
   display: flex;
