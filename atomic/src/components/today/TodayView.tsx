@@ -149,6 +149,52 @@ export default function TodayView() {
         <div className="today-layout">
 
           {/* ── Left column ── */}
+          <div className="today-sidebar" ref={rightRef}>
+
+            {/* Mini Calendar */}
+            <div className="today-sidebar-section">
+              <MiniCalendar />
+            </div>
+
+            {/* Schedule */}
+            {scheduledTasks.length > 0 && (
+              <div className="today-sidebar-section">
+                <div className="section-label">{t.today.todaySchedule}</div>
+                <div className="today-schedule">
+                  {scheduledTasks.map((task) => {
+                    const entry = taskTimeEntries.find((e) => e.task_id === task.id);
+                    return (
+                      <div key={task.id} className={`today-schedule-item${(task.is_done || pendingCheckIds.has(task.id)) ? ' done' : ''}`}>
+                        <div className="today-schedule-time">
+                          <div>{entry?.start_time}</div>
+                          <div style={{ opacity: 0.6, fontSize: '0.85em' }}>{entry?.end_time}</div>
+                        </div>
+                        <div className="today-schedule-body">
+                          <div className="today-schedule-title">{task.title}</div>
+                          <div className="today-schedule-cat">{t.cat[task.category as keyof typeof t.cat] ?? task.category}</div>
+                        </div>
+                        <button
+                          className={`today-schedule-tick${(task.is_done || pendingCheckIds.has(task.id)) ? ' checked' : ''}`}
+                          onClick={() => handleScheduleToggle(task.id)}
+                        >
+                          <IconCheck size={12} strokeWidth={3} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Heatmap */}
+            <div className="today-sidebar-section">
+              <div className="section-label">{t.today.activityTitle}</div>
+              <MiniHeatmap data={heatmap} />
+            </div>
+
+          </div>
+
+          {/* ── Right column ── */}
           <div className="today-main" ref={mainRef}>
             {/* Stat cards */}
             <div className="stats-row">
@@ -215,52 +261,6 @@ export default function TodayView() {
                 <div>{t.today.emptyState}</div>
               </div>
             )}
-          </div>
-
-          {/* ── Right column ── */}
-          <div className="today-right" ref={rightRef}>
-
-            {/* Mini Calendar */}
-            <div className="today-right-section">
-              <MiniCalendar />
-            </div>
-
-            {/* Schedule */}
-            {scheduledTasks.length > 0 && (
-              <div className="today-right-section">
-                <div className="section-label">{t.today.todaySchedule}</div>
-                <div className="today-schedule">
-                  {scheduledTasks.map((task) => {
-                    const entry = taskTimeEntries.find((e) => e.task_id === task.id);
-                    return (
-                      <div key={task.id} className={`today-schedule-item${(task.is_done || pendingCheckIds.has(task.id)) ? ' done' : ''}`}>
-                        <div className="today-schedule-time">
-                          <div>{entry?.start_time}</div>
-                          <div style={{ opacity: 0.6, fontSize: '0.85em' }}>{entry?.end_time}</div>
-                        </div>
-                        <div className="today-schedule-body">
-                          <div className="today-schedule-title">{task.title}</div>
-                          <div className="today-schedule-cat">{t.cat[task.category as keyof typeof t.cat] ?? task.category}</div>
-                        </div>
-                        <button
-                          className={`today-schedule-tick${(task.is_done || pendingCheckIds.has(task.id)) ? ' checked' : ''}`}
-                          onClick={() => handleScheduleToggle(task.id)}
-                        >
-                          <IconCheck size={12} strokeWidth={3} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Heatmap */}
-            <div className="today-right-section">
-              <div className="section-label">{t.today.activityTitle}</div>
-              <MiniHeatmap data={heatmap} />
-            </div>
-
           </div>
         </div>
       </div>
