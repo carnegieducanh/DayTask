@@ -138,6 +138,13 @@ export const vi = {
     greetingReset: "Khôi phục mặc định",
     greetingFixedHint: "Câu chào ngày đầu",
   },
+  weeklyChecklist: {
+    title: "Kế hoạch tuần",
+    weekLabel: (w: number) => `Tuần ${w}`,
+    addPlaceholder: "Thêm mục tiêu tuần này...",
+    hintEmpty: "Thêm kế hoạch cho tuần này...",
+    done: "hoàn thành",
+  },
   today: {
     title: "Hôm nay",
     statDone: "Hoàn thành",

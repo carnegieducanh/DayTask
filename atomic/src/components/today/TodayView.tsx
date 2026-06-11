@@ -11,6 +11,7 @@ import AddTaskModal from "./AddTaskModal";
 import MiniHeatmap from "./MiniHeatmap";
 import MiniCalendar from "./MiniCalendar";
 import DailyGreeting from "./DailyGreeting";
+import { WeeklyChecklist } from "./WeeklyChecklist";
 import type { Task } from "../../types";
 
 export default function TodayView() {
@@ -208,6 +209,9 @@ export default function TodayView() {
 
           {/* ── Middle column ── */}
           <div className="today-main" ref={mainRef}>
+            {/* Weekly checklist */}
+            <WeeklyChecklist selectedDate={selectedDate} />
+
             {/* Add task */}
             <div className="add-task-row" onClick={openAdd}>
               <IconPlus size={16} />

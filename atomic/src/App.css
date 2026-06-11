@@ -1148,6 +1148,243 @@ select {
   color: var(--primary);
 }
 
+/* ── Weekly Checklist ── */
+.wc-dormant {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  border-left: 2px solid color-mix(in srgb, var(--greeting-color) 25%, transparent);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.wc-dormant:hover {
+  background: color-mix(in srgb, var(--greeting-color) 6%, transparent);
+  border-color: color-mix(in srgb, var(--greeting-color) 45%, transparent);
+}
+.wc-dormant-icon {
+  color: color-mix(in srgb, var(--greeting-color) 40%, transparent);
+  flex-shrink: 0;
+}
+.wc-dormant-text {
+  font-family: 'Lora', Georgia, serif;
+  font-style: italic;
+  font-size: 0.93rem;
+  color: color-mix(in srgb, var(--greeting-color) 40%, transparent);
+  flex: 1;
+}
+
+.weekly-checklist {
+  margin-bottom: 6px;
+  padding: 8px 10px 6px;
+  border-radius: 6px;
+  border-left: 2px solid color-mix(in srgb, var(--greeting-color) 30%, transparent);
+  background: color-mix(in srgb, var(--greeting-color) 4%, transparent);
+}
+
+.wc-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+.wc-title {
+  font-family: 'Lora', Georgia, serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--greeting-color) 90%, transparent);
+  letter-spacing: 0.02em;
+}
+.wc-week-badge {
+  font-family: 'Lora', Georgia, serif;
+  font-style: italic;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--greeting-color) 80%, transparent);
+  background: color-mix(in srgb, var(--greeting-color) 12%, transparent);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.wc-stats {
+  font-family: 'Lora', Georgia, serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: color-mix(in srgb, var(--greeting-color) 80%, transparent);
+}
+.wc-add-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: color-mix(in srgb, var(--greeting-color) 65%, transparent);
+  display: flex;
+  align-items: center;
+  padding: 2px 3px;
+  border-radius: 4px;
+  margin-left: auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: color 0.15s, background 0.15s, opacity 0.15s;
+}
+.wc-header:hover .wc-add-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+.wc-add-btn:hover {
+  color: color-mix(in srgb, var(--greeting-color) 90%, transparent);
+  background: color-mix(in srgb, var(--greeting-color) 10%, transparent);
+}
+
+.wc-items {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wc-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+.wc-item:hover {
+  background: color-mix(in srgb, var(--greeting-color) 7%, transparent);
+}
+
+.wc-check {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.wc-item:hover .wc-check {
+  color: color-mix(in srgb, var(--greeting-color) 30%, transparent);
+}
+.wc-item:hover .wc-check:hover {
+  color: color-mix(in srgb, var(--greeting-color) 70%, transparent);
+}
+.wc-done .wc-check {
+  color: color-mix(in srgb, var(--greeting-color) 60%, transparent);
+}
+.wc-done:hover .wc-check {
+  color: var(--greeting-color);
+}
+
+.wc-text {
+  font-family: 'Lora', Georgia, serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--greeting-color);
+  line-height: 1.45;
+  flex: 1;
+}
+.wc-text-inner {
+  display: inline;
+}
+.wc-done .wc-text {
+  color: color-mix(in srgb, var(--greeting-color) 35%, transparent);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--greeting-color) 30%, transparent);
+}
+.wc-completing .wc-text {
+  transition: color 0.32s ease;
+  color: color-mix(in srgb, var(--greeting-color) 35%, transparent);
+}
+.wc-completing .wc-text-inner {
+  position: relative;
+}
+.wc-completing .wc-text-inner::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 1px;
+  background: color-mix(in srgb, var(--greeting-color) 30%, transparent);
+  animation: wc-strikethrough 0.32s ease forwards;
+}
+@keyframes wc-strikethrough {
+  from { width: 0; }
+  to { width: 100%; }
+}
+.wc-completing .wc-check {
+  color: color-mix(in srgb, var(--greeting-color) 60%, transparent);
+}
+
+.wc-actions {
+  display: flex;
+  gap: 1px;
+  flex-shrink: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+}
+.wc-item:hover .wc-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.wc-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: color-mix(in srgb, var(--greeting-color) 35%, transparent);
+  display: flex;
+  align-items: center;
+  padding: 2px 3px;
+  border-radius: 3px;
+  transition: color 0.12s, background 0.12s;
+}
+.wc-action-btn:hover {
+  color: var(--greeting-color);
+  background: color-mix(in srgb, var(--greeting-color) 10%, transparent);
+}
+.wc-action-del:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.wc-input-icon {
+  color: color-mix(in srgb, var(--greeting-color) 40%, transparent);
+  flex-shrink: 0;
+}
+.wc-input {
+  font-family: 'Lora', Georgia, serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--greeting-color);
+  background: none;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--greeting-color) 30%, transparent);
+  outline: none;
+  flex: 1;
+  padding: 0 2px 1px;
+}
+.wc-input::placeholder {
+  color: color-mix(in srgb, var(--greeting-color) 32%, transparent);
+}
+.wc-undo-toast {
+  position: static;
+  transform: none;
+  width: fit-content;
+  margin: 8px auto 0;
+  animation: wc-toast-in 0.18s ease;
+}
+@keyframes wc-toast-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Kanban ── */
 .kanban-drag-hint {
   display: flex;

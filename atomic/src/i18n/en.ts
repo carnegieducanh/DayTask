@@ -136,6 +136,13 @@ export const en: typeof vi = {
     greetingReset: 'Reset to defaults',
     greetingFixedHint: 'First-day greeting',
   },
+  weeklyChecklist: {
+    title: 'Week Plan',
+    weekLabel: (w: number) => `Week ${w}`,
+    addPlaceholder: 'Add a goal for this week...',
+    hintEmpty: 'Add a plan for this week...',
+    done: 'done',
+  },
   today: {
     title: 'Today',
     statDone: 'Done',
