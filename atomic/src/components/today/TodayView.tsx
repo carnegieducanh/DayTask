@@ -1,37 +1,40 @@
-import { useState, useEffect, useRef } from 'react';
-import { useSmoothScroll } from '../../hooks/useSmoothScroll';
-import { format } from 'date-fns';
-import { vi as viLocale } from 'date-fns/locale';
-import { IconPlus, IconSun, IconCheck } from '@tabler/icons-react';
-import { useAppStore } from '../../store/appStore';
-import { useT } from '../../i18n';
-import { isTauri } from '../../store/mockDb';
-import TaskCard from './TaskCard';
-import AddTaskModal from './AddTaskModal';
-import MiniHeatmap from './MiniHeatmap';
-import MiniCalendar from './MiniCalendar';
-import DailyGreeting from './DailyGreeting';
-import type { Task } from '../../types';
+import { useState, useEffect, useRef } from "react";
+import { useSmoothScroll } from "../../hooks/useSmoothScroll";
+import { format } from "date-fns";
+import { vi as viLocale } from "date-fns/locale";
+import { IconPlus, IconSun, IconCheck } from "@tabler/icons-react";
+import { useAppStore } from "../../store/appStore";
+import { useT } from "../../i18n";
+import { isTauri } from "../../store/mockDb";
+import TaskCard from "./TaskCard";
+import AddTaskModal from "./AddTaskModal";
+import MiniHeatmap from "./MiniHeatmap";
+import MiniCalendar from "./MiniCalendar";
+import DailyGreeting from "./DailyGreeting";
+import type { Task } from "../../types";
 
 export default function TodayView() {
   const t = useT();
   const {
-    tasks, selectedDate,
-    heatmap, loadHeatmap,
+    tasks,
+    selectedDate,
+    heatmap,
+    loadHeatmap,
     language,
-    getStreak, setReminderPopup,
+    getStreak,
+    setReminderPopup,
     toggleTask,
     taskTimeEntries,
   } = useAppStore();
 
-  const [showModal, setShowModal]         = useState(false);
-  const [editTask, setEditTask]           = useState<Task | null>(null);
-  const [streak, setStreak]               = useState(0);
+  const [showModal, setShowModal] = useState(false);
+  const [editTask, setEditTask] = useState<Task | null>(null);
+  const [streak, setStreak] = useState(0);
   const [pendingCheckIds, setPendingCheckIds] = useState<Set<number>>(new Set());
   const demoPopupShown = useRef(false);
-  const mainRef        = useRef<HTMLDivElement>(null);
-  const rightRef       = useRef<HTMLDivElement>(null);
-  const scheduleRef    = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
+  const scheduleRef = useRef<HTMLDivElement>(null);
   const pendingListRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(mainRef);
   useSmoothScroll(rightRef);
@@ -67,10 +70,10 @@ export default function TodayView() {
     });
   }
 
-  const pending   = sortByTime(tasks.filter((task) => !task.is_done));
-  const done      = sortByTime(tasks.filter((task) => task.is_done));
-  const total     = tasks.length;
-  const pct       = total === 0 ? 0 : Math.round((done.length / total) * 100);
+  const pending = sortByTime(tasks.filter((task) => !task.is_done));
+  const done = sortByTime(tasks.filter((task) => task.is_done));
+  const total = tasks.length;
+  const pct = total === 0 ? 0 : Math.round((done.length / total) * 100);
   const scheduled = taskTimeEntries.length;
 
   const scheduledTasks = tasks
@@ -79,21 +82,30 @@ export default function TodayView() {
       if (a.is_done !== b.is_done) return a.is_done ? 1 : -1;
       const ea = taskTimeEntries.find((e) => e.task_id === a.id);
       const eb = taskTimeEntries.find((e) => e.task_id === b.id);
-      return (ea?.start_time ?? '').localeCompare(eb?.start_time ?? '');
+      return (ea?.start_time ?? "").localeCompare(eb?.start_time ?? "");
     });
 
   const dateLabel = format(
-    new Date(selectedDate + 'T00:00:00'),
+    new Date(selectedDate + "T00:00:00"),
     "EEEE, d MMMM yyyy",
-    language === 'vi' ? { locale: viLocale } : undefined,
+    language === "vi" ? { locale: viLocale } : undefined,
   );
 
-  function openAdd()         { setEditTask(null); setShowModal(true); }
-  function openEdit(task: Task) { setEditTask(task); setShowModal(true); }
+  function openAdd() {
+    setEditTask(null);
+    setShowModal(true);
+  }
+  function openEdit(task: Task) {
+    setEditTask(task);
+    setShowModal(true);
+  }
 
   function handleScheduleToggle(taskId: number) {
     const task = tasks.find((t) => t.id === taskId);
-    if (!task || task.is_done) { toggleTask(taskId); return; }
+    if (!task || task.is_done) {
+      toggleTask(taskId);
+      return;
+    }
 
     setPendingCheckIds((prev) => new Set(prev).add(taskId));
 
@@ -101,31 +113,39 @@ export default function TodayView() {
     if (!wrapper) {
       setTimeout(() => {
         toggleTask(taskId);
-        setPendingCheckIds((prev) => { const s = new Set(prev); s.delete(taskId); return s; });
+        setPendingCheckIds((prev) => {
+          const s = new Set(prev);
+          s.delete(taskId);
+          return s;
+        });
       }, 400);
       return;
     }
 
     const height = wrapper.offsetHeight;
     wrapper.style.maxHeight = `${height}px`;
-    wrapper.style.overflow  = 'hidden';
+    wrapper.style.overflow = "hidden";
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         wrapper.style.transition = [
-          'max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-          'opacity 0.45s ease',
-          'transform 0.55s ease',
-        ].join(', ');
-        wrapper.style.maxHeight = '0px';
-        wrapper.style.opacity   = '0';
-        wrapper.style.transform = 'translateY(10px)';
+          "max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+          "opacity 0.45s ease",
+          "transform 0.55s ease",
+        ].join(", ");
+        wrapper.style.maxHeight = "0px";
+        wrapper.style.opacity = "0";
+        wrapper.style.transform = "translateY(10px)";
       });
     });
 
     setTimeout(() => {
       toggleTask(taskId);
-      setPendingCheckIds((prev) => { const s = new Set(prev); s.delete(taskId); return s; });
+      setPendingCheckIds((prev) => {
+        const s = new Set(prev);
+        s.delete(taskId);
+        return s;
+      });
     }, 640);
   }
 
@@ -135,27 +155,48 @@ export default function TodayView() {
       <div className="view-topbar today-topbar">
         <div className="today-topbar-side">
           <div className="view-title">{t.today.title}</div>
-          <div className="view-subtitle" style={{ textTransform: 'capitalize' }}>{dateLabel}</div>
+          <div className="view-subtitle" style={{ textTransform: "capitalize" }}>
+            {dateLabel}
+          </div>
         </div>
 
-        <DailyGreeting
-          pendingCount={pending.length}
-          isToday={selectedDate === format(new Date(), 'yyyy-MM-dd')}
-        />
+        <DailyGreeting pendingCount={pending.length} isToday={selectedDate === format(new Date(), "yyyy-MM-dd")} />
 
-        <div className="today-topbar-side today-topbar-actions">
-        </div>
+        <div className="today-topbar-side today-topbar-actions"></div>
       </div>
 
       <div className="view-content today-content">
         <div className="today-layout">
-
           {/* ── Left column ── */}
           <div className="today-sidebar" ref={rightRef}>
+            {/* Stat cards + Mini Calendar */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, width: "100%" }}>
+              <div className="stats-row">
+                <div className="stat-card">
+                  <div className="stat-label">{t.today.statDone}</div>
+                  <div className="stat-value">
+                    {done.length}
+                    <span style={{ fontSize: 20, color: "var(--text-secondary)", fontWeight: 400 }}>/{total}</span>
+                  </div>
+                  <div className="progress-bar-wrap" style={{ marginTop: 8 }}>
+                    <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">{t.today.statStreak}</div>
+                  <div className="stat-value">🔥 {streak}</div>
+                  <div className="stat-sub">{t.today.streakDays}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">{t.today.statScheduled}</div>
+                  <div className="stat-value">{scheduled}</div>
+                  <div className="stat-sub">{t.today.scheduledToday}</div>
+                </div>
+              </div>
 
-            {/* Mini Calendar */}
-            <div className="today-sidebar-section">
-              <MiniCalendar />
+              <div className="today-sidebar-section">
+                <MiniCalendar />
+              </div>
             </div>
 
             {/* Heatmap */}
@@ -163,35 +204,10 @@ export default function TodayView() {
               <div className="section-label">{t.today.activityTitle}</div>
               <MiniHeatmap data={heatmap} />
             </div>
-
           </div>
 
           {/* ── Middle column ── */}
           <div className="today-main" ref={mainRef}>
-            {/* Stat cards */}
-            <div className="stats-row">
-              <div className="stat-card">
-                <div className="stat-label">{t.today.statDone}</div>
-                <div className="stat-value">
-                  {done.length}
-                  <span style={{ fontSize: 20, color: 'var(--text-secondary)', fontWeight: 400 }}>/{total}</span>
-                </div>
-                <div className="progress-bar-wrap" style={{ marginTop: 8 }}>
-                  <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-label">{t.today.statStreak}</div>
-                <div className="stat-value">🔥 {streak}</div>
-                <div className="stat-sub">{t.today.streakDays}</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-label">{t.today.statScheduled}</div>
-                <div className="stat-value">{scheduled}</div>
-                <div className="stat-sub">{t.today.scheduledToday}</div>
-              </div>
-            </div>
-
             {/* Add task */}
             <div className="add-task-row" onClick={openAdd}>
               <IconPlus size={16} />
@@ -202,7 +218,10 @@ export default function TodayView() {
             {pending.length > 0 && (
               <div>
                 <div className="section-label">
-                  {t.today.pending} <span style={{ fontWeight: 400 }}>· {pending.length} {t.today.taskUnit}</span>
+                  {t.today.pending}{" "}
+                  <span style={{ fontWeight: 400 }}>
+                    · {pending.length} {t.today.taskUnit}
+                  </span>
                 </div>
                 <div className="task-list" ref={pendingListRef}>
                   {pending.map((task) => (
@@ -218,18 +237,23 @@ export default function TodayView() {
             {done.length > 0 && (
               <div>
                 <div className="section-label">
-                  {t.today.completed} <span style={{ fontWeight: 400 }}>· {done.length} {t.today.taskUnit}</span>
+                  {t.today.completed}{" "}
+                  <span style={{ fontWeight: 400 }}>
+                    · {done.length} {t.today.taskUnit}
+                  </span>
                 </div>
                 <div className="task-list">
-                  {done.map((task) => <TaskCard key={task.id} task={task} onEdit={openEdit} />)}
+                  {done.map((task) => (
+                    <TaskCard key={task.id} task={task} onEdit={openEdit} />
+                  ))}
                 </div>
               </div>
             )}
 
             {/* Empty state */}
             {total === 0 && (
-              <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px 0' }}>
-                <IconSun size={32} style={{ marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
+              <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: "20px 0" }}>
+                <IconSun size={32} style={{ marginBottom: 8, display: "block", margin: "0 auto 8px" }} />
                 <div>{t.today.emptyState}</div>
               </div>
             )}
@@ -244,17 +268,22 @@ export default function TodayView() {
                   {scheduledTasks.map((task) => {
                     const entry = taskTimeEntries.find((e) => e.task_id === task.id);
                     return (
-                      <div key={task.id} className={`today-schedule-item${(task.is_done || pendingCheckIds.has(task.id)) ? ' done' : ''}`}>
+                      <div
+                        key={task.id}
+                        className={`today-schedule-item${task.is_done || pendingCheckIds.has(task.id) ? " done" : ""}`}
+                      >
                         <div className="today-schedule-time">
                           <div>{entry?.start_time}</div>
-                          <div style={{ opacity: 0.6, fontSize: '0.85em' }}>{entry?.end_time}</div>
+                          <div style={{ opacity: 0.6, fontSize: "0.85em" }}>{entry?.end_time}</div>
                         </div>
                         <div className="today-schedule-body">
                           <div className="today-schedule-title">{task.title}</div>
-                          <div className="today-schedule-cat">{t.cat[task.category as keyof typeof t.cat] ?? task.category}</div>
+                          <div className="today-schedule-cat">
+                            {t.cat[task.category as keyof typeof t.cat] ?? task.category}
+                          </div>
                         </div>
                         <button
-                          className={`today-schedule-tick${(task.is_done || pendingCheckIds.has(task.id)) ? ' checked' : ''}`}
+                          className={`today-schedule-tick${task.is_done || pendingCheckIds.has(task.id) ? " checked" : ""}`}
                           onClick={() => handleScheduleToggle(task.id)}
                         >
                           <IconCheck size={12} strokeWidth={3} />
@@ -264,20 +293,20 @@ export default function TodayView() {
                   })}
                 </div>
               ) : (
-                <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                  {t.today.noScheduled}
-                </div>
+                <div style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>{t.today.noScheduled}</div>
               )}
             </div>
           </div>
-
         </div>
       </div>
 
       {showModal && (
         <AddTaskModal
           editTask={editTask}
-          onClose={() => { setShowModal(false); setEditTask(null); }}
+          onClose={() => {
+            setShowModal(false);
+            setEditTask(null);
+          }}
         />
       )}
     </>

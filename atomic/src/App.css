@@ -644,7 +644,7 @@ select {
 
 .today-layout {
   display: grid;
-  grid-template-columns: 270px 1fr 230px;
+  grid-template-columns: 290px 1fr 250px;
   height: 100%;
   overflow: hidden;
 }
@@ -658,7 +658,7 @@ select {
 }
 
 .today-sidebar {
-  overflow-y: auto;
+  overflow-y: overlay;
   padding: 16px 14px;
   display: flex;
   justify-content: space-between;
@@ -666,6 +666,19 @@ select {
   gap: 20px;
   border-right: 0.5px solid var(--border-1);
   background: var(--bg-secondary);
+}
+
+.today-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.today-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.today-sidebar::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 2px;
 }
 
 .today-right {
@@ -682,6 +695,35 @@ select {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.today-sidebar .stats-row {
+  gap: 6px;
+}
+
+.today-sidebar .stat-card {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.today-sidebar .stat-label {
+  font-size: 0.72rem;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.today-sidebar .stat-value {
+  font-size: 1.57rem;
+  white-space: nowrap;
+}
+
+.today-sidebar .stat-sub,
+.today-sidebar .progress-bar-wrap {
+  margin-top: auto;
+  white-space: nowrap;
 }
 
 /* ── Today reminder widget (inline) ── */
