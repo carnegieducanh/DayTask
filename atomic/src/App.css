@@ -737,20 +737,44 @@ select {
 
 /* ── Today tab enter animations ── */
 @keyframes today-topbar-in {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes today-sidebar-in {
-  from { opacity: 0; transform: translateX(-10px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 @keyframes today-main-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes today-right-in {
-  from { opacity: 0; transform: translateX(10px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* ── Heatmap tab enter animations ── */
@@ -766,7 +790,7 @@ select {
   animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 .kanban-drag-hint {
-  animation: today-main-in 0.30s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
+  animation: today-main-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
 }
 .kanban-board {
   animation: today-main-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
@@ -776,6 +800,32 @@ select {
 .cal-wrap {
   animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
+
+/* Week view — staggered column entrance */
+.cal-week-col {
+  animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.cal-week-col:nth-child(1) { animation-delay: 0ms; }
+.cal-week-col:nth-child(2) { animation-delay: 30ms; }
+.cal-week-col:nth-child(3) { animation-delay: 60ms; }
+.cal-week-col:nth-child(4) { animation-delay: 90ms; }
+.cal-week-col:nth-child(5) { animation-delay: 120ms; }
+.cal-week-col:nth-child(6) { animation-delay: 150ms; }
+.cal-week-col:nth-child(7) { animation-delay: 180ms; }
+
+/* Month view — DOW header + staggered week row entrance */
+.cal-month-dow-row {
+  animation: today-topbar-in 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.cal-month-week-row {
+  animation: today-main-in 0.30s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.cal-month-week-row:nth-child(2) { animation-delay: 40ms; }
+.cal-month-week-row:nth-child(3) { animation-delay: 80ms; }
+.cal-month-week-row:nth-child(4) { animation-delay: 120ms; }
+.cal-month-week-row:nth-child(5) { animation-delay: 160ms; }
+.cal-month-week-row:nth-child(6) { animation-delay: 200ms; }
+.cal-month-week-row:nth-child(7) { animation-delay: 240ms; }
 
 /* ── Journal tab enter animations ── */
 .journal-sidebar {
@@ -2892,6 +2942,10 @@ select {
   width: 580px;
   padding: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 560px;
+  max-height: 90vh;
 }
 
 .settings-head {
@@ -2963,7 +3017,8 @@ select {
 .settings-body {
   padding: 6px 0;
   overflow-y: auto;
-  max-height: calc(90vh - 130px);
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 @keyframes settings-tab-enter {
@@ -4828,7 +4883,7 @@ select {
 .cal-body {
   flex: 1;
   display: flex;
-  gap: 12px;
+  gap: 20px;
   min-height: 0;
   overflow: hidden;
 }
@@ -4858,6 +4913,53 @@ select {
   padding: 10px 0;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* ── Calendar Day Sidebar — stats + vocab below MiniCalendar ── */
+.cal-day-sidebar-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding: 25px 0 0;
+}
+
+.cal-day-sidebar .vocab-widget-outer {
+  min-width: 0;
+  width: 100%;
+}
+
+.cal-day-sidebar .vocab-widget-word-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.cal-day-sidebar .vocab-widget-word {
+  font-size: 1.6rem;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.cal-day-sidebar .vocab-widget-ipa {
+  font-size: 0.85rem;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.cal-day-sidebar .vocab-widget-meaning {
+  font-size: 0.95rem;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.cal-day-sidebar .vocab-widget-meaning-en {
+  font-size: 0.82rem;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
 }
 
 /* ── Calendar Filter Sidebar ── */

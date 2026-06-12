@@ -22,6 +22,9 @@ import MonthView from "./MonthView";
 import DayView from "./DayView";
 import CalendarFilterSidebar from "./CalendarFilterSidebar";
 import MiniCalendar from "../today/MiniCalendar";
+import VocabWidget from "../today/VocabWidget";
+import DayStatsSection from "./DayStatsSection";
+import { calcDayStats } from "./calendarUtils";
 
 type CalViewType = "day" | "week" | "month";
 
@@ -124,7 +127,6 @@ export default function CalendarView() {
   const [highlightDate, setHighlightDate] = useState<string | null>(null);
   const [activeCategories, setActiveCategories] = useState<Set<Category>>(new Set());
   const [activeTags, setActiveTags] = useState<Set<number>>(new Set());
-
   useEffect(() => {
     const year = currentDate.getFullYear();
     if (year !== loadedYear) {
@@ -222,6 +224,8 @@ export default function CalendarView() {
     setActiveTags(new Set());
   };
 
+  const dayStats = calcDayStats(calendarTasks, calendarTimeEntries, selectedDate, categoryColors);
+
   return (
     <div className="cal-wrap">
       <CalToolbar
@@ -234,6 +238,12 @@ export default function CalendarView() {
         {view === "day" ? (
           <div className="cal-day-sidebar">
             <MiniCalendar />
+            <div className="cal-day-sidebar-extras">
+              <DayStatsSection stats={dayStats} />
+              <div style={{ padding: "0 8px" }}>
+                <VocabWidget />
+              </div>
+            </div>
           </div>
         ) : (
           <CalendarFilterSidebar

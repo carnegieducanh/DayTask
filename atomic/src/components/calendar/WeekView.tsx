@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { attachSmoothScroll } from '../../hooks/useSmoothScroll';
-import { createPortal } from 'react-dom';
 import { startOfWeek, addDays, format, isSameDay } from 'date-fns';
 
-import { IconClock, IconTrash, IconCheck } from '@tabler/icons-react';
+import { IconTrash, IconCheck } from '@tabler/icons-react';
 import { useT } from '../../i18n';
 import type { Task, CategoryColors, TaskTimeEntry } from '../../types';
 import { useAppStore } from '../../store/appStore';
-import { calcDayStats, formatMins, type DayStat } from './calendarUtils';
+import { calcDayStats } from './calendarUtils';
+import DayStatsSection from './DayStatsSection';
 
 const COLOR_PALETTE: string[] = [
   '#C05476', '#E3683E', '#D8BE5E', '#489160', '#6E72C3', '#A75ABA',
@@ -36,123 +36,6 @@ interface WeekViewProps {
   onDayClick: (date: string) => void;
   timeEntries: TaskTimeEntry[];
   highlightDate?: string;
-}
-
-function StatsPopover({ stats, pos }: { stats: DayStat[]; pos: { top: number; left: number } }) {
-  const t = useT();
-  const total = stats.reduce((sum, s) => sum + s.totalMins, 0);
-
-  return createPortal(
-    <div className="cal-stats-popup" style={{ top: pos.top, left: pos.left }}>
-      <div className="cal-week-stat-total-row">
-        <span className="cal-week-stat-total-label">
-          <IconClock size="0.75rem" />
-          {t.calendar.statsTotal}
-        </span>
-        <span className="cal-week-stat-total-val">{formatMins(total)}</span>
-      </div>
-      <div className="cal-week-stat-bar" style={{ marginBottom: 6 }}>
-        {stats.map((s) => (
-          <div
-            key={s.category}
-            className="cal-week-stat-bar-seg"
-            style={{ width: `${(s.totalMins / total) * 100}%`, background: s.color }}
-          />
-        ))}
-      </div>
-      <div className="cal-stats-popup-cats">
-        {stats.map((s) => (
-          <div key={s.category} className="cal-stats-popup-cat">
-            <div className="cal-stats-popup-cat-left">
-              <span className="cal-week-stat-dot" style={{ background: s.color }} />
-              <span className="cal-stats-popup-cat-name">{t.cat[s.category]}</span>
-            </div>
-            <span className="cal-week-stat-cat-val">{formatMins(s.totalMins)}</span>
-          </div>
-        ))}
-      </div>
-    </div>,
-    document.body
-  );
-}
-
-function DayStatsSection({ stats }: { stats: DayStat[] }) {
-  const t = useT();
-  const [hovered, setHovered] = useState(false);
-  const [popPos, setPopPos] = useState({ top: 0, left: 0 });
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (scrollRef.current) return attachSmoothScroll(scrollRef.current);
-  }, []);
-
-  const handleMouseEnter = (e: React.MouseEvent) => {
-    if (!stats.length) return;
-    const popW = 260;
-    const popH = 220;
-    let left = e.clientX + 14;
-    if (left + popW > window.innerWidth - 8) left = e.clientX - popW - 14;
-    if (left < 8) left = 8;
-    let top = e.clientY - 10;
-    if (top + popH > window.innerHeight - 8) top = window.innerHeight - popH - 8;
-    if (top < 8) top = 8;
-    setPopPos({ top, left });
-    setHovered(true);
-  };
-
-  if (!stats.length) {
-    return (
-      <div className="cal-week-stats">
-        <div className="cal-week-stats-empty">{t.calendar.noTasks}</div>
-      </div>
-    );
-  }
-
-  const total = stats.reduce((sum, s) => sum + s.totalMins, 0);
-
-  return (
-    <>
-      <div
-        ref={scrollRef}
-        className="cal-week-stats"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={() => setHovered(false)}
-      >
-        <div className="cal-week-stat-total-row">
-          <span className="cal-week-stat-total-label">
-            <IconClock size="0.75rem" />
-            {t.calendar.statsTotal}
-          </span>
-          <span className="cal-week-stat-total-val">{formatMins(total)}</span>
-        </div>
-
-        <div className="cal-week-stat-bar">
-          {stats.map((s) => (
-            <div
-              key={s.category}
-              className="cal-week-stat-bar-seg"
-              style={{
-                width: `${(s.totalMins / total) * 100}%`,
-                background: s.color,
-              }}
-            />
-          ))}
-        </div>
-
-        <div className="cal-week-stat-cats">
-          {stats.map((s) => (
-            <div key={s.category} className="cal-week-stat-cat">
-              <div className="cal-week-stat-cat-left">
-                <span className="cal-week-stat-dot" style={{ background: s.color }} />
-                <span className="cal-week-stat-cat-name">{t.cat[s.category]}</span>
-              </div>
-              <span className="cal-week-stat-cat-val">{formatMins(s.totalMins)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      {hovered && <StatsPopover stats={stats} pos={popPos} />}
-    </>
-  );
 }
 
 export default function WeekView({
