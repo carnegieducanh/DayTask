@@ -5390,8 +5390,7 @@ select {
 }
 
 .day-pending-count {
-  position: absolute;
-  left: 0;
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -5399,7 +5398,6 @@ select {
   color: var(--text-secondary);
   user-select: none;
   pointer-events: none;
-  line-height: 20px;
 }
 
 .day-pending-dot {
@@ -5415,23 +5413,34 @@ select {
   flex-shrink: 0;
   border-bottom: 1px solid var(--border-1);
   background: var(--bg-primary);
-  transition: height 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
 }
 
 .day-deck-gutter-spacer {
   width: 52px;
   flex-shrink: 0;
+}
+
+.day-deck-info-strip {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 6px;
+  align-items: center;
+  padding-right: 6px;
 }
 
 .day-tz-label {
+  width: 52px;
+  flex-shrink: 0;
   font-size: 0.7rem;
   color: var(--text-secondary);
   white-space: nowrap;
   user-select: none;
+  text-align: center;
 }
 
 .day-deck-events-area {
@@ -5439,6 +5448,12 @@ select {
   position: relative;
   /* border-left: 1px solid var(--border-1); */
   margin-top: 3px;
+}
+
+.day-deck-cards-clip {
+  position: relative;
+  overflow: hidden;
+  transition: height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .day-deck-card {
@@ -5467,8 +5482,7 @@ select {
 }
 
 .day-deck-badge {
-  position: absolute;
-  right: 6px;
+  flex-shrink: 0;
   font-size: 0.75rem;
   color: var(--text-secondary);
   background: var(--bg-secondary);

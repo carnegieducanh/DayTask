@@ -145,6 +145,8 @@ interface DragDeckTask {
   cursorX: number;
   cursorY: number;
   cardWidth: number;
+  grabOffsetX: number;
+  grabOffsetY: number;
 }
 
 export default function DayView({
@@ -195,12 +197,12 @@ export default function DayView({
 
   const layoutItems = computeLayout(scheduledTasks, taskTimeEntries, dateStr);
 
-  const visibleDeckTasks = deckExpanded ? unscheduledTasks : unscheduledTasks.slice(-MAX_DECK);
+  const collapsedDeckCount = Math.min(MAX_DECK, unscheduledTasks.length);
+  const collapsedDeckHeight = collapsedDeckCount > 0 ? CARD_HEIGHT + (collapsedDeckCount - 1) * DECK_OFFSET : 0;
+  const expandedDeckHeight = unscheduledTasks.length > 0 ? CARD_HEIGHT + (unscheduledTasks.length - 1) * DECK_OFFSET : 0;
+  const deckHeight = deckExpanded ? expandedDeckHeight : collapsedDeckHeight;
   const hiddenCount = deckExpanded ? 0 : Math.max(0, unscheduledTasks.length - MAX_DECK);
-  const deckHeight = visibleDeckTasks.length > 0 ? CARD_HEIGHT + (visibleDeckTasks.length - 1) * DECK_OFFSET : 0;
-  const hasBadge = hiddenCount > 0 || (deckExpanded && unscheduledTasks.length > MAX_DECK);
   const pendingCount = unscheduledTasks.length;
-  const hasBottomRow = hasBadge || pendingCount > 0;
 
   // Update current-time indicator every minute
   useEffect(() => {
@@ -304,7 +306,7 @@ export default function DayView({
     if (e.button !== 0) return;
     e.stopPropagation();
     e.preventDefault();
-    const cardWidth = (e.currentTarget as HTMLElement).getBoundingClientRect().width;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     setDragDeckTask({
       taskId: task.id,
       task,
@@ -312,7 +314,9 @@ export default function DayView({
       endMin: -1,
       cursorX: e.clientX,
       cursorY: e.clientY,
-      cardWidth,
+      cardWidth: rect.width,
+      grabOffsetX: e.clientX - rect.left,
+      grabOffsetY: e.clientY - rect.top,
     });
   }
 
@@ -446,44 +450,47 @@ export default function DayView({
   return (
     <div className="day-view">
       {/* Unscheduled task deck — fixed row above the scrollable grid */}
-      {(visibleDeckTasks.length > 0 || pendingCount > 0) && (
-        <div className="day-deck-row" style={{ height: deckHeight + (hasBottomRow ? 30 : 0) }}>
-          <div className="day-deck-gutter-spacer">
-            <span className="day-tz-label">{tzLabel}</span>
+      {unscheduledTasks.length > 0 && (
+        <div className="day-deck-row" style={{ height: deckHeight + 28 }}>
+          <div className="day-deck-gutter-spacer" />
+          <div className="day-deck-events-area">
+            <div className="day-deck-cards-clip" style={{ height: deckHeight }}>
+              {unscheduledTasks.map((task, i) => {
+                const color = task.color ?? categoryColors[task.category];
+                return (
+                  <div
+                    key={task.id}
+                    className="day-deck-card"
+                    style={{
+                      top: i * DECK_OFFSET,
+                      zIndex: i + 1,
+                      backgroundColor: color,
+                      borderLeft: `3px solid ${color}`,
+                    }}
+                    onMouseDown={(e) => handleDeckCardMouseDown(e, task)}
+                    onContextMenu={(e) => handleTaskContextMenu(e, task)}
+                  >
+                    <div className="day-task-title">{task.title}</div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="day-deck-events-area" style={{ height: deckHeight }}>
-            {visibleDeckTasks.map((task, i) => {
-              const color = task.color ?? categoryColors[task.category];
-              return (
-                <div
-                  key={task.id}
-                  className="day-deck-card"
-                  style={{
-                    top: i * DECK_OFFSET,
-                    zIndex: i + 1,
-                    backgroundColor: color,
-                    borderLeft: `3px solid ${color}`,
-                  }}
-                  onMouseDown={(e) => handleDeckCardMouseDown(e, task)}
-                  onContextMenu={(e) => handleTaskContextMenu(e, task)}
-                >
-                  <div className="day-task-title">{task.title}</div>
-                </div>
-              );
-            })}
+          <div className="day-deck-info-strip">
+            <span className="day-tz-label">{tzLabel}</span>
             {pendingCount > 0 && (
-              <div className="day-pending-count" style={{ top: deckHeight + 3 }}>
+              <div className="day-pending-count">
                 <span className="day-pending-dot" />
                 {t.calendar.pendingTasks(pendingCount)}
               </div>
             )}
             {hiddenCount > 0 && (
-              <div className="day-deck-badge" style={{ top: deckHeight + 4 }} onClick={() => setDeckExpanded(true)}>
+              <div className="day-deck-badge" onClick={() => setDeckExpanded(true)}>
                 +{hiddenCount}
               </div>
             )}
             {deckExpanded && unscheduledTasks.length > MAX_DECK && (
-              <div className="day-deck-badge" style={{ top: deckHeight + 4 }} onClick={() => setDeckExpanded(false)}>
+              <div className="day-deck-badge" onClick={() => setDeckExpanded(false)}>
                 −
               </div>
             )}
@@ -723,8 +730,8 @@ export default function DayView({
         <div
           style={{
             position: "fixed",
-            left: dragDeckTask.cursorX - 10,
-            top: dragDeckTask.cursorY - 14,
+            left: dragDeckTask.cursorX - dragDeckTask.grabOffsetX,
+            top: dragDeckTask.cursorY - dragDeckTask.grabOffsetY,
             width: dragDeckTask.cardWidth,
             height: CARD_HEIGHT,
             borderRadius: 4,
