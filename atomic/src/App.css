@@ -702,7 +702,7 @@ select {
   flex-shrink: 0;
 }
 .vocab-widget-ipa {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   line-height: 1.2;
   white-space: nowrap;
@@ -719,17 +719,8 @@ select {
 .vocab-widget-meaning {
   font-size: 0.8rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--greeting-color);
   line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.vocab-widget-meaning-en {
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  font-style: italic;
-  line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -801,27 +792,53 @@ select {
 .cal-week-col {
   animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
-.cal-week-col:nth-child(1) { animation-delay: 0ms; }
-.cal-week-col:nth-child(2) { animation-delay: 30ms; }
-.cal-week-col:nth-child(3) { animation-delay: 60ms; }
-.cal-week-col:nth-child(4) { animation-delay: 90ms; }
-.cal-week-col:nth-child(5) { animation-delay: 120ms; }
-.cal-week-col:nth-child(6) { animation-delay: 150ms; }
-.cal-week-col:nth-child(7) { animation-delay: 180ms; }
+.cal-week-col:nth-child(1) {
+  animation-delay: 0ms;
+}
+.cal-week-col:nth-child(2) {
+  animation-delay: 30ms;
+}
+.cal-week-col:nth-child(3) {
+  animation-delay: 60ms;
+}
+.cal-week-col:nth-child(4) {
+  animation-delay: 90ms;
+}
+.cal-week-col:nth-child(5) {
+  animation-delay: 120ms;
+}
+.cal-week-col:nth-child(6) {
+  animation-delay: 150ms;
+}
+.cal-week-col:nth-child(7) {
+  animation-delay: 180ms;
+}
 
 /* Month view — DOW header + staggered week row entrance */
 .cal-month-dow-row {
   animation: today-topbar-in 0.24s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 .cal-month-week-row {
-  animation: today-main-in 0.30s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  animation: today-main-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
-.cal-month-week-row:nth-child(2) { animation-delay: 40ms; }
-.cal-month-week-row:nth-child(3) { animation-delay: 80ms; }
-.cal-month-week-row:nth-child(4) { animation-delay: 120ms; }
-.cal-month-week-row:nth-child(5) { animation-delay: 160ms; }
-.cal-month-week-row:nth-child(6) { animation-delay: 200ms; }
-.cal-month-week-row:nth-child(7) { animation-delay: 240ms; }
+.cal-month-week-row:nth-child(2) {
+  animation-delay: 40ms;
+}
+.cal-month-week-row:nth-child(3) {
+  animation-delay: 80ms;
+}
+.cal-month-week-row:nth-child(4) {
+  animation-delay: 120ms;
+}
+.cal-month-week-row:nth-child(5) {
+  animation-delay: 160ms;
+}
+.cal-month-week-row:nth-child(6) {
+  animation-delay: 200ms;
+}
+.cal-month-week-row:nth-child(7) {
+  animation-delay: 240ms;
+}
 
 /* ── Journal tab enter animations ── */
 .journal-sidebar {
@@ -904,6 +921,8 @@ select {
   padding: 10px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .today-sidebar .stat-label {
@@ -917,12 +936,16 @@ select {
 .today-sidebar .stat-value {
   font-size: 1.57rem;
   white-space: nowrap;
+  overflow: hidden;
 }
 
-.today-sidebar .stat-sub,
+.today-sidebar .stat-sub {
+  font-size: 0.68rem;
+  line-height: 1.3;
+}
+
 .today-sidebar .progress-bar-wrap {
   margin-top: auto;
-  white-space: nowrap;
 }
 
 /* ── Today reminder widget (inline) ── */
@@ -1397,14 +1420,14 @@ select {
   font-style: italic;
   font-size: 0.9rem;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--text-primary);
   letter-spacing: 0.02em;
 }
 .wc-week-badge {
   font-family: "Lora", Georgia, serif;
   font-style: italic;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-primary);
   background: rgba(255, 255, 255, 0.09);
   padding: 1px 6px;
   border-radius: 3px;
@@ -1413,7 +1436,7 @@ select {
   font-family: "Lora", Georgia, serif;
   font-style: italic;
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-primary);
 }
 .wc-add-btn {
   background: none;
@@ -5355,24 +5378,10 @@ select {
   min-width: 0;
 }
 
-.day-task-desc {
-  font-size: 0.78rem;
-  color: rgba(0, 0, 0, 0.6);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.3;
-  margin-top: 1px;
-}
-
 .day-task-desc-inline {
   font-size: 0.78rem;
-  color: rgba(0, 0, 0, 0.6);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-shrink: 2;
-  min-width: 0;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.72);
 }
 
 .day-task-time {
@@ -5458,7 +5467,9 @@ select {
   right: 0.5%;
   height: 52px;
   animation: deck-card-in 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-  transition: top 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.1s;
+  transition:
+    top 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    filter 0.1s;
   border-radius: 4px;
   padding: 3px 6px;
   font-size: 0.88rem;
@@ -5488,7 +5499,11 @@ select {
   pointer-events: all;
   user-select: none;
   cursor: pointer;
-  transition: color 0.15s, background 0.15s, border-color 0.15s, transform 0.1s;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.1s;
   animation: deck-badge-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
@@ -5502,14 +5517,28 @@ select {
 }
 
 @keyframes deck-card-in {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes deck-badge-pop {
-  0%   { opacity: 0; transform: scale(0.65); }
-  60%  { transform: scale(1.1); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  60% {
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* ── Update Dialog ── */

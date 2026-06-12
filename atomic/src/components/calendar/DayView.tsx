@@ -627,10 +627,12 @@ export default function DayView({
                 />
                 {height < 48 ? (
                   <div className="day-task-compact-row">
-                    <div className="day-task-title">{item.task.title}</div>
-                    {item.task.description && (
-                      <span className="day-task-desc-inline">{item.task.description}</span>
-                    )}
+                    <div className="day-task-title">
+                      {item.task.title}
+                      {item.task.description && (
+                        <span className="day-task-desc-inline"> &gt; {item.task.description}</span>
+                      )}
+                    </div>
                     {item.entry && (
                       <span className="day-task-time">
                         {minToTime(startMin)} – {minToTime(endMin)}
@@ -646,10 +648,12 @@ export default function DayView({
                   </div>
                 ) : (
                   <>
-                    <div className="day-task-title">{item.task.title}</div>
-                    {item.task.description && (
-                      <div className="day-task-desc">{item.task.description}</div>
-                    )}
+                    <div className="day-task-title">
+                      {item.task.title}
+                      {item.task.description && (
+                        <span className="day-task-desc-inline"> &gt; {item.task.description}</span>
+                      )}
+                    </div>
                     {height >= 34 && (
                       <div className="day-task-meta">
                         {item.entry && (
