@@ -743,7 +743,6 @@ select {
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 @keyframes today-sidebar-in {
@@ -753,7 +752,6 @@ select {
   }
   to {
     opacity: 1;
-    transform: translateX(0);
   }
 }
 @keyframes today-main-in {
@@ -763,7 +761,6 @@ select {
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 @keyframes today-right-in {
@@ -773,7 +770,6 @@ select {
   }
   to {
     opacity: 1;
-    transform: translateX(0);
   }
 }
 

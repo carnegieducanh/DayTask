@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import { format } from "date-fns";
 import { IconTag, IconTrash, IconCheck, IconCalendarMinus } from "@tabler/icons-react";
@@ -726,7 +727,7 @@ export default function DayView({
       </div>
 
       {/* Floating cursor ghost — visible while dragging a deck card over the deck area */}
-      {dragDeckTask && dragDeckTask.startMin === -1 && (
+      {dragDeckTask && dragDeckTask.startMin === -1 && createPortal(
         <div
           style={{
             position: "fixed",
@@ -750,7 +751,8 @@ export default function DayView({
           }}
         >
           <div className="day-task-title">{dragDeckTask.task.title}</div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {contextMenu && (
