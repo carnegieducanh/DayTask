@@ -114,6 +114,15 @@ export interface JournalStats {
   gratitudeDays: number;
   lessonDays: number;
 }
+export interface VocabWord {
+  id: number;
+  word: string;
+  ipa: string;
+  meaning: string;
+  position: number;
+  created_at: string;
+}
+
 export type Theme = 'light' | 'dark';
 export type Language = 'vi' | 'en';
 export type AccentColor = 'blue' | 'orange' | 'green' | 'purple' | 'red' | 'yellow';

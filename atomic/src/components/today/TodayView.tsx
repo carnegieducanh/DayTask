@@ -12,6 +12,7 @@ import MiniHeatmap from "./MiniHeatmap";
 import MiniCalendar from "./MiniCalendar";
 import DailyGreeting from "./DailyGreeting";
 import { WeeklyChecklist } from "./WeeklyChecklist";
+import VocabWidget from "./VocabWidget";
 import type { Task } from "../../types";
 
 export default function TodayView() {
@@ -163,7 +164,9 @@ export default function TodayView() {
 
         <DailyGreeting pendingCount={pending.length} isToday={selectedDate === format(new Date(), "yyyy-MM-dd")} />
 
-        <div className="today-topbar-side today-topbar-actions"></div>
+        <div className="today-topbar-side today-topbar-actions">
+          <VocabWidget />
+        </div>
       </div>
 
       <div className="view-content today-content">

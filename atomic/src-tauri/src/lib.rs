@@ -192,6 +192,19 @@ pub fn run() {
             CREATE INDEX IF NOT EXISTS idx_weekly_checklist_week ON weekly_checklist(week_key);",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 13,
+            description: "create_vocab_words",
+            sql: "CREATE TABLE IF NOT EXISTS vocab_words (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                word       TEXT NOT NULL,
+                ipa        TEXT NOT NULL DEFAULT '',
+                meaning    TEXT NOT NULL,
+                position   INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT DEFAULT (datetime('now'))
+            );",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]
