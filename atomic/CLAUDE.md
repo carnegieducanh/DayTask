@@ -320,6 +320,51 @@ let _ = tauri::WebviewWindowBuilder::new(app, "tray-popup", ...)
 
 ---
 
+### Tab Enter Animation — CSS-only, không cần JS
+
+**Cách hoạt động:** Vì mỗi tab view được render bằng `{activeTab === 'x' && <XView />}`, component remount mỗi lần switch tab → CSS `animation` tự phát lại mà không cần thêm logic JS nào.
+
+**Keyframes dùng chung (đã có trong `App.css`):**
+```css
+@keyframes today-topbar-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes today-sidebar-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes today-main-in   { from { opacity: 0; transform: translateY(10px); }  to { opacity: 1; transform: translateY(0); } }
+@keyframes today-right-in  { from { opacity: 0; transform: translateX(10px); }  to { opacity: 1; transform: translateX(0); } }
+```
+
+**Mapping tab → class → animation đang dùng:**
+
+| Tab | CSS class | Keyframe | Delay |
+|---|---|---|---|
+| Today | `.today-topbar` | `today-topbar-in` | 0ms |
+| Today | `.today-sidebar` | `today-sidebar-in` | 40ms |
+| Today | `.today-main` | `today-main-in` | 80ms |
+| Today | `.today-right` | `today-right-in` | 40ms |
+| Heatmap | `.view-topbar:not(.today-topbar)` | `today-topbar-in` | 0ms |
+| Heatmap | `.view-content:not(.today-content)` | `today-main-in` | 60ms |
+| Year Plan | `.kanban-stats-bar` | `today-topbar-in` | 0ms |
+| Year Plan | `.kanban-drag-hint` | `today-main-in` | 40ms |
+| Year Plan | `.kanban-board` | `today-main-in` | 80ms |
+| Calendar | `.cal-wrap` | `today-main-in` | 0ms |
+| Journal | `.journal-sidebar` | `today-sidebar-in` | 40ms |
+| Journal | `.journal-main` | `today-main-in` | 80ms |
+
+**Template thêm animation cho tab mới:**
+```css
+/* Trong App.css — thêm vào block "Tab Enter Animations" */
+.ten-class-wrapper {
+  animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) Xms both;
+}
+```
+- Easing chuẩn: `cubic-bezier(0.25, 0.46, 0.45, 0.94)`
+- Duration: 0.28–0.35s (topbar nhanh hơn, content chậm hơn)
+- `both` = giữ trạng thái `opacity: 0` trước khi animation chạy
+- Stagger: mỗi element tiếp theo tăng thêm ~40ms delay
+
+**Lưu ý:** `.view-topbar` và `.view-content` là class dùng chung. Heatmap dùng `:not(.today-topbar)` / `:not(.today-content)` để tránh đụng Today. Tab mới nên có wrapper class riêng.
+
+---
+
 ## Lưu ý quan trọng
 
 - **Icons:** Dùng `@tabler/icons-react` — KHÔNG dùng webfont hay emoji

@@ -629,6 +629,7 @@ select {
   display: grid;
   grid-template-columns: var(--today-cols);
   align-items: center;
+  animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
 .today-topbar-side {
@@ -734,6 +735,56 @@ select {
   text-overflow: ellipsis;
 }
 
+/* ── Today tab enter animations ── */
+@keyframes today-topbar-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes today-sidebar-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes today-main-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes today-right-in {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Heatmap tab enter animations ── */
+.view-topbar:not(.today-topbar) {
+  animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.view-content:not(.today-content) {
+  animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.06s both;
+}
+
+/* ── Kanban (Year Plan) tab enter animations ── */
+.kanban-stats-bar {
+  animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.kanban-drag-hint {
+  animation: today-main-in 0.30s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
+}
+.kanban-board {
+  animation: today-main-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
+}
+
+/* ── Calendar tab enter animations ── */
+.cal-wrap {
+  animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* ── Journal tab enter animations ── */
+.journal-sidebar {
+  animation: today-sidebar-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
+}
+.journal-main {
+  animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
+}
+
 /* ── Today 2-column layout ── */
 .view-content.today-content {
   padding: 0;
@@ -754,6 +805,7 @@ select {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
 }
 
 .today-sidebar {
@@ -765,6 +817,7 @@ select {
   gap: 20px;
   border-right: 0.5px solid var(--border-1);
   background: var(--bg-secondary);
+  animation: today-sidebar-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
 }
 
 .today-sidebar::-webkit-scrollbar {
@@ -788,6 +841,7 @@ select {
   gap: 20px;
   border-left: 0.5px solid var(--border-1);
   background: var(--bg-secondary);
+  animation: today-right-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
 }
 
 .today-sidebar-section {
@@ -1290,6 +1344,7 @@ select {
   align-items: center;
   gap: 7px;
   margin-bottom: 6px;
+  margin-left: 10px;
 }
 .wc-title {
   font-family: "Lora", Georgia, serif;
@@ -4799,7 +4854,8 @@ select {
   width: 200px;
   flex-shrink: 0;
   background: var(--bg-primary);
-  padding: 10px 8px 12px;
+  /* padding: 10px 8px 12px; */
+  padding: 10px 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
