@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
@@ -22,6 +22,7 @@ export default function DailyGreeting({ pendingCount, isToday }: Props) {
   const t = useT();
   const language = useAppStore((s) => s.language);
   const [visible, setVisible] = useState(false);
+  const mainRef = useRef<HTMLDivElement>(null);
   const period = getPeriod(new Date().getHours());
 
   const message = useMemo(() => {
@@ -72,13 +73,29 @@ export default function DailyGreeting({ pendingCount, isToday }: Props) {
     return () => clearTimeout(id);
   }, []);
 
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const fit = () => {
+      const maxWidth = el.parentElement?.offsetWidth ?? el.offsetWidth;
+      el.style.fontSize = '40px';
+      while (el.scrollWidth > maxWidth && parseFloat(el.style.fontSize) > 14) {
+        el.style.fontSize = (parseFloat(el.style.fontSize) - 1) + 'px';
+      }
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el.parentElement ?? el);
+    return () => ro.disconnect();
+  }, [message]);
+
   const taskText = isToday
     ? pendingCount === 0 ? t.greeting.noTasks : t.greeting.hasTasks(pendingCount)
     : pendingCount === 0 ? t.greeting.noTasksDay : t.greeting.hasTasksDay(pendingCount);
 
   return (
     <div className={`daily-greeting${visible ? ' daily-greeting--visible' : ''}`}>
-      <div className="daily-greeting-main">{message}</div>
+      <div className="daily-greeting-main" ref={mainRef}>{message}</div>
       {taskText && <div className="daily-greeting-sub">{taskText}</div>}
     </div>
   );

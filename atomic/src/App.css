@@ -592,6 +592,8 @@ select {
 /* ── Daily Greeting ── */
 .daily-greeting {
   text-align: center;
+  min-width: 0;
+  overflow: hidden;
   opacity: 0;
   transform: translateY(8px);
   transition:
@@ -608,9 +610,11 @@ select {
   font-family: "Lora", Georgia, serif;
   font-weight: 300;
   font-size: 40px;
-  line-height: 60px;
+  line-height: 1.5;
   color: var(--greeting-color);
   letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .daily-greeting-sub {
