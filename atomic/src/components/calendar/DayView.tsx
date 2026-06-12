@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import { format } from "date-fns";
@@ -179,6 +179,22 @@ export default function DayView({
   const [deckExpanded, setDeckExpanded] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(gridRef);
+  // Mutable refs so mousemove/mouseup callbacks are stable ([] deps) and listeners
+  // are not removed+re-added on every state update, which was causing jitter.
+  const dragCreateRef = useRef(dragCreate);
+  dragCreateRef.current = dragCreate;
+  const dragMoveRef = useRef(dragMove);
+  dragMoveRef.current = dragMove;
+  const dragResizeRef = useRef(dragResize);
+  dragResizeRef.current = dragResize;
+  const dragDeckTaskRef = useRef(dragDeckTask);
+  dragDeckTaskRef.current = dragDeckTask;
+  // Direct DOM ref for the floating card — position updated without React re-render
+  const floatingCardRef = useRef<HTMLDivElement | null>(null);
+  // Direct DOM ref for the timeline ghost — same approach, smooth follow + only state when time changes
+  const ghostRef = useRef<HTMLDivElement | null>(null);
+  // Stores cardTop at the moment startMin last changed — used to set initial ghost position via useLayoutEffect
+  const ghostInitialTopRef = useRef<number>(0);
 
   const [currentTimeMin, setCurrentTimeMin] = useState(() => {
     const now = new Date();
@@ -324,6 +340,13 @@ export default function DayView({
   // ── Global mouse-move and mouse-up handlers (window-level) ──
   const handleWindowMouseMove = useCallback(
     (e: MouseEvent) => {
+      // Read from refs so this callback is stable ([] deps) and the useEffect
+      // never removes+re-adds the listener on every state update.
+      const dragCreate = dragCreateRef.current;
+      const dragMove = dragMoveRef.current;
+      const dragResize = dragResizeRef.current;
+      const dragDeckTask = dragDeckTaskRef.current;
+
       if (dragCreate) {
         const y = getRelY(e.clientY);
         const endMin = Math.round(Math.max(0, Math.min(pxToMin(y), 1440)) / 15) * 15;
@@ -364,26 +387,47 @@ export default function DayView({
         const cursorX = e.clientX;
         const cursorY = e.clientY;
         if (viewportY < 0) {
-          // Cursor back above the grid (deck area) — reset placement, keep cursor pos
-          setDragDeckTask((prev) => {
-            if (!prev) return null;
-            const next = { ...prev, cursorX, cursorY };
-            return prev.startMin !== -1 ? { ...next, startMin: -1, endMin: -1 } : next;
-          });
+          // Cursor above grid — show floating card.
+          // Update DOM directly to avoid a React re-render on every frame.
+          if (floatingCardRef.current) {
+            floatingCardRef.current.style.left = `${cursorX - dragDeckTask.grabOffsetX}px`;
+            floatingCardRef.current.style.top = `${cursorY - dragDeckTask.grabOffsetY}px`;
+          }
+          // Only call setState when transitioning from timeline → deck (startMin changes).
+          if (dragDeckTask.startMin !== -1) {
+            setDragDeckTask((prev) => prev ? { ...prev, cursorX, cursorY, startMin: -1, endMin: -1 } : null);
+          }
         } else {
-          // Ghost follows cursor with fixed DEFAULT_DURATION height
+          // Cursor over timeline.
           const y = getRelY(e.clientY);
-          const startMin = Math.max(0, Math.min(Math.round(pxToMin(y) / 15) * 15, 1380));
-          setDragDeckTask((prev) =>
-            prev ? { ...prev, startMin, endMin: Math.min(startMin + DEFAULT_DURATION, 1440), cursorX, cursorY } : null,
-          );
+          // Ghost follows cursor with same grab offset as the floating card (smooth).
+          const cardTop = Math.max(0, Math.min(y - dragDeckTask.grabOffsetY, minToPx(1440) - CARD_HEIGHT));
+          if (ghostRef.current) {
+            ghostRef.current.style.top = `${cardTop}px`;
+          }
+          // Snap time to 15-min grid based on card top, not raw cursor.
+          const startMin = Math.max(0, Math.min(Math.round(pxToMin(cardTop) / 15) * 15, 1380));
+          const endMin = Math.min(startMin + DEFAULT_DURATION, 1440);
+          // Only update React state when snapped time actually changes (time text update).
+          if (dragDeckTask.startMin !== startMin) {
+            // Remember cardTop so useLayoutEffect can restore it after React overwrites nothing
+            // (but also handles the first-mount case when ghostRef is still null here).
+            ghostInitialTopRef.current = cardTop;
+            setDragDeckTask((prev) => prev ? { ...prev, startMin, endMin } : null);
+          }
         }
       }
     },
-    [dragCreate, dragMove, dragResize, dragDeckTask], // eslint-disable-line react-hooks/exhaustive-deps
+    [], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const handleWindowMouseUp = useCallback(async () => {
+    // Read from refs for the same reason as handleWindowMouseMove.
+    const dragCreate = dragCreateRef.current;
+    const dragMove = dragMoveRef.current;
+    const dragResize = dragResizeRef.current;
+    const dragDeckTask = dragDeckTaskRef.current;
+
     if (dragCreate) {
       const { startMin, endMin } = dragCreate;
       if (endMin - startMin >= MIN_DRAG_DURATION) {
@@ -429,17 +473,29 @@ export default function DayView({
       // else: card returns to deck naturally (dragDeckTask cleared)
       setDragDeckTask(null);
     }
-  }, [dragCreate, dragMove, dragResize, dragDeckTask, dateStr, saveTimeEntry, onTaskClick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dateStr, saveTimeEntry, onTaskClick]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Register listeners only when drag starts/stops — not on every state update.
+  const isDragging = !!(dragCreate || dragMove || dragResize || dragDeckTask);
   useEffect(() => {
-    if (!dragCreate && !dragMove && !dragResize && !dragDeckTask) return;
+    if (!isDragging) return;
     window.addEventListener("mousemove", handleWindowMouseMove);
     window.addEventListener("mouseup", handleWindowMouseUp);
     return () => {
       window.removeEventListener("mousemove", handleWindowMouseMove);
       window.removeEventListener("mouseup", handleWindowMouseUp);
     };
-  }, [dragCreate, dragMove, dragResize, dragDeckTask, handleWindowMouseMove, handleWindowMouseUp]);
+  }, [isDragging, handleWindowMouseMove, handleWindowMouseUp]);
+
+  // Runs synchronously after React commits the ghost element, before paint.
+  // Restores the cursor-following `top` that direct DOM set — React would have
+  // overwritten it via the style prop, so we removed `top` from the style prop
+  // and own it exclusively here + in the mousemove handler.
+  useLayoutEffect(() => {
+    if (ghostRef.current) {
+      ghostRef.current.style.top = `${ghostInitialTopRef.current}px`;
+    }
+  }, [dragDeckTask?.startMin]); // fires whenever startMin changes (boundary crossing or first mount)
 
   const tzOffset = -new Date().getTimezoneOffset() / 60;
   const tzLabel = `GMT${tzOffset >= 0 ? "+" : ""}${tzOffset}`;
@@ -624,9 +680,11 @@ export default function DayView({
           {/* Deck drag ghost — shows on timeline while dragging from deck */}
           {dragDeckTask && dragDeckTask.startMin !== -1 && (
             <div
+              ref={ghostRef}
               className="day-task-block"
               style={{
-                top: minToPx(dragDeckTask.startMin),
+                // `top` intentionally omitted — owned entirely by direct DOM (mousemove + useLayoutEffect).
+                // If it were here, React would overwrite our cursor-following value on every re-render.
                 height: Math.max(minToPx(dragDeckTask.endMin - dragDeckTask.startMin), 22),
                 left: "0.5%",
                 width: "98%",
@@ -729,6 +787,7 @@ export default function DayView({
       {/* Floating cursor ghost — visible while dragging a deck card over the deck area */}
       {dragDeckTask && dragDeckTask.startMin === -1 && createPortal(
         <div
+          ref={floatingCardRef}
           style={{
             position: "fixed",
             left: dragDeckTask.cursorX - dragDeckTask.grabOffsetX,
