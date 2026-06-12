@@ -1401,15 +1401,15 @@ select {
   font-style: italic;
   font-size: 0.9rem;
   font-weight: 400;
-  color: color-mix(in srgb, var(--greeting-color) 90%, transparent);
+  color: rgba(255, 255, 255, 0.72);
   letter-spacing: 0.02em;
 }
 .wc-week-badge {
   font-family: "Lora", Georgia, serif;
   font-style: italic;
   font-size: 0.75rem;
-  color: color-mix(in srgb, var(--greeting-color) 80%, transparent);
-  background: color-mix(in srgb, var(--greeting-color) 12%, transparent);
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.09);
   padding: 1px 6px;
   border-radius: 3px;
 }
@@ -1417,7 +1417,7 @@ select {
   font-family: "Lora", Georgia, serif;
   font-style: italic;
   font-size: 0.9rem;
-  color: color-mix(in srgb, var(--greeting-color) 80%, transparent);
+  color: rgba(255, 255, 255, 0.55);
 }
 .wc-add-btn {
   background: none;
@@ -1493,7 +1493,7 @@ select {
 .wc-text {
   font-family: "Lora", Georgia, serif;
   font-style: italic;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 400;
   color: var(--greeting-color);
   line-height: 1.45;
@@ -5415,6 +5415,7 @@ select {
   flex-shrink: 0;
   border-bottom: 1px solid var(--border-1);
   background: var(--bg-primary);
+  transition: height 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .day-deck-gutter-spacer {
@@ -5445,6 +5446,8 @@ select {
   left: 0.5%;
   right: 0.5%;
   height: 52px;
+  animation: deck-card-in 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  transition: top 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.1s;
   border-radius: 4px;
   padding: 3px 6px;
   font-size: 0.88rem;
@@ -5453,7 +5456,6 @@ select {
   box-sizing: border-box;
   user-select: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
-  transition: filter 0.1s;
 }
 
 .day-deck-card:hover {
@@ -5476,11 +5478,28 @@ select {
   pointer-events: all;
   user-select: none;
   cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s, transform 0.1s;
+  animation: deck-badge-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .day-deck-badge:hover {
   color: var(--text-primary);
   border-color: var(--border-2);
+}
+
+.day-deck-badge:active {
+  transform: scale(0.88);
+}
+
+@keyframes deck-card-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes deck-badge-pop {
+  0%   { opacity: 0; transform: scale(0.65); }
+  60%  { transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 /* ── Update Dialog ── */
