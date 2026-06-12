@@ -205,6 +205,13 @@ pub fn run() {
             );",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 14,
+            description: "vocab_words_add_pos_meaning_en",
+            sql: "ALTER TABLE vocab_words ADD COLUMN part_of_speech TEXT NOT NULL DEFAULT '';
+                  ALTER TABLE vocab_words ADD COLUMN meaning_en TEXT NOT NULL DEFAULT '';",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

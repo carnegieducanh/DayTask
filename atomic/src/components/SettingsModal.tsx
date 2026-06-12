@@ -178,7 +178,9 @@ export default function SettingsModal() {
         return {
           word: parts[0]?.trim() ?? "",
           ipa: parts[1]?.trim() ?? "",
-          meaning: parts[2]?.trim() ?? "",
+          part_of_speech: parts[2]?.trim() ?? "",
+          meaning: parts[3]?.trim() ?? "",
+          meaning_en: parts[4]?.trim() ?? "",
         };
       })
       .filter((r) => r.word && r.meaning);
@@ -785,7 +787,9 @@ export default function SettingsModal() {
                         <tr>
                           <th>{t.vocab.wordCol}</th>
                           <th>{t.vocab.ipaCol}</th>
+                          <th>{t.vocab.posCol}</th>
                           <th>{t.vocab.meaningCol}</th>
+                          <th>{t.vocab.meaningEnCol}</th>
                           <th></th>
                         </tr>
                       </thead>
@@ -796,7 +800,13 @@ export default function SettingsModal() {
                             <td style={{ color: "var(--text-secondary)", fontFamily: "monospace", fontSize: "0.78rem" }}>
                               {w.ipa || "—"}
                             </td>
+                            <td style={{ color: "var(--text-secondary)", fontSize: "0.78rem" }}>
+                              {w.part_of_speech || "—"}
+                            </td>
                             <td>{w.meaning}</td>
+                            <td style={{ color: "var(--text-secondary)", fontStyle: "italic" }}>
+                              {w.meaning_en || "—"}
+                            </td>
                             <td>
                               <button
                                 className="settings-tag-action-btn settings-tag-action-delete"

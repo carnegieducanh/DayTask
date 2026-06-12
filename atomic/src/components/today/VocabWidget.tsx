@@ -73,13 +73,25 @@ export default function VocabWidget() {
   if (!current) return null;
 
   return (
-    <div className="vocab-widget" onClick={advance} title={t.vocab.clickHint}>
+    <div className="vocab-widget-outer" onClick={advance} title={t.vocab.clickHint}>
+      <div className="vocab-widget-label">{t.vocab.widgetHeader}</div>
+      <div className="vocab-widget">
       <div className="vocab-widget-content" key={contentKey}>
-        <span className="vocab-widget-word">{current.word}</span>
-        {current.ipa && (
-          <span className="vocab-widget-ipa">/{current.ipa}/</span>
+        <div className="vocab-widget-word-row">
+          <span className="vocab-widget-word">{current.word}</span>
+          {current.ipa && (
+            <span className="vocab-widget-ipa">/ {current.ipa} /</span>
+          )}
+        </div>
+        {current.part_of_speech && (
+          <span className="vocab-widget-pos">{current.part_of_speech}</span>
         )}
+        <div className="vocab-widget-divider" />
         <span className="vocab-widget-meaning">{current.meaning}</span>
+        {current.meaning_en && (
+          <span className="vocab-widget-meaning-en">{current.meaning_en}</span>
+        )}
+      </div>
       </div>
     </div>
   );

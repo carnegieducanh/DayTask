@@ -40,7 +40,7 @@ export async function dbAddVocabWord(word: string, ipa: string, meaning: string)
 }
 
 export async function dbBulkAddVocabWords(
-  rows: Array<{ word: string; ipa: string; meaning: string }>
+  rows: Array<{ word: string; ipa: string; part_of_speech: string; meaning: string; meaning_en: string }>
 ): Promise<void> {
   if (!isTauri()) return;
   const db = await getDb();
@@ -50,8 +50,8 @@ export async function dbBulkAddVocabWords(
   let pos = (maxPos[0]?.m ?? -1) + 1;
   for (const r of rows) {
     await db.execute(
-      'INSERT INTO vocab_words (word, ipa, meaning, position) VALUES ($1, $2, $3, $4)',
-      [r.word.trim(), r.ipa.trim(), r.meaning.trim(), pos++]
+      'INSERT INTO vocab_words (word, ipa, part_of_speech, meaning, meaning_en, position) VALUES ($1, $2, $3, $4, $5, $6)',
+      [r.word.trim(), r.ipa.trim(), r.part_of_speech.trim(), r.meaning.trim(), r.meaning_en.trim(), pos++]
     );
   }
   window.dispatchEvent(new CustomEvent('vocabWordsChanged'));

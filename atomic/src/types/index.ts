@@ -118,7 +118,9 @@ export interface VocabWord {
   id: number;
   word: string;
   ipa: string;
+  part_of_speech: string;
   meaning: string;
+  meaning_en: string;
   position: number;
   created_at: string;
 }
