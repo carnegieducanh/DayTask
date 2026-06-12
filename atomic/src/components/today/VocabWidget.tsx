@@ -83,9 +83,6 @@ export default function VocabWidget() {
             <span className="vocab-widget-ipa">/ {current.ipa} /</span>
           )}
         </div>
-        {current.part_of_speech && (
-          <span className="vocab-widget-pos">{current.part_of_speech}</span>
-        )}
         <div className="vocab-widget-divider" />
         <span className="vocab-widget-meaning">{current.meaning}</span>
         {current.meaning_en && (

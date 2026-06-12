@@ -1,7 +1,8 @@
 /* ── CSS Variables ── */
 :root {
   --font: "Segoe UI", system-ui, -apple-system, sans-serif;
-  --today-cols: 290px 1fr 250px;
+  /* --today-cols: 290px 1fr minmax(0, 250px); */
+  --today-cols: 290px 1fr 270px;
 }
 
 [data-lang="en"] {
@@ -636,9 +637,11 @@ select {
 
 .today-topbar-actions {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   gap: 6px;
+  overflow: hidden;
+  margin-left: 20px;
 }
 
 /* ── Vocab Widget (topbar) ── */
@@ -654,7 +657,8 @@ select {
 }
 
 .vocab-widget-outer {
-  min-width: 200px;
+  min-width: 250px;
+  max-width: 100%;
   cursor: pointer;
   user-select: none;
 }
@@ -685,6 +689,7 @@ select {
   display: flex;
   align-items: baseline;
   gap: 7px;
+  overflow: hidden;
 }
 .vocab-widget-word {
   font-size: 1.3rem;
@@ -692,18 +697,18 @@ select {
   color: var(--primary);
   letter-spacing: -0.01em;
   line-height: 1.2;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .vocab-widget-ipa {
   font-size: 0.7rem;
   color: var(--text-secondary);
   line-height: 1.2;
-}
-.vocab-widget-pos {
-  font-size: 0.6rem;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--primary) 70%, transparent);
-  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
 }
 .vocab-widget-divider {
   height: 1px;
@@ -715,12 +720,18 @@ select {
   font-weight: 500;
   color: var(--text-primary);
   line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .vocab-widget-meaning-en {
   font-size: 0.7rem;
   color: var(--text-secondary);
   font-style: italic;
   line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Today 2-column layout ── */
@@ -3220,8 +3231,51 @@ select {
   vertical-align: middle;
 }
 .vocab-table td:last-child {
-  width: 28px;
+  width: 52px;
   padding: 0 4px;
+  text-align: center;
+  vertical-align: middle;
+}
+.vocab-table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.vocab-clear-btn {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-1);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+.vocab-clear-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+.vocab-clear-btn--confirm {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+.vocab-clear-btn--confirm:hover {
+  color: #ef4444;
+  background: color-mix(in srgb, #ef4444 10%, transparent);
+}
+.vocab-table-edit-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-1);
+  border-radius: 0;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  padding: 2px 0;
+  outline: none;
 }
 .vocab-table-empty {
   padding: 16px 8px;

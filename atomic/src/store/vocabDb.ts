@@ -40,7 +40,7 @@ export async function dbAddVocabWord(word: string, ipa: string, meaning: string)
 }
 
 export async function dbBulkAddVocabWords(
-  rows: Array<{ word: string; ipa: string; part_of_speech: string; meaning: string; meaning_en: string }>
+  rows: Array<{ word: string; ipa: string; meaning: string; meaning_en: string }>
 ): Promise<void> {
   if (!isTauri()) return;
   const db = await getDb();
@@ -50,8 +50,8 @@ export async function dbBulkAddVocabWords(
   let pos = (maxPos[0]?.m ?? -1) + 1;
   for (const r of rows) {
     await db.execute(
-      'INSERT INTO vocab_words (word, ipa, part_of_speech, meaning, meaning_en, position) VALUES ($1, $2, $3, $4, $5, $6)',
-      [r.word.trim(), r.ipa.trim(), r.part_of_speech.trim(), r.meaning.trim(), r.meaning_en.trim(), pos++]
+      'INSERT INTO vocab_words (word, ipa, meaning, meaning_en, position) VALUES ($1, $2, $3, $4, $5)',
+      [r.word.trim(), r.ipa.trim(), r.meaning.trim(), r.meaning_en.trim(), pos++]
     );
   }
   window.dispatchEvent(new CustomEvent('vocabWordsChanged'));
@@ -61,5 +61,25 @@ export async function dbDeleteVocabWord(id: number): Promise<void> {
   if (!isTauri()) return;
   const db = await getDb();
   await db.execute('DELETE FROM vocab_words WHERE id = $1', [id]);
+  window.dispatchEvent(new CustomEvent('vocabWordsChanged'));
+}
+
+export async function dbClearAllVocabWords(): Promise<void> {
+  if (!isTauri()) return;
+  const db = await getDb();
+  await db.execute('DELETE FROM vocab_words');
+  window.dispatchEvent(new CustomEvent('vocabWordsChanged'));
+}
+
+export async function dbUpdateVocabWord(
+  id: number,
+  data: { word: string; ipa: string; meaning: string; meaning_en: string }
+): Promise<void> {
+  if (!isTauri()) return;
+  const db = await getDb();
+  await db.execute(
+    'UPDATE vocab_words SET word=$1, ipa=$2, meaning=$3, meaning_en=$4 WHERE id=$5',
+    [data.word.trim(), data.ipa.trim(), data.meaning.trim(), data.meaning_en.trim(), id]
+  );
   window.dispatchEvent(new CustomEvent('vocabWordsChanged'));
 }

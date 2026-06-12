@@ -20,6 +20,8 @@ import {
   dbGetVocabWords,
   dbBulkAddVocabWords,
   dbDeleteVocabWord,
+  dbUpdateVocabWord,
+  dbClearAllVocabWords,
   getVocabInterval,
   saveVocabInterval,
 } from "../store/vocabDb";
@@ -92,6 +94,11 @@ export default function SettingsModal() {
   const [vocabPasteSuccess, setVocabPasteSuccess] = useState(0);
   const pasteSuccessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pasteZoneRef = useRef<HTMLTextAreaElement>(null);
+  const [pendingDeleteVocab, setPendingDeleteVocab] = useState<VocabWord | null>(null);
+  const deleteVTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [editingVocabId, setEditingVocabId] = useState<number | null>(null);
+  const [editVocabFields, setEditVocabFields] = useState({ word: "", ipa: "", meaning: "", meaning_en: "" });
+  const [confirmClearVocab, setConfirmClearVocab] = useState(false);
 
   const SCALE_OPTIONS: { label: string; value: number; desc: string }[] = [
     { label: t.settings.small, value: 0.9, desc: "90%" },
@@ -150,6 +157,16 @@ export default function SettingsModal() {
   }, [showResetToast]);
 
   useEffect(() => {
+    if (deleteVTimerRef.current) clearTimeout(deleteVTimerRef.current);
+    if (!pendingDeleteVocab) return;
+    deleteVTimerRef.current = setTimeout(async () => {
+      await dbDeleteVocabWord(pendingDeleteVocab.id);
+      setPendingDeleteVocab(null);
+    }, 4000);
+    return () => { if (deleteVTimerRef.current) clearTimeout(deleteVTimerRef.current); };
+  }, [pendingDeleteVocab]);
+
+  useEffect(() => {
     if (activeTab !== "vocab") return;
     dbGetVocabWords().then(setVocabWords);
   }, [activeTab]);
@@ -162,9 +179,44 @@ export default function SettingsModal() {
     saveVocabInterval(minutes);
   }
 
-  async function handleDeleteVocabWord(id: number) {
-    await dbDeleteVocabWord(id);
+  function handleDeleteVocabWord(id: number) {
+    const word = vocabWords.find((w) => w.id === id);
+    if (!word) return;
+    if (deleteVTimerRef.current) clearTimeout(deleteVTimerRef.current);
     setVocabWords((prev) => prev.filter((w) => w.id !== id));
+    setPendingDeleteVocab(word);
+  }
+
+  function handleUndoDeleteVocab() {
+    if (!pendingDeleteVocab) return;
+    if (deleteVTimerRef.current) clearTimeout(deleteVTimerRef.current);
+    setVocabWords((prev) => {
+      const idx = prev.findIndex((w) => w.position != null && w.position > (pendingDeleteVocab.position ?? -1));
+      const arr = [...prev];
+      arr.splice(idx === -1 ? arr.length : idx, 0, pendingDeleteVocab);
+      return arr;
+    });
+    setPendingDeleteVocab(null);
+  }
+
+  function handleEditVocabStart(w: VocabWord) {
+    setEditingVocabId(w.id);
+    setEditVocabFields({ word: w.word, ipa: w.ipa ?? "", meaning: w.meaning, meaning_en: w.meaning_en ?? "" });
+  }
+
+  async function handleEditVocabSave() {
+    if (!editingVocabId) return;
+    await dbUpdateVocabWord(editingVocabId, editVocabFields);
+    setVocabWords((prev) => prev.map((w) =>
+      w.id === editingVocabId ? { ...w, ...editVocabFields } : w
+    ));
+    setEditingVocabId(null);
+  }
+
+  async function handleClearAllVocab() {
+    await dbClearAllVocabWords();
+    setVocabWords([]);
+    setConfirmClearVocab(false);
   }
 
   async function handleVocabPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
@@ -178,9 +230,8 @@ export default function SettingsModal() {
         return {
           word: parts[0]?.trim() ?? "",
           ipa: parts[1]?.trim() ?? "",
-          part_of_speech: parts[2]?.trim() ?? "",
-          meaning: parts[3]?.trim() ?? "",
-          meaning_en: parts[4]?.trim() ?? "",
+          meaning: parts[2]?.trim() ?? "",
+          meaning_en: parts[3]?.trim() ?? "",
         };
       })
       .filter((r) => r.word && r.meaning);
@@ -777,6 +828,34 @@ export default function SettingsModal() {
                   {vocabWords.length > 0 && (
                     <span className="settings-tag-count">{vocabWords.length}</span>
                   )}
+                  {vocabWords.length > 0 && (
+                    <span style={{ marginLeft: "auto" }}>
+                      {confirmClearVocab ? (
+                        <>
+                          <button
+                            className="vocab-clear-btn vocab-clear-btn--confirm"
+                            onClick={handleClearAllVocab}
+                          >
+                            {t.vocab.clearAllConfirm}
+                          </button>
+                          <button
+                            className="vocab-clear-btn"
+                            onClick={() => setConfirmClearVocab(false)}
+                            style={{ marginLeft: 4 }}
+                          >
+                            {t.toast.undo}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          className="vocab-clear-btn"
+                          onClick={() => setConfirmClearVocab(true)}
+                        >
+                          {t.vocab.clearAll}
+                        </button>
+                      )}
+                    </span>
+                  )}
                 </div>
                 <div className="vocab-table-wrap">
                   {vocabWords.length === 0 ? (
@@ -787,37 +866,86 @@ export default function SettingsModal() {
                         <tr>
                           <th>{t.vocab.wordCol}</th>
                           <th>{t.vocab.ipaCol}</th>
-                          <th>{t.vocab.posCol}</th>
                           <th>{t.vocab.meaningCol}</th>
-                          <th>{t.vocab.meaningEnCol}</th>
                           <th></th>
                         </tr>
                       </thead>
                       <tbody>
-                        {vocabWords.map((w) => (
+                        {vocabWords.map((w) =>
+                          editingVocabId === w.id ? (
+                            <tr key={w.id}>
+                              <td>
+                                <input
+                                  className="vocab-table-edit-input"
+                                  value={editVocabFields.word}
+                                  onChange={(e) => setEditVocabFields((f) => ({ ...f, word: e.target.value }))}
+                                  onKeyDown={(e) => { if (e.key === "Enter") handleEditVocabSave(); if (e.key === "Escape") setEditingVocabId(null); }}
+                                  autoFocus
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  className="vocab-table-edit-input"
+                                  value={editVocabFields.ipa}
+                                  onChange={(e) => setEditVocabFields((f) => ({ ...f, ipa: e.target.value }))}
+                                  onKeyDown={(e) => { if (e.key === "Enter") handleEditVocabSave(); if (e.key === "Escape") setEditingVocabId(null); }}
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  className="vocab-table-edit-input"
+                                  value={editVocabFields.meaning}
+                                  onChange={(e) => setEditVocabFields((f) => ({ ...f, meaning: e.target.value }))}
+                                  onKeyDown={(e) => { if (e.key === "Enter") handleEditVocabSave(); if (e.key === "Escape") setEditingVocabId(null); }}
+                                />
+                              </td>
+                              <td>
+                                <div className="vocab-table-actions">
+                                  <button
+                                    className="settings-tag-action-btn"
+                                    title={t.vocab.saveWord}
+                                    onClick={handleEditVocabSave}
+                                  >
+                                    <IconCheck size={12} />
+                                  </button>
+                                  <button
+                                    className="settings-tag-action-btn"
+                                    title={t.vocab.cancelEdit}
+                                    onClick={() => setEditingVocabId(null)}
+                                  >
+                                    <IconX size={12} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ) : (
                           <tr key={w.id}>
                             <td style={{ fontWeight: 500 }}>{w.word}</td>
                             <td style={{ color: "var(--text-secondary)", fontFamily: "monospace", fontSize: "0.78rem" }}>
                               {w.ipa || "—"}
                             </td>
-                            <td style={{ color: "var(--text-secondary)", fontSize: "0.78rem" }}>
-                              {w.part_of_speech || "—"}
-                            </td>
                             <td>{w.meaning}</td>
-                            <td style={{ color: "var(--text-secondary)", fontStyle: "italic" }}>
-                              {w.meaning_en || "—"}
-                            </td>
                             <td>
-                              <button
-                                className="settings-tag-action-btn settings-tag-action-delete"
-                                title={t.vocab.deleteWord}
-                                onClick={() => handleDeleteVocabWord(w.id)}
-                              >
-                                <IconTrash size={12} />
-                              </button>
+                              <div className="vocab-table-actions">
+                                <button
+                                  className="settings-tag-action-btn"
+                                  title={t.vocab.editWord}
+                                  onClick={() => handleEditVocabStart(w)}
+                                >
+                                  <IconPencil size={12} />
+                                </button>
+                                <button
+                                  className="settings-tag-action-btn settings-tag-action-delete"
+                                  title={t.vocab.deleteWord}
+                                  onClick={() => handleDeleteVocabWord(w.id)}
+                                >
+                                  <IconTrash size={12} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
-                        ))}
+                          )
+                        )}
                       </tbody>
                     </table>
                   )}
@@ -862,6 +990,15 @@ export default function SettingsModal() {
             {t.toast.deleted(pendingDeleteGreeting.item.vi || pendingDeleteGreeting.item.en || "—")}
           </span>
           <button className="delete-toast-undo" onClick={handleUndoDeleteGreeting}>
+            {t.toast.undo}
+          </button>
+        </div>
+      )}
+
+      {pendingDeleteVocab && (
+        <div className="delete-toast" role="status" onClick={(e) => e.stopPropagation()}>
+          <span className="delete-toast-msg">{t.toast.deleted(pendingDeleteVocab.word)}</span>
+          <button className="delete-toast-undo" onClick={handleUndoDeleteVocab}>
             {t.toast.undo}
           </button>
         </div>
