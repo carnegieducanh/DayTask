@@ -230,6 +230,7 @@ export const en: typeof vi = {
     filterTitle: 'Filters',
     filterCategories: 'Categories',
     filterTags: 'Tags',
+    filterTagSearch: 'Search tags...',
     filterReset: 'Clear',
     filterNoTags: 'No tags',
     filterNoTime: '',

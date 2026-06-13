@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { IconX } from '@tabler/icons-react';
 import { useT } from '../../i18n';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
@@ -46,6 +46,7 @@ export default function CalendarFilterSidebar({
   const t = useT();
   const sidebarRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(sidebarRef);
+  const [tagSearch, setTagSearch] = useState('');
 
   const catStats = calcRangeCategoryStats(tasks, timeEntries, startDate, endDate, categoryColors);
   const tagStats = calcRangeTagStats(tasks, timeEntries, taskTags, tags, startDate, endDate);
@@ -107,23 +108,33 @@ export default function CalendarFilterSidebar({
       {tags.length > 0 && (
         <div className="cal-filter-section">
           <div className="cal-filter-section-label">{t.calendar.filterTags}</div>
+          <input
+            className="cal-filter-tag-search"
+            type="text"
+            placeholder={t.calendar.filterTagSearch}
+            value={tagSearch}
+            onChange={(e) => setTagSearch(e.target.value)}
+            spellCheck={false}
+          />
           <div className="cal-filter-list cal-filter-list--scrollable">
-            {tagStats.map((s) => {
-              const active = activeTags.has(s.tagId);
-              return (
-                <button
-                  key={s.tagId}
-                  className={`cal-filter-item${active ? ' active' : ''}`}
-                  onClick={() => onToggleTag(s.tagId)}
-                >
-                  <span
-                    className="cal-filter-tag-chip"
-                    style={{ background: s.color }}
-                  />
-                  <span className="cal-filter-item-name">{s.name}</span>
-                </button>
-              );
-            })}
+            {tagStats
+              .filter((s) => !tagSearch || s.name.toLowerCase().includes(tagSearch.toLowerCase()))
+              .map((s) => {
+                const active = activeTags.has(s.tagId);
+                return (
+                  <button
+                    key={s.tagId}
+                    className={`cal-filter-item${active ? ' active' : ''}`}
+                    onClick={() => onToggleTag(s.tagId)}
+                  >
+                    <span
+                      className="cal-filter-tag-chip"
+                      style={{ background: s.color }}
+                    />
+                    <span className="cal-filter-item-name">{s.name}</span>
+                  </button>
+                );
+              })}
           </div>
         </div>
       )}

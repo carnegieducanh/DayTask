@@ -5049,6 +5049,26 @@ select {
   max-height: 12rem;
   overflow-y: auto;
 }
+.cal-filter-tag-search {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.75rem;
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border-1);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 4px 6px;
+  margin-bottom: 4px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.cal-filter-tag-search::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+.cal-filter-tag-search:focus {
+  border-color: var(--accent);
+}
 .cal-filter-item {
   display: flex;
   align-items: center;

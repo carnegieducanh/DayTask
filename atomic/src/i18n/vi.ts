@@ -222,6 +222,7 @@ export const vi = {
     filterTitle: "Bộ lọc",
     filterCategories: "Danh mục",
     filterTags: "Thẻ tag",
+    filterTagSearch: "Tìm tag...",
     filterReset: "Bỏ lọc",
     filterNoTags: "Không có thẻ tag",
     filterNoTime: "",
