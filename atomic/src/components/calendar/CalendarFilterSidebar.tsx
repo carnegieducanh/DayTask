@@ -86,58 +86,60 @@ export default function CalendarFilterSidebar({
         </button>
       </div>
 
-      <div className="cal-filter-section">
-        <div className="cal-filter-section-label">{t.calendar.filterCategories}</div>
-        <div className="cal-filter-list">
-          {catStats.map((s) => {
-            const active = activeCategories.has(s.category);
-            return (
-              <button
-                key={s.category}
-                className={`cal-filter-item${active ? ' active' : ''}`}
-                onClick={() => onToggleCategory(s.category)}
-              >
-                <span className="cal-filter-dot" style={{ background: s.color }} />
-                <span className="cal-filter-item-name">{t.cat[s.category]}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {tags.length > 0 && (
+      <div className="cal-filter-sections">
         <div className="cal-filter-section">
-          <div className="cal-filter-section-label">{t.calendar.filterTags}</div>
-          <input
-            className="cal-filter-tag-search"
-            type="text"
-            placeholder={t.calendar.filterTagSearch}
-            value={tagSearch}
-            onChange={(e) => setTagSearch(e.target.value)}
-            spellCheck={false}
-          />
+          <div className="cal-filter-section-label">{t.calendar.filterCategories}</div>
           <div className="cal-filter-list cal-filter-list--scrollable">
-            {tagStats
-              .filter((s) => !tagSearch || s.name.toLowerCase().includes(tagSearch.toLowerCase()))
-              .map((s) => {
-                const active = activeTags.has(s.tagId);
-                return (
-                  <button
-                    key={s.tagId}
-                    className={`cal-filter-item${active ? ' active' : ''}`}
-                    onClick={() => onToggleTag(s.tagId)}
-                  >
-                    <span
-                      className="cal-filter-tag-chip"
-                      style={{ background: s.color }}
-                    />
-                    <span className="cal-filter-item-name">{s.name}</span>
-                  </button>
-                );
-              })}
+            {catStats.map((s) => {
+              const active = activeCategories.has(s.category);
+              return (
+                <button
+                  key={s.category}
+                  className={`cal-filter-item${active ? ' active' : ''}`}
+                  onClick={() => onToggleCategory(s.category)}
+                >
+                  <span className="cal-filter-dot" style={{ background: s.color }} />
+                  <span className="cal-filter-item-name">{t.cat[s.category]}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
-      )}
+
+        {tags.length > 0 && (
+          <div className="cal-filter-section">
+            <div className="cal-filter-section-label">{t.calendar.filterTags}</div>
+            <input
+              className="cal-filter-tag-search"
+              type="text"
+              placeholder={t.calendar.filterTagSearch}
+              value={tagSearch}
+              onChange={(e) => setTagSearch(e.target.value)}
+              spellCheck={false}
+            />
+            <div className="cal-filter-list cal-filter-list--scrollable">
+              {tagStats
+                .filter((s) => !tagSearch || s.name.toLowerCase().includes(tagSearch.toLowerCase()))
+                .map((s) => {
+                  const active = activeTags.has(s.tagId);
+                  return (
+                    <button
+                      key={s.tagId}
+                      className={`cal-filter-item${active ? ' active' : ''}`}
+                      onClick={() => onToggleTag(s.tagId)}
+                    >
+                      <span
+                        className="cal-filter-tag-chip"
+                        style={{ background: s.color }}
+                      />
+                      <span className="cal-filter-item-name">{s.name}</span>
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+      </div>
 
       {showStats && (
         <div className="cal-filter-week-stats">

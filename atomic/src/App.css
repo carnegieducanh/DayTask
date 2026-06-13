@@ -4994,9 +4994,21 @@ select {
   background: var(--bg-secondary);
   border: 0.5px solid var(--border-1);
   border-radius: var(--radius-md);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   padding: 10px 8px 0;
+}
+.cal-filter-sections {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cal-filter-sections .cal-filter-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
 }
 .cal-filter-header {
   display: flex;
@@ -5046,6 +5058,8 @@ select {
   gap: 1px;
 }
 .cal-filter-list--scrollable {
+  flex: 1;
+  min-height: 0;
   max-height: 12rem;
   overflow-y: auto;
 }
