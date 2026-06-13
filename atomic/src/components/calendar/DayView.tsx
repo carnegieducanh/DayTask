@@ -177,6 +177,8 @@ export default function DayView({
   const [dragDeckTask, setDragDeckTask] = useState<DragDeckTask | null>(null);
   const [contextMenu, setContextMenu] = useState<{ taskId: number; task: Task; x: number; y: number } | null>(null);
   const [deckExpanded, setDeckExpanded] = useState(false);
+  const [deckClosing, setDeckClosing] = useState(false);
+  const deckCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(gridRef);
   // Mutable refs so mousemove/mouseup callbacks are stable ([] deps) and listeners
@@ -215,9 +217,9 @@ export default function DayView({
   const layoutItems = computeLayout(scheduledTasks, taskTimeEntries, dateStr);
 
   const collapsedDeckCount = Math.min(MAX_DECK, unscheduledTasks.length);
-  const collapsedDeckHeight = collapsedDeckCount > 0 ? CARD_HEIGHT + (collapsedDeckCount - 1) * DECK_OFFSET : 0;
+  const collapsedDeckHeight = collapsedDeckCount > 0 ? (collapsedDeckCount - 1) * DECK_OFFSET + CARD_HEIGHT / 2 : 0;
   const expandedDeckHeight = unscheduledTasks.length > 0 ? CARD_HEIGHT + (unscheduledTasks.length - 1) * DECK_OFFSET : 0;
-  const deckHeight = deckExpanded ? expandedDeckHeight : collapsedDeckHeight;
+  const deckHeight = deckExpanded && !deckClosing ? expandedDeckHeight : collapsedDeckHeight;
   const hiddenCount = deckExpanded ? 0 : Math.max(0, unscheduledTasks.length - MAX_DECK);
   const pendingCount = unscheduledTasks.length;
 
@@ -514,7 +516,7 @@ export default function DayView({
             <div className="day-deck-cards-clip" style={{ height: deckHeight }}>
               {unscheduledTasks.map((task, i) => {
                 const color = task.color ?? categoryColors[task.category];
-                const overMax = !deckExpanded && i >= MAX_DECK;
+                const overMax = !deckExpanded && !deckClosing && i >= MAX_DECK;
                 return (
                   <div
                     key={task.id}
@@ -525,6 +527,7 @@ export default function DayView({
                       backgroundColor: color,
                       borderLeft: `3px solid ${color}`,
                       opacity: overMax ? 0 : 1,
+                      animation: overMax ? 'none' : undefined,
                       pointerEvents: overMax ? 'none' : undefined,
                     }}
                     onMouseDown={(e) => handleDeckCardMouseDown(e, task)}
@@ -550,7 +553,17 @@ export default function DayView({
               </div>
             )}
             {deckExpanded && unscheduledTasks.length > MAX_DECK && (
-              <div className="day-deck-badge" onClick={() => setDeckExpanded(false)}>
+              <div
+                className="day-deck-badge"
+                onClick={() => {
+                  if (deckCloseTimerRef.current) clearTimeout(deckCloseTimerRef.current);
+                  setDeckClosing(true);
+                  deckCloseTimerRef.current = setTimeout(() => {
+                    setDeckExpanded(false);
+                    setDeckClosing(false);
+                  }, 320);
+                }}
+              >
                 −
               </div>
             )}
