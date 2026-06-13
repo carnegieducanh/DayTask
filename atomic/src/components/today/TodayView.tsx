@@ -188,7 +188,7 @@ export default function TodayView() {
                 </div>
                 <div className="stat-card">
                   <div className="stat-label">{t.today.statStreak}</div>
-                  <div className="stat-value">🔥 {streak}</div>
+                  <div className="stat-value">🔥{streak}</div>
                   <div className="stat-sub">{t.today.streakDays}</div>
                 </div>
                 <div className="stat-card">

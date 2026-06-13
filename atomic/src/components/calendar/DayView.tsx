@@ -42,7 +42,7 @@ const DRAG_MOVE_THRESHOLD = 4; // px before a mousedown on a task is treated as 
 const MIN_RESIZE_DURATION = 15; // minimum minutes when resizing
 const DECK_OFFSET = 28; // px each unscheduled card is offset from the one below
 const CARD_HEIGHT = 52; // px height of each deck card
-const MAX_DECK = 5; // max visible cards in deck
+const MAX_DECK = 3; // max visible cards in deck
 
 function timeToMin(time: string): number {
   const [h, m] = time.split(":").map(Number);
@@ -514,6 +514,7 @@ export default function DayView({
             <div className="day-deck-cards-clip" style={{ height: deckHeight }}>
               {unscheduledTasks.map((task, i) => {
                 const color = task.color ?? categoryColors[task.category];
+                const overMax = !deckExpanded && i >= MAX_DECK;
                 return (
                   <div
                     key={task.id}
@@ -523,6 +524,8 @@ export default function DayView({
                       zIndex: i + 1,
                       backgroundColor: color,
                       borderLeft: `3px solid ${color}`,
+                      opacity: overMax ? 0 : 1,
+                      pointerEvents: overMax ? 'none' : undefined,
                     }}
                     onMouseDown={(e) => handleDeckCardMouseDown(e, task)}
                     onContextMenu={(e) => handleTaskContextMenu(e, task)}
