@@ -228,6 +228,8 @@ export const vi = {
     noTitle: "(Chưa đặt tên)",
     removeFromCalendar: "Xóa khỏi lịch",
     pendingTasks: (n: number) => `${n} task chưa hoàn thành`,
+    weekStats: "Tổng tuần",
+    monthStats: "Tổng tháng",
   },
   update: {
     title: "Có bản cập nhật mới",

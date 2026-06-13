@@ -80,6 +80,21 @@ export function calcRangeTagStats(
     .sort((a, b) => b.totalMins - a.totalMins);
 }
 
+export function calcWeekTotalMins(
+  tasks: Task[],
+  timeEntries: TaskTimeEntry[],
+  startDate: string,
+  endDate: string,
+): number {
+  let total = 0;
+  for (const task of tasks) {
+    if (task.date < startDate || task.date > endDate) continue;
+    const entries = timeEntries.filter((e) => e.task_id === task.id && e.date === task.date);
+    for (const entry of entries) total += entryMins(entry.start_time, entry.end_time);
+  }
+  return total;
+}
+
 export function calcDayStats(
   tasks: Task[],
   timeEntries: TaskTimeEntry[],

@@ -236,6 +236,8 @@ export const en: typeof vi = {
     noTitle: '(No title)',
     removeFromCalendar: 'Remove from calendar',
     pendingTasks: (n: number) => `${n} task${n === 1 ? '' : 's'} pending`,
+    weekStats: 'Week total',
+    monthStats: 'Month total',
   },
   update: {
     title: 'New update available',

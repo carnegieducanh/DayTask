@@ -248,6 +248,7 @@ export default function CalendarView() {
         ) : (
           <CalendarFilterSidebar
             tasks={calendarTasks}
+            filteredTasks={filteredTasks}
             timeEntries={calendarTimeEntries}
             taskTags={calendarTaskTags}
             tags={tags}
@@ -259,6 +260,7 @@ export default function CalendarView() {
             onToggleCategory={toggleCategory}
             onToggleTag={toggleTag}
             onReset={resetFilter}
+            view={view}
           />
         )}
         <div className="cal-main">

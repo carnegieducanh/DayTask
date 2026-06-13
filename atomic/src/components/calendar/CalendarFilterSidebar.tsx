@@ -6,10 +6,13 @@ import type { Category, CategoryColors, Tag, Task, TaskTimeEntry } from '../../t
 import {
   calcRangeCategoryStats,
   calcRangeTagStats,
+  calcWeekTotalMins,
+  formatMins,
 } from './calendarUtils';
 
 interface CalendarFilterSidebarProps {
   tasks: Task[];
+  filteredTasks: Task[];
   timeEntries: TaskTimeEntry[];
   taskTags: Record<number, number[]>;
   tags: Tag[];
@@ -21,10 +24,12 @@ interface CalendarFilterSidebarProps {
   onToggleCategory: (cat: Category) => void;
   onToggleTag: (tagId: number) => void;
   onReset: () => void;
+  view: string;
 }
 
 export default function CalendarFilterSidebar({
   tasks,
+  filteredTasks,
   timeEntries,
   taskTags,
   tags,
@@ -36,6 +41,7 @@ export default function CalendarFilterSidebar({
   onToggleCategory,
   onToggleTag,
   onReset,
+  view,
 }: CalendarFilterSidebarProps) {
   const t = useT();
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -44,6 +50,26 @@ export default function CalendarFilterSidebar({
   const catStats = calcRangeCategoryStats(tasks, timeEntries, startDate, endDate, categoryColors);
   const tagStats = calcRangeTagStats(tasks, timeEntries, taskTags, tags, startDate, endDate);
   const hasFilter = activeCategories.size > 0 || activeTags.size > 0;
+
+  const showStats = view === 'week' || view === 'month';
+  const totalMins = showStats
+    ? calcWeekTotalMins(hasFilter ? filteredTasks : tasks, timeEntries, startDate, endDate)
+    : 0;
+
+  let breakdown: { label: string; color: string; mins: number }[] = [];
+  if (showStats && hasFilter) {
+    if (activeCategories.size > 0) {
+      const stats = calcRangeCategoryStats(filteredTasks, timeEntries, startDate, endDate, categoryColors);
+      breakdown = stats
+        .filter((s) => s.totalMins > 0)
+        .map((s) => ({ label: t.cat[s.category], color: s.color, mins: s.totalMins }));
+    } else if (activeTags.size > 0) {
+      const stats = calcRangeTagStats(filteredTasks, timeEntries, taskTags, tags, startDate, endDate);
+      breakdown = stats
+        .filter((s) => s.totalMins > 0)
+        .map((s) => ({ label: s.name, color: s.color, mins: s.totalMins }));
+    }
+  }
 
   return (
     <div className="cal-filter-sidebar" ref={sidebarRef}>
@@ -99,6 +125,30 @@ export default function CalendarFilterSidebar({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {showStats && (
+        <div className="cal-filter-week-stats">
+          <div className="cal-filter-week-total-row">
+            <span className="cal-filter-section-label">
+              {view === 'week' ? t.calendar.weekStats : t.calendar.monthStats}
+            </span>
+            <span className="cal-filter-week-total-value">{formatMins(totalMins) || '–'}</span>
+          </div>
+          {breakdown.length > 0 && (
+            <div className="cal-filter-week-breakdown">
+              {breakdown.map((s, i) => (
+                <div key={i} className="cal-filter-week-breakdown-item">
+                  <span className="cal-filter-breakdown-label">
+                    <span className="cal-filter-dot" style={{ background: s.color }} />
+                    <span className="cal-filter-breakdown-label-text">{s.label}</span>
+                  </span>
+                  <span className="cal-filter-breakdown-mins">{formatMins(s.mins)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
