@@ -90,6 +90,24 @@ export interface DayActivity {
   count: number;
 }
 
+export interface DayDuration {
+  date: string;
+  minutes: number;
+}
+
+export interface TagStat {
+  name: string;
+  color: string;
+  tasks: number;
+  minutes: number;
+}
+
+export interface MonthStat {
+  month: number;
+  created: number;
+  done: number;
+}
+
 export interface Tag {
   id: number;
   name: string;

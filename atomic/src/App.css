@@ -17,12 +17,12 @@
   --bg-secondary: #f8f7f5;
   --bg-hover: #edeae5;
   --text-primary: #1a1a1a;
-  --text-secondary: #717171;
-  --text-muted: #a0a09a;
+  --text-secondary: #555555;
+  --text-muted: #7a7a75;
   --border-1: #e8e6e0;
   --border-2: #d0cdc4;
   --toggle-track: #c4c0bb;
-  --greeting-color: #6e6c67;
+  --greeting-color: #454340;
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -390,6 +390,12 @@ select {
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin-bottom: 6px;
+}
+
+.section-note {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 /* ── Category Tag ── */
@@ -941,7 +947,7 @@ select {
 }
 
 .today-sidebar .stat-sub {
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   line-height: 1.3;
   padding-left: 10px;
 }
@@ -1415,7 +1421,7 @@ select {
   align-items: center;
   gap: 7px;
   margin-bottom: 6px;
-  margin-left: 10px;
+  /* margin-left: 10px; */
 }
 .wc-title {
   font-family: "Lora", Georgia, serif;
@@ -2879,21 +2885,22 @@ select {
 
 .monthly-bar-track {
   width: 100%;
-  height: 90px;
+  height: 80px;
   display: flex;
   align-items: flex-end;
 }
 
 .monthly-bar {
   width: 100%;
-  background: var(--bg-tertiary);
+  background: var(--primary);
+  opacity: 0.35;
   border-radius: 3px 3px 0 0;
   min-height: 0;
   transition: height 0.3s ease;
 }
 
 .monthly-bar--active {
-  background: var(--primary);
+  opacity: 1;
 }
 
 .monthly-bar-label {
@@ -2946,7 +2953,7 @@ select {
 }
 
 .stat-card-sm-value {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.2;
@@ -2956,6 +2963,300 @@ select {
   font-size: 0.86rem;
   color: var(--text-secondary);
   margin-top: 2px;
+}
+
+/* ── Heatmap Dashboard Extensions ── */
+
+.stats-row--4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Mode toggle (Count | Hours) */
+.heatmap-mode-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 3px;
+}
+
+.heatmap-mode-btn {
+  padding: 3px 10px;
+  border-radius: calc(var(--radius-md) - 2px);
+  font-size: 0.79rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.heatmap-mode-btn--active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Weekly summary strip */
+.weekly-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.weekly-strip-cell {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.weekly-strip-cell--today {
+  border-color: var(--primary);
+}
+
+.weekly-strip-dow {
+  font-size: 0.71rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.weekly-strip-date {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.weekly-strip-tasks {
+  font-size: 0.79rem;
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.weekly-strip-hours {
+  font-size: 0.71rem;
+  color: var(--text-muted);
+}
+
+/* Two-column layout for heatmap sections */
+.heatmap-two-col {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* Monthly summary strip (horizontal, below bar chart) */
+.heatmap-month-summary {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.month-card-row--first {
+  padding-left: 0;
+}
+
+.month-card-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 4px 16px;
+  border-right: 0.5px solid var(--border-1);
+}
+
+.month-card-label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.month-card-right {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.month-card-val {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.month-card-delta {
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+.delta-up {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.delta-down {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.month-card-rate-wrap {
+  padding: 4px 0 4px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 100px;
+}
+
+.month-card-rate-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.month-card-rate-bar {
+  height: 5px;
+  background: var(--bg-hover);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.month-card-rate-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.month-card-tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Day-of-week pattern chart */
+.dow-chart {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.dow-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.dow-bar-track {
+  width: 100%;
+  height: 72px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.dow-bar {
+  width: 100%;
+  background: var(--primary);
+  border-radius: 3px 3px 0 0;
+  min-height: 0;
+  transition: height 0.3s ease;
+}
+
+.dow-label {
+  font-size: 0.71rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.dow-value {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Top tags horizontal bars */
+.tag-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.tag-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-stat-name {
+  font-size: 0.79rem;
+  font-weight: 500;
+  width: 72px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag-stat-bar-wrap {
+  flex: 1;
+  height: 7px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tag-stat-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  opacity: 0.85;
+}
+
+.tag-stat-count {
+  font-size: 0.79rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  width: 24px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.tag-stat-hours {
+  font-size: 0.71rem;
+  color: var(--text-muted);
+  width: 36px;
+  flex-shrink: 0;
+}
+
+/* Completion rate bar (reuses .monthly-bar styles with accent) */
+.completion-bar {
+  background: var(--primary);
+  opacity: 0.7;
+}
+
+.completion-bar.monthly-bar--active {
+  opacity: 1;
 }
 
 /* ── Settings Modal ── */
@@ -4932,8 +5233,7 @@ select {
   background: var(--bg-primary);
   /* padding: 10px 8px 12px; */
   padding: 10px 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* ── Calendar Day Sidebar — stats + vocab below MiniCalendar ── */
@@ -5067,11 +5367,12 @@ select {
   width: 100%;
   box-sizing: border-box;
   font-size: 0.75rem;
-  background: var(--bg-primary);
-  border: 0.5px solid var(--border-1);
-  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  border-bottom: 0.5px solid var(--border-1);
+  border-radius: 0;
   color: var(--text-primary);
-  padding: 4px 6px;
+  padding: 3px 4px;
   margin-bottom: 4px;
   outline: none;
   transition: border-color 0.15s;
@@ -5081,7 +5382,7 @@ select {
   opacity: 0.7;
 }
 .cal-filter-tag-search:focus {
-  border-color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 .cal-filter-item {
   display: flex;
@@ -5154,10 +5455,16 @@ select {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 4px;
   margin-bottom: 5px;
 }
 .cal-filter-week-total-row .cal-filter-section-label {
   margin-bottom: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .cal-filter-week-stats .cal-filter-dot {
   opacity: 1;
@@ -5166,6 +5473,8 @@ select {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .cal-filter-week-breakdown {
   display: flex;

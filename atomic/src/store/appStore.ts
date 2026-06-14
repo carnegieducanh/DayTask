@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { format, subDays } from 'date-fns';
 import { invoke } from '@tauri-apps/api/core';
-import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, Tab, Theme, Language, AccentColor, GoalChecklistItem, Category, CategoryColors, TaskTimeEntry, Tag } from '../types';
+import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, DayDuration, TagStat, MonthStat, Tab, Theme, Language, AccentColor, GoalChecklistItem, Category, CategoryColors, TaskTimeEntry, Tag } from '../types';
 import {
   isTauri,
   mockTasks, mockGoals, mockChecklist, mockTags, mockTaskTags, mockTimeEntries,
@@ -124,6 +124,10 @@ interface AppState {
   goals: Goal[];
   checklistItems: Record<number, GoalChecklistItem[]>;
   heatmap: DayActivity[];
+  heatmapDurations: DayDuration[];
+  heatmapTagStats: TagStat[];
+  heatmapMonthStats: MonthStat[];
+  heatmapTopTagHours: { name: string; color: string; minutes: number } | null;
   selectedDate: string;
   selectedYear: number;
   loading: boolean;
@@ -206,6 +210,10 @@ interface AppState {
   deleteChecklistItem: (itemId: number, goalId: number) => Promise<void>;
 
   loadHeatmap: (year: number) => Promise<void>;
+  loadHeatmapDurations: (year: number) => Promise<void>;
+  loadHeatmapTagStats: (startDate: string, endDate: string) => Promise<void>;
+  loadHeatmapMonthStats: (year: number) => Promise<void>;
+  loadHeatmapTopTagHours: (yearMonthPrefix: string) => Promise<void>;
   getStreak: () => Promise<number>;
   seedIfEmpty: () => Promise<void>;
   exportAllData: () => Promise<void>;
@@ -224,6 +232,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   goals: [],
   checklistItems: {},
   heatmap: [],
+  heatmapDurations: [],
+  heatmapTagStats: [],
+  heatmapMonthStats: [],
+  heatmapTopTagHours: null,
   selectedDate: format(new Date(), 'yyyy-MM-dd'),
   selectedYear: new Date().getFullYear(),
   loading: false,
@@ -1158,6 +1170,89 @@ export const useAppStore = create<AppState>((set, get) => ({
       [`${year}-%`]
     );
     set({ heatmap: rows });
+  },
+
+  loadHeatmapDurations: async (year) => {
+    if (!isTauri()) { set({ heatmapDurations: [] }); return; }
+    const db = await getDb();
+    const rows = await db.select<DayDuration[]>(
+      `SELECT date,
+         COALESCE(SUM(
+           (CAST(SUBSTR(end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(end_time, 4, 2) AS INTEGER)) -
+           (CAST(SUBSTR(start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(start_time, 4, 2) AS INTEGER))
+         ), 0) as minutes
+       FROM task_time_entries
+       WHERE date LIKE $1 AND end_time > start_time
+       GROUP BY date`,
+      [`${year}-%`]
+    );
+    set({ heatmapDurations: rows });
+  },
+
+  loadHeatmapTagStats: async (startDate, endDate) => {
+    if (!isTauri()) { set({ heatmapTagStats: [] }); return; }
+    const db = await getDb();
+    const rows = await db.select<TagStat[]>(
+      `SELECT tg.name, tg.color,
+         COUNT(DISTINCT t.id) as tasks,
+         COALESCE(SUM(
+           CASE WHEN tte.end_time > tte.start_time THEN
+             (CAST(SUBSTR(tte.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.end_time, 4, 2) AS INTEGER)) -
+             (CAST(SUBSTR(tte.start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.start_time, 4, 2) AS INTEGER))
+           ELSE 0 END
+         ), 0) as minutes
+       FROM tags tg
+       JOIN task_tags tt ON tt.tag_id = tg.id
+       JOIN tasks t ON t.id = tt.task_id
+       LEFT JOIN task_time_entries tte ON tte.task_id = t.id
+       WHERE t.date >= $1 AND t.date <= $2 AND t.is_done = 1
+       GROUP BY tg.id
+       ORDER BY tasks DESC, minutes DESC
+       LIMIT 6`,
+      [startDate, endDate]
+    );
+    set({ heatmapTagStats: rows });
+  },
+
+  loadHeatmapMonthStats: async (year) => {
+    if (!isTauri()) { set({ heatmapMonthStats: [] }); return; }
+    const db = await getDb();
+    const rows = await db.select<MonthStat[]>(
+      `SELECT
+         CAST(SUBSTR(date, 6, 2) AS INTEGER) as month,
+         COUNT(*) as created,
+         SUM(is_done) as done
+       FROM tasks
+       WHERE date LIKE $1
+       GROUP BY month
+       ORDER BY month`,
+      [`${year}-%`]
+    );
+    set({ heatmapMonthStats: rows });
+  },
+
+  loadHeatmapTopTagHours: async (yearMonthPrefix) => {
+    if (!isTauri()) { set({ heatmapTopTagHours: null }); return; }
+    const db = await getDb();
+    const rows = await db.select<{ name: string; color: string; minutes: number }[]>(
+      `SELECT tg.name, tg.color,
+         COALESCE(SUM(
+           CASE WHEN tte.end_time > tte.start_time THEN
+             (CAST(SUBSTR(tte.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.end_time, 4, 2) AS INTEGER)) -
+             (CAST(SUBSTR(tte.start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.start_time, 4, 2) AS INTEGER))
+           ELSE 0 END
+         ), 0) as minutes
+       FROM tags tg
+       JOIN task_tags tt ON tt.tag_id = tg.id
+       JOIN tasks t ON t.id = tt.task_id
+       LEFT JOIN task_time_entries tte ON tte.task_id = t.id AND tte.date LIKE $1
+       WHERE tte.end_time > tte.start_time
+       GROUP BY tg.id
+       ORDER BY minutes DESC
+       LIMIT 1`,
+      [`${yearMonthPrefix}%`]
+    );
+    set({ heatmapTopTagHours: rows.length > 0 && rows[0].minutes > 0 ? rows[0] : null });
   },
 
   getStreak: async () => {

@@ -3,10 +3,10 @@ import { startOfYear, endOfYear, eachDayOfInterval, getDay, format, isToday } fr
 import { vi as viLocale } from 'date-fns/locale';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
-import type { DayActivity } from '../../types';
+import type { DayActivity, DayDuration } from '../../types';
 import { getHeatmapColors } from '../../utils/heatmapColors';
 
-function getLevel(count: number): number {
+function getCountLevel(count: number): number {
   if (count === 0) return 0;
   if (count <= 2) return 1;
   if (count <= 4) return 2;
@@ -14,12 +14,22 @@ function getLevel(count: number): number {
   return 4;
 }
 
+function getHoursLevel(minutes: number): number {
+  if (minutes === 0) return 0;
+  if (minutes < 30) return 1;
+  if (minutes < 90) return 2;
+  if (minutes < 180) return 3;
+  return 4;
+}
+
 interface Props {
   year: number;
   data: DayActivity[];
+  mode?: 'count' | 'hours';
+  durations?: DayDuration[];
 }
 
-export default function HeatmapGrid({ year, data }: Props) {
+export default function HeatmapGrid({ year, data, mode = 'count', durations = [] }: Props) {
   const t = useT();
   const { theme, language, accentColor } = useAppStore();
   const LEVEL_COLORS = getHeatmapColors(accentColor, theme);
@@ -29,6 +39,12 @@ export default function HeatmapGrid({ year, data }: Props) {
     data.forEach((d) => { m[d.date] = d.count; });
     return m;
   }, [data]);
+
+  const durationMap = useMemo(() => {
+    const m: Record<string, number> = {};
+    durations.forEach((d) => { m[d.date] = d.minutes; });
+    return m;
+  }, [durations]);
 
   const weeks = useMemo(() => {
     const start = startOfYear(new Date(year, 0, 1));
@@ -97,18 +113,32 @@ export default function HeatmapGrid({ year, data }: Props) {
               {week.map((day, di) => {
                 if (!day) return <div key={di} className="hm-cell" style={{ background: 'transparent' }} />;
                 const dateStr = format(day, 'yyyy-MM-dd');
-                const count   = activityMap[dateStr] ?? 0;
-                const level   = getLevel(count);
                 const todayBorder = isToday(day) ? '1.5px solid var(--primary)' : undefined;
                 const formattedDate = language === 'vi'
                   ? format(day, 'd MMM', { locale: viLocale })
                   : format(day, 'MMM d');
+
+                let level: number;
+                let tooltipText: string;
+
+                if (mode === 'hours') {
+                  const mins = durationMap[dateStr] ?? 0;
+                  level = getHoursLevel(mins);
+                  const h = Math.floor(mins / 60);
+                  const m = mins % 60;
+                  tooltipText = t.heatmap.cellTooltipHours(formattedDate, h, m);
+                } else {
+                  const count = activityMap[dateStr] ?? 0;
+                  level = getCountLevel(count);
+                  tooltipText = t.heatmap.cellTooltip(formattedDate, count);
+                }
+
                 return (
                   <div
                     key={di}
                     className="hm-cell"
                     style={{ background: LEVEL_COLORS[level], outline: todayBorder }}
-                    title={t.heatmap.cellTooltip(formattedDate, count)}
+                    title={tooltipText}
                   />
                 );
               })}

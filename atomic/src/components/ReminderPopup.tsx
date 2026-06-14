@@ -16,6 +16,12 @@ export default function ReminderPopup() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [reminderPopup, dismissReminder]);
 
+  useEffect(() => {
+    if (!reminderPopup) return;
+    const timer = setTimeout(dismissReminder, 60_000);
+    return () => clearTimeout(timer);
+  }, [reminderPopup, dismissReminder]);
+
   if (!reminderPopup) return null;
 
   const task = reminderPopup;

@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { attachSmoothScroll } from '../../hooks/useSmoothScroll';
+import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import { IconClock } from '@tabler/icons-react';
 import { useT } from '../../i18n';
 import { formatMins, type DayStat } from './calendarUtils';
@@ -48,9 +48,7 @@ export default function DayStatsSection({ stats }: { stats: DayStat[] }) {
   const [hovered, setHovered] = useState(false);
   const [popPos, setPopPos] = useState({ top: 0, left: 0 });
   const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (scrollRef.current) return attachSmoothScroll(scrollRef.current);
-  }, []);
+  useSmoothScroll(scrollRef);
 
   const handleMouseEnter = (e: React.MouseEvent) => {
     if (!stats.length) return;
