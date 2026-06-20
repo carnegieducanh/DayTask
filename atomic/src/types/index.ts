@@ -115,7 +115,7 @@ export interface Tag {
   created_at: string;
 }
 
-export type Tab = 'today' | 'kanban' | 'heatmap' | 'calendar' | 'journal';
+export type Tab = 'today' | 'kanban' | 'heatmap' | 'calendar' | 'journal' | 'quotes';
 
 export type JournalType = 'gratitude' | 'lesson';
 
@@ -140,6 +140,25 @@ export interface VocabWord {
   meaning_en: string;
   position: number;
   created_at: string;
+}
+
+export type QuoteHeroMode = 'random_daily' | 'manual' | 'random_favorites';
+
+export interface Quote {
+  id: number;
+  text: string;
+  author: string | null;
+  language: string;
+  is_favorite: number;
+  tags: string[];
+  created_at: string;
+}
+
+export interface NewQuote {
+  text: string;
+  author?: string;
+  language: string;
+  tags?: string[];
 }
 
 export type Theme = 'light' | 'dark';

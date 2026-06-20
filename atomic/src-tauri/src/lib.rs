@@ -212,6 +212,25 @@ pub fn run() {
                   ALTER TABLE vocab_words ADD COLUMN meaning_en TEXT NOT NULL DEFAULT '';",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 15,
+            description: "create_quotes_tables",
+            sql: "CREATE TABLE IF NOT EXISTS quotes (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                text        TEXT NOT NULL,
+                author      TEXT DEFAULT NULL,
+                language    TEXT NOT NULL DEFAULT 'EN',
+                is_favorite INTEGER NOT NULL DEFAULT 0,
+                created_at  TEXT DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS quote_tags (
+                quote_id INTEGER NOT NULL REFERENCES quotes(id) ON DELETE CASCADE,
+                tag      TEXT NOT NULL,
+                PRIMARY KEY (quote_id, tag)
+            );
+            PRAGMA foreign_keys = ON;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]
