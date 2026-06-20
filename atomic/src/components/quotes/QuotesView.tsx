@@ -729,8 +729,8 @@ export default function QuotesView() {
               </div>
             ) : (
               quotes.map((quote) => (
-                <div key={quote.id} className={`quotes-item quotes-lang-${quote.language.toLowerCase()}`}>
-                  <div className="quotes-item-body">
+                <div key={quote.id} className={`quotes-item quotes-lang-${quote.language.toLowerCase()}${heroQuote?.id === quote.id ? ' hero-active' : ''}`}>
+                  <div className="quotes-item-body" onClick={() => setHeroQuote(quote)}>
                     <div className="quotes-item-text">{quote.text}</div>
                     <div className="quotes-item-meta">
                       {quote.author && (

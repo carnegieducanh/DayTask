@@ -408,6 +408,7 @@ export const en: typeof vi = {
     favSection: (n: number) => `Favorites · ${n}`,
     recentSection: "Recent",
     langSection: (lang: string, n: number) => `${lang} · ${n}`,
+    todayPlaceholder: "Add a quote →",
   },
   reminder: {
     title: "Reminder",

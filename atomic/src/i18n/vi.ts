@@ -384,6 +384,7 @@ export const vi = {
     favSection: (n: number) => `Yêu thích · ${n}`,
     recentSection: "Gần đây",
     langSection: (lang: string, n: number) => `${lang} · ${n}`,
+    todayPlaceholder: "Thêm quote →",
   },
   reminder: {
     title: "Nhắc nhở",

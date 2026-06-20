@@ -13,6 +13,7 @@ import MiniCalendar from "./MiniCalendar";
 import DailyGreeting from "./DailyGreeting";
 import { WeeklyChecklist } from "./WeeklyChecklist";
 import VocabWidget from "./VocabWidget";
+import { TodayHeroQuote } from "./TodayHeroQuote";
 import type { Task } from "../../types";
 
 export default function TodayView() {
@@ -156,10 +157,10 @@ export default function TodayView() {
       {/* Topbar */}
       <div className="view-topbar today-topbar">
         <div className="today-topbar-side">
-          <div className="view-title">{t.today.title}</div>
           <div className="view-subtitle" style={{ textTransform: "capitalize" }}>
             {dateLabel}
           </div>
+          <TodayHeroQuote />
         </div>
 
         <DailyGreeting pendingCount={pending.length} isToday={selectedDate === format(new Date(), "yyyy-MM-dd")} />
