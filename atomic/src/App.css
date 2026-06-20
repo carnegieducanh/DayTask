@@ -1,8 +1,8 @@
 /* ── CSS Variables ── */
 :root {
   --font: "Segoe UI", system-ui, -apple-system, sans-serif;
-  /* --today-cols: 290px 1fr minmax(0, 250px); */
-  --today-cols: 290px 1fr 270px;
+  /* --today-cols: 297px 1fr minmax(0, 250px); */
+  --today-cols: 270px 1fr 270px;
 }
 
 [data-lang="en"] {
@@ -2180,6 +2180,32 @@ select {
   z-index: 9999;
   overflow: hidden;
   min-width: 180px;
+}
+
+.tag-dropdown-search-wrap {
+  padding: 7px 8px 6px;
+  border-bottom: 1px solid var(--border-1);
+}
+
+.tag-dropdown-search {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.82rem;
+  padding: 4px 8px;
+  border: 1.5px solid var(--border-1);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.tag-dropdown-search:focus {
+  border-color: var(--primary);
+}
+
+.tag-dropdown-search::placeholder {
+  color: var(--text-muted);
 }
 
 .tag-dropdown-list {

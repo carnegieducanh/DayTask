@@ -281,7 +281,9 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
   const [renamingTagId, setRenamingTagId] = useState<number | null>(null);
   const [renameInput, setRenameInput] = useState("");
   const [tagPanelStyle, setTagPanelStyle] = useState<React.CSSProperties>({});
+  const [tagSearch, setTagSearch] = useState("");
   const newTagInputRef = useRef<HTMLInputElement>(null);
+  const tagSearchInputRef = useRef<HTMLInputElement>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const catTriggerRef = useRef<HTMLButtonElement>(null);
@@ -428,6 +430,8 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
         width: Math.max(rect.width, 200),
         right: 'auto',
       });
+      setTagSearch("");
+      setTimeout(() => tagSearchInputRef.current?.focus(), 0);
     }
     setTagDropdownOpen((v) => !v);
   }
@@ -616,11 +620,30 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                 </button>
                 {tagDropdownOpen && (
                   <div className="tag-dropdown-panel" style={tagPanelStyle}>
+                    {tags.length > 0 && (
+                      <div className="tag-dropdown-search-wrap">
+                        <input
+                          ref={tagSearchInputRef}
+                          className="tag-dropdown-search"
+                          type="text"
+                          placeholder={t.calendar.filterTagSearch}
+                          value={tagSearch}
+                          onChange={(e) => setTagSearch(e.target.value)}
+                          spellCheck={false}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    )}
                     <div className="tag-dropdown-list" ref={tagListRef}>
                       {tags.length === 0 && (
                         <div className="tag-dropdown-empty">{t.tags.noTags}</div>
                       )}
-                      {tags.map((tag) => {
+                      {tags.length > 0 && tagSearch && !tags.some((tag) => tag.name.toLowerCase().includes(tagSearch.toLowerCase())) && (
+                        <div className="tag-dropdown-empty">{t.tags.noTags}</div>
+                      )}
+                      {tags
+                        .filter((tag) => !tagSearch || tag.name.toLowerCase().includes(tagSearch.toLowerCase()))
+                        .map((tag) => {
                         const selected = selectedTagIds.includes(tag.id);
                         return (
                           <div
