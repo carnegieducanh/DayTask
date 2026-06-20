@@ -7229,8 +7229,9 @@ select {
 .quotes-hero {
   position: relative;
   border-radius: var(--radius-lg);
-  padding: 16px 20px 20px;
-  min-height: 230px;
+  padding: 10px 20px;
+  min-height: 250px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   /* Light mode: airy cream with subtle warm top glow */
@@ -7386,13 +7387,11 @@ select {
 .quotes-hero-body {
   position: relative;
   z-index: 1;
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
   text-align: left;
-  padding: 4px 28px 8px;
+  padding: 4px 28px 20px;
   gap: 10px;
 }
 
@@ -7404,8 +7403,14 @@ select {
 }
 
 @keyframes quotes-hero-content-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .quotes-hero-content {
