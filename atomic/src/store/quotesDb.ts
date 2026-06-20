@@ -53,8 +53,8 @@ export async function dbGetQuotes(opts: {
   }
 
   if (opts.search?.trim()) {
-    conditions.push(`(text LIKE $${idx} OR COALESCE(author,'') LIKE $${idx})`);
-    params.push(`%${opts.search.trim()}%`);
+    conditions.push(`(LOWER(text) LIKE $${idx} OR LOWER(COALESCE(author,'')) LIKE $${idx})`);
+    params.push(`%${opts.search.trim().toLowerCase()}%`);
     idx++;
   }
 
@@ -99,6 +99,31 @@ export async function dbAddQuote(
   }
   const rows = await db.select<QuoteRow[]>('SELECT * FROM quotes WHERE id = $1', [id]);
   return rows.length ? rowToQuote(db, rows[0]) : null;
+}
+
+export async function dbUpdateQuote(
+  id: number,
+  text: string,
+  author: string | null,
+  language: string,
+  tags: string[]
+): Promise<void> {
+  if (!isTauri()) return;
+  const db = await getDb();
+  await db.execute(
+    'UPDATE quotes SET text = $1, author = $2, language = $3 WHERE id = $4',
+    [text, author || null, language, id]
+  );
+  await db.execute('DELETE FROM quote_tags WHERE quote_id = $1', [id]);
+  for (const tag of tags) {
+    const t = tag.trim();
+    if (t) {
+      await db.execute(
+        'INSERT OR IGNORE INTO quote_tags (quote_id, tag) VALUES ($1, $2)',
+        [id, t]
+      );
+    }
+  }
 }
 
 export async function dbDeleteQuote(id: number): Promise<void> {

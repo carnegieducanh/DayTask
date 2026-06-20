@@ -15,11 +15,13 @@ import {
   IconSparkles,
   IconStack2,
   IconClock,
+  IconPencil,
 } from '@tabler/icons-react';
 import type { Quote, QuoteHeroMode } from '../../types';
 import {
   dbGetQuotes,
   dbAddQuote,
+  dbUpdateQuote,
   dbDeleteQuote,
   dbToggleQuoteFavorite,
   dbGetHeroQuote,
@@ -38,14 +40,9 @@ const LANG_NAMES: Record<string, string> = {
   VI: 'Tiếng Việt',
   JA: '日本語',
   ZH: '中文',
-  KO: '한국어',
-  FR: 'Français',
-  DE: 'Deutsch',
-  ES: 'Español',
-  RU: 'Русский',
 };
 
-const LANG_OPTIONS = ['EN', 'VI', 'JA', 'ZH', 'KO', 'FR', 'DE', 'ES', 'RU'];
+const LANG_OPTIONS = ['EN', 'VI', 'JA', 'ZH'];
 
 type SidebarFilter = 'all' | 'favorites' | 'recent';
 
@@ -54,15 +51,17 @@ type SidebarFilter = 'all' | 'favorites' | 'recent';
 interface AddQuoteModalProps {
   onSave: (text: string, author: string, language: string, tags: string[]) => Promise<void>;
   onClose: () => void;
+  initialQuote?: Quote;
 }
 
-function AddQuoteModal({ onSave, onClose }: AddQuoteModalProps) {
+function AddQuoteModal({ onSave, onClose, initialQuote }: AddQuoteModalProps) {
   const t = useT();
-  const [text, setText] = useState('');
-  const [author, setAuthor] = useState('');
-  const [language, setLanguage] = useState('EN');
+  const isEdit = !!initialQuote;
+  const [text, setText] = useState(initialQuote?.text ?? '');
+  const [author, setAuthor] = useState(initialQuote?.author ?? '');
+  const [language, setLanguage] = useState(initialQuote?.language ?? 'EN');
   const [tagInput, setTagInput] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>(initialQuote?.tags ?? []);
   const [saving, setSaving] = useState(false);
   const textRef = useRef<HTMLTextAreaElement>(null);
 
@@ -98,7 +97,7 @@ function AddQuoteModal({ onSave, onClose }: AddQuoteModalProps) {
     <div className="quotes-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown}>
       <div className="quotes-modal">
         <div className="quotes-modal-header">
-          <span className="quotes-modal-title">{t.quotes.modalAddTitle}</span>
+          <span className="quotes-modal-title">{isEdit ? t.quotes.modalEditTitle : t.quotes.modalAddTitle}</span>
           <button className="quotes-modal-close" onClick={onClose}><IconX size={16} /></button>
         </div>
 
@@ -166,7 +165,7 @@ function AddQuoteModal({ onSave, onClose }: AddQuoteModalProps) {
             onClick={handleSave}
             disabled={!text.trim() || saving}
           >
-            {saving ? '...' : t.quotes.save}
+            {saving ? '...' : isEdit ? t.quotes.editSave : t.quotes.save}
           </button>
         </div>
       </div>
@@ -189,9 +188,13 @@ export default function QuotesView() {
   const [favCount, setFavCount] = useState(0);
   const [langCounts, setLangCounts] = useState<{ language: string; count: number }[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [pendingDeleteQuote, setPendingDeleteQuote] = useState<Quote | null>(null);
+  const [pendingDeleteHeroWas, setPendingDeleteHeroWas] = useState<Quote | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modeMenuRef = useRef<HTMLDivElement>(null);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -250,14 +253,55 @@ export default function QuotesView() {
     if (heroMode === 'random_favorites') await loadHeroQuote(heroMode);
   }
 
-  async function handleDelete(quote: Quote) {
+  async function commitDelete(quote: Quote, wasHero: Quote | null) {
     await dbDeleteQuote(quote.id);
+    if (wasHero?.id === quote.id && heroMode === 'manual') setPinnedIdLS(null);
+    await loadStats();
+    setPendingDeleteQuote(null);
+    setPendingDeleteHeroWas(null);
+  }
+
+  function handleDelete(quote: Quote) {
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    if (pendingDeleteQuote) {
+      commitDelete(pendingDeleteQuote, pendingDeleteHeroWas);
+    }
+
     setQuotes((prev) => prev.filter((q) => q.id !== quote.id));
-    if (heroQuote?.id === quote.id) {
-      setPinnedIdLS(null);
+
+    const savedHero = heroQuote?.id === quote.id ? heroQuote : null;
+    if (savedHero) {
+      if (heroMode === 'manual') setPinnedIdLS(null);
       setHeroQuote(null);
     }
-    await loadStats();
+
+    setPendingDeleteQuote(quote);
+    setPendingDeleteHeroWas(savedHero);
+
+    deleteTimerRef.current = setTimeout(() => {
+      commitDelete(quote, savedHero);
+    }, 4000);
+  }
+
+  function handleUndoDelete() {
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    if (!pendingDeleteQuote) return;
+    if (pendingDeleteHeroWas) {
+      setHeroQuote(pendingDeleteHeroWas);
+      if (heroMode === 'manual') setPinnedIdLS(pendingDeleteHeroWas.id);
+    }
+    loadQuotes(sidebarFilter, langFilter, searchQuery);
+    setPendingDeleteQuote(null);
+    setPendingDeleteHeroWas(null);
+  }
+
+  async function handleUpdateQuote(text: string, author: string, language: string, tags: string[]) {
+    if (!editingQuote) return;
+    await dbUpdateQuote(editingQuote.id, text, author || null, language, tags);
+    const updated: Quote = { ...editingQuote, text, author: author || null, language, tags };
+    setQuotes((prev) => prev.map((q) => (q.id === editingQuote.id ? updated : q)));
+    if (heroQuote?.id === editingQuote.id) setHeroQuote(updated);
+    setEditingQuote(null);
   }
 
   async function handleCopy(quote: Quote) {
@@ -414,7 +458,7 @@ export default function QuotesView() {
             </div>
           </div>
 
-          <div className="quotes-hero-body">
+          <div className={`quotes-hero-body${heroQuote ? ` quotes-lang-${heroQuote.language.toLowerCase()}` : ''}`}>
             <div className="quotes-hero-bigmark">
               <IconQuote size={40} strokeWidth={1.5} />
             </div>
@@ -488,7 +532,7 @@ export default function QuotesView() {
               </div>
             ) : (
               quotes.map((quote) => (
-                <div key={quote.id} className="quotes-item">
+                <div key={quote.id} className={`quotes-item quotes-lang-${quote.language.toLowerCase()}`}>
                   <div className="quotes-item-body">
                     <div className="quotes-item-text">{quote.text}</div>
                     <div className="quotes-item-meta">
@@ -527,6 +571,13 @@ export default function QuotesView() {
                       {copiedId === quote.id ? <IconCheck size={14} /> : <IconCopy size={14} />}
                     </button>
                     <button
+                      className="quotes-btn-sm"
+                      onClick={() => setEditingQuote(quote)}
+                      title={t.quotes.edit}
+                    >
+                      <IconPencil size={14} />
+                    </button>
+                    <button
                       className="quotes-btn-sm danger"
                       onClick={() => handleDelete(quote)}
                       title={t.quotes.delete}
@@ -543,6 +594,25 @@ export default function QuotesView() {
 
       {showAddModal && (
         <AddQuoteModal onSave={handleAddQuote} onClose={() => setShowAddModal(false)} />
+      )}
+
+      {editingQuote && (
+        <AddQuoteModal
+          onSave={handleUpdateQuote}
+          onClose={() => setEditingQuote(null)}
+          initialQuote={editingQuote}
+        />
+      )}
+
+      {pendingDeleteQuote && (
+        <div className="delete-toast" role="status">
+          <span className="delete-toast-msg">
+            {t.quotes.deleted(pendingDeleteQuote.text)}
+          </span>
+          <button className="delete-toast-undo" onClick={handleUndoDelete}>
+            {t.quotes.undo}
+          </button>
+        </div>
       )}
     </div>
   );
