@@ -2192,16 +2192,17 @@ select {
   box-sizing: border-box;
   font-size: 0.82rem;
   padding: 4px 8px;
-  border: 1.5px solid var(--border-1);
-  border-radius: 6px;
-  background: var(--bg-secondary);
+  border: none;
+  border-bottom: 1px solid var(--border-1);
+  border-radius: 0;
+  background: transparent;
   color: var(--text-primary);
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-bottom-color 0.15s;
 }
 
 .tag-dropdown-search:focus {
-  border-color: var(--primary);
+  border-bottom-color: var(--primary);
 }
 
 .tag-dropdown-search::placeholder {
