@@ -2173,6 +2173,7 @@ select {
 }
 
 .tag-dropdown-panel {
+  position: absolute;
   background: var(--bg-primary);
   border: 1.5px solid var(--border-1);
   border-radius: 10px;
@@ -7704,62 +7705,6 @@ select {
   gap: 12px;
 }
 
-/* ── Tag input ── */
-.quotes-tag-input-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  align-items: center;
-  padding: 6px 10px;
-  border-radius: var(--radius-md);
-  border: 0.5px solid var(--border-1);
-  background: var(--bg-secondary);
-  cursor: text;
-  min-height: 38px;
-  transition: border-color 0.15s;
-}
-.quotes-tag-input-wrap:focus-within {
-  border-color: var(--primary);
-}
-
-.quotes-tag-chip {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 7px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--primary) 14%, transparent);
-  color: var(--primary);
-  font-size: 0.79rem;
-}
-
-.quotes-tag-remove {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: inherit;
-  opacity: 0.7;
-  padding: 0;
-}
-.quotes-tag-remove:hover { opacity: 1; }
-
-.quotes-tag-input {
-  flex: 1;
-  min-width: 80px;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: var(--text-primary);
-  font-size: 0.88rem;
-  font-family: inherit;
-  padding: 0;
-}
-.quotes-tag-input::placeholder {
-  color: var(--text-muted);
-}
 
 /* ── Modal footer ── */
 .quotes-modal-footer {

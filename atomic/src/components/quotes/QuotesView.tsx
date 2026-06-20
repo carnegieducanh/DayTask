@@ -16,6 +16,8 @@ import {
   IconStack2,
   IconClock,
   IconPencil,
+  IconTag,
+  IconChevronDown,
 } from '@tabler/icons-react';
 import type { Quote, QuoteHeroMode } from '../../types';
 import {
@@ -27,6 +29,9 @@ import {
   dbGetHeroQuote,
   dbGetLanguageCounts,
   dbGetQuoteCounts,
+  dbGetAllQuoteTagNames,
+  dbRenameQuoteTag,
+  dbDeleteQuoteTag,
   getHeroModeLS,
   setHeroModeLS,
   getPinnedIdLS,
@@ -52,34 +57,96 @@ interface AddQuoteModalProps {
   onSave: (text: string, author: string, language: string, tags: string[]) => Promise<void>;
   onClose: () => void;
   initialQuote?: Quote;
+  onTagDeleted: (name: string, undo: () => void) => void;
 }
 
-function AddQuoteModal({ onSave, onClose, initialQuote }: AddQuoteModalProps) {
+function AddQuoteModal({ onSave, onClose, initialQuote, onTagDeleted }: AddQuoteModalProps) {
   const t = useT();
   const isEdit = !!initialQuote;
   const [text, setText] = useState(initialQuote?.text ?? '');
   const [author, setAuthor] = useState(initialQuote?.author ?? '');
   const [language, setLanguage] = useState(initialQuote?.language ?? 'EN');
-  const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>(initialQuote?.tags ?? []);
   const [saving, setSaving] = useState(false);
   const textRef = useRef<HTMLTextAreaElement>(null);
 
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [tagDropOpen, setTagDropOpen] = useState(false);
+  const [tagSearch, setTagSearch] = useState('');
+  const [showNewTagInput, setShowNewTagInput] = useState(false);
+  const [newTagInput, setNewTagInput] = useState('');
+  const [tagPanelStyle, setTagPanelStyle] = useState<React.CSSProperties>({});
+  const [renamingTag, setRenamingTag] = useState<string | null>(null);
+  const [renameInput, setRenameInput] = useState('');
+  const tagDropRef = useRef<HTMLDivElement>(null);
+  const tagTriggerRef = useRef<HTMLButtonElement>(null);
+  const tagSearchRef = useRef<HTMLInputElement>(null);
+  const newTagInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     textRef.current?.focus();
+    dbGetAllQuoteTagNames().then(setAllTags);
   }, []);
 
-  function handleTagKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      const trimmed = tagInput.trim().replace(/,$/, '');
-      if (trimmed && !tags.includes(trimmed)) {
-        setTags((prev) => [...prev, trimmed]);
+  useEffect(() => {
+    if (!tagDropOpen) return;
+    function handler(e: MouseEvent) {
+      if (tagDropRef.current && !tagDropRef.current.contains(e.target as Node)) {
+        setTagDropOpen(false);
+        setShowNewTagInput(false);
+        setNewTagInput('');
       }
-      setTagInput('');
-    } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
-      setTags((prev) => prev.slice(0, -1));
     }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [tagDropOpen]);
+
+  function handleTagDropClick() {
+    if (!tagDropOpen && tagTriggerRef.current) {
+      const rect = tagTriggerRef.current.getBoundingClientRect();
+      setTagPanelStyle({ top: rect.height + 4, left: 0, minWidth: rect.width });
+      setTagSearch('');
+      setTimeout(() => tagSearchRef.current?.focus(), 0);
+    }
+    setTagDropOpen((v) => !v);
+  }
+
+  function toggleTag(name: string) {
+    setTags((prev) => prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]);
+  }
+
+  function handleCreateTag() {
+    const name = newTagInput.trim();
+    if (!name) return;
+    if (!allTags.includes(name)) setAllTags((prev) => [...prev, name].sort());
+    if (!tags.includes(name)) setTags((prev) => [...prev, name]);
+    setNewTagInput('');
+    setShowNewTagInput(false);
+  }
+
+  function handleNewTagKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') { e.preventDefault(); handleCreateTag(); }
+    if (e.key === 'Escape') { setShowNewTagInput(false); setNewTagInput(''); }
+  }
+
+  async function handleRenameTag(oldName: string) {
+    const newName = renameInput.trim();
+    setRenamingTag(null);
+    if (!newName || newName === oldName) return;
+    await dbRenameQuoteTag(oldName, newName);
+    setAllTags((prev) => prev.map((t) => t === oldName ? newName : t).sort());
+    setTags((prev) => prev.map((t) => t === oldName ? newName : t));
+  }
+
+  function handleDeleteTag(name: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    const wasSelected = tags.includes(name);
+    setAllTags((prev) => prev.filter((t) => t !== name));
+    if (wasSelected) setTags((prev) => prev.filter((t) => t !== name));
+    onTagDeleted(name, () => {
+      setAllTags((prev) => [...prev, name].sort());
+      if (wasSelected) setTags((prev) => [...prev, name]);
+    });
   }
 
   async function handleSave() {
@@ -90,8 +157,10 @@ function AddQuoteModal({ onSave, onClose, initialQuote }: AddQuoteModalProps) {
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Escape') onClose();
+    if (e.key === 'Escape' && !tagDropOpen) onClose();
   }
+
+  const filteredTags = allTags.filter((t) => !tagSearch || t.toLowerCase().includes(tagSearch.toLowerCase()));
 
   return (
     <div className="quotes-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown}>
@@ -138,23 +207,132 @@ function AddQuoteModal({ onSave, onClose, initialQuote }: AddQuoteModalProps) {
           </div>
 
           <label className="quotes-modal-label">{t.quotes.tagsLabel}</label>
-          <div className="quotes-tag-input-wrap">
-            {tags.map((tag) => (
-              <span key={tag} className="quotes-tag-chip">
-                {tag}
-                <button className="quotes-tag-remove" onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}>
-                  <IconX size={10} />
-                </button>
-              </span>
-            ))}
-            <input
-              className="quotes-tag-input"
-              placeholder={tags.length === 0 ? t.quotes.tagsPlaceholder : ''}
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagKeyDown}
-              spellCheck={false}
-            />
+          <div className="tag-dropdown" ref={tagDropRef}>
+            <button
+              ref={tagTriggerRef}
+              type="button"
+              className={`tag-dropdown-trigger${tagDropOpen ? ' open' : ''}`}
+              onClick={handleTagDropClick}
+            >
+              {tags.length === 0 ? (
+                <>
+                  <IconTag size={13} className="time-dropdown-icon muted" />
+                  <span className="tag-dropdown-label placeholder">{t.quotes.tagsPlaceholder}</span>
+                </>
+              ) : (
+                <span className="tag-dropdown-label">{tags.join(', ')}</span>
+              )}
+              <IconChevronDown size={13} className={`cat-dropdown-chevron${tagDropOpen ? ' open' : ''}`} />
+            </button>
+
+            {tagDropOpen && (
+              <div className="tag-dropdown-panel" style={tagPanelStyle}>
+                {allTags.length > 0 && (
+                  <div className="tag-dropdown-search-wrap">
+                    <input
+                      ref={tagSearchRef}
+                      className="tag-dropdown-search"
+                      placeholder={t.calendar.filterTagSearch}
+                      value={tagSearch}
+                      onChange={(e) => setTagSearch(e.target.value)}
+                    />
+                  </div>
+                )}
+                <div className="tag-dropdown-list">
+                  {allTags.length === 0 && (
+                    <div className="tag-dropdown-empty">{t.tags.noTags}</div>
+                  )}
+                  {allTags.length > 0 && tagSearch && filteredTags.length === 0 && (
+                    <div className="tag-dropdown-empty">{t.tags.noTags}</div>
+                  )}
+                  {filteredTags.map((tagName) => {
+                    const selected = tags.includes(tagName);
+                    const isRenaming = renamingTag === tagName;
+                    return (
+                      <div
+                        key={tagName}
+                        className={`tag-dropdown-item${selected && !isRenaming ? ' selected' : ''}`}
+                      >
+                        {isRenaming ? (
+                          <>
+                            <input
+                              className="tag-dropdown-rename-input"
+                              value={renameInput}
+                              onChange={(e) => setRenameInput(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              onBlur={() => handleRenameTag(tagName)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') { e.preventDefault(); handleRenameTag(tagName); }
+                                if (e.key === 'Escape') setRenamingTag(null);
+                              }}
+                              autoFocus
+                            />
+                            <div className="tag-dropdown-item-actions">
+                              <button className="tag-dropdown-action-btn" onClick={(e) => { e.stopPropagation(); handleRenameTag(tagName); }}>
+                                <IconCheck size={12} />
+                              </button>
+                              <button className="tag-dropdown-action-btn" onClick={(e) => { e.stopPropagation(); setRenamingTag(null); }}>
+                                <IconX size={12} />
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="tag-dropdown-item-select" onClick={() => toggleTag(tagName)}>
+                              <span className="tag-dropdown-check">
+                                {selected && <IconCheck size={11} />}
+                              </span>
+                              <span>{tagName}</span>
+                            </div>
+                            <div className="tag-dropdown-item-actions">
+                              <button
+                                className="tag-dropdown-action-btn"
+                                onClick={(e) => { e.stopPropagation(); setRenamingTag(tagName); setRenameInput(tagName); }}
+                              >
+                                <IconPencil size={12} />
+                              </button>
+                              <button
+                                className="tag-dropdown-action-btn tag-dropdown-action-delete"
+                                onClick={(e) => handleDeleteTag(tagName, e)}
+                              >
+                                <IconTrash size={12} />
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="tag-dropdown-footer">
+                  {showNewTagInput ? (
+                    <div className="tag-picker-new-input">
+                      <input
+                        ref={newTagInputRef}
+                        className="tag-picker-input"
+                        value={newTagInput}
+                        onChange={(e) => setNewTagInput(e.target.value)}
+                        onKeyDown={handleNewTagKeyDown}
+                        placeholder={t.tags.addPlaceholder}
+                      />
+                      <button type="button" className="tag-picker-confirm" onClick={handleCreateTag}>
+                        <IconCheck size={13} />
+                      </button>
+                      <button type="button" className="tag-picker-cancel" onClick={() => { setShowNewTagInput(false); setNewTagInput(''); }}>
+                        <IconX size={13} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="tag-dropdown-add-btn"
+                      onClick={() => { setShowNewTagInput(true); setTimeout(() => newTagInputRef.current?.focus(), 0); }}
+                    >
+                      {t.tags.createNew}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -192,9 +370,11 @@ export default function QuotesView() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [pendingDeleteQuote, setPendingDeleteQuote] = useState<Quote | null>(null);
   const [pendingDeleteHeroWas, setPendingDeleteHeroWas] = useState<Quote | null>(null);
+  const [pendingDeleteQuoteTag, setPendingDeleteQuoteTag] = useState<{ name: string; undo: () => void } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modeMenuRef = useRef<HTMLDivElement>(null);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tagDeleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -325,6 +505,23 @@ export default function QuotesView() {
     setShowModeMenu(false);
     if (mode !== 'manual') invalidateDailyCache();
     await loadHeroQuote(mode);
+  }
+
+  function handleTagDeleted(name: string, undo: () => void) {
+    if (tagDeleteTimerRef.current) clearTimeout(tagDeleteTimerRef.current);
+    setPendingDeleteQuoteTag({ name, undo });
+    tagDeleteTimerRef.current = setTimeout(async () => {
+      await dbDeleteQuoteTag(name);
+      setPendingDeleteQuoteTag(null);
+      tagDeleteTimerRef.current = null;
+    }, 4000);
+  }
+
+  function handleUndoTagDelete() {
+    if (!pendingDeleteQuoteTag) return;
+    if (tagDeleteTimerRef.current) { clearTimeout(tagDeleteTimerRef.current); tagDeleteTimerRef.current = null; }
+    pendingDeleteQuoteTag.undo();
+    setPendingDeleteQuoteTag(null);
   }
 
   async function handleAddQuote(text: string, author: string, language: string, tags: string[]) {
@@ -593,7 +790,7 @@ export default function QuotesView() {
       </div>
 
       {showAddModal && (
-        <AddQuoteModal onSave={handleAddQuote} onClose={() => setShowAddModal(false)} />
+        <AddQuoteModal onSave={handleAddQuote} onClose={() => setShowAddModal(false)} onTagDeleted={handleTagDeleted} />
       )}
 
       {editingQuote && (
@@ -601,6 +798,7 @@ export default function QuotesView() {
           onSave={handleUpdateQuote}
           onClose={() => setEditingQuote(null)}
           initialQuote={editingQuote}
+          onTagDeleted={handleTagDeleted}
         />
       )}
 
@@ -611,6 +809,17 @@ export default function QuotesView() {
           </span>
           <button className="delete-toast-undo" onClick={handleUndoDelete}>
             {t.quotes.undo}
+          </button>
+        </div>
+      )}
+
+      {pendingDeleteQuoteTag && (
+        <div className="delete-toast" role="status">
+          <span className="delete-toast-msg">
+            {t.toast.deleted(pendingDeleteQuoteTag.name)}
+          </span>
+          <button className="delete-toast-undo" onClick={handleUndoTagDelete}>
+            {t.toast.undo}
           </button>
         </div>
       )}

@@ -235,3 +235,24 @@ export function invalidateDailyCache() {
   clearDailyCache('quote_hero_daily_random');
   clearDailyCache('quote_hero_daily_fav');
 }
+
+export async function dbGetAllQuoteTagNames(): Promise<string[]> {
+  if (!isTauri()) return [];
+  const db = await getDb();
+  const rows = await db.select<{ tag: string }[]>(
+    'SELECT DISTINCT tag FROM quote_tags ORDER BY tag'
+  );
+  return rows.map((r) => r.tag);
+}
+
+export async function dbRenameQuoteTag(oldName: string, newName: string): Promise<void> {
+  if (!isTauri()) return;
+  const db = await getDb();
+  await db.execute('UPDATE quote_tags SET tag = $1 WHERE tag = $2', [newName, oldName]);
+}
+
+export async function dbDeleteQuoteTag(name: string): Promise<void> {
+  if (!isTauri()) return;
+  const db = await getDb();
+  await db.execute('DELETE FROM quote_tags WHERE tag = $1', [name]);
+}
