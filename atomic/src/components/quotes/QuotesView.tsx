@@ -111,6 +111,7 @@ function AddQuoteModal({ onSave, onClose }: AddQuoteModalProps) {
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={4}
+            spellCheck={false}
           />
 
           <label className="quotes-modal-label">{t.quotes.authorLabel}</label>
@@ -119,6 +120,7 @@ function AddQuoteModal({ onSave, onClose }: AddQuoteModalProps) {
             placeholder={t.quotes.authorPlaceholder}
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
+            spellCheck={false}
           />
 
           <div className="quotes-modal-row">
@@ -152,6 +154,7 @@ function AddQuoteModal({ onSave, onClose }: AddQuoteModalProps) {
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagKeyDown}
+              spellCheck={false}
             />
           </div>
         </div>
@@ -373,10 +376,6 @@ export default function QuotesView() {
       <div className="quotes-main">
         {/* Hero card */}
         <div className="quotes-hero">
-          <div className="quotes-hero-bigmark">
-            <IconQuote size={44} strokeWidth={1.5} />
-          </div>
-
           <div className="quotes-hero-top">
             <div className="quotes-hero-label">
               <IconSparkles size={12} />
@@ -415,18 +414,23 @@ export default function QuotesView() {
             </div>
           </div>
 
-          {heroQuote ? (
-            <>
-              <div className="quotes-hero-text">{heroQuote.text}</div>
-              {heroQuote.author && (
-                <div className="quotes-hero-author">
-                  — <span>{heroQuote.author}</span>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="quotes-hero-empty">{heroEmpty}</div>
-          )}
+          <div className="quotes-hero-body">
+            <div className="quotes-hero-bigmark">
+              <IconQuote size={40} strokeWidth={1.5} />
+            </div>
+            {heroQuote ? (
+              <>
+                <div className="quotes-hero-text">{heroQuote.text}</div>
+                {heroQuote.author && (
+                  <div className="quotes-hero-author">
+                    — <span>{heroQuote.author}</span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="quotes-hero-empty">{heroEmpty}</div>
+            )}
+          </div>
         </div>
 
         {/* List section */}
@@ -447,7 +451,9 @@ export default function QuotesView() {
               placeholder={t.quotes.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
+              spellCheck={false}
             />
+            <span className="quotes-search-line" aria-hidden>{t.quotes.searchPlaceholder}</span>
             {searchQuery && (
               <button
                 className="quotes-search-clear"
