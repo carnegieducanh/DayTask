@@ -14,6 +14,8 @@ import DailyGreeting from "./DailyGreeting";
 import { WeeklyChecklist } from "./WeeklyChecklist";
 import VocabWidget from "./VocabWidget";
 import { TodayHeroQuote } from "./TodayHeroQuote";
+import DayStatsSection from "../calendar/DayStatsSection";
+import { calcRangeCategoryStats } from "../calendar/calendarUtils";
 import type { Task } from "../../types";
 
 export default function TodayView() {
@@ -28,6 +30,7 @@ export default function TodayView() {
     setReminderPopup,
     toggleTask,
     taskTimeEntries,
+    categoryColors,
   } = useAppStore();
 
   const [showModal, setShowModal] = useState(false);
@@ -78,6 +81,10 @@ export default function TodayView() {
   const total = tasks.length;
   const pct = total === 0 ? 0 : Math.round((done.length / total) * 100);
   const scheduled = taskTimeEntries.length;
+
+  const dayStats = calcRangeCategoryStats(tasks, taskTimeEntries, selectedDate, selectedDate, categoryColors).filter(
+    (s) => s.totalMins > 0,
+  );
 
   const scheduledTasks = tasks
     .filter((task) => taskTimeEntries.some((e) => e.task_id === task.id))
@@ -304,6 +311,12 @@ export default function TodayView() {
                 <div style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>{t.today.noScheduled}</div>
               )}
             </div>
+
+            {dayStats.length > 0 && (
+              <div className="today-sidebar-section">
+                <DayStatsSection stats={dayStats} />
+              </div>
+            )}
           </div>
         </div>
       </div>

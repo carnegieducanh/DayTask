@@ -764,8 +764,8 @@ select {
 .vocab-widget-word-row {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 7px;
-  overflow: hidden;
 }
 .vocab-widget-word {
   font-size: 1.3rem;
@@ -773,18 +773,11 @@ select {
   color: var(--primary);
   letter-spacing: -0.01em;
   line-height: 1.2;
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 .vocab-widget-ipa {
   font-size: 0.9rem;
   color: var(--text-secondary);
   line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-shrink: 1;
-  min-width: 0;
 }
 .vocab-widget-divider {
   height: 1px;
@@ -982,6 +975,13 @@ select {
   animation: today-right-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
 }
 
+.today-right .cal-week-stats {
+  height: auto;
+  border-top: none;
+  background: transparent;
+  padding: 0;
+}
+
 .today-sidebar-section {
   display: flex;
   flex-direction: column;
@@ -1016,7 +1016,7 @@ select {
 }
 
 .today-sidebar .stat-sub {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   line-height: 1.3;
   padding-left: 10px;
 }

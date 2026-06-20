@@ -11,7 +11,20 @@ export function TodayHeroQuote() {
   const t = useT();
 
   useEffect(() => {
+    let lastLoadedDate = new Date().toISOString().slice(0, 10);
     dbGetHeroQuote(getHeroModeLS()).then(setQuote);
+
+    function onVisibilityChange() {
+      if (document.visibilityState !== 'visible') return;
+      const today = new Date().toISOString().slice(0, 10);
+      if (today !== lastLoadedDate) {
+        lastLoadedDate = today;
+        dbGetHeroQuote(getHeroModeLS()).then(setQuote);
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, []);
 
   if (quote === undefined) return null;
