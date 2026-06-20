@@ -701,13 +701,13 @@ select {
 
 .today-hero-quote-text {
   font-family: "Lora", Georgia, serif;
-  font-size: 0.94rem;
+  font-size: 1.05rem;
   font-weight: 300;
 }
 
 .today-hero-quote-author {
   font-family: "Lora", Georgia, serif;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 300;
   opacity: 0.55;
 }
@@ -7401,6 +7401,22 @@ select {
   line-height: 0;
   pointer-events: none;
   user-select: none;
+}
+
+@keyframes quotes-hero-content-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.quotes-hero-content {
+  display: contents;
+}
+
+.quotes-hero-content-animate {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: quotes-hero-content-in 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
 .quotes-hero-text {

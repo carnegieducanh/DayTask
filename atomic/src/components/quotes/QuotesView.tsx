@@ -367,6 +367,7 @@ export default function QuotesView() {
   const [langCounts, setLangCounts] = useState<{ language: string; count: number }[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
+  const [heroAnimKey, setHeroAnimKey] = useState(0);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [pendingDeleteQuote, setPendingDeleteQuote] = useState<Quote | null>(null);
   const [pendingDeleteHeroWas, setPendingDeleteHeroWas] = useState<Quote | null>(null);
@@ -660,14 +661,14 @@ export default function QuotesView() {
               <IconQuote size={40} strokeWidth={1.5} />
             </div>
             {heroQuote ? (
-              <>
+              <div key={heroAnimKey} className="quotes-hero-content-animate">
                 <div className="quotes-hero-text">{heroQuote.text}</div>
                 {heroQuote.author && (
                   <div className="quotes-hero-author">
                     — <span>{heroQuote.author}</span>
                   </div>
                 )}
-              </>
+              </div>
             ) : (
               <div className="quotes-hero-empty">{heroEmpty}</div>
             )}
@@ -730,7 +731,7 @@ export default function QuotesView() {
             ) : (
               quotes.map((quote) => (
                 <div key={quote.id} className={`quotes-item quotes-lang-${quote.language.toLowerCase()}${heroQuote?.id === quote.id ? ' hero-active' : ''}`}>
-                  <div className="quotes-item-body" onClick={() => setHeroQuote(quote)}>
+                  <div className="quotes-item-body" onClick={() => { setHeroQuote(quote); setHeroAnimKey((k) => k + 1); }}>
                     <div className="quotes-item-text">{quote.text}</div>
                     <div className="quotes-item-meta">
                       {quote.author && (
