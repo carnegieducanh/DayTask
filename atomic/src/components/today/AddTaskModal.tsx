@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import type React from "react";
 import { attachSmoothScroll } from "../../hooks/useSmoothScroll";
 import { useModalClose } from "../../hooks/useModalClose";
 import {
@@ -261,7 +260,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
     setTaskTags,
   } = useAppStore();
 
-  const CATEGORIES: { value: Category; label: string }[] = [
+  const CATEGORIES: { value: Category; label: string; separator?: boolean }[] = [
     { value: "work", label: t.cat.work },
     { value: "personal", label: t.cat.personal },
     { value: "health", label: t.cat.health },
@@ -269,6 +268,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
     { value: "creative", label: t.cat.creative },
     { value: "mindfulness", label: t.cat.mindfulness },
     { value: "finance", label: t.cat.finance },
+    { value: "other", label: t.cat.other, separator: true },
   ];
 
   const taskColor = editTask?.color ?? null;
@@ -541,8 +541,9 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                   createPortal(
                     <div className="cat-dropdown-panel" style={catPanelStyle} ref={catPanelRef}>
                       {CATEGORIES.map((cat) => (
+                        <React.Fragment key={cat.value}>
+                          {cat.separator && <div className="cat-dropdown-divider" />}
                         <div
-                          key={cat.value}
                           className={`cat-dropdown-item${category === cat.value ? " selected" : ""}`}
                         >
                           <button
@@ -612,6 +613,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                             </div>
                           )}
                         </div>
+                        </React.Fragment>
                       ))}
                     </div>,
                     document.body,

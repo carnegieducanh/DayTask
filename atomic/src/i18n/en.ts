@@ -22,6 +22,7 @@ export const en: typeof vi = {
     creative: "Creative",
     mindfulness: "Mindfulness",
     finance: "Finance",
+    other: "Other",
   },
   priority: {
     high: "High",

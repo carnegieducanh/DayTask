@@ -231,6 +231,32 @@ pub fn run() {
             PRAGMA foreign_keys = ON;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 16,
+            description: "add_other_category",
+            sql: "PRAGMA foreign_keys = OFF;
+            ALTER TABLE tasks RENAME TO tasks_old;
+            CREATE TABLE tasks (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                title           TEXT NOT NULL,
+                description     TEXT,
+                category        TEXT CHECK(category IN ('work','personal','health','learn','creative','mindfulness','finance','other')),
+                priority        TEXT CHECK(priority IN ('high','mid','low')) DEFAULT 'mid',
+                reminder        TEXT,
+                date            TEXT NOT NULL,
+                is_done         INTEGER DEFAULT 0,
+                created_at      TEXT DEFAULT (datetime('now')),
+                repeat_daily    INTEGER NOT NULL DEFAULT 0,
+                series_id       INTEGER DEFAULT NULL,
+                repeat_end_date TEXT DEFAULT NULL,
+                color           TEXT DEFAULT NULL
+            );
+            INSERT INTO tasks SELECT * FROM tasks_old;
+            DROP TABLE tasks_old;
+            PRAGMA foreign_keys = ON;
+            INSERT OR IGNORE INTO category_colors (category, color) VALUES ('other', '#9E9E9E');",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

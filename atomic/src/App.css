@@ -7883,3 +7883,46 @@ select {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* ── Other category ── */
+.cat-dropdown-divider {
+  height: 0.5px;
+  background: var(--border-1);
+  margin: 3px 0;
+}
+
+.other-tasks-section {
+  margin-top: 4px;
+}
+
+.other-tasks-divider {
+  height: 0.5px;
+  background: var(--border-1);
+  margin: 12px 0 10px;
+}
+
+.other-stats-section {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 0.5px solid var(--border-1);
+}
+
+.other-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.other-stats-label {
+  flex: 1;
+  font-weight: 500;
+}
+
+.other-stats-val {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}

@@ -1,4 +1,4 @@
-export type Category = 'work' | 'personal' | 'health' | 'learn' | 'creative' | 'mindfulness' | 'finance';
+export type Category = 'work' | 'personal' | 'health' | 'learn' | 'creative' | 'mindfulness' | 'finance' | 'other';
 export type Priority = 'high' | 'mid' | 'low';
 export type GoalStatus = 'todo' | 'doing' | 'review' | 'done';
 export type Quarter = 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'full';

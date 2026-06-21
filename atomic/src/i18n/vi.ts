@@ -20,6 +20,7 @@ export const vi = {
     creative: "Sáng tạo",
     mindfulness: "Thiền định",
     finance: "Tài chính",
+    other: "Khác",
   },
   priority: {
     high: "Cao",

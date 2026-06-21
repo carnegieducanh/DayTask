@@ -27,6 +27,7 @@ const DEFAULT_CATEGORY_COLORS: CategoryColors = {
   creative:     '#F9A8D4',
   mindfulness:  '#6EE7B7',
   finance:      '#FDE68A',
+  other:        '#9E9E9E',
 };
 
 let _db: import('@tauri-apps/plugin-sql').default | null = null;
