@@ -88,7 +88,7 @@ export default function TodayView() {
   const scheduled = taskTimeEntries.length;
 
   const dayStats = calcRangeCategoryStats(tasks, taskTimeEntries, selectedDate, selectedDate, categoryColors).filter(
-    (s) => s.totalMins > 0,
+    (s) => s.totalMins > 0 && s.category !== 'other',
   );
   const otherDayMins = calcOtherDayMins(tasks, taskTimeEntries, selectedDate);
 

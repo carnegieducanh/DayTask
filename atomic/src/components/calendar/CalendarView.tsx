@@ -225,7 +225,7 @@ export default function CalendarView() {
     setActiveTags(new Set());
   };
 
-  const dayStats = calcDayStats(calendarTasks, calendarTimeEntries, selectedDate, categoryColors);
+  const dayStats = calcDayStats(calendarTasks, calendarTimeEntries, selectedDate, categoryColors).filter(s => s.category !== 'other');
   const otherDayMins = calcOtherDayMins(calendarTasks, calendarTimeEntries, selectedDate);
 
   return (
@@ -241,8 +241,10 @@ export default function CalendarView() {
           <div className="cal-day-sidebar">
             <MiniCalendar />
             <div className="cal-day-sidebar-extras">
-              <DayStatsSection stats={dayStats} />
-              <OtherStatsSection totalMins={otherDayMins} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <DayStatsSection stats={dayStats} />
+                <OtherStatsSection totalMins={otherDayMins} />
+              </div>
               <div style={{ padding: "0 8px" }}>
                 <VocabWidget />
               </div>

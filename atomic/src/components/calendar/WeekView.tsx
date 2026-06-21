@@ -6,7 +6,7 @@ import { IconTrash, IconCheck } from '@tabler/icons-react';
 import { useT } from '../../i18n';
 import type { Task, CategoryColors, TaskTimeEntry } from '../../types';
 import { useAppStore } from '../../store/appStore';
-import { calcDayStats } from './calendarUtils';
+import { calcDayStats, calcOtherDayMins } from './calendarUtils';
 import DayStatsSection from './DayStatsSection';
 
 const COLOR_PALETTE: string[] = [
@@ -110,7 +110,9 @@ export default function WeekView({
             return ea.start_time.localeCompare(eb.start_time);
           });
         const isToday = isSameDay(day, today);
-        const stats = calcDayStats(tasks, timeEntries, dateStr, categoryColors);
+        const stats = calcDayStats(tasks, timeEntries, dateStr, categoryColors).filter(s => s.category !== 'other');
+        const otherMins = calcOtherDayMins(tasks, timeEntries, dateStr);
+        const otherColor = categoryColors['other'] ?? '#7C7C7C';
 
         return (
           <div key={dateStr} className="cal-week-col">
@@ -153,7 +155,7 @@ export default function WeekView({
                 );
               })}
             </div>
-            <DayStatsSection stats={stats} />
+            <DayStatsSection stats={stats} otherMins={otherMins} otherColor={otherColor} />
           </div>
         );
       })}

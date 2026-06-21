@@ -98,6 +98,22 @@ export function calcOtherDayMins(
   return total;
 }
 
+export function calcRangeOtherMins(
+  tasks: Task[],
+  timeEntries: TaskTimeEntry[],
+  startDate: string,
+  endDate: string,
+): number {
+  let total = 0;
+  for (const task of tasks) {
+    if (task.date < startDate || task.date > endDate) continue;
+    if (task.category !== 'other') continue;
+    const entries = timeEntries.filter((e) => e.task_id === task.id && e.date === task.date);
+    for (const entry of entries) total += entryMins(entry.start_time, entry.end_time);
+  }
+  return total;
+}
+
 export function calcWeekTotalMins(
   tasks: Task[],
   timeEntries: TaskTimeEntry[],

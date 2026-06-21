@@ -521,13 +521,29 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                   onClick={() => {
                     if (!dropdownOpen && catTriggerRef.current) {
                       const rect = catTriggerRef.current.getBoundingClientRect();
-                      setCatPanelStyle({
-                        position: "fixed",
-                        top: rect.bottom + 4,
-                        left: rect.left,
-                        width: rect.width,
-                        right: "auto",
-                      });
+                      const spaceBelow = window.innerHeight - rect.bottom - 8;
+                      const spaceAbove = rect.top - 8;
+                      const panelMaxH = 320;
+                      if (spaceBelow >= 150) {
+                        setCatPanelStyle({
+                          position: "fixed",
+                          top: rect.bottom + 4,
+                          left: rect.left,
+                          width: rect.width,
+                          maxHeight: `${Math.min(panelMaxH, spaceBelow)}px`,
+                          right: "auto",
+                        });
+                      } else {
+                        setCatPanelStyle({
+                          position: "fixed",
+                          bottom: window.innerHeight - rect.top + 4,
+                          top: "auto",
+                          left: rect.left,
+                          width: rect.width,
+                          maxHeight: `${Math.min(panelMaxH, spaceAbove)}px`,
+                          right: "auto",
+                        });
+                      }
                     }
                     setDropdownOpen((v) => !v);
                     setColorPickerFor(null);
@@ -539,7 +555,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                 </button>
                 {dropdownOpen &&
                   createPortal(
-                    <div className="cat-dropdown-panel" style={catPanelStyle} ref={catPanelRef}>
+                    <div className="cat-dropdown-panel" style={catPanelStyle} ref={catPanelRef} onMouseDown={(e) => e.stopPropagation()}>
                       {CATEGORIES.map((cat) => (
                         <React.Fragment key={cat.value}>
                           {cat.separator && <div className="cat-dropdown-divider" />}

@@ -7,6 +7,7 @@ import {
   calcRangeCategoryStats,
   calcRangeTagStats,
   calcWeekTotalMins,
+  calcRangeOtherMins,
   formatMins,
 } from './calendarUtils';
 
@@ -53,16 +54,17 @@ export default function CalendarFilterSidebar({
   const hasFilter = activeCategories.size > 0 || activeTags.size > 0;
 
   const showStats = view === 'week' || view === 'month';
-  const totalMins = showStats
-    ? calcWeekTotalMins(hasFilter ? filteredTasks : tasks, timeEntries, startDate, endDate)
-    : 0;
+  const baseTasks = hasFilter ? filteredTasks : tasks;
+  const totalMins = showStats ? calcWeekTotalMins(baseTasks, timeEntries, startDate, endDate) : 0;
+  const otherRangeMins = showStats ? calcRangeOtherMins(baseTasks, timeEntries, startDate, endDate) : 0;
+  const displayTotal = totalMins - otherRangeMins;
 
   let breakdown: { label: string; color: string; mins: number }[] = [];
   if (showStats && hasFilter) {
     if (activeCategories.size > 0) {
       const stats = calcRangeCategoryStats(filteredTasks, timeEntries, startDate, endDate, categoryColors);
       breakdown = stats
-        .filter((s) => s.totalMins > 0)
+        .filter((s) => s.totalMins > 0 && s.category !== 'other')
         .map((s) => ({ label: t.cat[s.category], color: s.color, mins: s.totalMins }));
     } else if (activeTags.size > 0) {
       const stats = calcRangeTagStats(filteredTasks, timeEntries, taskTags, tags, startDate, endDate);
@@ -147,7 +149,7 @@ export default function CalendarFilterSidebar({
             <span className="cal-filter-section-label">
               {view === 'week' ? t.calendar.weekStats : t.calendar.monthStats}
             </span>
-            <span className="cal-filter-week-total-value">{formatMins(totalMins) || '–'}</span>
+            <span className="cal-filter-week-total-value">{formatMins(displayTotal) || '–'}</span>
           </div>
           {breakdown.length > 0 && (
             <div className="cal-filter-week-breakdown">
@@ -160,6 +162,18 @@ export default function CalendarFilterSidebar({
                   <span className="cal-filter-breakdown-mins">{formatMins(s.mins)}</span>
                 </div>
               ))}
+            </div>
+          )}
+          {otherRangeMins > 0 && (
+            <div
+              className="cal-filter-week-breakdown-item"
+              style={{ marginTop: breakdown.length > 0 ? 4 : 0 }}
+            >
+              <span className="cal-filter-breakdown-label">
+                <span className="cal-filter-dot" style={{ background: categoryColors['other'] ?? '#7C7C7C' }} />
+                <span className="cal-filter-breakdown-label-text">{t.cat.other}</span>
+              </span>
+              <span className="cal-filter-breakdown-mins">{formatMins(otherRangeMins)}</span>
             </div>
           )}
         </div>
