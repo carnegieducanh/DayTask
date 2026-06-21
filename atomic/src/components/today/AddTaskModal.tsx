@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type React from "react";
 import { attachSmoothScroll } from "../../hooks/useSmoothScroll";
 import { useModalClose } from "../../hooks/useModalClose";
@@ -87,7 +88,7 @@ function TimeDropdown({
       const rect = triggerRef.current.getBoundingClientRect();
       setPanelStyle({
         position: 'fixed',
-        top: rect.bottom + 4,
+        top: rect.bottom + 2,
         left: rect.left,
         width: rect.width,
         right: 'auto',
@@ -151,7 +152,7 @@ function TimeDropdown({
             />
           </div>
         )}
-        {open && (
+        {open && createPortal(
           <div
             className="time-dropdown-panel"
             style={panelStyle}
@@ -178,7 +179,8 @@ function TimeDropdown({
                 </button>
               ))}
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>
@@ -425,7 +427,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
       const rect = tagTriggerRef.current.getBoundingClientRect();
       setTagPanelStyle({
         position: 'fixed',
-        top: rect.bottom + 4,
+        top: rect.bottom + 2,
         left: rect.left,
         width: Math.max(rect.width, 200),
         right: 'auto',
@@ -506,7 +508,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                       const rect = catTriggerRef.current.getBoundingClientRect();
                       setCatPanelStyle({
                         position: 'fixed',
-                        top: rect.bottom + 4,
+                        top: rect.bottom + 2,
                         left: rect.left,
                         width: rect.width,
                         right: 'auto',
@@ -525,7 +527,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                     className={`cat-dropdown-chevron${dropdownOpen ? " open" : ""}`}
                   />
                 </button>
-                {dropdownOpen && (
+                {dropdownOpen && createPortal(
                   <div className="cat-dropdown-panel" style={catPanelStyle} ref={catPanelRef}>
                     {CATEGORIES.map((cat) => (
                       <div
@@ -583,7 +585,8 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                         )}
                       </div>
                     ))}
-                  </div>
+                  </div>,
+                  document.body
                 )}
               </div>
             </div>
@@ -618,7 +621,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                   )}
                   <IconChevronDown size={13} className={`cat-dropdown-chevron${tagDropdownOpen ? " open" : ""}`} />
                 </button>
-                {tagDropdownOpen && (
+                {tagDropdownOpen && createPortal(
                   <div className="tag-dropdown-panel" style={tagPanelStyle}>
                     {tags.length > 0 && (
                       <div className="tag-dropdown-search-wrap">
@@ -739,7 +742,8 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                         </button>
                       )}
                     </div>
-                  </div>
+                  </div>,
+                  document.body
                 )}
               </div>
             </div>
