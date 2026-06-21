@@ -73,10 +73,14 @@ export default function DayStatsSection({
   stats,
   otherMins = 0,
   otherColor = '#7C7C7C',
+  doneMins,
+  totalMins,
 }: {
   stats: DayStat[];
   otherMins?: number;
   otherColor?: string;
+  doneMins?: number;
+  totalMins?: number;
 }) {
   const t = useT();
   const [hovered, setHovered] = useState(false);
@@ -121,9 +125,13 @@ export default function DayStatsSection({
             <div className="cal-week-stat-total-row">
               <span className="cal-week-stat-total-label">
                 <IconClock size="0.75rem" />
-                {t.calendar.statsTotal}
+                {doneMins !== undefined ? t.calendar.statsDoneOfTotal : t.calendar.statsTotal}
               </span>
-              <span className="cal-week-stat-total-val">{formatMins(total)}</span>
+              <span className="cal-week-stat-total-val">
+                {doneMins !== undefined
+                  ? `${formatMins(doneMins) || '0m'} / ${formatMins(totalMins ?? total) || '0m'}`
+                  : formatMins(total)}
+              </span>
             </div>
 
             <div className="cal-week-stat-bar">

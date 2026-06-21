@@ -129,6 +129,20 @@ export function calcWeekTotalMins(
   return total;
 }
 
+export function calcDayDoneMins(
+  tasks: Task[],
+  timeEntries: TaskTimeEntry[],
+  dateStr: string,
+): number {
+  let total = 0;
+  for (const task of tasks) {
+    if (task.date !== dateStr || task.is_done !== 1) continue;
+    const entries = timeEntries.filter((e) => e.task_id === task.id && e.date === dateStr);
+    for (const entry of entries) total += entryMins(entry.start_time, entry.end_time);
+  }
+  return total;
+}
+
 export function calcDayStats(
   tasks: Task[],
   timeEntries: TaskTimeEntry[],

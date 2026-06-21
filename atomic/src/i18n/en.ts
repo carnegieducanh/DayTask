@@ -262,6 +262,7 @@ export const en: typeof vi = {
     },
     weekDowShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     statsTotal: "Total",
+    statsDoneOfTotal: "Done / Scheduled",
     noTasks: "No tasks",
     filterTitle: "Filters",
     filterCategories: "Categories",

@@ -237,6 +237,7 @@ export const vi = {
     monthLabel: (m: number, y: number) => `Tháng ${m}, ${y}`,
     weekDowShort: ["CN", "T2", "T3", "T4", "T5", "T6", "T7"],
     statsTotal: "Tổng",
+    statsDoneOfTotal: "Xong / Dự kiến",
     noTasks: "Không có task",
     filterTitle: "Bộ lọc",
     filterCategories: "Danh mục",

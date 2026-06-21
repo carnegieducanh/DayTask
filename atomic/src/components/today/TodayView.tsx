@@ -16,7 +16,7 @@ import VocabWidget from "./VocabWidget";
 import { TodayHeroQuote } from "./TodayHeroQuote";
 import DayStatsSection from "../calendar/DayStatsSection";
 import OtherStatsSection from "../calendar/OtherStatsSection";
-import { calcRangeCategoryStats, calcOtherDayMins } from "../calendar/calendarUtils";
+import { calcRangeCategoryStats, calcOtherDayMins, calcDayDoneMins, calcWeekTotalMins } from "../calendar/calendarUtils";
 import type { Task } from "../../types";
 
 export default function TodayView() {
@@ -91,6 +91,8 @@ export default function TodayView() {
     (s) => s.totalMins > 0 && s.category !== 'other',
   );
   const otherDayMins = calcOtherDayMins(tasks, taskTimeEntries, selectedDate);
+  const dayDoneMins = calcDayDoneMins(habitTasks, taskTimeEntries, selectedDate);
+  const dayTotalMins = calcWeekTotalMins(habitTasks, taskTimeEntries, selectedDate, selectedDate);
 
   const scheduledTasks = tasks
     .filter((task) => taskTimeEntries.some((e) => e.task_id === task.id))
@@ -343,7 +345,7 @@ export default function TodayView() {
 
             {dayStats.length > 0 && (
               <div className="today-sidebar-section">
-                <DayStatsSection stats={dayStats} />
+                <DayStatsSection stats={dayStats} doneMins={dayDoneMins} totalMins={dayTotalMins} />
               </div>
             )}
             {otherDayMins > 0 && (

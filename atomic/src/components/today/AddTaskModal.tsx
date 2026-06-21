@@ -667,7 +667,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                 </button>
                 {tagDropdownOpen &&
                   createPortal(
-                    <div className="tag-dropdown-panel" style={tagPanelStyle}>
+                    <div className="tag-dropdown-panel" style={tagPanelStyle} onMouseDown={(e) => e.stopPropagation()}>
                       {tags.length > 0 && (
                         <div className="tag-dropdown-search-wrap">
                           <input
