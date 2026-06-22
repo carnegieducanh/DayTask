@@ -158,7 +158,7 @@ function TimeDropdown({
         )}
         {open &&
           createPortal(
-            <div className="time-dropdown-panel" style={panelStyle} onMouseDown={(e) => e.preventDefault()}>
+            <div className="time-dropdown-panel" style={panelStyle} onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}>
               <div className="time-dropdown-list" ref={listRef}>
                 <button
                   type="button"

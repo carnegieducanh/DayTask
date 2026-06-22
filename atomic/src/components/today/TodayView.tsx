@@ -16,7 +16,12 @@ import VocabWidget from "./VocabWidget";
 import { TodayHeroQuote } from "./TodayHeroQuote";
 import DayStatsSection from "../calendar/DayStatsSection";
 import OtherStatsSection from "../calendar/OtherStatsSection";
-import { calcRangeCategoryStats, calcOtherDayMins, calcDayDoneMins, calcWeekTotalMins } from "../calendar/calendarUtils";
+import {
+  calcRangeCategoryStats,
+  calcOtherDayMins,
+  calcDayDoneMins,
+  calcWeekTotalMins,
+} from "../calendar/calendarUtils";
 import type { Task } from "../../types";
 
 export default function TodayView() {
@@ -77,8 +82,8 @@ export default function TodayView() {
     });
   }
 
-  const habitTasks = tasks.filter((task) => task.category !== 'other');
-  const otherTasks = tasks.filter((task) => task.category === 'other');
+  const habitTasks = tasks.filter((task) => task.category !== "other");
+  const otherTasks = tasks.filter((task) => task.category === "other");
   const pending = sortByTime(habitTasks.filter((task) => !task.is_done));
   const done = sortByTime(habitTasks.filter((task) => task.is_done));
   const otherPending = sortByTime(otherTasks.filter((task) => !task.is_done));
@@ -88,7 +93,7 @@ export default function TodayView() {
   const scheduled = taskTimeEntries.length;
 
   const dayStats = calcRangeCategoryStats(tasks, taskTimeEntries, selectedDate, selectedDate, categoryColors).filter(
-    (s) => s.totalMins > 0 && s.category !== 'other',
+    (s) => s.totalMins > 0 && s.category !== "other",
   );
   const otherDayMins = calcOtherDayMins(tasks, taskTimeEntries, selectedDate);
   const dayDoneMins = calcDayDoneMins(habitTasks, taskTimeEntries, selectedDate);
@@ -307,6 +312,17 @@ export default function TodayView() {
 
           {/* ── Right column ── */}
           <div className="today-right" ref={scheduleRef}>
+            {dayStats.length > 0 && (
+              <div className="today-sidebar-section">
+                <DayStatsSection stats={dayStats} doneMins={dayDoneMins} totalMins={dayTotalMins} />
+              </div>
+            )}
+            {otherDayMins > 0 && (
+              <div className="today-sidebar-section">
+                <OtherStatsSection totalMins={otherDayMins} />
+              </div>
+            )}
+
             <div className="today-sidebar-section">
               <div className="section-label">{t.today.todaySchedule}</div>
               {scheduledTasks.length > 0 ? (
@@ -342,17 +358,6 @@ export default function TodayView() {
                 <div style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>{t.today.noScheduled}</div>
               )}
             </div>
-
-            {dayStats.length > 0 && (
-              <div className="today-sidebar-section">
-                <DayStatsSection stats={dayStats} doneMins={dayDoneMins} totalMins={dayTotalMins} />
-              </div>
-            )}
-            {otherDayMins > 0 && (
-              <div className="today-sidebar-section">
-                <OtherStatsSection totalMins={otherDayMins} />
-              </div>
-            )}
           </div>
         </div>
       </div>
