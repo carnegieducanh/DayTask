@@ -312,14 +312,14 @@ export default function TodayView() {
 
           {/* ── Right column ── */}
           <div className="today-right" ref={scheduleRef}>
-            {dayStats.length > 0 && (
+            {(dayStats.length > 0 || otherDayMins > 0) && (
               <div className="today-sidebar-section">
-                <DayStatsSection stats={dayStats} doneMins={dayDoneMins} totalMins={dayTotalMins} />
-              </div>
-            )}
-            {otherDayMins > 0 && (
-              <div className="today-sidebar-section">
-                <OtherStatsSection totalMins={otherDayMins} />
+                {dayStats.length > 0 && (
+                  <DayStatsSection stats={dayStats} doneMins={dayDoneMins} totalMins={dayTotalMins} showCatDone />
+                )}
+                {otherDayMins > 0 && (
+                  <OtherStatsSection totalMins={otherDayMins} hasBorderTop={dayStats.length > 0} />
+                )}
               </div>
             )}
 

@@ -5023,6 +5023,24 @@ select {
   white-space: nowrap;
   margin-left: 4px;
 }
+.cal-week-stat-cat-val-split {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.cal-week-stat-cat-done {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.cal-week-stat-cat-sep {
+  color: var(--text-secondary);
+  opacity: 0.4;
+  font-weight: 400;
+}
+.cal-week-stat-cat-sched {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
 
 /* Stats hover popup */
 @keyframes cal-pop-in {
@@ -7902,11 +7920,10 @@ select {
   margin: 12px 0 10px;
 }
 
-.other-stats-section {
-  padding: 6px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-secondary);
-  border: 0.5px solid var(--border-1);
+.other-stats-section--bordered {
+  border-top: 0.5px solid var(--border-1);
+  padding-top: 7px;
+  margin-top: 2px;
 }
 
 .other-stats-row {

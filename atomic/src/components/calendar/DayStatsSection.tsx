@@ -75,12 +75,14 @@ export default function DayStatsSection({
   otherColor = '#7C7C7C',
   doneMins,
   totalMins,
+  showCatDone = false,
 }: {
   stats: DayStat[];
   otherMins?: number;
   otherColor?: string;
   doneMins?: number;
   totalMins?: number;
+  showCatDone?: boolean;
 }) {
   const t = useT();
   const [hovered, setHovered] = useState(false);
@@ -154,7 +156,15 @@ export default function DayStatsSection({
                     <span className="cal-week-stat-dot" style={{ background: s.color }} />
                     <span className="cal-week-stat-cat-name">{t.cat[s.category]}</span>
                   </div>
-                  <span className="cal-week-stat-cat-val">{formatMins(s.totalMins)}</span>
+                  {showCatDone && s.doneMins !== undefined ? (
+                    <span className="cal-week-stat-cat-val cal-week-stat-cat-val-split">
+                      <span className="cal-week-stat-cat-done">{formatMins(s.doneMins) || '0m'}</span>
+                      <span className="cal-week-stat-cat-sep">/</span>
+                      <span className="cal-week-stat-cat-sched">{formatMins(s.totalMins) || '0m'}</span>
+                    </span>
+                  ) : (
+                    <span className="cal-week-stat-cat-val">{formatMins(s.totalMins)}</span>
+                  )}
                 </div>
               ))}
             </div>

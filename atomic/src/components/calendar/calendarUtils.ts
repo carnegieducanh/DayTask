@@ -9,7 +9,7 @@ export function formatMins(mins: number): string {
   return `${h}h ${m}m`;
 }
 
-export type DayStat = { category: Category; color: string; totalMins: number };
+export type DayStat = { category: Category; color: string; totalMins: number; doneMins?: number };
 
 function entryMins(start: string, end: string): number {
   const [sh, sm] = start.split(':').map(Number);
@@ -27,8 +27,10 @@ export function calcRangeCategoryStats(
   categoryColors: CategoryColors
 ): DayStat[] {
   const statsMap: Partial<Record<Category, number>> = {};
+  const doneMap: Partial<Record<Category, number>> = {};
   for (const cat of Object.keys(categoryColors) as Category[]) {
     statsMap[cat] = 0;
+    doneMap[cat] = 0;
   }
   for (const task of tasks) {
     if (task.date < startDate || task.date > endDate) continue;
@@ -37,6 +39,9 @@ export function calcRangeCategoryStats(
       const mins = entryMins(entry.start_time, entry.end_time);
       if (mins <= 0) continue;
       statsMap[task.category] = (statsMap[task.category] ?? 0) + mins;
+      if (task.is_done === 1) {
+        doneMap[task.category] = (doneMap[task.category] ?? 0) + mins;
+      }
     }
   }
   return (Object.entries(statsMap) as [Category, number][])
@@ -44,6 +49,7 @@ export function calcRangeCategoryStats(
       category,
       color: categoryColors[category] ?? '#7DD3FC',
       totalMins,
+      doneMins: doneMap[category] ?? 0,
     }))
     .sort((a, b) => b.totalMins - a.totalMins);
 }

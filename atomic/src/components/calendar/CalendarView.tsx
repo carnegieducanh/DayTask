@@ -242,8 +242,10 @@ export default function CalendarView() {
             <MiniCalendar />
             <div className="cal-day-sidebar-extras">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <DayStatsSection stats={dayStats} />
-                <OtherStatsSection totalMins={otherDayMins} />
+                <div>
+                  <DayStatsSection stats={dayStats} />
+                  <OtherStatsSection totalMins={otherDayMins} hasBorderTop={dayStats.length > 0} />
+                </div>
               </div>
               <div style={{ padding: "0 8px" }}>
                 <VocabWidget />
