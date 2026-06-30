@@ -43,6 +43,7 @@ const MIN_RESIZE_DURATION = 15; // minimum minutes when resizing
 const DECK_OFFSET = 28; // px each unscheduled card is offset from the one below
 const CARD_HEIGHT = 52; // px height of each deck card
 const MAX_DECK = 3; // max visible cards in deck
+const DECK_SCROLL_MAX = 9; // above this count, expanded deck gets a scrollbar
 
 function timeToMin(time: string): number {
   const [h, m] = time.split(":").map(Number);
@@ -179,8 +180,10 @@ export default function DayView({
   const [deckExpanded, setDeckExpanded] = useState(false);
   const [deckClosing, setDeckClosing] = useState(false);
   const deckCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deckCardsClipRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(gridRef);
+  useSmoothScroll(deckCardsClipRef);
   // Mutable refs so mousemove/mouseup callbacks are stable ([] deps) and listeners
   // are not removed+re-added on every state update, which was causing jitter.
   const dragCreateRef = useRef(dragCreate);
@@ -222,6 +225,9 @@ export default function DayView({
   const deckHeight = deckExpanded && !deckClosing ? expandedDeckHeight : collapsedDeckHeight;
   const hiddenCount = deckExpanded ? 0 : Math.max(0, unscheduledTasks.length - MAX_DECK);
   const pendingCount = unscheduledTasks.length;
+  const maxScrollDeckHeight = CARD_HEIGHT + (DECK_SCROLL_MAX - 1) * DECK_OFFSET;
+  const shouldScroll = deckExpanded && !deckClosing && unscheduledTasks.length > DECK_SCROLL_MAX;
+  const displayDeckHeight = shouldScroll ? maxScrollDeckHeight : deckHeight;
 
   // Update current-time indicator every minute
   useEffect(() => {
@@ -510,10 +516,14 @@ export default function DayView({
     <div className="day-view">
       {/* Unscheduled task deck — fixed row above the scrollable grid */}
       {unscheduledTasks.length > 0 && (
-        <div className="day-deck-row" style={{ height: deckHeight + 28 }}>
+        <div className="day-deck-row" style={{ height: displayDeckHeight + 28 }}>
           <div className="day-deck-gutter-spacer" />
           <div className="day-deck-events-area">
-            <div className="day-deck-cards-clip" style={{ height: deckHeight }}>
+            <div
+              ref={deckCardsClipRef}
+              className="day-deck-cards-clip"
+              style={{ height: displayDeckHeight, overflowY: shouldScroll ? 'auto' : 'hidden' }}
+            >
               {unscheduledTasks.map((task, i) => {
                 const color = task.color ?? categoryColors[task.category];
                 const overMax = !deckExpanded && !deckClosing && i >= MAX_DECK;
@@ -556,6 +566,7 @@ export default function DayView({
               <div
                 className="day-deck-badge"
                 onClick={() => {
+                  if (deckCardsClipRef.current) deckCardsClipRef.current.scrollTop = 0;
                   if (deckCloseTimerRef.current) clearTimeout(deckCloseTimerRef.current);
                   setDeckClosing(true);
                   deckCloseTimerRef.current = setTimeout(() => {

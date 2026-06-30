@@ -5974,6 +5974,19 @@ select {
   transition: height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
+.day-deck-cards-clip::-webkit-scrollbar {
+  width: 4px;
+}
+
+.day-deck-cards-clip::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.day-deck-cards-clip::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 2px;
+}
+
 .day-deck-card {
   position: absolute;
   left: 0.5%;
