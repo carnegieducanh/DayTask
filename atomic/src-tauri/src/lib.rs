@@ -257,6 +257,25 @@ pub fn run() {
             INSERT OR IGNORE INTO category_colors (category, color) VALUES ('other', '#9E9E9E');",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 17,
+            description: "deduplicate_daily_instances_and_add_unique_index",
+            sql: "DELETE FROM task_tags WHERE task_id IN (
+                SELECT id FROM tasks WHERE series_id IS NOT NULL AND id NOT IN (
+                    SELECT MIN(id) FROM tasks WHERE series_id IS NOT NULL GROUP BY series_id, date
+                )
+            );
+            DELETE FROM task_time_entries WHERE task_id IN (
+                SELECT id FROM tasks WHERE series_id IS NOT NULL AND id NOT IN (
+                    SELECT MIN(id) FROM tasks WHERE series_id IS NOT NULL GROUP BY series_id, date
+                )
+            );
+            DELETE FROM tasks WHERE series_id IS NOT NULL AND id NOT IN (
+                SELECT MIN(id) FROM tasks WHERE series_id IS NOT NULL GROUP BY series_id, date
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_series_date ON tasks (series_id, date);",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

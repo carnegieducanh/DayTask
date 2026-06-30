@@ -23,16 +23,23 @@ npm run dev            # Chỉ Vite web (nhanh, UI only) → http://localhost:51
 
 ## Build & Release
 
-```powershell
-# Build local
-npm run tauri build
-# Output: src-tauri/target/release/bundle/
-#   msi/Atomic_0.1.1_x64_en-US.msi
-#   nsis/Atomic_0.1.1_x64-setup.exe
+**KHÔNG cần build local.** GitHub Actions tự build khi push tag. Các bước release:
 
-# Release mới: push tag để GitHub Actions build tự động
-git tag v0.X.X
-git push origin main && git push origin v0.X.X
+```powershell
+# 1. Commit các thay đổi
+git add <files>
+git commit -m "mô tả thay đổi"
+
+# 2. Bump version lên X.Y.Z trong 3 file:
+#    - atomic/src-tauri/tauri.conf.json
+#    - atomic/src-tauri/Cargo.toml
+#    - atomic/package.json
+git add atomic/src-tauri/tauri.conf.json atomic/src-tauri/Cargo.toml atomic/package.json
+git commit -m "chore: bump version to X.Y.Z"
+
+# 3. Tag + push → GitHub Actions tự build và upload artifacts
+git tag vX.Y.Z
+git push origin main && git push origin vX.Y.Z
 # → GitHub Actions (.github/workflows/release.yml) build + upload artifacts
 ```
 

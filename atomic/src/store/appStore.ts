@@ -485,30 +485,37 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     const db = await getDb();
 
-    // Lazy-create instances for active series templates that don't yet have one for this date.
-    // A template is: repeat_daily=1, series_id IS NULL, date < $date, repeat_end_date IS NULL OR >= $date.
-    const templatesToInstantiate = await db.select<{ id: number; title: string; category: string; created_at: string }[]>(
-      `SELECT t.id, t.title, t.category, t.created_at FROM tasks t
-       WHERE t.repeat_daily = 1 AND t.series_id IS NULL
-         AND t.date < $1
-         AND (t.repeat_end_date IS NULL OR t.repeat_end_date >= $1)
-         AND NOT EXISTS (
-           SELECT 1 FROM tasks inst WHERE inst.series_id = t.id AND inst.date = $1
-         )`,
-      [date]
-    );
-    for (const tpl of templatesToInstantiate) {
-      const result = await db.execute(
-        `INSERT INTO tasks (title, description, category, date, is_done, repeat_daily, series_id, created_at)
-         VALUES ($1, NULL, $2, $3, 0, 0, $4, $5)`,
-        [tpl.title, tpl.category, date, tpl.id, tpl.created_at]
+    // Only instantiate daily templates in the main window to prevent race conditions
+    // when multiple webview windows (main + tray-popup) call loadTasks concurrently.
+    const windowLabel = (window as unknown as { __TAURI_INTERNALS__?: { metadata?: { currentWindow?: { label?: string } } } }).__TAURI_INTERNALS__?.metadata?.currentWindow?.label;
+    const isMainWindow = !windowLabel || windowLabel === 'main';
+
+    if (isMainWindow) {
+      // Lazy-create instances for active series templates that don't yet have one for this date.
+      // A template is: repeat_daily=1, series_id IS NULL, date < $date, repeat_end_date IS NULL OR >= $date.
+      const templatesToInstantiate = await db.select<{ id: number; title: string; category: string; created_at: string }[]>(
+        `SELECT t.id, t.title, t.category, t.created_at FROM tasks t
+         WHERE t.repeat_daily = 1 AND t.series_id IS NULL
+           AND t.date < $1
+           AND (t.repeat_end_date IS NULL OR t.repeat_end_date >= $1)
+           AND NOT EXISTS (
+             SELECT 1 FROM tasks inst WHERE inst.series_id = t.id AND inst.date = $1
+           )`,
+        [date]
       );
-      const newId = result.lastInsertId;
-      if (newId) {
-        await db.execute(
-          `INSERT INTO task_tags (task_id, tag_id) SELECT $1, tag_id FROM task_tags WHERE task_id = $2`,
-          [newId, tpl.id]
+      for (const tpl of templatesToInstantiate) {
+        const result = await db.execute(
+          `INSERT OR IGNORE INTO tasks (title, description, category, date, is_done, repeat_daily, series_id, created_at)
+           VALUES ($1, NULL, $2, $3, 0, 0, $4, $5)`,
+          [tpl.title, tpl.category, date, tpl.id, tpl.created_at]
         );
+        const newId = result.lastInsertId;
+        if (newId) {
+          await db.execute(
+            `INSERT INTO task_tags (task_id, tag_id) SELECT $1, tag_id FROM task_tags WHERE task_id = $2`,
+            [newId, tpl.id]
+          );
+        }
       }
     }
 
