@@ -2,6 +2,7 @@ mod tray;
 
 use tauri::Manager;
 use tauri_plugin_sql::{Migration, MigrationKind};
+use tauri_plugin_window_state::{StateFlags, WindowExt};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -298,6 +299,7 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(w) = app.get_webview_window("main") {
                 let _ = w.show();
@@ -318,6 +320,9 @@ pub fn run() {
             let is_autolaunch = std::env::args().any(|a| a == "--autolaunch");
             if !is_autolaunch {
                 if let Some(w) = app.get_webview_window("main") {
+                    let _ = w.restore_state(
+                        StateFlags::SIZE | StateFlags::POSITION | StateFlags::MAXIMIZED,
+                    );
                     let _ = w.show();
                 }
             }
