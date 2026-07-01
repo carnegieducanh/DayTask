@@ -1666,55 +1666,60 @@ select {
 
 @keyframes wc-leaf-1 {
   0%   { transform: translateY(-36px) translateX(0px)   rotate(20deg);  opacity: 0; }
-  10%  { opacity: 0.52; }
-  25%  { transform: translateY(30px)  translateX(-13px) rotate(-5deg); }
-  50%  { transform: translateY(95px)  translateX(10px)  rotate(24deg); }
-  75%  { transform: translateY(160px) translateX(-8px)  rotate(8deg); }
-  90%  { opacity: 0.44; }
-  100% { transform: translateY(220px) translateX(3px)   rotate(15deg);  opacity: 0; }
+  8%   { opacity: 0.52; }
+  18%  { transform: translateY(20px)  translateX(-24px) rotate(-6deg); }
+  36%  { transform: translateY(72px)  translateX(20px)  rotate(28deg); }
+  54%  { transform: translateY(130px) translateX(-26px) rotate(6deg); }
+  72%  { transform: translateY(178px) translateX(16px)  rotate(22deg); }
+  88%  { opacity: 0.44; }
+  100% { transform: translateY(230px) translateX(-8px)  rotate(15deg);  opacity: 0; }
 }
 @keyframes wc-leaf-2 {
   0%   { transform: translateY(-36px) translateX(0px)   rotate(-18deg); opacity: 0; }
   8%   { opacity: 0.46; }
-  30%  { transform: translateY(40px)  translateX(12px)  rotate(14deg); }
-  55%  { transform: translateY(105px) translateX(-10px) rotate(-22deg); }
-  78%  { transform: translateY(165px) translateX(7px)   rotate(-8deg); }
+  22%  { transform: translateY(32px)  translateX(22px)  rotate(16deg); }
+  42%  { transform: translateY(90px)  translateX(-20px) rotate(-28deg); }
+  62%  { transform: translateY(145px) translateX(24px)  rotate(-6deg); }
+  80%  { transform: translateY(188px) translateX(-12px) rotate(-14deg); }
   90%  { opacity: 0.40; }
-  100% { transform: translateY(210px) translateX(2px)   rotate(-12deg); opacity: 0; }
+  100% { transform: translateY(220px) translateX(4px)   rotate(-12deg); opacity: 0; }
 }
 @keyframes wc-leaf-3 {
   0%   { transform: translateY(-36px) translateX(0px)   rotate(30deg);  opacity: 0; }
   10%  { opacity: 0.48; }
-  22%  { transform: translateY(25px)  translateX(-16px) rotate(10deg); }
-  45%  { transform: translateY(90px)  translateX(8px)   rotate(32deg); }
-  68%  { transform: translateY(150px) translateX(-12px) rotate(14deg); }
+  20%  { transform: translateY(22px)  translateX(-28px) rotate(12deg); }
+  40%  { transform: translateY(82px)  translateX(22px)  rotate(36deg); }
+  58%  { transform: translateY(138px) translateX(-24px) rotate(16deg); }
+  78%  { transform: translateY(188px) translateX(18px)  rotate(28deg); }
   88%  { opacity: 0.42; }
-  100% { transform: translateY(225px) translateX(-4px)  rotate(22deg);  opacity: 0; }
+  100% { transform: translateY(230px) translateX(-6px)  rotate(22deg);  opacity: 0; }
 }
 @keyframes wc-leaf-4 {
   0%   { transform: translateY(-36px) translateX(0px)   rotate(-25deg); opacity: 0; }
   8%   { opacity: 0.38; }
-  32%  { transform: translateY(45px)  translateX(-8px)  rotate(-8deg); }
-  58%  { transform: translateY(110px) translateX(13px)  rotate(-28deg); }
-  80%  { transform: translateY(165px) translateX(-5px)  rotate(-14deg); }
+  25%  { transform: translateY(38px)  translateX(-18px) rotate(-10deg); }
+  45%  { transform: translateY(98px)  translateX(26px)  rotate(-32deg); }
+  65%  { transform: translateY(152px) translateX(-20px) rotate(-16deg); }
+  82%  { transform: translateY(192px) translateX(12px)  rotate(-22deg); }
   90%  { opacity: 0.32; }
-  100% { transform: translateY(210px) translateX(3px)   rotate(-18deg); opacity: 0; }
+  100% { transform: translateY(220px) translateX(-4px)  rotate(-18deg); opacity: 0; }
 }
 @keyframes wc-leaf-5 {
   0%   { transform: translateY(-36px) translateX(0px)   rotate(12deg);  opacity: 0; }
   10%  { opacity: 0.34; }
-  28%  { transform: translateY(35px)  translateX(10px)  rotate(25deg); }
-  52%  { transform: translateY(100px) translateX(-8px)  rotate(8deg); }
-  76%  { transform: translateY(160px) translateX(6px)   rotate(20deg); }
+  22%  { transform: translateY(28px)  translateX(20px)  rotate(28deg); }
+  44%  { transform: translateY(90px)  translateX(-22px) rotate(10deg); }
+  64%  { transform: translateY(148px) translateX(18px)  rotate(24deg); }
+  82%  { transform: translateY(192px) translateX(-14px) rotate(14deg); }
   88%  { opacity: 0.30; }
-  100% { transform: translateY(215px) translateX(1px)   rotate(15deg);  opacity: 0; }
+  100% { transform: translateY(220px) translateX(2px)   rotate(15deg);  opacity: 0; }
 }
 
-.wc-leaf-1 { font-size: 1.8rem; left: 56px; animation: wc-leaf-1 4.8s ease-in-out 0s   infinite; }
-.wc-leaf-2 { font-size: 1.5rem; left: 24px; animation: wc-leaf-2 4.0s ease-in-out 1.3s infinite; }
-.wc-leaf-3 { font-size: 1.6rem; left: 46px; animation: wc-leaf-3 5.2s ease-in-out 0.6s infinite; }
-.wc-leaf-4 { font-size: 1.2rem; left: 72px; animation: wc-leaf-4 3.9s ease-in-out 2.1s infinite; }
-.wc-leaf-5 { font-size: 1.1rem; left: 14px; animation: wc-leaf-5 4.4s ease-in-out 1.8s infinite; }
+.wc-leaf-1 { font-size: 1.8rem; left: 56px; animation: wc-leaf-1 9.5s ease-in-out  -1.5s infinite; }
+.wc-leaf-2 { font-size: 1.5rem; left: 24px; animation: wc-leaf-2 8.0s ease-in-out  -4.0s infinite; }
+.wc-leaf-3 { font-size: 1.6rem; left: 46px; animation: wc-leaf-3 10.5s ease-in-out -3.0s infinite; }
+.wc-leaf-4 { font-size: 1.2rem; left: 72px; animation: wc-leaf-4 8.5s ease-in-out  -6.5s infinite; }
+.wc-leaf-5 { font-size: 1.1rem; left: 14px; animation: wc-leaf-5 9.0s ease-in-out  -2.2s infinite; }
 
 /* ── Leaf pile at bottom ── */
 .wc-leaf-pile {
@@ -5751,11 +5756,11 @@ select {
   top: 0;
   line-height: 1;
 }
-.vn-leaf-1 { font-size: 1.7rem; left: 52px; animation: wc-leaf-1 4.8s ease-in-out 0s   infinite; }
-.vn-leaf-2 { font-size: 1.4rem; left: 20px; animation: wc-leaf-2 4.0s ease-in-out 1.3s infinite; }
-.vn-leaf-3 { font-size: 1.5rem; left: 42px; animation: wc-leaf-3 5.2s ease-in-out 0.6s infinite; }
-.vn-leaf-4 { font-size: 1.1rem; left: 68px; animation: wc-leaf-4 3.9s ease-in-out 2.1s infinite; }
-.vn-leaf-5 { font-size: 1.0rem; left: 10px; animation: wc-leaf-5 4.4s ease-in-out 1.8s infinite; }
+.vn-leaf-1 { font-size: 1.7rem; left: 52px; animation: wc-leaf-1 9.5s ease-in-out  -1.5s infinite; }
+.vn-leaf-2 { font-size: 1.4rem; left: 20px; animation: wc-leaf-2 8.0s ease-in-out  -4.0s infinite; }
+.vn-leaf-3 { font-size: 1.5rem; left: 42px; animation: wc-leaf-3 10.5s ease-in-out -3.0s infinite; }
+.vn-leaf-4 { font-size: 1.1rem; left: 68px; animation: wc-leaf-4 8.5s ease-in-out  -6.5s infinite; }
+.vn-leaf-5 { font-size: 1.0rem; left: 10px; animation: wc-leaf-5 9.0s ease-in-out  -2.2s infinite; }
 
 .vn-leaf-pile {
   position: absolute;
