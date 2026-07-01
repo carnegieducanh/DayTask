@@ -734,6 +734,13 @@ select {
 
 .today-topbar-actions .vocab-widget-note .vocab-widget-content {
   padding-bottom: 0;
+  overflow: hidden;
+  max-height: 6em;
+  transition: max-height 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.today-topbar-actions .vocab-widget-note:hover .vocab-widget-content {
+  max-height: 14em;
 }
 
 .today-topbar-actions .vocab-note-botanical {
@@ -1741,8 +1748,8 @@ select {
 .wc-text {
   font-family: "Segoe Script", "Palatino Linotype", Georgia, serif;
   font-style: italic;
-  font-size: 1rem;
-  font-weight: 400;
+  font-size: 1.15rem;
+  font-weight: 500;
   color: #2e1a0e;
   line-height: 1.45;
   flex: 1;

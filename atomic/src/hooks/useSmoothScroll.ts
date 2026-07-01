@@ -68,9 +68,12 @@ export function attachSmoothScroll(el: HTMLElement): () => void {
       node = node.parentElement;
     }
 
-    // Fall through to the root el
-    e.preventDefault();
-    smoothScroll(el, delta);
+    // Fall through to the root el — only if it can actually scroll
+    const elOy = getComputedStyle(el).overflowY;
+    if ((elOy === 'auto' || elOy === 'scroll') && el.scrollHeight > el.clientHeight) {
+      e.preventDefault();
+      smoothScroll(el, delta);
+    }
   }
 
   function onScroll() {
