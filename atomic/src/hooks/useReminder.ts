@@ -76,7 +76,11 @@ export function useReminder() {
 
       due.forEach((t) => {
         if (permGranted.current) {
-          sendNotification({ title: "atomic_task — Nhắc nhở", body: t.title });
+          const entry = taskTimeEntries.find((e) => e.task_id === t.id && e.date === today);
+          sendNotification({
+            title: t.title,
+            body: entry ? `${entry.start_time} → ${entry.end_time}` : 'Đến giờ rồi!',
+          });
         }
         setReminderPopup(t);
       });
