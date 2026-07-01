@@ -163,5 +163,5 @@ export interface NewQuote {
 
 export type Theme = 'light' | 'dark';
 export type Language = 'vi' | 'en';
-export type AccentColor = 'blue' | 'orange' | 'green' | 'purple' | 'red' | 'yellow';
+export type AccentColor = 'blue' | 'orange' | 'green' | 'purple' | 'red' | 'yellow' | 'custom';
 export type CategoryColors = Record<Category, string>;

@@ -147,6 +147,8 @@ interface AppState {
   pendingDeleteChecklistItem: { item: GoalChecklistItem; goalId: number } | null;
   autostart: boolean;
   accentColor: AccentColor;
+  customAccentColor: string;
+  savedAccentColors: string[];
   tags: Tag[];
   taskTags: Record<number, number[]>;
 
@@ -155,6 +157,8 @@ interface AppState {
   setUiScale: (scale: number) => void;
   setLanguage: (lang: Language) => void;
   setAccentColor: (color: AccentColor) => void;
+  setCustomAccentColor: (hex: string) => void;
+  saveAccentColor: (hex: string) => void;
   setOpenSettingsModal: (val: boolean) => void;
   setSelectedDate: (date: string) => void;
   setSelectedYear: (year: number) => void;
@@ -255,6 +259,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   pendingDeleteChecklistItem: null,
   autostart: true,
   accentColor: (localStorage.getItem('accentColor') as AccentColor) ?? 'blue',
+  customAccentColor: localStorage.getItem('customAccentColor') ?? '#185FA5',
+  savedAccentColors: JSON.parse(localStorage.getItem('savedAccentColors') ?? '[]'),
   tags: [],
   taskTags: {},
 
@@ -273,6 +279,18 @@ export const useAppStore = create<AppState>((set, get) => ({
   setAccentColor: (color) => {
     localStorage.setItem('accentColor', color);
     set({ accentColor: color });
+  },
+
+  setCustomAccentColor: (hex) => {
+    localStorage.setItem('customAccentColor', hex);
+    set({ customAccentColor: hex });
+  },
+
+  saveAccentColor: (hex) => {
+    const prev: string[] = JSON.parse(localStorage.getItem('savedAccentColors') ?? '[]');
+    const deduped = [hex, ...prev.filter(c => c !== hex)].slice(0, 8);
+    localStorage.setItem('savedAccentColors', JSON.stringify(deduped));
+    set({ savedAccentColors: deduped });
   },
 
   setOpenSettingsModal: (val) => set({ openSettingsModal: val }),
