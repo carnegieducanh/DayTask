@@ -578,7 +578,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     const db = await getDb();
     const tasks = await db.select<Task[]>(
-      'SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color FROM tasks WHERE is_done = 1 AND date >= $1 AND date <= $2 ORDER BY date ASC',
+      'SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color FROM tasks WHERE date >= $1 AND date <= $2 ORDER BY date ASC',
       [startDate, endDate]
     );
     const calendarTimeEntries = await db.select<TaskTimeEntry[]>(
@@ -588,7 +588,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const tagRows = await db.select<{ task_id: number; tag_id: number }[]>(
       `SELECT tt.task_id, tt.tag_id FROM task_tags tt
        INNER JOIN tasks t ON t.id = tt.task_id
-       WHERE t.is_done = 1 AND t.date >= $1 AND t.date <= $2`,
+       WHERE t.date >= $1 AND t.date <= $2`,
       [startDate, endDate]
     );
     const calendarTaskTags: Record<number, number[]> = {};

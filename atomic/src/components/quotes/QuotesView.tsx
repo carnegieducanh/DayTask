@@ -373,13 +373,15 @@ export default function QuotesView() {
   const [pendingDeleteQuote, setPendingDeleteQuote] = useState<Quote | null>(null);
   const [pendingDeleteHeroWas, setPendingDeleteHeroWas] = useState<Quote | null>(null);
   const [pendingDeleteQuoteTag, setPendingDeleteQuoteTag] = useState<{ name: string; undo: () => void } | null>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modeMenuRef = useRef<HTMLDivElement>(null);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tagDeleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useSmoothScroll(wrapRef);
+  useSmoothScroll(mainRef);
+  useSmoothScroll(sidebarRef);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -570,9 +572,9 @@ export default function QuotesView() {
     : t.quotes.heroEmpty;
 
   return (
-    <div ref={wrapRef} className="quotes-wrap">
+    <div className="quotes-wrap">
       {/* ── Sidebar ── */}
-      <div className="quotes-sidebar">
+      <div ref={sidebarRef} className="quotes-sidebar">
         <div className="quotes-sb-section">
           <div className="quotes-sb-label">{t.quotes.library}</div>
           <button
@@ -619,7 +621,7 @@ export default function QuotesView() {
       </div>
 
       {/* ── Main ── */}
-      <div className="quotes-main">
+      <div ref={mainRef} className="quotes-main">
         {/* Hero card */}
         <div className="quotes-hero">
           <div className="quotes-hero-top">

@@ -311,7 +311,7 @@ export function dbDeleteChecklistItemsByGoal(goalId: number): void {
 
 export function dbGetCalendarTasks(startDate: string, endDate: string): Task[] {
   return mockTasks
-    .filter((t) => t.is_done === 1 && t.date >= startDate && t.date <= endDate)
+    .filter((t) => t.date >= startDate && t.date <= endDate)
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
