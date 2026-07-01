@@ -685,8 +685,7 @@ select {
 }
 
 /* Compact note card for topbar: same aesthetic, smaller scale */
-.today-topbar-actions .vocab-widget-note .vocab-widget::before,
-.today-topbar-actions .vocab-widget-note .vocab-widget::after {
+.today-topbar-actions .vocab-widget-note .vocab-widget::before {
   display: none;
 }
 
@@ -1881,7 +1880,8 @@ select {
   font-weight: 500;
   color: #2e1a0e;
   line-height: 1.45;
-  flex: 1;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 .wc-text-inner {
   display: inline;
