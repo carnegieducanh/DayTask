@@ -91,12 +91,15 @@ export default function VocabWidget({ noteStyle = false }: { noteStyle?: boolean
           )}
         </div>
         {noteStyle && (
-          <svg className="vocab-note-botanical" viewBox="0 0 30 38" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15 36 Q15 25 15 6" stroke="#7A9E7E" strokeWidth="1.2" strokeLinecap="round"/>
-            <path d="M15 28 Q7 23 8 17 Q13 22 15 28" fill="#8DB58F"/>
-            <path d="M15 20 Q23 15 22 9 Q17 14 15 20" fill="#8DB58F"/>
-            <path d="M15 12 Q10 8 11 3 Q14 7 15 12" fill="#8DB58F" opacity="0.75"/>
-          </svg>
+          <div className="vn-leaf-pile" aria-hidden="true">
+            <span>🍂</span>
+            <span>🍂</span>
+            <span>🍂</span>
+            <span>🍂</span>
+            <span>🍂</span>
+            <span>🍂</span>
+            <span>🍂</span>
+          </div>
         )}
       </div>
     </div>

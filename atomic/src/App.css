@@ -743,7 +743,9 @@ select {
   max-height: 14em;
 }
 
-.today-topbar-actions .vocab-note-botanical {
+.today-topbar-actions .vocab-note-botanical,
+.today-topbar-actions .vn-leaf-zone,
+.today-topbar-actions .vn-leaf-pile {
   display: none;
 }
 
@@ -1645,6 +1647,95 @@ select {
     3px 7px 24px rgba(80, 55, 30, 0.22),
     0 2px 5px rgba(0, 0, 0, 0.1);
 }
+
+/* ── Falling leaves (WeeklyChecklist) ── */
+.wc-leaf-zone {
+  position: absolute;
+  top: -16px;
+  bottom: 0;
+  right: 4px;
+  width: 110px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.wc-leaf-zone > span {
+  position: absolute;
+  top: 0;
+  line-height: 1;
+}
+
+@keyframes wc-leaf-1 {
+  0%   { transform: translateY(-36px) translateX(0px)   rotate(20deg);  opacity: 0; }
+  10%  { opacity: 0.52; }
+  25%  { transform: translateY(30px)  translateX(-13px) rotate(-5deg); }
+  50%  { transform: translateY(95px)  translateX(10px)  rotate(24deg); }
+  75%  { transform: translateY(160px) translateX(-8px)  rotate(8deg); }
+  90%  { opacity: 0.44; }
+  100% { transform: translateY(220px) translateX(3px)   rotate(15deg);  opacity: 0; }
+}
+@keyframes wc-leaf-2 {
+  0%   { transform: translateY(-36px) translateX(0px)   rotate(-18deg); opacity: 0; }
+  8%   { opacity: 0.46; }
+  30%  { transform: translateY(40px)  translateX(12px)  rotate(14deg); }
+  55%  { transform: translateY(105px) translateX(-10px) rotate(-22deg); }
+  78%  { transform: translateY(165px) translateX(7px)   rotate(-8deg); }
+  90%  { opacity: 0.40; }
+  100% { transform: translateY(210px) translateX(2px)   rotate(-12deg); opacity: 0; }
+}
+@keyframes wc-leaf-3 {
+  0%   { transform: translateY(-36px) translateX(0px)   rotate(30deg);  opacity: 0; }
+  10%  { opacity: 0.48; }
+  22%  { transform: translateY(25px)  translateX(-16px) rotate(10deg); }
+  45%  { transform: translateY(90px)  translateX(8px)   rotate(32deg); }
+  68%  { transform: translateY(150px) translateX(-12px) rotate(14deg); }
+  88%  { opacity: 0.42; }
+  100% { transform: translateY(225px) translateX(-4px)  rotate(22deg);  opacity: 0; }
+}
+@keyframes wc-leaf-4 {
+  0%   { transform: translateY(-36px) translateX(0px)   rotate(-25deg); opacity: 0; }
+  8%   { opacity: 0.38; }
+  32%  { transform: translateY(45px)  translateX(-8px)  rotate(-8deg); }
+  58%  { transform: translateY(110px) translateX(13px)  rotate(-28deg); }
+  80%  { transform: translateY(165px) translateX(-5px)  rotate(-14deg); }
+  90%  { opacity: 0.32; }
+  100% { transform: translateY(210px) translateX(3px)   rotate(-18deg); opacity: 0; }
+}
+@keyframes wc-leaf-5 {
+  0%   { transform: translateY(-36px) translateX(0px)   rotate(12deg);  opacity: 0; }
+  10%  { opacity: 0.34; }
+  28%  { transform: translateY(35px)  translateX(10px)  rotate(25deg); }
+  52%  { transform: translateY(100px) translateX(-8px)  rotate(8deg); }
+  76%  { transform: translateY(160px) translateX(6px)   rotate(20deg); }
+  88%  { opacity: 0.30; }
+  100% { transform: translateY(215px) translateX(1px)   rotate(15deg);  opacity: 0; }
+}
+
+.wc-leaf-1 { font-size: 1.8rem; left: 56px; animation: wc-leaf-1 4.8s ease-in-out 0s   infinite; }
+.wc-leaf-2 { font-size: 1.5rem; left: 24px; animation: wc-leaf-2 4.0s ease-in-out 1.3s infinite; }
+.wc-leaf-3 { font-size: 1.6rem; left: 46px; animation: wc-leaf-3 5.2s ease-in-out 0.6s infinite; }
+.wc-leaf-4 { font-size: 1.2rem; left: 72px; animation: wc-leaf-4 3.9s ease-in-out 2.1s infinite; }
+.wc-leaf-5 { font-size: 1.1rem; left: 14px; animation: wc-leaf-5 4.4s ease-in-out 1.8s infinite; }
+
+/* ── Leaf pile at bottom ── */
+.wc-leaf-pile {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 130px;
+  height: 44px;
+  pointer-events: none;
+}
+.wc-leaf-pile > span {
+  position: absolute;
+  line-height: 1;
+}
+.wc-leaf-pile > span:nth-child(1) { font-size: 1.9rem; bottom: 2px;  right: 4px;  transform: rotate(8deg);   opacity: 0.58; }
+.wc-leaf-pile > span:nth-child(2) { font-size: 1.6rem; bottom: 4px;  right: 26px; transform: rotate(-30deg); opacity: 0.52; }
+.wc-leaf-pile > span:nth-child(3) { font-size: 1.7rem; bottom: 0;    right: 48px; transform: rotate(42deg);  opacity: 0.48; }
+.wc-leaf-pile > span:nth-child(4) { font-size: 1.4rem; bottom: 5px;  right: 70px; transform: rotate(-18deg); opacity: 0.44; }
+.wc-leaf-pile > span:nth-child(5) { font-size: 1.5rem; bottom: 14px; right: 12px; transform: rotate(-45deg); opacity: 0.40; }
+.wc-leaf-pile > span:nth-child(6) { font-size: 1.3rem; bottom: 12px; right: 38px; transform: rotate(25deg);  opacity: 0.36; }
+.wc-leaf-pile > span:nth-child(7) { font-size: 1.2rem; bottom: 18px; right: 60px; transform: rotate(-8deg);  opacity: 0.30; }
 
 .wc-header {
   display: flex;
@@ -5644,6 +5735,47 @@ select {
   opacity: 0.68;
   pointer-events: none;
 }
+
+/* ── Vocab note falling leaves (reuses wc-leaf-N keyframes) ── */
+.vn-leaf-zone {
+  position: absolute;
+  top: -16px;
+  bottom: 0;
+  right: 4px;
+  width: 100px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.vn-leaf-zone > span {
+  position: absolute;
+  top: 0;
+  line-height: 1;
+}
+.vn-leaf-1 { font-size: 1.7rem; left: 52px; animation: wc-leaf-1 4.8s ease-in-out 0s   infinite; }
+.vn-leaf-2 { font-size: 1.4rem; left: 20px; animation: wc-leaf-2 4.0s ease-in-out 1.3s infinite; }
+.vn-leaf-3 { font-size: 1.5rem; left: 42px; animation: wc-leaf-3 5.2s ease-in-out 0.6s infinite; }
+.vn-leaf-4 { font-size: 1.1rem; left: 68px; animation: wc-leaf-4 3.9s ease-in-out 2.1s infinite; }
+.vn-leaf-5 { font-size: 1.0rem; left: 10px; animation: wc-leaf-5 4.4s ease-in-out 1.8s infinite; }
+
+.vn-leaf-pile {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 120px;
+  height: 40px;
+  pointer-events: none;
+}
+.vn-leaf-pile > span {
+  position: absolute;
+  line-height: 1;
+}
+.vn-leaf-pile > span:nth-child(1) { font-size: 1.7rem; bottom: 2px;  right: 4px;  transform: rotate(8deg);   opacity: 0.58; }
+.vn-leaf-pile > span:nth-child(2) { font-size: 1.5rem; bottom: 4px;  right: 24px; transform: rotate(-30deg); opacity: 0.52; }
+.vn-leaf-pile > span:nth-child(3) { font-size: 1.6rem; bottom: 0;    right: 44px; transform: rotate(42deg);  opacity: 0.48; }
+.vn-leaf-pile > span:nth-child(4) { font-size: 1.3rem; bottom: 5px;  right: 66px; transform: rotate(-18deg); opacity: 0.44; }
+.vn-leaf-pile > span:nth-child(5) { font-size: 1.4rem; bottom: 14px; right: 12px; transform: rotate(-45deg); opacity: 0.40; }
+.vn-leaf-pile > span:nth-child(6) { font-size: 1.2rem; bottom: 12px; right: 36px; transform: rotate(25deg);  opacity: 0.36; }
+.vn-leaf-pile > span:nth-child(7) { font-size: 1.1rem; bottom: 18px; right: 58px; transform: rotate(-8deg);  opacity: 0.30; }
 
 .vocab-note-pin {
   position: absolute;

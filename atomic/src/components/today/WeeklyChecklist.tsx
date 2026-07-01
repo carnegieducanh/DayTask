@@ -155,6 +155,13 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
       ) : (
         <div className="weekly-checklist">
           <span className="vocab-note-pin" aria-hidden="true">📌</span>
+          <div className="wc-leaf-zone" aria-hidden="true">
+            <span className="wc-leaf-1">🍂</span>
+            <span className="wc-leaf-2">🍂</span>
+            <span className="wc-leaf-3">🍂</span>
+            <span className="wc-leaf-4">🍂</span>
+            <span className="wc-leaf-5">🍂</span>
+          </div>
           <div className="wc-header">
             <span className="wc-title">{t.weeklyChecklist.title}</span>
             <span className="wc-week-badge">{weekRange}</span>
@@ -221,6 +228,16 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
                 />
               </div>
             )}
+          </div>
+
+          <div className="wc-leaf-pile" aria-hidden="true">
+            <span>🍂</span>
+            <span>🍂</span>
+            <span>🍂</span>
+            <span>🍂</span>
+            <span>🍂</span>
+            <span>🍂</span>
+            <span>🍂</span>
           </div>
 
           {pendingDelete && (
