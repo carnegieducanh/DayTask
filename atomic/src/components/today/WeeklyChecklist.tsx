@@ -147,14 +147,12 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
     <div className="wc-note-wrap">
       {isDormant ? (
         <div className="wc-dormant" onClick={() => setAdding(true)}>
-          <span className="vocab-note-pin" aria-hidden="true">📌</span>
           <IconPlus size={12} className="wc-dormant-icon" />
           <span className="wc-dormant-text">{t.weeklyChecklist.hintEmpty}</span>
           <span className="wc-week-badge">{weekRange}</span>
         </div>
       ) : (
         <div className="weekly-checklist">
-          <span className="vocab-note-pin" aria-hidden="true">📌</span>
           <div className="wc-leaf-zone" aria-hidden="true">
             <span className="wc-leaf-1">🍂</span>
             <span className="wc-leaf-2">🍂</span>

@@ -685,7 +685,8 @@ select {
 }
 
 /* Compact note card for topbar: same aesthetic, smaller scale */
-.today-topbar-actions .vocab-widget-note .vocab-widget::before {
+.today-topbar-actions .vocab-widget-note .vocab-widget::before,
+.today-topbar-actions .vocab-widget-note .vocab-widget::after {
   display: none;
 }
 
@@ -1557,6 +1558,8 @@ select {
   position: relative;
   margin-top: 14px;
   margin-bottom: 6px;
+  transform: rotate(-1.5deg);
+  transform-origin: top center;
 }
 
 .wc-dormant {
@@ -1566,7 +1569,7 @@ select {
   gap: 7px;
   padding: 10px 14px;
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: 3px 0 3px 3px;
   background: radial-gradient(ellipse at 50% 38%, #e8d9a8 0%, #e2ce9a 55%, #dac48a 100%);
   border: 1px solid rgba(150, 118, 65, 0.22);
   box-shadow:
@@ -1593,6 +1596,21 @@ select {
   );
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   pointer-events: none;
+  z-index: 5;
+}
+.wc-dormant::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 26px 26px 0;
+  border-color: transparent #d2bc7e transparent transparent;
+  box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.28);
+  z-index: 3;
+  pointer-events: none;
 }
 .wc-dormant:hover {
   box-shadow:
@@ -1614,7 +1632,7 @@ select {
 .weekly-checklist {
   position: relative;
   padding: 12px 14px 16px;
-  border-radius: 3px;
+  border-radius: 3px 0 3px 3px;
   background: radial-gradient(ellipse at 50% 38%, #e8d9a8 0%, #e2ce9a 55%, #dac48a 100%);
   border: 1px solid rgba(150, 118, 65, 0.22);
   box-shadow:
@@ -1640,6 +1658,21 @@ select {
     rgba(185, 225, 190, 0.38) 8px
   );
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  z-index: 5;
+}
+.weekly-checklist::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 26px 26px 0;
+  border-color: transparent #d2bc7e transparent transparent;
+  box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.28);
+  z-index: 3;
   pointer-events: none;
 }
 .weekly-checklist:hover {
@@ -5629,7 +5662,7 @@ select {
 .vocab-widget-note .vocab-widget {
   background: radial-gradient(ellipse at 50% 38%, #e8d9a8 0%, #e2ce9a 55%, #dac48a 100%);
   border: 1px solid rgba(150, 118, 65, 0.22);
-  border-radius: 3px;
+  border-radius: 3px 0 3px 3px;
   box-shadow:
     2px 5px 18px rgba(80, 55, 30, 0.18),
     0 1px 3px rgba(0, 0, 0, 0.08);
@@ -5667,6 +5700,21 @@ select {
     rgba(185, 225, 190, 0.38) 8px
   );
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+
+.vocab-widget-note .vocab-widget::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 26px 26px 0;
+  border-color: transparent #d2bc7e transparent transparent;
+  box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.28);
+  z-index: 3;
   pointer-events: none;
 }
 

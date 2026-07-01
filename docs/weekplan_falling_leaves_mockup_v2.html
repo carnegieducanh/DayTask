@@ -1,0 +1,76 @@
+<style>
+@keyframes leafFall1{0%{transform:translate(0,-14px) rotate(0deg);opacity:0}8%{opacity:1}30%{transform:translate(18px,40px) rotate(60deg)}55%{transform:translate(-8px,90px) rotate(140deg)}80%{transform:translate(14px,140px) rotate(220deg)}100%{transform:translate(4px,180px) rotate(300deg);opacity:0}}
+@keyframes leafFall2{0%{transform:translate(0,-10px) rotate(10deg);opacity:0}10%{opacity:1}35%{transform:translate(-16px,50px) rotate(-40deg)}60%{transform:translate(10px,100px) rotate(80deg)}85%{transform:translate(-12px,150px) rotate(180deg)}100%{transform:translate(0,190px) rotate(260deg);opacity:0}}
+@keyframes leafFall3{0%{transform:translate(0,-18px) rotate(-20deg);opacity:0}12%{opacity:1}40%{transform:translate(14px,45px) rotate(50deg)}65%{transform:translate(-14px,95px) rotate(-30deg)}88%{transform:translate(8px,145px) rotate(150deg)}100%{transform:translate(0,175px) rotate(240deg);opacity:0}}
+@keyframes sway{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+.leaf-anim1{animation:leafFall1 7s ease-in-out infinite}
+.leaf-anim2{animation:leafFall2 8.5s ease-in-out infinite}
+.leaf-anim3{animation:leafFall3 6.2s ease-in-out infinite}
+.leaf-settled{animation:sway 4s ease-in-out infinite}
+</style>
+<div style="background:#141414;border-radius:16px;padding:40px 24px;font-family:var(--font-sans, sans-serif);">
+
+  <div style="position:relative;transform:rotate(-1.2deg);max-width:560px;margin:0 auto;">
+
+    <div style="position:relative;background:#ecdca9;border-radius:3px;padding:22px 22px 18px;overflow:hidden;min-height:260px;box-shadow:0 10px 24px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4);background-image:repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0px, rgba(0,0,0,0.02) 1px, transparent 1px, transparent 26px);">
+
+      <div style="position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 26px 26px 0;border-color:transparent #d9c78e transparent transparent;box-shadow:-2px 2px 4px rgba(0,0,0,0.25);z-index:3;"></div>
+
+      <div style="position:absolute;top:16px;right:36px;display:flex;gap:6px;z-index:4;">
+        <div style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;color:#4a3a1a;font-size:14px;"><i class="ti ti-edit" aria-hidden="true"></i></div>
+        <div style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;color:#4a3a1a;font-size:14px;"><i class="ti ti-trash" aria-hidden="true"></i></div>
+      </div>
+
+      <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%) rotate(-3deg);z-index:5;width:54px;height:20px;background:rgba(224,64,122,0.55);border:0.5px solid rgba(224,64,122,0.7);"></div>
+      <div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%) rotate(-3deg);color:#7a1436;font-size:16px;z-index:6;"><i class="ti ti-map-pin" aria-hidden="true"></i></div>
+
+      <div style="position:relative;z-index:2;padding-top:8px;">
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:2px;">
+          <span style="font-weight:500;font-size:15px;color:#3a2c14;">Week plan</span>
+          <span style="font-size:12px;color:#6b5a35;background:rgba(255,255,255,0.3);padding:2px 8px;border-radius:6px;">29 Jun–5 Jul</span>
+          <span style="font-size:12px;color:#6b5a35;">0/4 done</span>
+        </div>
+
+        <div style="width:60px;height:6px;margin:10px 0 16px;border-radius:3px;background:repeating-linear-gradient(45deg,#6f8a5c,#6f8a5c 4px,#8fa878 4px,#8fa878 8px);"></div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;font-family:var(--font-voice, serif);font-size:16px;color:#3a2c14;">
+          <div style="display:flex;align-items:center;gap:10px;"><span style="width:14px;height:14px;border-radius:50%;border:1.5px solid #6b5a35;flex-shrink:0;"></span>Nghe xong listening toeic 2026 test 1</div>
+          <div style="display:flex;align-items:center;gap:10px;"><span style="width:14px;height:14px;border-radius:50%;border:1.5px solid #6b5a35;flex-shrink:0;"></span>Ôn lại 10 chủ điểm ngữ pháp toeic</div>
+          <div style="display:flex;align-items:center;gap:10px;"><span style="width:14px;height:14px;border-radius:50%;border:1.5px solid #6b5a35;flex-shrink:0;"></span>Làm tiếp 1 dự án react + TS + tailwindcss</div>
+          <div style="display:flex;align-items:center;gap:10px;"><span style="width:14px;height:14px;border-radius:50%;border:1.5px solid #6b5a35;flex-shrink:0;"></span>Thực hành 1 dự án figma</div>
+        </div>
+
+        <div style="margin-top:18px;font-size:14px;color:#8a7a55;display:flex;align-items:center;gap:6px;">
+          <i class="ti ti-plus" aria-hidden="true"></i> Add new task...
+        </div>
+      </div>
+
+      <div style="position:absolute;top:-20px;left:68%;z-index:1;" class="leaf-anim1">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2C7 2 3 6 3 12c0 5 4 9 9 10 5-1 9-5 9-10 0-6-4-10-9-10z" fill="#D8863B"/><path d="M12 4v16" stroke="#8B4A1E" stroke-width="1" stroke-linecap="round"/></svg>
+      </div>
+      <div style="position:absolute;top:-20px;left:80%;z-index:1;" class="leaf-anim2">
+        <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2C7 2 3 6 3 12c0 5 4 9 9 10 5-1 9-5 9-10 0-6-4-10-9-10z" fill="#C25A2E"/><path d="M12 4v16" stroke="#7A331A" stroke-width="1" stroke-linecap="round"/></svg>
+      </div>
+      <div style="position:absolute;top:-16px;left:90%;z-index:1;" class="leaf-anim3">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2C7 2 3 6 3 12c0 5 4 9 9 10 5-1 9-5 9-10 0-6-4-10-9-10z" fill="#E0A23F"/><path d="M12 4v16" stroke="#8F5E15" stroke-width="1" stroke-linecap="round"/></svg>
+      </div>
+
+      <div style="position:absolute;bottom:8px;right:14px;transform:rotate(-10deg);z-index:1;" class="leaf-settled">
+        <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 2C7 2 3 6 3 12c0 5 4 9 9 10 5-1 9-5 9-10 0-6-4-10-9-10z" fill="#C25A2E"/><path d="M12 4v16" stroke="#7A331A" stroke-width="1" stroke-linecap="round"/></svg>
+      </div>
+      <div style="position:absolute;bottom:4px;right:38px;transform:rotate(18deg);z-index:1;">
+        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2C7 2 3 6 3 12c0 5 4 9 9 10 5-1 9-5 9-10 0-6-4-10-9-10z" fill="#D8863B"/><path d="M12 4v16" stroke="#8B4A1E" stroke-width="1" stroke-linecap="round"/></svg>
+      </div>
+      <div style="position:absolute;bottom:0px;right:62px;transform:rotate(-30deg);z-index:1;">
+        <svg width="17" height="17" viewBox="0 0 24 24"><path d="M12 2C7 2 3 6 3 12c0 5 4 9 9 10 5-1 9-5 9-10 0-6-4-10-9-10z" fill="#E0A23F"/><path d="M12 4v16" stroke="#8F5E15" stroke-width="1" stroke-linecap="round"/></svg>
+      </div>
+      <div style="position:absolute;bottom:6px;right:5px;transform:rotate(40deg);z-index:1;">
+        <svg width="15" height="15" viewBox="0 0 24 24"><path d="M12 2C7 2 3 6 3 12c0 5 4 9 9 10 5-1 9-5 9-10 0-6-4-10-9-10z" fill="#9B3E22" opacity="0.85"/><path d="M12 4v16" stroke="#5C2612" stroke-width="1" stroke-linecap="round"/></svg>
+      </div>
+      <div style="position:absolute;bottom:20px;right:24px;transform:rotate(70deg);z-index:1;">
+        <svg width="13" height="13" viewBox="0 0 24 24"><path d="M12 2C7 2 3 6 3 12c0 5 4 9 9 10 5-1 9-5 9-10 0-6-4-10-9-10z" fill="#C87A3A" opacity="0.8"/><path d="M12 4v16" stroke="#7A4118" stroke-width="1" stroke-linecap="round"/></svg>
+      </div>
+
+    </div>
+  </div>
+</div>
