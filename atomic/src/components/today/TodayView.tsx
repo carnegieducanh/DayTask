@@ -186,7 +186,7 @@ export default function TodayView() {
         <DailyGreeting pendingCount={pending.length} isToday={selectedDate === format(new Date(), "yyyy-MM-dd")} />
 
         <div className="today-topbar-side today-topbar-actions">
-          <VocabWidget />
+          <VocabWidget noteStyle />
         </div>
       </div>
 

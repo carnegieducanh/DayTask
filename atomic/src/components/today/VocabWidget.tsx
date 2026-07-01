@@ -76,6 +76,7 @@ export default function VocabWidget({ noteStyle = false }: { noteStyle?: boolean
     <div className={`vocab-widget-outer${noteStyle ? ' vocab-widget-note' : ''}`} onClick={advance} title={t.vocab.clickHint}>
       <div className="vocab-widget-label">{t.vocab.widgetHeader}</div>
       <div className="vocab-widget">
+        {noteStyle && <span className="vocab-note-pin" aria-hidden="true">📌</span>}
         <div className="vocab-widget-content" key={contentKey}>
           <div className="vocab-widget-word-row">
             <span className="vocab-widget-word">{current.word}</span>
