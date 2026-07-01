@@ -5399,6 +5399,124 @@ select {
   text-overflow: unset;
 }
 
+/* ── Vocab Widget — Note variant (Day view) ── */
+.vocab-widget-note {
+  position: relative;
+  margin-top: 14px;
+}
+
+.vocab-widget-note .vocab-widget-label {
+  display: none;
+}
+
+.vocab-widget-note .vocab-widget {
+  background: radial-gradient(
+    ellipse at 50% 38%,
+    #F0E4C0 0%,
+    #E6D49E 60%,
+    #DECA8E 100%
+  );
+  border: 1px solid rgba(150, 118, 65, 0.22);
+  border-radius: 3px;
+  box-shadow:
+    2px 5px 18px rgba(80, 55, 30, 0.18),
+    0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 18px 14px 18px;
+  transform: rotate(-0.7deg);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  position: relative;
+  overflow: visible;
+}
+
+.vocab-widget-note:hover .vocab-widget {
+  transform: rotate(0deg);
+  background: radial-gradient(
+    ellipse at 50% 38%,
+    #F0E4C0 0%,
+    #E6D49E 60%,
+    #DECA8E 100%
+  );
+  box-shadow:
+    3px 7px 24px rgba(80, 55, 30, 0.22),
+    0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.vocab-widget-note .vocab-widget::before {
+  content: '';
+  position: absolute;
+  width: 68px;
+  height: 22px;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(90, 140, 100, 0.52) 0px,
+    rgba(90, 140, 100, 0.52) 4px,
+    rgba(185, 225, 190, 0.38) 4px,
+    rgba(185, 225, 190, 0.38) 8px
+  );
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+
+.vocab-widget-note .vocab-widget-content {
+  position: relative;
+  padding-bottom: 22px;
+}
+
+.vocab-widget-note .vocab-widget-word {
+  font-family: 'Segoe Script', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  color: #3D2B1A;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 1.7rem;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.vocab-widget-note .vocab-widget-ipa {
+  font-family: 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  font-style: italic;
+  color: #6B5438;
+  font-size: 1rem;
+}
+
+.vocab-widget-note .vocab-widget-divider {
+  background: none;
+  border-top: 1px dashed rgba(120, 90, 55, 0.3);
+  height: 0;
+  margin: 9px 0 8px;
+}
+
+.vocab-widget-note .vocab-widget-meaning {
+  font-family: 'Segoe Script', 'Palatino Linotype', Georgia, serif;
+  color: #2E1A0E;
+  font-size: 1.15rem;
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.vocab-widget-note .vocab-widget-meaning-en {
+  font-family: 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  color: #7A6045;
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+.vocab-note-botanical {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 36px;
+  height: 44px;
+  opacity: 0.68;
+  pointer-events: none;
+}
+
+
 /* ── Calendar Filter Sidebar ── */
 .cal-filter-sidebar {
   width: 168px;

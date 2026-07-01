@@ -248,7 +248,7 @@ export default function CalendarView() {
                 </div>
               </div>
               <div style={{ padding: "0 8px" }}>
-                <VocabWidget />
+                <VocabWidget noteStyle />
               </div>
             </div>
           </div>
