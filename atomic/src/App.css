@@ -1544,41 +1544,99 @@ select {
 }
 
 /* ── Weekly Checklist ── */
+.wc-note-wrap {
+  position: relative;
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+
 .wc-dormant {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 7px 10px;
-  margin-bottom: 6px;
-  border-radius: 6px;
-  border-left: 2px solid color-mix(in srgb, var(--greeting-color) 25%, transparent);
+  padding: 10px 14px;
   cursor: pointer;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
+  border-radius: 3px;
+  background: radial-gradient(ellipse at 50% 38%, #e8d9a8 0%, #e2ce9a 55%, #dac48a 100%);
+  border: 1px solid rgba(150, 118, 65, 0.22);
+  box-shadow:
+    2px 5px 14px rgba(80, 55, 30, 0.14),
+    0 1px 3px rgba(0, 0, 0, 0.07);
+  transition: box-shadow 0.25s ease;
+  overflow: visible;
+}
+.wc-dormant::before {
+  content: "";
+  position: absolute;
+  width: 68px;
+  height: 22px;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(90, 140, 100, 0.52) 0px,
+    rgba(90, 140, 100, 0.52) 4px,
+    rgba(185, 225, 190, 0.38) 4px,
+    rgba(185, 225, 190, 0.38) 8px
+  );
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
 }
 .wc-dormant:hover {
-  background: color-mix(in srgb, var(--greeting-color) 6%, transparent);
-  border-color: color-mix(in srgb, var(--greeting-color) 45%, transparent);
+  box-shadow:
+    3px 7px 24px rgba(80, 55, 30, 0.18),
+    0 2px 5px rgba(0, 0, 0, 0.08);
 }
 .wc-dormant-icon {
-  color: color-mix(in srgb, var(--greeting-color) 40%, transparent);
+  color: #7a6045;
   flex-shrink: 0;
 }
 .wc-dormant-text {
-  font-family: "Lora", Georgia, serif;
+  font-family: "Segoe Script", "Palatino Linotype", Georgia, serif;
   font-style: italic;
   font-size: 0.93rem;
-  color: color-mix(in srgb, var(--greeting-color) 40%, transparent);
+  color: #7a6045;
   flex: 1;
 }
 
 .weekly-checklist {
-  margin-bottom: 6px;
-  padding: 8px 10px 6px;
-  border-radius: 6px;
-  border-left: 2px solid color-mix(in srgb, var(--greeting-color) 30%, transparent);
-  background: color-mix(in srgb, var(--greeting-color) 4%, transparent);
+  position: relative;
+  padding: 12px 14px 16px;
+  border-radius: 3px;
+  background: radial-gradient(ellipse at 50% 38%, #e8d9a8 0%, #e2ce9a 55%, #dac48a 100%);
+  border: 1px solid rgba(150, 118, 65, 0.22);
+  box-shadow:
+    2px 5px 18px rgba(80, 55, 30, 0.18),
+    0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.25s ease;
+  overflow: visible;
+}
+.weekly-checklist::before {
+  content: "";
+  position: absolute;
+  width: 68px;
+  height: 22px;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(90, 140, 100, 0.52) 0px,
+    rgba(90, 140, 100, 0.52) 4px,
+    rgba(185, 225, 190, 0.38) 4px,
+    rgba(185, 225, 190, 0.38) 8px
+  );
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+.weekly-checklist:hover {
+  box-shadow:
+    3px 7px 24px rgba(80, 55, 30, 0.22),
+    0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .wc-header {
@@ -1586,36 +1644,34 @@ select {
   align-items: center;
   gap: 7px;
   margin-bottom: 6px;
-  /* margin-left: 10px; */
 }
 .wc-title {
-  font-family: "Lora", Georgia, serif;
+  font-family: "Segoe Script", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   font-style: italic;
   font-size: 0.9rem;
   font-weight: 400;
-  color: var(--text-primary);
-  letter-spacing: 0.02em;
+  color: #3d2b1a;
 }
 .wc-week-badge {
-  font-family: "Lora", Georgia, serif;
+  font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
   font-style: italic;
   font-size: 0.75rem;
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.09);
+  color: #7a6045;
+  background: rgba(120, 90, 55, 0.1);
   padding: 1px 6px;
   border-radius: 3px;
 }
 .wc-stats {
-  font-family: "Lora", Georgia, serif;
+  font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
   font-style: italic;
-  font-size: 0.9rem;
-  color: var(--text-primary);
+  font-size: 0.85rem;
+  color: #7a6045;
 }
 .wc-add-btn {
   background: none;
   border: none;
   cursor: pointer;
-  color: color-mix(in srgb, var(--greeting-color) 65%, transparent);
+  color: rgba(80, 55, 30, 0.5);
   display: flex;
   align-items: center;
   padding: 2px 3px;
@@ -1633,8 +1689,8 @@ select {
   pointer-events: auto;
 }
 .wc-add-btn:hover {
-  color: color-mix(in srgb, var(--greeting-color) 90%, transparent);
-  background: color-mix(in srgb, var(--greeting-color) 10%, transparent);
+  color: #3d2b1a;
+  background: rgba(120, 90, 55, 0.12);
 }
 
 .wc-items {
@@ -1652,7 +1708,7 @@ select {
   transition: background 0.1s;
 }
 .wc-item:hover {
-  background: color-mix(in srgb, var(--greeting-color) 7%, transparent);
+  background: rgba(120, 90, 55, 0.07);
 }
 
 .wc-check {
@@ -1670,24 +1726,24 @@ select {
   transition: color 0.15s;
 }
 .wc-item:hover .wc-check {
-  color: color-mix(in srgb, var(--greeting-color) 30%, transparent);
+  color: rgba(80, 55, 30, 0.3);
 }
 .wc-item:hover .wc-check:hover {
-  color: color-mix(in srgb, var(--greeting-color) 70%, transparent);
+  color: rgba(80, 55, 30, 0.7);
 }
 .wc-done .wc-check {
-  color: color-mix(in srgb, var(--greeting-color) 60%, transparent);
+  color: rgba(80, 55, 30, 0.5);
 }
 .wc-done:hover .wc-check {
-  color: var(--greeting-color);
+  color: #3d2b1a;
 }
 
 .wc-text {
-  font-family: "Lora", Georgia, serif;
+  font-family: "Segoe Script", "Palatino Linotype", Georgia, serif;
   font-style: italic;
   font-size: 1rem;
   font-weight: 400;
-  color: var(--greeting-color);
+  color: #2e1a0e;
   line-height: 1.45;
   flex: 1;
 }
@@ -1695,13 +1751,13 @@ select {
   display: inline;
 }
 .wc-done .wc-text {
-  color: color-mix(in srgb, var(--greeting-color) 35%, transparent);
+  color: rgba(80, 55, 30, 0.38);
   text-decoration: line-through;
-  text-decoration-color: color-mix(in srgb, var(--greeting-color) 30%, transparent);
+  text-decoration-color: rgba(80, 55, 30, 0.3);
 }
 .wc-completing .wc-text {
   transition: color 0.32s ease;
-  color: color-mix(in srgb, var(--greeting-color) 35%, transparent);
+  color: rgba(80, 55, 30, 0.38);
 }
 .wc-completing .wc-text-inner {
   position: relative;
@@ -1712,7 +1768,7 @@ select {
   left: 0;
   top: 50%;
   height: 1px;
-  background: color-mix(in srgb, var(--greeting-color) 30%, transparent);
+  background: rgba(80, 55, 30, 0.3);
   animation: wc-strikethrough 0.32s ease forwards;
 }
 @keyframes wc-strikethrough {
@@ -1724,7 +1780,7 @@ select {
   }
 }
 .wc-completing .wc-check {
-  color: color-mix(in srgb, var(--greeting-color) 60%, transparent);
+  color: rgba(80, 55, 30, 0.5);
 }
 
 .wc-actions {
@@ -1743,7 +1799,7 @@ select {
   background: none;
   border: none;
   cursor: pointer;
-  color: color-mix(in srgb, var(--greeting-color) 35%, transparent);
+  color: rgba(80, 55, 30, 0.35);
   display: flex;
   align-items: center;
   padding: 2px 3px;
@@ -1753,8 +1809,8 @@ select {
     background 0.12s;
 }
 .wc-action-btn:hover {
-  color: var(--greeting-color);
-  background: color-mix(in srgb, var(--greeting-color) 10%, transparent);
+  color: #3d2b1a;
+  background: rgba(120, 90, 55, 0.1);
 }
 .wc-action-del:hover {
   color: #ef4444;
@@ -1762,23 +1818,23 @@ select {
 }
 
 .wc-input-icon {
-  color: color-mix(in srgb, var(--greeting-color) 40%, transparent);
+  color: rgba(80, 55, 30, 0.4);
   flex-shrink: 0;
 }
 .wc-input {
-  font-family: "Lora", Georgia, serif;
+  font-family: "Segoe Script", "Palatino Linotype", Georgia, serif;
   font-style: italic;
   font-size: 1rem;
-  color: var(--greeting-color);
+  color: #2e1a0e;
   background: none;
   border: none;
-  border-bottom: 1px solid color-mix(in srgb, var(--greeting-color) 30%, transparent);
+  border-bottom: 1px solid rgba(120, 90, 55, 0.3);
   outline: none;
   flex: 1;
   padding: 0 2px 1px;
 }
 .wc-input::placeholder {
-  color: color-mix(in srgb, var(--greeting-color) 32%, transparent);
+  color: rgba(80, 55, 30, 0.32);
 }
 .wc-undo-toast {
   position: static;
@@ -5584,8 +5640,8 @@ select {
 
 .vocab-note-pin {
   position: absolute;
-  top: -4px;
-  left: 6px;
+  top: -5px;
+  left: 0px;
   font-size: 1.1rem;
   line-height: 1;
   pointer-events: none;

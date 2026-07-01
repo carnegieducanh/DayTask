@@ -143,7 +143,7 @@ export const en: typeof vi = {
     greetingFixedHint: "First-day greeting",
   },
   weeklyChecklist: {
-    title: " 📌 Week Plan",
+    title: "Week Plan",
     weekLabel: (w: number) => `Week ${w}`,
     addPlaceholder: "Add a goal for this week...",
     hintEmpty: "Add a plan for this week...",
@@ -390,7 +390,7 @@ export const en: typeof vi = {
     copied: "Copied!",
     edit: "Edit",
     delete: "Delete",
-    deleted: (text: string) => `Deleted "${text.length > 40 ? text.slice(0, 40) + '…' : text}"`,
+    deleted: (text: string) => `Deleted "${text.length > 40 ? text.slice(0, 40) + "…" : text}"`,
     undo: "Undo",
     pin: "Pin as Quote of the Day",
     pinned: "Pinned",
