@@ -1210,14 +1210,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!isTauri()) { set({ heatmapDurations: [] }); return; }
     const db = await getDb();
     const rows = await db.select<DayDuration[]>(
-      `SELECT date,
+      `SELECT tte.date,
          COALESCE(SUM(
-           (CAST(SUBSTR(end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(end_time, 4, 2) AS INTEGER)) -
-           (CAST(SUBSTR(start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(start_time, 4, 2) AS INTEGER))
+           (CAST(SUBSTR(tte.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.end_time, 4, 2) AS INTEGER)) -
+           (CAST(SUBSTR(tte.start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.start_time, 4, 2) AS INTEGER))
          ), 0) as minutes
-       FROM task_time_entries
-       WHERE date LIKE $1 AND end_time > start_time
-       GROUP BY date`,
+       FROM task_time_entries tte
+       JOIN tasks t ON t.id = tte.task_id
+       WHERE tte.date LIKE $1 AND tte.end_time > tte.start_time AND t.is_done = 1
+       GROUP BY tte.date`,
       [`${year}-%`]
     );
     set({ heatmapDurations: rows });
