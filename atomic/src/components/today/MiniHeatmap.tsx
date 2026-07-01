@@ -10,8 +10,8 @@ function level(n: number) { return n === 0 ? 0 : n <= 2 ? 1 : n <= 4 ? 2 : n <= 
 
 export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
   const t = useT();
-  const { theme, language, accentColor } = useAppStore();
-  const COLORS = getHeatmapColors(accentColor, theme, 'var(--border-1)');
+  const { theme, language, accentColor, customAccentColor } = useAppStore();
+  const COLORS = getHeatmapColors(accentColor, theme, 'var(--border-1)', customAccentColor);
 
   const map = useMemo(
     () => Object.fromEntries(data.map((d) => [d.date, d.count])),

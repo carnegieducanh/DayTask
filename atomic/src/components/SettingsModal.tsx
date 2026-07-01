@@ -11,9 +11,7 @@ import {
   IconCheck,
   IconPencil,
   IconChevronRight,
-  IconPalette,
   IconAlertTriangle,
-  IconBookmark,
 } from "@tabler/icons-react";
 import { useAppStore } from "../store/appStore";
 import { useT } from "../i18n";
@@ -46,6 +44,7 @@ export default function SettingsModal() {
     setCustomAccentColor,
     savedAccentColors,
     saveAccentColor,
+    removeAccentColor,
     exportAllData,
     importAllData,
     autostart,
@@ -97,7 +96,19 @@ export default function SettingsModal() {
 
   // Custom accent color picker state
   const [showCustomPicker, setShowCustomPicker] = useState(false);
+  const [pickerClosing, setPickerClosing] = useState(false);
   const [customHexInput, setCustomHexInput] = useState(customAccentColor);
+
+  function closeColorPicker() {
+    setPickerClosing(true);
+    setTimeout(() => {
+      setShowCustomPicker(false);
+      setPickerClosing(false);
+    }, 160);
+  }
+  const [selectedSavedHex, setSelectedSavedHex] = useState<string | null>(null);
+  const [undoDeleteColor, setUndoDeleteColor] = useState<string | null>(null);
+  const undoColorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Vocab state
   const [vocabWords, setVocabWords] = useState<VocabWord[]>([]);
@@ -145,6 +156,22 @@ export default function SettingsModal() {
     const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
     // Warn if contrast against white < 3:1 (color too bright to be visible on light bg)
     return (1.05 / (L + 0.05)) < 3;
+  }
+
+  function handleDeleteSavedColor() {
+    if (!selectedSavedHex) return;
+    if (undoColorTimerRef.current) clearTimeout(undoColorTimerRef.current);
+    setUndoDeleteColor(selectedSavedHex);
+    removeAccentColor(selectedSavedHex);
+    setSelectedSavedHex(null);
+    undoColorTimerRef.current = setTimeout(() => setUndoDeleteColor(null), 4000);
+  }
+
+  function handleUndoDeleteColor() {
+    if (!undoDeleteColor) return;
+    if (undoColorTimerRef.current) clearTimeout(undoColorTimerRef.current);
+    saveAccentColor(undoDeleteColor);
+    setUndoDeleteColor(null);
   }
 
   const PERIODS: { key: Period; label: string }[] = [
@@ -457,7 +484,7 @@ export default function SettingsModal() {
                   </div>
                 </div>
 
-                {/* Row 1 right: Accent Color swatches */}
+                {/* Row 1 right: Accent Color swatches + custom picker */}
                 <div className="settings-general-col">
                   <div className="settings-section">
                     <div className="settings-section-label">{t.settings.accentColor}</div>
@@ -469,7 +496,7 @@ export default function SettingsModal() {
                             className={`settings-accent-swatch${accentColor === opt.value ? " active" : ""}`}
                             title={opt.label}
                             style={{ background: opt.color }}
-                            onClick={() => { setAccentColor(opt.value); setShowCustomPicker(false); }}
+                            onClick={() => { setAccentColor(opt.value); if (showCustomPicker) closeColorPicker(); }}
                           />
                         ))}
                         <button
@@ -479,78 +506,15 @@ export default function SettingsModal() {
                           onClick={() => {
                             setAccentColor("custom");
                             setCustomHexInput(customAccentColor);
-                            setShowCustomPicker((v) => !v);
+                            if (showCustomPicker) closeColorPicker(); else setShowCustomPicker(true);
                           }}
                         >
-                          <IconPalette size={12} color="rgba(255,255,255,0.85)" stroke={2.5} />
+                          🎨
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Row 2: Custom color picker — spans both columns */}
-                {showCustomPicker && accentColor === "custom" && (
-                  <div className="settings-custom-picker-section">
-                    <div className="settings-divider" style={{ margin: "0 0 10px" }} />
-                    <div className="settings-custom-picker">
-                      <input
-                        type="color"
-                        className="settings-color-native"
-                        value={isValidHex(customHexInput) ? customHexInput : customAccentColor}
-                        onChange={(e) => {
-                          setCustomHexInput(e.target.value);
-                          setCustomAccentColor(e.target.value);
-                        }}
-                      />
-                      <input
-                        type="text"
-                        className="settings-hex-input"
-                        value={customHexInput}
-                        placeholder="#000000"
-                        maxLength={7}
-                        spellCheck={false}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setCustomHexInput(val);
-                          if (isValidHex(val)) setCustomAccentColor(val);
-                        }}
-                        onBlur={() => {
-                          if (!isValidHex(customHexInput)) setCustomHexInput(customAccentColor);
-                        }}
-                      />
-                      {hasLowContrast(customHexInput) && (
-                        <span className="settings-contrast-warn" title={t.settings.lowContrastWarning}>
-                          <IconAlertTriangle size={14} />
-                        </span>
-                      )}
-                      <button
-                        className="settings-save-color-btn"
-                        title={t.settings.saveColor}
-                        disabled={!isValidHex(customHexInput)}
-                        onClick={() => saveAccentColor(customHexInput)}
-                      >
-                        <IconBookmark size={14} />
-                      </button>
-                      {savedAccentColors.length > 0 && (
-                        <div className="settings-saved-colors">
-                          {savedAccentColors.map((hex) => (
-                            <button
-                              key={hex}
-                              className="settings-saved-swatch"
-                              title={hex}
-                              style={{ background: hex }}
-                              onClick={() => {
-                                setCustomHexInput(hex);
-                                setCustomAccentColor(hex);
-                              }}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
 
                 {/* Row 3 left: Font Size */}
                 <div className="settings-general-col settings-general-col--left">
@@ -1087,6 +1051,93 @@ export default function SettingsModal() {
         />
       </div>
 
+      {showCustomPicker && accentColor === "custom" && (
+        <div className={`color-picker-popup-wrap${pickerClosing ? " closing" : ""}`} onClick={closeColorPicker}>
+          <div className="color-picker-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="color-picker-popup-head">
+              <span className="color-picker-popup-title">🎨 {t.settings.custom}</span>
+              <button className="color-picker-popup-close" onClick={closeColorPicker}>
+                <IconX size={13} />
+              </button>
+            </div>
+            <div className="color-picker-popup-body">
+              <div className="settings-custom-picker">
+                <input
+                  type="color"
+                  className="settings-color-native"
+                  value={isValidHex(customHexInput) ? customHexInput : customAccentColor}
+                  onChange={(e) => {
+                    setCustomHexInput(e.target.value);
+                    setCustomAccentColor(e.target.value);
+                  }}
+                />
+                <input
+                  type="text"
+                  className="settings-hex-input"
+                  value={customHexInput}
+                  placeholder="#000000"
+                  maxLength={7}
+                  spellCheck={false}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCustomHexInput(val);
+                    if (isValidHex(val)) setCustomAccentColor(val);
+                  }}
+                  onBlur={() => {
+                    if (!isValidHex(customHexInput)) setCustomHexInput(customAccentColor);
+                  }}
+                />
+                {hasLowContrast(customHexInput) && (
+                  <span className="settings-contrast-warn" title={t.settings.lowContrastWarning}>
+                    <IconAlertTriangle size={14} />
+                  </span>
+                )}
+                <button
+                  className="settings-save-color-btn"
+                  disabled={!isValidHex(customHexInput)}
+                  onClick={() => saveAccentColor(customHexInput)}
+                >
+                  {t.settings.saveColor}
+                </button>
+              </div>
+              {savedAccentColors.length > 0 && (
+                <>
+                  <div className="settings-saved-colors-row">
+                    <span className="settings-saved-label">{t.settings.savedColors}</span>
+                    <div className="settings-saved-colors">
+                      {savedAccentColors.map((hex) => (
+                        <button
+                          key={hex}
+                          className={`settings-saved-swatch${selectedSavedHex === hex ? " selected" : ""}`}
+                          title={hex}
+                          style={{ background: hex }}
+                          onClick={() => {
+                            setCustomHexInput(hex);
+                            setCustomAccentColor(hex);
+                            setSelectedSavedHex(prev => prev === hex ? null : hex);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {selectedSavedHex !== null && savedAccentColors.includes(selectedSavedHex) && (
+                    <div className="settings-saved-delete-row">
+                      <button
+                        className="settings-saved-delete-btn"
+                        onClick={handleDeleteSavedColor}
+                      >
+                        <IconTrash size={12} />
+                        {t.settings.deleteSavedColor}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showResetToast && (
         <div className="delete-toast" role="status" onClick={(e) => e.stopPropagation()}>
           <span className="delete-toast-msg">{t.settings.greetingReset} ✓</span>
@@ -1108,6 +1159,15 @@ export default function SettingsModal() {
         <div className="delete-toast" role="status" onClick={(e) => e.stopPropagation()}>
           <span className="delete-toast-msg">{t.toast.deleted(pendingDeleteVocab.word)}</span>
           <button className="delete-toast-undo" onClick={handleUndoDeleteVocab}>
+            {t.toast.undo}
+          </button>
+        </div>
+      )}
+
+      {undoDeleteColor && (
+        <div className="delete-toast" role="status" onClick={(e) => e.stopPropagation()}>
+          <span className="delete-toast-msg">{t.toast.deleted(undoDeleteColor)}</span>
+          <button className="delete-toast-undo" onClick={handleUndoDeleteColor}>
             {t.toast.undo}
           </button>
         </div>

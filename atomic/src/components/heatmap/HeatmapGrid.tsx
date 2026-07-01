@@ -31,8 +31,8 @@ interface Props {
 
 export default function HeatmapGrid({ year, data, mode = 'count', durations = [] }: Props) {
   const t = useT();
-  const { theme, language, accentColor } = useAppStore();
-  const LEVEL_COLORS = getHeatmapColors(accentColor, theme);
+  const { theme, language, accentColor, customAccentColor } = useAppStore();
+  const LEVEL_COLORS = getHeatmapColors(accentColor, theme, undefined, customAccentColor);
 
   const activityMap = useMemo(() => {
     const m: Record<string, number> = {};

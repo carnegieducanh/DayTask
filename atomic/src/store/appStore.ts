@@ -159,6 +159,7 @@ interface AppState {
   setAccentColor: (color: AccentColor) => void;
   setCustomAccentColor: (hex: string) => void;
   saveAccentColor: (hex: string) => void;
+  removeAccentColor: (hex: string) => void;
   setOpenSettingsModal: (val: boolean) => void;
   setSelectedDate: (date: string) => void;
   setSelectedYear: (year: number) => void;
@@ -291,6 +292,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     const deduped = [hex, ...prev.filter(c => c !== hex)].slice(0, 8);
     localStorage.setItem('savedAccentColors', JSON.stringify(deduped));
     set({ savedAccentColors: deduped });
+  },
+
+  removeAccentColor: (hex) => {
+    const prev: string[] = JSON.parse(localStorage.getItem('savedAccentColors') ?? '[]');
+    const updated = prev.filter(c => c !== hex);
+    localStorage.setItem('savedAccentColors', JSON.stringify(updated));
+    set({ savedAccentColors: updated });
   },
 
   setOpenSettingsModal: (val) => set({ openSettingsModal: val }),
