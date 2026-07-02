@@ -11,12 +11,13 @@ export function TodayHeroQuote() {
   const t = useT();
 
   useEffect(() => {
-    let lastLoadedDate = new Date().toISOString().slice(0, 10);
+    const localDate = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' });
+    let lastLoadedDate = localDate();
     dbGetHeroQuote(getHeroModeLS()).then(setQuote);
 
     function onVisibilityChange() {
       if (document.visibilityState !== 'visible') return;
-      const today = new Date().toISOString().slice(0, 10);
+      const today = localDate();
       if (today !== lastLoadedDate) {
         lastLoadedDate = today;
         dbGetHeroQuote(getHeroModeLS()).then(setQuote);

@@ -175,7 +175,7 @@ export async function dbGetQuoteCounts(): Promise<{ total: number; favorites: nu
 // ── Hero quote helpers (localStorage-backed) ──────────────────────────────
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' });
 }
 
 function getDailyCache(key: string): { date: string; id: number } | null {
