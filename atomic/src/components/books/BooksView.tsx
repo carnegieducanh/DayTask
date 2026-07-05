@@ -1103,9 +1103,12 @@ export default function BooksView() {
               <IconTarget size={14} />
               <span>{t.books.goalTitle(currentYear)}</span>
               {readingGoal !== null && !editingGoal && (
-                <button className="books-goal-edit" onClick={handleStartGoalEdit} title={t.books.edit}>
-                  <IconPencil size={12} />
-                </button>
+                <>
+                  <span className="books-goal-count-inline">{t.books.goalProgress(currentYearCount, readingGoal)}</span>
+                  <button className="books-goal-edit" onClick={handleStartGoalEdit} title={t.books.edit}>
+                    <IconPencil size={12} />
+                  </button>
+                </>
               )}
             </div>
 
@@ -1125,12 +1128,9 @@ export default function BooksView() {
                 <button className="books-goal-editor-btn" onClick={() => setEditingGoal(false)}><IconX size={13} /></button>
               </div>
             ) : readingGoal ? (
-              <>
-                <div className="books-goal-bar-track">
-                  <div className="books-goal-bar-fill" style={{ width: `${goalPct}%` }} />
-                </div>
-                <div className="books-goal-count">{t.books.goalProgress(currentYearCount, readingGoal)}</div>
-              </>
+              <div className="books-goal-bar-track">
+                <div className="books-goal-bar-fill" style={{ width: `${goalPct}%` }} />
+              </div>
             ) : (
               <button className="books-goal-cta" onClick={handleStartGoalEdit}>{t.books.setGoalCta}</button>
             )}
@@ -1163,50 +1163,52 @@ export default function BooksView() {
           </select>
         </div>
 
-        {books.length === 0 ? (
-          <div className="books-empty-state">
-            <IconBooks size={36} className="books-empty-icon" />
-            <p className="books-empty-text">{emptyText}</p>
-            {!searchQuery && (
-              <button className="books-btn-add" onClick={() => setShowAddModal(true)}>
-                <IconPlus size={13} />
-                {t.books.addBook}
-              </button>
-            )}
-          </div>
-        ) : libraryFilter === 'all' ? (
-          grouped.map(([year, list]) => (
-            <div key={year} className="books-year-section">
-              <div className="books-year-heading">
-                <span>{year}</span>
-                <span className="books-year-count">{t.books.booksCount(list.length)}</span>
-              </div>
-              <div className="books-shelf-grid">
-                {list.map((book) => (
-                  <BookCard
-                    key={book.id}
-                    book={book}
-                    onView={() => setViewingBook(book)}
-                    onEdit={() => setEditingBook(book)}
-                    onDelete={() => handleDelete(book)}
-                  />
-                ))}
-              </div>
+        <div key={`${libraryFilter}-${yearFilter ?? ''}-${tagFilter ?? ''}`} className="books-content-view">
+          {books.length === 0 ? (
+            <div className="books-empty-state">
+              <IconBooks size={36} className="books-empty-icon" />
+              <p className="books-empty-text">{emptyText}</p>
+              {!searchQuery && (
+                <button className="books-btn-add" onClick={() => setShowAddModal(true)}>
+                  <IconPlus size={13} />
+                  {t.books.addBook}
+                </button>
+              )}
             </div>
-          ))
-        ) : (
-          <div className="books-shelf-grid">
-            {flatList.map((book) => (
-              <BookCard
-                key={book.id}
-                book={book}
-                onView={() => setViewingBook(book)}
-                onEdit={() => setEditingBook(book)}
-                onDelete={() => handleDelete(book)}
-              />
-            ))}
-          </div>
-        )}
+          ) : libraryFilter === 'all' ? (
+            grouped.map(([year, list]) => (
+              <div key={year} className="books-year-section">
+                <div className="books-year-heading">
+                  <span>{year}</span>
+                  <span className="books-year-count">{t.books.booksCount(list.length)}</span>
+                </div>
+                <div className="books-shelf-grid">
+                  {list.map((book) => (
+                    <BookCard
+                      key={book.id}
+                      book={book}
+                      onView={() => setViewingBook(book)}
+                      onEdit={() => setEditingBook(book)}
+                      onDelete={() => handleDelete(book)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="books-shelf-grid">
+              {flatList.map((book) => (
+                <BookCard
+                  key={book.id}
+                  book={book}
+                  onView={() => setViewingBook(book)}
+                  onEdit={() => setEditingBook(book)}
+                  onDelete={() => handleDelete(book)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {showAddModal && (

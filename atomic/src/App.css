@@ -5407,11 +5407,16 @@ select {
   display: flex;
   align-items: center;
   gap: 3px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .cal-week-stat-total-val {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 8px;
 }
 .cal-week-stat-bar {
   height: 4px;
@@ -8916,6 +8921,13 @@ select {
   flex-direction: column;
   gap: 18px;
 }
+
+.books-content-view {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: today-main-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
 .books-main::-webkit-scrollbar {
   width: 4px;
 }
@@ -9040,10 +9052,10 @@ select {
   border: 0.5px solid var(--border-1);
   border-radius: var(--radius-lg);
   background: var(--bg-secondary);
-  padding: 14px 16px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .books-goal-head {
@@ -9059,8 +9071,15 @@ select {
   flex-shrink: 0;
 }
 
-.books-goal-edit {
+.books-goal-count-inline {
   margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.books-goal-edit {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9079,23 +9098,17 @@ select {
 
 .books-goal-bar-track {
   width: 100%;
-  height: 8px;
-  border-radius: 4px;
+  height: 6px;
+  border-radius: 3px;
   background: var(--bg-hover);
   overflow: hidden;
 }
 
 .books-goal-bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 3px;
   background: var(--primary);
   transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.books-goal-count {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  font-variant-numeric: tabular-nums;
 }
 
 .books-goal-cta {
@@ -9165,7 +9178,6 @@ select {
   position: relative;
   display: flex;
   align-items: center;
-  flex: 1;
 }
 
 .books-search-icon {
@@ -9176,10 +9188,10 @@ select {
 }
 
 .books-search-input {
-  width: 100%;
+  width: calc(30ch + 64px);
   padding: 7px 32px;
-  border-radius: var(--radius-md);
-  border: 0.5px solid var(--border-1);
+  border: none;
+  border-bottom: 1px solid var(--border-1);
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 0.88rem;
@@ -9253,7 +9265,7 @@ select {
 
 .books-shelf-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  grid-template-columns: repeat(auto-fill, 128px);
   gap: 18px;
 }
 
@@ -9262,11 +9274,13 @@ select {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .books-card-cover {
   position: relative;
-  aspect-ratio: 2 / 3;
+  width: 128px;
+  height: 192px;
   transition: transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .books-card:hover .books-card-cover {
@@ -9548,6 +9562,10 @@ select {
 .books-modal-input::placeholder,
 .books-modal-textarea::placeholder {
   color: var(--text-muted);
+}
+
+[data-theme="dark"] .books-modal-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
 }
 
 .books-modal-row {
