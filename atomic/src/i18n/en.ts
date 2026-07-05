@@ -451,6 +451,7 @@ export const en: typeof vi = {
     modalAddTitle: "Add new book",
     modalEditTitle: "Edit book",
     coverUpload: "Upload cover",
+    coverDrop: "Drop image here",
     coverChange: "Change cover",
     coverRemove: "Remove cover",
     titleLabel: "Title *",

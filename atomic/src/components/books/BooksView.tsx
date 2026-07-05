@@ -297,6 +297,8 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
   const [notes, setNotes] = useState(initialBook?.notes ?? '');
   const [tags, setTags] = useState<string[]>(initialBook?.tags ?? []);
   const [saving, setSaving] = useState(false);
+  const [coverDragOver, setCoverDragOver] = useState(false);
+  const dragCounterRef = useRef(0);
   const titleRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -386,16 +388,49 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
     }
   }
 
-  async function handlePickCover(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
+  async function applyCoverFile(file: File) {
+    if (!file.type.startsWith('image/')) return;
     try {
       const dataUrl = await compressCoverImage(file);
       setCoverImage(dataUrl);
     } catch {
       // ignore unreadable image, keep previous cover
     }
+  }
+
+  async function handlePickCover(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    await applyCoverFile(file);
+  }
+
+  function handleCoverDragEnter(e: React.DragEvent) {
+    e.preventDefault();
+    dragCounterRef.current += 1;
+    setCoverDragOver(true);
+  }
+
+  function handleCoverDragOver(e: React.DragEvent) {
+    e.preventDefault();
+  }
+
+  function handleCoverDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      setCoverDragOver(false);
+    }
+  }
+
+  async function handleCoverDrop(e: React.DragEvent) {
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setCoverDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    await applyCoverFile(file);
   }
 
   async function handleSave() {
@@ -428,7 +463,13 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
         </div>
 
         <div className="books-modal-body">
-          <div className="books-modal-cover-row">
+          <div
+            className={`books-modal-cover-row${coverDragOver ? ' drag-over' : ''}`}
+            onDragEnter={handleCoverDragEnter}
+            onDragOver={handleCoverDragOver}
+            onDragLeave={handleCoverDragLeave}
+            onDrop={handleCoverDrop}
+          >
             <input
               ref={fileInputRef}
               type="file"
@@ -438,7 +479,7 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
             />
             <button
               type="button"
-              className="books-cover-picker"
+              className={`books-cover-picker${coverDragOver ? ' drag-over' : ''}`}
               onClick={() => fileInputRef.current?.click()}
             >
               {coverImage ? (
@@ -446,7 +487,7 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
               ) : (
                 <div className="books-cover-picker-empty">
                   <IconCameraPlus size={22} />
-                  <span>{t.books.coverUpload}</span>
+                  <span>{coverDragOver ? t.books.coverDrop : t.books.coverUpload}</span>
                 </div>
               )}
             </button>

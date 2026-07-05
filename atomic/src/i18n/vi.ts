@@ -427,6 +427,7 @@ export const vi = {
     modalAddTitle: "Thêm sách mới",
     modalEditTitle: "Sửa thông tin sách",
     coverUpload: "Tải ảnh bìa",
+    coverDrop: "Thả ảnh vào đây",
     coverChange: "Đổi ảnh",
     coverRemove: "Xóa ảnh",
     titleLabel: "Tên sách *",
