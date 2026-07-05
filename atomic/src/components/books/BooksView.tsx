@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
-import { useSmoothScroll } from '../../hooks/useSmoothScroll';
+import { useSmoothScroll, attachSmoothScroll } from '../../hooks/useSmoothScroll';
 import {
   IconBooks,
   IconBook2,
@@ -362,6 +362,7 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
   const dragCounterRef = useRef(0);
   const titleRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   const [allTags, setAllTags] = useState<string[]>([]);
   const [tagDropOpen, setTagDropOpen] = useState(false);
@@ -375,6 +376,14 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
   const tagTriggerRef = useRef<HTMLButtonElement>(null);
   const tagSearchRef = useRef<HTMLInputElement>(null);
   const newTagInputRef = useRef<HTMLInputElement>(null);
+  const tagListRef = useRef<HTMLDivElement>(null);
+
+  useSmoothScroll(bodyRef);
+
+  useEffect(() => {
+    if (!tagDropOpen || !tagListRef.current) return;
+    return attachSmoothScroll(tagListRef.current);
+  }, [tagDropOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     titleRef.current?.focus();
@@ -526,7 +535,7 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
           <button className="books-modal-close" onClick={onClose}><IconX size={16} /></button>
         </div>
 
-        <div className="books-modal-body">
+        <div className="books-modal-body" ref={bodyRef}>
           <div
             className={`books-modal-cover-row${coverDragOver ? ' drag-over' : ''}`}
             onDragEnter={handleCoverDragEnter}
@@ -659,7 +668,7 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
                     />
                   </div>
                 )}
-                <div className="tag-dropdown-list">
+                <div className="tag-dropdown-list" ref={tagListRef}>
                   {allTags.length === 0 && (
                     <div className="tag-dropdown-empty">{t.tags.noTags}</div>
                   )}
