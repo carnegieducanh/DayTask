@@ -85,13 +85,15 @@ function BookCard({
   return (
     <div className="books-card" onClick={onView}>
       <div className="books-card-cover">
-        {book.cover_image ? (
-          <img src={book.cover_image} alt={book.title} />
-        ) : (
-          <div className="books-card-cover-placeholder">
-            <IconBooks size={28} />
-          </div>
-        )}
+        <div className="books-card-cover-inner">
+          {book.cover_image ? (
+            <img src={book.cover_image} alt={book.title} />
+          ) : (
+            <div className="books-card-cover-placeholder">
+              <IconBooks size={28} />
+            </div>
+          )}
+        </div>
         <div className="books-card-actions">
           <button className="books-card-action-btn" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
             <IconPencil size={13} />
@@ -193,13 +195,15 @@ function BookDetailModal({ book, onClose, onEdit, onDelete, onStatusChange }: Bo
 
         <div className="books-detail-body">
           <div className="books-detail-cover">
-            {book.cover_image ? (
-              <img src={book.cover_image} alt={book.title} />
-            ) : (
-              <div className="books-card-cover-placeholder">
-                <IconBooks size={40} />
-              </div>
-            )}
+            <div className="books-detail-cover-inner">
+              {book.cover_image ? (
+                <img src={book.cover_image} alt={book.title} />
+              ) : (
+                <div className="books-card-cover-placeholder">
+                  <IconBooks size={40} />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="books-detail-info">
