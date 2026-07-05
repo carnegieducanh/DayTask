@@ -84,7 +84,9 @@ export default function TodayView() {
 
   const habitTasks = tasks.filter((task) => task.category !== "other");
   const otherTasks = tasks.filter((task) => task.category === "other");
-  const pending = sortByTime(habitTasks.filter((task) => !task.is_done));
+  const pending = sortByTime(
+    habitTasks.filter((task) => !task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)),
+  );
   const done = sortByTime(habitTasks.filter((task) => task.is_done));
   const otherPending = sortByTime(otherTasks.filter((task) => !task.is_done));
   const otherDone = sortByTime(otherTasks.filter((task) => task.is_done));

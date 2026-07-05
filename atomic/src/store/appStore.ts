@@ -181,7 +181,7 @@ interface AppState {
   confirmDeleteTag: (tag: Tag) => Promise<void>;
   setTaskTags: (taskId: number, tagIds: number[]) => Promise<void>;
 
-  loadTasks: (date: string) => Promise<void>;
+  loadTasks: (date: string) => Promise<{ tasks: Task[]; taskTimeEntries: TaskTimeEntry[] }>;
   loadCalendarTasks: (startDate: string, endDate: string) => Promise<void>;
   loadTimeEntries: (date: string) => Promise<void>;
   saveTimeEntry: (taskId: number, date: string, startTime: string, endTime: string) => Promise<void>;
@@ -506,8 +506,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   loadTasks: async (date) => {
     if (!isTauri()) {
-      set({ tasks: dbGetTasks(date), taskTimeEntries: dbGetTimeEntries(date), taskTags: dbGetTaskTagsForDate(date) });
-      return;
+      const tasks = dbGetTasks(date);
+      const taskTimeEntries = dbGetTimeEntries(date);
+      const taskTags = dbGetTaskTagsForDate(date);
+      if (date === get().selectedDate) set({ tasks, taskTimeEntries, taskTags });
+      return { tasks, taskTimeEntries };
     }
     const db = await getDb();
 
@@ -564,7 +567,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (!taskTags[row.task_id]) taskTags[row.task_id] = [];
       taskTags[row.task_id].push(row.tag_id);
     }
-    set({ tasks, taskTimeEntries, taskTags });
+    if (date === get().selectedDate) set({ tasks, taskTimeEntries, taskTags });
+    return { tasks, taskTimeEntries };
   },
 
   loadCalendarTasks: async (startDate, endDate) => {

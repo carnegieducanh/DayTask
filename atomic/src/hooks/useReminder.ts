@@ -32,9 +32,9 @@ export function useReminder() {
       const today = format(new Date(), "yyyy-MM-dd");
       const nowMs = Date.now();
 
-      await loadTasks(today);
+      const { tasks: latestTasks, taskTimeEntries } = await loadTasks(today);
 
-      const { tasks: latestTasks, taskTimeEntries, snoozedUntil } = useAppStore.getState();
+      const { snoozedUntil } = useAppStore.getState();
 
       const due = latestTasks.filter((t) => {
         if (t.is_done || t.date !== today) return false;
