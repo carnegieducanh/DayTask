@@ -839,7 +839,7 @@ select {
   user-select: none;
 }
 .vocab-widget-label {
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--text-secondary);
@@ -3977,7 +3977,7 @@ select {
   border-radius: 7px;
   border: none;
   background: var(--bg-secondary);
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-primary);
   cursor: pointer;
   text-align: center;
@@ -3993,7 +3993,7 @@ select {
 }
 
 .settings-font-pct {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-muted);
   display: block;
   margin-top: 1px;
