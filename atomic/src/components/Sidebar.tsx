@@ -5,6 +5,7 @@ import {
   IconCalendar,
   IconNotebook,
   IconQuote,
+  IconBooks,
   IconChevronLeft,
   IconChevronRight,
   IconSettings,
@@ -35,6 +36,7 @@ export default function Sidebar() {
     { id: "kanban",   label: t.nav.yearPlan, icon: <IconCalendarStats size={16} /> },
     { id: "heatmap",  label: t.nav.heatmap,  icon: <IconChartDots size={16} /> },
     { id: "quotes",   label: t.nav.quotes,   icon: <IconQuote size={16} /> },
+    { id: "books",    label: t.nav.books,    icon: <IconBooks size={16} /> },
   ];
 
   const pendingCount = tasks.filter((t) => !t.is_done).length;

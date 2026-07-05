@@ -20,6 +20,7 @@ import HeatmapView from './components/heatmap/HeatmapView';
 import CalendarView from './components/calendar/CalendarView';
 import JournalView from './components/journal/JournalView';
 import QuotesView from './components/quotes/QuotesView';
+import BooksView from './components/books/BooksView';
 import ReminderPopup from './components/ReminderPopup';
 import DeleteToast from './components/DeleteToast';
 import SettingsModal from './components/SettingsModal';
@@ -328,6 +329,7 @@ function App() {
           {activeTab === 'calendar' && <CalendarView />}
           {activeTab === 'journal' && <JournalView />}
           {activeTab === 'quotes' && <QuotesView />}
+          {activeTab === 'books' && <BooksView />}
           <ReminderPopup />
           <DeleteToast />
           <SettingsModal />

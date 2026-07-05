@@ -8866,3 +8866,827 @@ select {
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
+
+/* ══════════════════════ Books Tab ══════════════════════ */
+
+/* ── Tab enter animations ── */
+.books-sidebar {
+  animation: today-sidebar-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
+}
+.books-main {
+  animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
+}
+
+/* ── Layout ── */
+.books-wrap {
+  display: flex;
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.books-sidebar {
+  width: 192px;
+  min-width: 192px;
+  background: var(--bg-secondary);
+  border-right: 0.5px solid var(--border-1);
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+.books-sidebar::-webkit-scrollbar {
+  width: 3px;
+}
+.books-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.books-sidebar::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 2px;
+}
+
+.books-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.books-main::-webkit-scrollbar {
+  width: 4px;
+}
+.books-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+.books-main::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 2px;
+}
+
+/* ── Sidebar items ── */
+.books-sb-section {
+  padding: 0 10px;
+  margin-bottom: 8px;
+}
+
+.books-sb-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 0 6px;
+  margin-bottom: 4px;
+}
+
+.books-sb-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.books-sb-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.books-sb-item.active {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--primary);
+}
+
+.books-sb-count {
+  margin-left: auto;
+  font-size: 0.76rem;
+  background: var(--bg-hover);
+  border-radius: 10px;
+  padding: 1px 6px;
+  color: var(--text-muted);
+}
+.books-sb-item.active .books-sb-count {
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  color: var(--primary);
+}
+
+.books-year-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 0.5px solid var(--border-2);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.books-sb-item.active .books-year-badge {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ── Header ── */
+.books-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.books-header-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.books-header-sub {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.books-btn-add {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 0.5px solid var(--border-1);
+  background: transparent;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.books-btn-add:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ── Reading goal card ── */
+.books-goal-card {
+  border: 0.5px solid var(--border-1);
+  border-radius: var(--radius-lg);
+  background: var(--bg-secondary);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.books-goal-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.books-goal-head svg {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.books-goal-edit {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.books-goal-edit:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.books-goal-bar-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+
+.books-goal-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--primary);
+  transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.books-goal-count {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.books-goal-cta {
+  align-self: flex-start;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-2);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    color 0.12s;
+}
+.books-goal-cta:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.books-goal-editor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.books-goal-input {
+  width: 100px;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  border: 0.5px solid var(--border-1);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+}
+.books-goal-input:focus {
+  border-color: var(--primary);
+}
+
+.books-goal-editor-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  border: 0.5px solid var(--border-1);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.books-goal-editor-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ── Toolbar ── */
+.books-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.books-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.books-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.books-search-input {
+  width: 100%;
+  padding: 7px 32px;
+  border-radius: var(--radius-md);
+  border: 0.5px solid var(--border-1);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.books-search-input:focus {
+  border-color: var(--primary);
+}
+.books-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.books-search-clear {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+.books-search-clear:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.books-sort-select {
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  border: 0.5px solid var(--border-1);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+/* ── Year sections & shelf grid ── */
+.books-year-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.books-year-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding-bottom: 6px;
+  border-bottom: 0.5px solid var(--border-1);
+}
+
+.books-year-count {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.books-shelf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 18px;
+}
+
+/* ── Book card ── */
+.books-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.books-card-cover {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-hover);
+  border: 0.5px solid var(--border-1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition:
+    transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 0.18s;
+}
+.books-card:hover .books-card-cover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
+.books-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.books-card-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  opacity: 0.4;
+}
+
+.books-card-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.books-card:hover .books-card-actions {
+  opacity: 1;
+}
+
+.books-card-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+.books-card-action-btn:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+.books-card-action-btn.danger:hover {
+  background: #dc3545;
+}
+
+.books-card-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.books-card-author {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: -4px;
+}
+
+.books-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.books-tag-chip-sm {
+  font-size: 0.7rem;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+/* ── Empty state ── */
+.books-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.books-empty-icon {
+  color: var(--text-muted);
+  opacity: 0.35;
+}
+
+.books-empty-text {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── Add/Edit Book Modal ── */
+.books-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+
+.books-modal {
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border-1);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+  animation: today-main-in 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.books-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 0.5px solid var(--border-1);
+  flex-shrink: 0;
+}
+
+.books-modal-title {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.books-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.books-modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.books-modal-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.books-modal-label {
+  display: block;
+  font-size: 0.79rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.books-modal-input,
+.books-modal-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 0.5px solid var(--border-1);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.books-modal-textarea {
+  resize: vertical;
+  min-height: 64px;
+  line-height: 1.5;
+}
+.books-modal-input:focus,
+.books-modal-textarea:focus {
+  border-color: var(--primary);
+}
+.books-modal-input::placeholder,
+.books-modal-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.books-modal-row {
+  display: flex;
+  gap: 12px;
+}
+
+/* ── Cover picker ── */
+.books-modal-cover-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.books-cover-picker {
+  width: 84px;
+  height: 126px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-2);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.books-cover-picker:hover {
+  border-color: var(--primary);
+}
+
+.books-cover-picker-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.books-cover-picker-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  text-align: center;
+  padding: 6px;
+}
+
+.books-cover-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.books-cover-action-btn {
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 0.5px solid var(--border-1);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+.books-cover-action-btn:hover {
+  background: var(--bg-hover);
+}
+.books-cover-action-btn.danger {
+  color: #dc3545;
+}
+.books-cover-action-btn.danger:hover {
+  background: rgba(220, 53, 69, 0.1);
+}
+
+/* ── Status segmented control ── */
+.books-status-toggle {
+  display: flex;
+  background: var(--bg-hover);
+  border: 0.5px solid var(--border-2);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.books-status-btn {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  white-space: nowrap;
+}
+.books-status-btn.active {
+  background: var(--bg-primary);
+  color: var(--primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+/* ── Modal footer ── */
+.books-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px 16px;
+  border-top: 0.5px solid var(--border-1);
+  flex-shrink: 0;
+}
+
+.books-modal-btn-cancel {
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  border: 0.5px solid var(--border-1);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.books-modal-btn-cancel:hover {
+  background: var(--bg-hover);
+}
+
+.books-modal-btn-save {
+  padding: 7px 16px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+.books-modal-btn-save:hover:not(:disabled) {
+  opacity: 0.85;
+}
+.books-modal-btn-save:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Goal celebration toast ── */
+@keyframes books-celebration-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+.books-celebration-toast {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  font-size: 0.88rem;
+  font-weight: 500;
+  z-index: 1200;
+  animation: books-celebration-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  max-width: min(420px, calc(100% - 32px));
+}
+
+.books-celebration-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #fff;
+  opacity: 0.8;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.books-celebration-close:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
+}

@@ -115,7 +115,7 @@ export interface Tag {
   created_at: string;
 }
 
-export type Tab = 'today' | 'kanban' | 'heatmap' | 'calendar' | 'journal' | 'quotes';
+export type Tab = 'today' | 'kanban' | 'heatmap' | 'calendar' | 'journal' | 'quotes' | 'books';
 
 export type JournalType = 'gratitude' | 'lesson';
 
@@ -158,6 +158,30 @@ export interface NewQuote {
   text: string;
   author?: string;
   language: string;
+  tags?: string[];
+}
+
+export type BookStatus = 'reading' | 'finished' | 'want_to_read';
+
+export interface Book {
+  id: number;
+  title: string;
+  author: string | null;
+  cover_image: string | null;
+  status: BookStatus;
+  finished_date: string | null;
+  notes: string | null;
+  tags: string[];
+  created_at: string;
+}
+
+export interface NewBook {
+  title: string;
+  author?: string | null;
+  cover_image?: string | null;
+  status: BookStatus;
+  finished_date?: string | null;
+  notes?: string | null;
   tags?: string[];
 }
 

@@ -19,6 +19,15 @@ const TAG_COLORS = [
   '#4ADE80', '#F87171', '#E879F9', '#38BDF8',
 ];
 
+type JournalEntryRow = { id: number; date: string; type: string; items: string; created_at: string; updated_at: string };
+type WeeklyChecklistRow = { id: number; week_key: string; text: string; is_done: number; position: number; created_at: string };
+type VocabWordRow = { id: number; word: string; ipa: string; meaning: string; meaning_en: string; part_of_speech: string; position: number; created_at: string };
+type QuoteRow = { id: number; text: string; author: string | null; language: string; is_favorite: number; created_at: string };
+type QuoteTagRow = { quote_id: number; tag: string };
+type BookRow = { id: number; title: string; author: string | null; cover_image: string | null; status: string; finished_date: string | null; notes: string | null; created_at: string };
+type BookTagRow = { book_id: number; tag: string };
+type BookGoalRow = { year: number; goal: number };
+
 const DEFAULT_CATEGORY_COLORS: CategoryColors = {
   work:         '#7DD3FC',
   personal:     '#86EFAC',
@@ -1324,6 +1333,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     let tags: Tag[];
     let taskTagPairs: Array<{ task_id: number; tag_id: number }>;
     let timeEntries: TaskTimeEntry[];
+    let journalEntries: JournalEntryRow[];
+    let weeklyChecklist: WeeklyChecklistRow[];
+    let vocabWords: VocabWordRow[];
+    let quotes: QuoteRow[];
+    let quoteTags: QuoteTagRow[];
+    let books: BookRow[];
+    let bookTags: BookTagRow[];
+    let bookReadingGoals: BookGoalRow[];
 
     if (!isTauri()) {
       tasks = [...mockTasks];
@@ -1336,6 +1353,15 @@ export const useAppStore = create<AppState>((set, get) => ({
         tagIds.map((tagId) => ({ task_id: Number(taskId), tag_id: tagId }))
       );
       timeEntries = [...mockTimeEntries];
+      // Journal/Vocab/Quotes/Books have no mock-mode store — nothing to export in browser dev mode.
+      journalEntries = [];
+      weeklyChecklist = [];
+      vocabWords = [];
+      quotes = [];
+      quoteTags = [];
+      books = [];
+      bookTags = [];
+      bookReadingGoals = [];
     } else {
       const db = await getDb();
       tasks = await db.select<Task[]>('SELECT * FROM tasks ORDER BY date ASC, created_at ASC');
@@ -1349,9 +1375,22 @@ export const useAppStore = create<AppState>((set, get) => ({
       tags = await db.select<Tag[]>('SELECT * FROM tags ORDER BY created_at ASC');
       taskTagPairs = await db.select<Array<{ task_id: number; tag_id: number }>>('SELECT task_id, tag_id FROM task_tags');
       timeEntries = await db.select<TaskTimeEntry[]>('SELECT * FROM task_time_entries ORDER BY task_id, date');
+      journalEntries = await db.select<JournalEntryRow[]>('SELECT * FROM journal_entries ORDER BY id ASC');
+      weeklyChecklist = await db.select<WeeklyChecklistRow[]>('SELECT * FROM weekly_checklist ORDER BY id ASC');
+      vocabWords = await db.select<VocabWordRow[]>('SELECT * FROM vocab_words ORDER BY id ASC');
+      quotes = await db.select<QuoteRow[]>('SELECT * FROM quotes ORDER BY id ASC');
+      quoteTags = await db.select<QuoteTagRow[]>('SELECT quote_id, tag FROM quote_tags');
+      books = await db.select<BookRow[]>('SELECT * FROM books ORDER BY id ASC');
+      bookTags = await db.select<BookTagRow[]>('SELECT book_id, tag FROM book_tags');
+      bookReadingGoals = await db.select<BookGoalRow[]>('SELECT year, goal FROM book_reading_goals ORDER BY year ASC');
     }
 
-    const payload = { version: '1.2', exportedAt: new Date().toISOString(), tasks, goals, checklistItems, categoryColors, tags, taskTags: taskTagPairs, timeEntries };
+    const payload = {
+      version: '2.0',
+      exportedAt: new Date().toISOString(),
+      tasks, goals, checklistItems, categoryColors, tags, taskTags: taskTagPairs, timeEntries,
+      journalEntries, weeklyChecklist, vocabWords, quotes, quoteTags, books, bookTags, bookReadingGoals,
+    };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1365,7 +1404,13 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   importAllData: async (file: File) => {
     const text = await file.text();
-    let data: { tasks?: Task[]; goals?: Goal[]; checklistItems?: GoalChecklistItem[]; categoryColors?: CategoryColors; tags?: Tag[]; taskTags?: Array<{ task_id: number; tag_id: number }>; timeEntries?: TaskTimeEntry[] };
+    let data: {
+      tasks?: Task[]; goals?: Goal[]; checklistItems?: GoalChecklistItem[]; categoryColors?: CategoryColors;
+      tags?: Tag[]; taskTags?: Array<{ task_id: number; tag_id: number }>; timeEntries?: TaskTimeEntry[];
+      journalEntries?: JournalEntryRow[]; weeklyChecklist?: WeeklyChecklistRow[]; vocabWords?: VocabWordRow[];
+      quotes?: QuoteRow[]; quoteTags?: QuoteTagRow[];
+      books?: BookRow[]; bookTags?: BookTagRow[]; bookReadingGoals?: BookGoalRow[];
+    };
     try {
       data = JSON.parse(text);
     } catch {
@@ -1408,10 +1453,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       for (const t of data.tasks) {
         await db.execute(
-          `INSERT INTO tasks (id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+          `INSERT INTO tasks (id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
           [t.id, t.title, t.description ?? null, t.category, t.date, t.is_done, t.repeat_daily ?? 0,
-           t.series_id ?? null, t.repeat_end_date ?? null, t.created_at]
+           t.series_id ?? null, t.repeat_end_date ?? null, t.created_at, t.color ?? null]
         );
       }
       for (const g of data.goals) {
@@ -1451,6 +1496,81 @@ export const useAppStore = create<AppState>((set, get) => ({
             'INSERT OR IGNORE INTO task_time_entries (task_id, date, start_time, end_time) VALUES ($1, $2, $3, $4)',
             [te.task_id, te.date, te.start_time, te.end_time]
           );
+        }
+      }
+
+      // Journal/Weekly checklist/Vocab/Quotes/Books: only wipe+restore when the backup
+      // actually has that section, so importing an older backup (made before these
+      // features existed) leaves the current data for them untouched instead of erasing it.
+      if (Array.isArray(data.journalEntries)) {
+        await db.execute('DELETE FROM journal_entries');
+        for (const j of data.journalEntries) {
+          await db.execute(
+            'INSERT INTO journal_entries (id, date, type, items, created_at, updated_at) VALUES ($1,$2,$3,$4,$5,$6)',
+            [j.id, j.date, j.type, j.items, j.created_at, j.updated_at]
+          );
+        }
+      }
+
+      if (Array.isArray(data.weeklyChecklist)) {
+        await db.execute('DELETE FROM weekly_checklist');
+        for (const w of data.weeklyChecklist) {
+          await db.execute(
+            'INSERT INTO weekly_checklist (id, week_key, text, is_done, position, created_at) VALUES ($1,$2,$3,$4,$5,$6)',
+            [w.id, w.week_key, w.text, w.is_done, w.position, w.created_at]
+          );
+        }
+      }
+
+      if (Array.isArray(data.vocabWords)) {
+        await db.execute('DELETE FROM vocab_words');
+        for (const v of data.vocabWords) {
+          await db.execute(
+            'INSERT INTO vocab_words (id, word, ipa, meaning, meaning_en, part_of_speech, position, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+            [v.id, v.word, v.ipa, v.meaning, v.meaning_en, v.part_of_speech, v.position, v.created_at]
+          );
+        }
+      }
+
+      if (Array.isArray(data.quotes)) {
+        await db.execute('DELETE FROM quote_tags');
+        await db.execute('DELETE FROM quotes');
+        for (const q of data.quotes) {
+          await db.execute(
+            'INSERT INTO quotes (id, text, author, language, is_favorite, created_at) VALUES ($1,$2,$3,$4,$5,$6)',
+            [q.id, q.text, q.author ?? null, q.language, q.is_favorite, q.created_at]
+          );
+        }
+        if (Array.isArray(data.quoteTags)) {
+          for (const qt of data.quoteTags) {
+            await db.execute('INSERT OR IGNORE INTO quote_tags (quote_id, tag) VALUES ($1, $2)', [qt.quote_id, qt.tag]);
+          }
+        }
+      }
+
+      if (Array.isArray(data.books)) {
+        await db.execute('DELETE FROM book_tags');
+        await db.execute('DELETE FROM books');
+        await db.execute('DELETE FROM book_reading_goals');
+        for (const b of data.books) {
+          await db.execute(
+            'INSERT INTO books (id, title, author, cover_image, status, finished_date, notes, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+            [b.id, b.title, b.author ?? null, b.cover_image ?? null, b.status, b.finished_date ?? null, b.notes ?? null, b.created_at]
+          );
+        }
+        if (Array.isArray(data.bookTags)) {
+          for (const bt of data.bookTags) {
+            await db.execute('INSERT OR IGNORE INTO book_tags (book_id, tag) VALUES ($1, $2)', [bt.book_id, bt.tag]);
+          }
+        }
+        if (Array.isArray(data.bookReadingGoals)) {
+          for (const g of data.bookReadingGoals) {
+            await db.execute(
+              `INSERT INTO book_reading_goals (year, goal) VALUES ($1, $2)
+               ON CONFLICT(year) DO UPDATE SET goal = excluded.goal`,
+              [g.year, g.goal]
+            );
+          }
         }
       }
     }

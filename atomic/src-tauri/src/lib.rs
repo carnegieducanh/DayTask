@@ -277,6 +277,31 @@ pub fn run() {
             CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_series_date ON tasks (series_id, date);",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 18,
+            description: "create_books_tables",
+            sql: "CREATE TABLE IF NOT EXISTS books (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                title         TEXT NOT NULL,
+                author        TEXT DEFAULT NULL,
+                cover_image   TEXT DEFAULT NULL,
+                status        TEXT NOT NULL CHECK(status IN ('reading','finished','want_to_read')) DEFAULT 'finished',
+                finished_date TEXT DEFAULT NULL,
+                notes         TEXT DEFAULT NULL,
+                created_at    TEXT DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS book_tags (
+                book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+                tag     TEXT NOT NULL,
+                PRIMARY KEY (book_id, tag)
+            );
+            CREATE TABLE IF NOT EXISTS book_reading_goals (
+                year INTEGER PRIMARY KEY,
+                goal INTEGER NOT NULL
+            );
+            PRAGMA foreign_keys = ON;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]
