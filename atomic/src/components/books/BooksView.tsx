@@ -77,9 +77,13 @@ function sortBooks(list: Book[], sortBy: SortBy): Book[] {
 
 // ── BookCard ─────────────────────────────────────────────────────────────────
 
-function BookCard({ book, onEdit, onDelete }: { book: Book; onEdit: () => void; onDelete: () => void }) {
+function BookCard({
+  book, onView, onEdit, onDelete,
+}: {
+  book: Book; onView: () => void; onEdit: () => void; onDelete: () => void;
+}) {
   return (
-    <div className="books-card">
+    <div className="books-card" onClick={onView}>
       <div className="books-card-cover">
         {book.cover_image ? (
           <img src={book.cover_image} alt={book.title} />
@@ -89,10 +93,10 @@ function BookCard({ book, onEdit, onDelete }: { book: Book; onEdit: () => void; 
           </div>
         )}
         <div className="books-card-actions">
-          <button className="books-card-action-btn" onClick={onEdit}>
+          <button className="books-card-action-btn" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
             <IconPencil size={13} />
           </button>
-          <button className="books-card-action-btn danger" onClick={onDelete}>
+          <button className="books-card-action-btn danger" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
             <IconTrash size={13} />
           </button>
         </div>
@@ -106,6 +110,167 @@ function BookCard({ book, onEdit, onDelete }: { book: Book; onEdit: () => void; 
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── BookDetailModal ──────────────────────────────────────────────────────────
+
+function formatISODate(iso: string): string {
+  const [y, m, d] = iso.split(/[- ]/);
+  return `${d}/${m}/${y}`;
+}
+
+const STATUS_ICON: Record<BookStatus, React.ReactNode> = {
+  reading: <IconBook2 size={13} />,
+  finished: <IconCheck size={13} />,
+  want_to_read: <IconBookmark size={13} />,
+};
+
+interface BookDetailModalProps {
+  book: Book;
+  onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onStatusChange: (status: BookStatus) => void;
+}
+
+function BookDetailModal({ book, onClose, onEdit, onDelete, onStatusChange }: BookDetailModalProps) {
+  const t = useT();
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!statusMenuOpen) return;
+    function handler(e: MouseEvent) {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+        setStatusMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [statusMenuOpen]);
+
+  const statusLabel = {
+    reading: t.books.statusReading,
+    finished: t.books.statusFinished,
+    want_to_read: t.books.statusWantToRead,
+  }[book.status];
+
+  const statusOptions: { id: BookStatus; label: string }[] = [
+    { id: 'reading', label: t.books.statusReading },
+    { id: 'finished', label: t.books.statusFinished },
+    { id: 'want_to_read', label: t.books.statusWantToRead },
+  ];
+
+  function handleStatusPick(next: BookStatus) {
+    setStatusMenuOpen(false);
+    if (next !== book.status) onStatusChange(next);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Escape') {
+      if (statusMenuOpen) setStatusMenuOpen(false);
+      else onClose();
+    }
+  }
+
+  return (
+    <div
+      className="books-modal-overlay"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onKeyDown={handleKeyDown}
+    >
+      <div className="books-detail-modal">
+        <button ref={closeRef} className="books-detail-close" onClick={onClose}>
+          <IconX size={16} />
+        </button>
+
+        <div className="books-detail-body">
+          <div className="books-detail-cover">
+            {book.cover_image ? (
+              <img src={book.cover_image} alt={book.title} />
+            ) : (
+              <div className="books-card-cover-placeholder">
+                <IconBooks size={40} />
+              </div>
+            )}
+          </div>
+
+          <div className="books-detail-info">
+            <div className="books-detail-title">{book.title}</div>
+            {book.author && <div className="books-detail-author">{book.author}</div>}
+
+            <div className="books-detail-badges">
+              <div className="books-detail-status-dropdown" ref={statusMenuRef}>
+                <button
+                  type="button"
+                  className={`books-detail-status-badge status-${book.status}${statusMenuOpen ? ' open' : ''}`}
+                  onClick={() => setStatusMenuOpen((v) => !v)}
+                >
+                  {STATUS_ICON[book.status]}
+                  {statusLabel}
+                  <IconChevronDown size={12} className={`books-detail-status-chevron${statusMenuOpen ? ' open' : ''}`} />
+                </button>
+                {statusMenuOpen && (
+                  <div className="books-detail-status-menu">
+                    {statusOptions.map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        className={`books-detail-status-option${opt.id === book.status ? ' active' : ''}`}
+                        onClick={() => handleStatusPick(opt.id)}
+                      >
+                        {STATUS_ICON[opt.id]}
+                        {opt.label}
+                        {opt.id === book.status && <IconCheck size={12} className="books-detail-status-check" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {book.status === 'finished' && book.finished_date && (
+                <span className="books-detail-date">{formatISODate(book.finished_date)}</span>
+              )}
+            </div>
+
+            {book.tags.length > 0 && (
+              <div className="books-detail-tags">
+                {book.tags.map((tag) => (
+                  <span key={tag} className="books-tag-chip-sm">{tag}</span>
+                ))}
+              </div>
+            )}
+
+            {book.notes && <div className="books-detail-notes">{book.notes}</div>}
+
+            <div className="books-detail-meta">
+              {t.books.addedOn(formatISODate(book.created_at.split(' ')[0]))}
+            </div>
+          </div>
+        </div>
+
+        <div className="books-modal-footer books-detail-footer">
+          <div className="books-modal-footer-group">
+            <button className="books-modal-btn-cancel books-detail-delete" onClick={onDelete}>
+              {t.books.delete}
+              <IconTrash size={13} />
+            </button>
+            <button className="books-modal-btn-cancel" onClick={onEdit}>
+              {t.books.edit}
+              <IconPencil size={13} />
+            </button>
+          </div>
+          <button className="books-modal-btn-save" onClick={onClose}>
+            {t.books.done}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -125,7 +290,7 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
   const [title, setTitle] = useState(initialBook?.title ?? '');
   const [author, setAuthor] = useState(initialBook?.author ?? '');
   const [coverImage, setCoverImage] = useState<string | null>(initialBook?.cover_image ?? null);
-  const [status, setStatus] = useState<BookStatus>(initialBook?.status ?? 'finished');
+  const [status, setStatus] = useState<BookStatus>(initialBook?.status ?? 'want_to_read');
   const [finishedDate, setFinishedDate] = useState(
     initialBook?.finished_date ?? format(new Date(), 'yyyy-MM-dd')
   );
@@ -297,27 +462,32 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
             </div>
           </div>
 
-          <label className="books-modal-label">{t.books.titleLabel}</label>
-          <input
-            ref={titleRef}
-            className="books-modal-input"
-            placeholder={t.books.titlePlaceholder}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            spellCheck={false}
-          />
-
-          <label className="books-modal-label">{t.books.authorLabel}</label>
-          <input
-            className="books-modal-input"
-            placeholder={t.books.authorPlaceholder}
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            spellCheck={false}
-          />
+          <div className="books-modal-row">
+            <div className="books-modal-col">
+              <label className="books-modal-label">{t.books.titleLabel}</label>
+              <input
+                ref={titleRef}
+                className="books-modal-input"
+                placeholder={t.books.titlePlaceholder}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                spellCheck={false}
+              />
+            </div>
+            <div className="books-modal-col">
+              <label className="books-modal-label">{t.books.authorLabel}</label>
+              <input
+                className="books-modal-input"
+                placeholder={t.books.authorPlaceholder}
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                spellCheck={false}
+              />
+            </div>
+          </div>
 
           <div className="books-modal-row">
-            <div style={{ flex: 1 }}>
+            <div className="books-modal-col">
               <label className="books-modal-label">{t.books.statusLabel}</label>
               <div className="books-status-toggle">
                 {(
@@ -338,19 +508,19 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
                 ))}
               </div>
             </div>
-          </div>
 
-          {status === 'finished' && (
-            <>
-              <label className="books-modal-label">{t.books.finishedDateLabel}</label>
-              <input
-                type="date"
-                className="books-modal-input"
-                value={finishedDate}
-                onChange={(e) => setFinishedDate(e.target.value)}
-              />
-            </>
-          )}
+            {status === 'finished' && (
+              <div className="books-modal-col">
+                <label className="books-modal-label">{t.books.finishedDateLabel}</label>
+                <input
+                  type="date"
+                  className="books-modal-input"
+                  value={finishedDate}
+                  onChange={(e) => setFinishedDate(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
 
           <label className="books-modal-label">{t.books.tagsLabel}</label>
           <div className="tag-dropdown" ref={tagDropRef}>
@@ -487,7 +657,7 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
             placeholder={t.books.notesPlaceholder}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            rows={3}
+            rows={2}
             spellCheck={false}
           />
         </div>
@@ -524,6 +694,7 @@ export default function BooksView() {
   const [stats, setStats] = useState({ total: 0, reading: 0, wantToRead: 0 });
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
+  const [viewingBook, setViewingBook] = useState<Book | null>(null);
   const [pendingDeleteBook, setPendingDeleteBook] = useState<Book | null>(null);
   const [pendingDeleteBookTag, setPendingDeleteBookTag] = useState<{ name: string; undo: () => void } | null>(null);
   const [readingGoal, setReadingGoal] = useState<number | null>(null);
@@ -643,6 +814,21 @@ export default function BooksView() {
     if (!editingBook) return;
     await dbUpdateBook(editingBook.id, data);
     setEditingBook(null);
+    await refreshAll();
+  }
+
+  async function handleQuickStatusChange(book: Book, status: BookStatus) {
+    const finished_date = status === 'finished' ? book.finished_date ?? format(new Date(), 'yyyy-MM-dd') : null;
+    await dbUpdateBook(book.id, {
+      title: book.title,
+      author: book.author,
+      cover_image: book.cover_image,
+      status,
+      finished_date,
+      notes: book.notes,
+      tags: book.tags,
+    });
+    setViewingBook((prev) => (prev && prev.id === book.id ? { ...prev, status, finished_date } : prev));
     await refreshAll();
   }
 
@@ -895,6 +1081,7 @@ export default function BooksView() {
                   <BookCard
                     key={book.id}
                     book={book}
+                    onView={() => setViewingBook(book)}
                     onEdit={() => setEditingBook(book)}
                     onDelete={() => handleDelete(book)}
                   />
@@ -908,6 +1095,7 @@ export default function BooksView() {
               <BookCard
                 key={book.id}
                 book={book}
+                onView={() => setViewingBook(book)}
                 onEdit={() => setEditingBook(book)}
                 onDelete={() => handleDelete(book)}
               />
@@ -926,6 +1114,16 @@ export default function BooksView() {
           onClose={() => setEditingBook(null)}
           initialBook={editingBook}
           onTagDeleted={handleTagDeleted}
+        />
+      )}
+
+      {viewingBook && (
+        <BookDetailModal
+          book={viewingBook}
+          onClose={() => setViewingBook(null)}
+          onEdit={() => { setEditingBook(viewingBook); setViewingBook(null); }}
+          onDelete={() => { handleDelete(viewingBook); setViewingBook(null); }}
+          onStatusChange={(status) => handleQuickStatusChange(viewingBook, status)}
         />
       )}
 

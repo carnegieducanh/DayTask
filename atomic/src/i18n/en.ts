@@ -445,6 +445,7 @@ export const en: typeof vi = {
     emptySearch: "No books found",
     edit: "Edit",
     delete: "Delete",
+    done: "Done",
     deleted: (title: string) => `Deleted "${title.length > 40 ? title.slice(0, 40) + "…" : title}"`,
     undo: "Undo",
     modalAddTitle: "Add new book",
@@ -468,6 +469,7 @@ export const en: typeof vi = {
     save: "Add book",
     editSave: "Save changes",
     cancel: "Cancel",
+    addedOn: (date: string) => `Added to library: ${date}`,
   },
   reminder: {
     title: "Reminder",

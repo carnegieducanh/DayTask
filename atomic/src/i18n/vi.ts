@@ -421,6 +421,7 @@ export const vi = {
     emptySearch: "Không tìm thấy sách nào",
     edit: "Sửa",
     delete: "Xóa",
+    done: "Xong",
     deleted: (title: string) => `Đã xóa "${title.length > 40 ? title.slice(0, 40) + '…' : title}"`,
     undo: "Hoàn tác",
     modalAddTitle: "Thêm sách mới",
@@ -444,6 +445,7 @@ export const vi = {
     save: "Thêm sách",
     editSave: "Lưu thay đổi",
     cancel: "Hủy",
+    addedOn: (date: string) => `Thêm vào tủ sách: ${date}`,
   },
   reminder: {
     title: "Nhắc nhở",
