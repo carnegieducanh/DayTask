@@ -9274,21 +9274,22 @@ select {
 }
 
 /* Page-block sticking out from the right edge — gives the cover a sense
-   of physical thickness (pages), tucked behind the front cover artwork. */
+   of physical thickness (pages), tucked behind the front cover artwork.
+   A single, muted gradient (darker near the spine, lighter towards the
+   outer edge) reads as a solid paper block. Kept as a plain rectangle —
+   clip-path would desync from box-shadow (shadow always follows the
+   un-clipped border box), which is what made the previous version look
+   broken. */
 .books-card-cover::after {
   content: "";
   position: absolute;
   z-index: -1;
-  top: 3%;
-  right: -5px;
-  width: 7px;
-  height: 94%;
+  top: 2%;
+  right: -6px;
+  width: 8px;
+  height: 96%;
   border-radius: 0 3px 3px 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    #efe9da 0px, #efe9da 2px,
-    #d9d2c0 2px, #d9d2c0 3px
-  );
+  background: linear-gradient(to right, #beb49b 0%, #e9e2d2 55%, #e9e2d2 100%);
   box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.35);
 }
 
@@ -9317,25 +9318,31 @@ select {
 }
 
 /* A black drop-shadow is invisible on a near-black page background — on
-   dark theme, depth has to come from a light edge ring + a faint upward
-   glow instead of a literal cast shadow. */
+   dark theme, depth has to come from multi-layer shadows at much higher
+   alpha (contact + diffuse) plus a light rim on the top/left edges where
+   a real light source would catch the cover, since darkness alone can't
+   separate the block from an already-dark background. */
 [data-theme="dark"] .books-card-cover-inner {
   border-color: rgba(255, 255, 255, 0.16);
   box-shadow:
     inset 2px 0 0 rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
     inset -6px 0 10px -6px rgba(0, 0, 0, 0.7),
     0 0 0 1px rgba(255, 255, 255, 0.14),
-    0 10px 22px rgba(0, 0, 0, 0.65),
-    0 2px 8px rgba(255, 255, 255, 0.05);
+    0 4px 8px rgba(0, 0, 0, 0.5),
+    0 14px 22px -8px rgba(0, 0, 0, 0.7),
+    0 16px 28px -6px var(--book-glow, transparent);
 }
 [data-theme="dark"] .books-card:hover .books-card-cover-inner {
   border-color: rgba(255, 255, 255, 0.22);
   box-shadow:
     inset 2px 0 0 rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
     inset -6px 0 10px -6px rgba(0, 0, 0, 0.7),
     0 0 0 1px rgba(255, 255, 255, 0.22),
-    0 18px 36px rgba(0, 0, 0, 0.7),
-    0 4px 14px rgba(255, 255, 255, 0.08);
+    0 6px 12px rgba(0, 0, 0, 0.55),
+    0 22px 34px -10px rgba(0, 0, 0, 0.75),
+    0 22px 36px -6px var(--book-glow, transparent);
 }
 
 .books-card-cover img {
@@ -9841,16 +9848,12 @@ select {
   content: "";
   position: absolute;
   z-index: -1;
-  top: 3%;
-  right: -7px;
-  width: 9px;
-  height: 94%;
-  border-radius: 0 3px 3px 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    #efe9da 0px, #efe9da 2px,
-    #d9d2c0 2px, #d9d2c0 3px
-  );
+  top: 2%;
+  right: -9px;
+  width: 11px;
+  height: 96%;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(to right, #beb49b 0%, #e9e2d2 55%, #e9e2d2 100%);
   box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.35);
 }
 
@@ -9872,10 +9875,12 @@ select {
   border-color: rgba(255, 255, 255, 0.16);
   box-shadow:
     inset 3px 0 0 rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
     inset -8px 0 14px -8px rgba(0, 0, 0, 0.7),
     0 0 0 1px rgba(255, 255, 255, 0.14),
-    0 12px 26px rgba(0, 0, 0, 0.65),
-    0 2px 8px rgba(255, 255, 255, 0.05);
+    0 5px 10px rgba(0, 0, 0, 0.5),
+    0 18px 28px -10px rgba(0, 0, 0, 0.7),
+    0 20px 34px -6px var(--book-glow, transparent);
 }
 .books-detail-cover img {
   width: 100%;

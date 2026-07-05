@@ -67,6 +67,59 @@ function compressCoverImage(file: File): Promise<string> {
   });
 }
 
+const coverColorCache = new Map<string, string | null>();
+
+function getAverageCoverColor(dataUrl: string): Promise<string | null> {
+  const cached = coverColorCache.get(dataUrl);
+  if (cached !== undefined) return Promise.resolve(cached);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onerror = () => { coverColorCache.set(dataUrl, null); resolve(null); };
+    img.onload = () => {
+      const size = 8;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { coverColorCache.set(dataUrl, null); resolve(null); return; }
+      ctx.drawImage(img, 0, 0, size, size);
+      let r = 0, g = 0, b = 0, count = 0;
+      try {
+        const data = ctx.getImageData(0, 0, size, size).data;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          count++;
+        }
+      } catch {
+        coverColorCache.set(dataUrl, null);
+        resolve(null);
+        return;
+      }
+      const color = count > 0 ? `${Math.round(r / count)}, ${Math.round(g / count)}, ${Math.round(b / count)}` : null;
+      coverColorCache.set(dataUrl, color);
+      resolve(color);
+    };
+    img.src = dataUrl;
+  });
+}
+
+function useCoverGlow(coverImage: string | null | undefined): React.CSSProperties {
+  const [glow, setGlow] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!coverImage) { setGlow(null); return; }
+    let cancelled = false;
+    getAverageCoverColor(coverImage).then((color) => {
+      if (!cancelled) setGlow(color);
+    });
+    return () => { cancelled = true; };
+  }, [coverImage]);
+
+  return glow ? ({ '--book-glow': `rgba(${glow}, 0.4)` } as React.CSSProperties) : {};
+}
+
 function sortBooks(list: Book[], sortBy: SortBy): Book[] {
   const arr = [...list];
   if (sortBy === 'title') arr.sort((a, b) => a.title.localeCompare(b.title));
@@ -82,9 +135,10 @@ function BookCard({
 }: {
   book: Book; onView: () => void; onEdit: () => void; onDelete: () => void;
 }) {
+  const glowStyle = useCoverGlow(book.cover_image);
   return (
     <div className="books-card" onClick={onView}>
-      <div className="books-card-cover">
+      <div className="books-card-cover" style={glowStyle}>
         <div className="books-card-cover-inner">
           {book.cover_image ? (
             <img src={book.cover_image} alt={book.title} />
@@ -142,6 +196,7 @@ function BookDetailModal({ book, onClose, onEdit, onDelete, onStatusChange }: Bo
   const closeRef = useRef<HTMLButtonElement>(null);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const statusMenuRef = useRef<HTMLDivElement>(null);
+  const glowStyle = useCoverGlow(book.cover_image);
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -194,7 +249,7 @@ function BookDetailModal({ book, onClose, onEdit, onDelete, onStatusChange }: Bo
         </button>
 
         <div className="books-detail-body">
-          <div className="books-detail-cover">
+          <div className="books-detail-cover" style={glowStyle}>
             <div className="books-detail-cover-inner">
               {book.cover_image ? (
                 <img src={book.cover_image} alt={book.title} />
