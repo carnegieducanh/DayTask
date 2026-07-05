@@ -302,6 +302,15 @@ pub fn run() {
             PRAGMA foreign_keys = ON;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 19,
+            description: "create_book_tag_pool",
+            sql: "CREATE TABLE IF NOT EXISTS book_tag_pool (
+                tag TEXT PRIMARY KEY
+            );
+            INSERT OR IGNORE INTO book_tag_pool (tag) SELECT DISTINCT tag FROM book_tags;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

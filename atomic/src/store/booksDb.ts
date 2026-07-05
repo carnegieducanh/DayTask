@@ -106,6 +106,7 @@ export async function dbAddBook(data: NewBook): Promise<Book | null> {
         'INSERT OR IGNORE INTO book_tags (book_id, tag) VALUES ($1, $2)',
         [id, t]
       );
+      await db.execute('INSERT OR IGNORE INTO book_tag_pool (tag) VALUES ($1)', [t]);
     }
   }
   const rows = await db.select<BookRow[]>('SELECT * FROM books WHERE id = $1', [id]);
@@ -136,6 +137,7 @@ export async function dbUpdateBook(id: number, data: NewBook): Promise<void> {
         'INSERT OR IGNORE INTO book_tags (book_id, tag) VALUES ($1, $2)',
         [id, t]
       );
+      await db.execute('INSERT OR IGNORE INTO book_tag_pool (tag) VALUES ($1)', [t]);
     }
   }
 }
@@ -180,9 +182,15 @@ export async function dbGetAllBookTagNames(): Promise<string[]> {
   if (!isTauri()) return [];
   const db = await getDb();
   const rows = await db.select<{ tag: string }[]>(
-    'SELECT DISTINCT tag FROM book_tags ORDER BY tag'
+    'SELECT tag FROM book_tag_pool ORDER BY tag'
   );
   return rows.map((r) => r.tag);
+}
+
+export async function dbCreateBookTag(name: string): Promise<void> {
+  if (!isTauri()) return;
+  const db = await getDb();
+  await db.execute('INSERT OR IGNORE INTO book_tag_pool (tag) VALUES ($1)', [name]);
 }
 
 export async function dbGetTagCounts(): Promise<{ tag: string; count: number }[]> {
@@ -197,12 +205,15 @@ export async function dbRenameBookTag(oldName: string, newName: string): Promise
   if (!isTauri()) return;
   const db = await getDb();
   await db.execute('UPDATE book_tags SET tag = $1 WHERE tag = $2', [newName, oldName]);
+  await db.execute('INSERT OR IGNORE INTO book_tag_pool (tag) VALUES ($1)', [newName]);
+  await db.execute('DELETE FROM book_tag_pool WHERE tag = $1', [oldName]);
 }
 
 export async function dbDeleteBookTag(name: string): Promise<void> {
   if (!isTauri()) return;
   const db = await getDb();
   await db.execute('DELETE FROM book_tags WHERE tag = $1', [name]);
+  await db.execute('DELETE FROM book_tag_pool WHERE tag = $1', [name]);
 }
 
 export async function dbGetReadingGoal(year: number): Promise<number | null> {

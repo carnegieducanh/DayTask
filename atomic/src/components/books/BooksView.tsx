@@ -11,6 +11,7 @@ import {
   IconPencil,
   IconX,
   IconCheck,
+  IconCircleCheck,
   IconSearch,
   IconTag,
   IconChevronDown,
@@ -27,6 +28,7 @@ import {
   dbGetYearsWithCounts,
   dbGetBookStats,
   dbGetAllBookTagNames,
+  dbCreateBookTag,
   dbGetTagCounts,
   dbRenameBookTag,
   dbDeleteBookTag,
@@ -179,7 +181,7 @@ function formatISODate(iso: string): string {
 
 const STATUS_ICON: Record<BookStatus, React.ReactNode> = {
   reading: <IconBook2 size={13} />,
-  finished: <IconCheck size={13} />,
+  finished: <IconCircleCheck size={13} />,
   want_to_read: <IconBookmark size={13} />,
 };
 
@@ -409,7 +411,10 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
   function handleCreateTag() {
     const name = newTagInput.trim();
     if (!name) return;
-    if (!allTags.includes(name)) setAllTags((prev) => [...prev, name].sort());
+    if (!allTags.includes(name)) {
+      setAllTags((prev) => [...prev, name].sort());
+      dbCreateBookTag(name);
+    }
     if (!tags.includes(name)) setTags((prev) => [...prev, name]);
     setNewTagInput('');
     setShowNewTagInput(false);
