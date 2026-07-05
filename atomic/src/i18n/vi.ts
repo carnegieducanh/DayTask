@@ -454,5 +454,6 @@ export const vi = {
     hasTasks: (n: number) => `Bạn có ${n} việc cần hoàn thành hôm nay.`,
     noTasksDay: "Không có task nào trong ngày này.",
     hasTasksDay: (n: number) => `Ngày này có ${n} việc cần hoàn thành.`,
+    backToToday: "Quay về hôm nay",
   },
 };

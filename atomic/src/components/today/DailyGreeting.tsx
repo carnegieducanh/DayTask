@@ -21,6 +21,7 @@ interface Props {
 export default function DailyGreeting({ pendingCount, isToday }: Props) {
   const t = useT();
   const language = useAppStore((s) => s.language);
+  const setSelectedDate = useAppStore((s) => s.setSelectedDate);
   const [visible, setVisible] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
   const period = getPeriod(new Date().getHours());
@@ -93,8 +94,17 @@ export default function DailyGreeting({ pendingCount, isToday }: Props) {
     ? pendingCount === 0 ? t.greeting.noTasks : t.greeting.hasTasks(pendingCount)
     : pendingCount === 0 ? t.greeting.noTasksDay : t.greeting.hasTasksDay(pendingCount);
 
+  function handleClick() {
+    if (isToday) return;
+    setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
+  }
+
   return (
-    <div className={`daily-greeting${visible ? ' daily-greeting--visible' : ''}`}>
+    <div
+      className={`daily-greeting${visible ? ' daily-greeting--visible' : ''}${isToday ? '' : ' daily-greeting--clickable'}`}
+      onClick={handleClick}
+      title={isToday ? undefined : t.greeting.backToToday}
+    >
       <div className="daily-greeting-main" ref={mainRef}>{message}</div>
       {taskText && <div className="daily-greeting-sub">{taskText}</div>}
     </div>

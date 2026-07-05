@@ -5,22 +5,40 @@ import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
 import type { Quote } from '../../types';
 
+// Module-level cache: TodayView (and thus this component) unmounts/remounts
+// on every tab switch. Seeding state from this cache avoids the "flash of
+// nothing then pop-in" jank when returning to the Today tab, while the
+// background refetch below still keeps it in sync with real changes.
+let cachedHeroQuote: Quote | null = null;
+let hasCachedHeroQuote = false;
+
 export function TodayHeroQuote() {
-  const [quote, setQuote] = useState<Quote | null | undefined>(undefined);
+  const [quote, setQuote] = useState<Quote | null | undefined>(
+    hasCachedHeroQuote ? cachedHeroQuote : undefined
+  );
   const setActiveTab = useAppStore(s => s.setActiveTab);
   const t = useT();
 
   useEffect(() => {
     const localDate = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' });
     let lastLoadedDate = localDate();
-    dbGetHeroQuote(getHeroModeLS()).then(setQuote);
+
+    function loadQuote() {
+      dbGetHeroQuote(getHeroModeLS()).then((q) => {
+        cachedHeroQuote = q;
+        hasCachedHeroQuote = true;
+        setQuote(q);
+      });
+    }
+
+    loadQuote();
 
     function onVisibilityChange() {
       if (document.visibilityState !== 'visible') return;
       const today = localDate();
       if (today !== lastLoadedDate) {
         lastLoadedDate = today;
-        dbGetHeroQuote(getHeroModeLS()).then(setQuote);
+        loadQuote();
       }
     }
 

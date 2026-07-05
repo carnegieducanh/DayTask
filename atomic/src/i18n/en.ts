@@ -478,5 +478,6 @@ export const en: typeof vi = {
     hasTasks: (n: number) => `You have ${n} task${n === 1 ? "" : "s"} to complete today.`,
     noTasksDay: "No tasks for this day.",
     hasTasksDay: (n: number) => `This day has ${n} task${n === 1 ? "" : "s"} to complete.`,
+    backToToday: "Back to today",
   },
 };

@@ -613,6 +613,14 @@ select {
   transform: translateY(0);
 }
 
+.daily-greeting--clickable {
+  cursor: pointer;
+}
+
+.daily-greeting--clickable:hover .daily-greeting-main {
+  opacity: 0.75;
+}
+
 .daily-greeting-main {
   font-family: "Lora", Georgia, serif;
   font-weight: 300;
@@ -3871,6 +3879,7 @@ select {
 .settings-body {
   padding: 6px 0;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1 1 0;
   min-height: 0;
 }
@@ -3893,7 +3902,7 @@ select {
 /* General tab — 2-column grid */
 .settings-general-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .settings-section {
@@ -7033,6 +7042,7 @@ select {
 .settings-accent-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
