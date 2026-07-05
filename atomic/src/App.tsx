@@ -124,7 +124,7 @@ function App() {
   // sẽ tự scale theo. Layout px (column width, sidebar...) giữ nguyên.
   // Cách này không ảnh hưởng hệ tọa độ DOM, nên @dnd-kit đo BCR chính xác.
   useEffect(() => {
-    document.documentElement.style.fontSize = `${14 * uiScale}px`;
+    document.documentElement.style.fontSize = `${16 * uiScale}px`;
   }, [uiScale]);
 
   useEffect(() => {

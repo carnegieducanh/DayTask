@@ -134,10 +134,10 @@ body,
   overflow: hidden;
 }
 
-/* Base font-size: 15px. JS đặt html { font-size: 15px * uiScale } để scale.
+/* Base font-size: 16px. JS đặt html { font-size: 16px * uiScale } để scale.
    Tất cả font-size trong CSS dùng rem (relative to html). */
 html {
-  font-size: 15px;
+  font-size: 16px;
 }
 
 body {

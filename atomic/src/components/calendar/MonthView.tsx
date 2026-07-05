@@ -201,7 +201,7 @@ function MonthDayCell({
 
   const dateStr = format(date, 'yyyy-MM-dd');
   const dayTasks = tasks
-    .filter((task) => task.date === dateStr)
+    .filter((task) => task.date === dateStr && task.is_done)
     .sort((a, b) => {
       const ea = timeEntries.find((e) => e.task_id === a.id && e.date === dateStr);
       const eb = timeEntries.find((e) => e.task_id === b.id && e.date === dateStr);
