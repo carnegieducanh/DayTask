@@ -259,10 +259,10 @@ select {
 }
 
 .nav-item.active {
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: color-mix(in srgb, var(--primary) 16%, var(--bg-primary));
+  color: var(--primary);
   font-weight: 500;
-  border: 0.5px solid var(--border-1);
+  border: 0.5px solid color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 .nav-icon {
@@ -5797,7 +5797,9 @@ select {
   background: var(--bg-primary);
   /* padding: 10px 8px 12px; */
   padding: 10px 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 /* ── Calendar Day Sidebar — stats + vocab below MiniCalendar ── */

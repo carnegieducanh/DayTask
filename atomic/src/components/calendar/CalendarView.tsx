@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import {
   format,
@@ -21,6 +21,7 @@ import WeekView from "./WeekView";
 import MonthView from "./MonthView";
 import DayView from "./DayView";
 import CalendarFilterSidebar from "./CalendarFilterSidebar";
+import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import MiniCalendar from "../today/MiniCalendar";
 import VocabWidget from "../today/VocabWidget";
 import DayStatsSection from "./DayStatsSection";
@@ -121,6 +122,9 @@ export default function CalendarView() {
     setSelectedDate,
     setActiveTab,
   } = useAppStore();
+
+  const daySidebarRef = useRef<HTMLDivElement>(null);
+  useSmoothScroll(daySidebarRef);
 
   const [view, setView] = useState<CalViewType>("day");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -239,7 +243,7 @@ export default function CalendarView() {
       />
       <div className="cal-body">
         {view === "day" ? (
-          <div className="cal-day-sidebar">
+          <div className="cal-day-sidebar" ref={daySidebarRef}>
             <MiniCalendar />
             <div className="cal-day-sidebar-extras">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
