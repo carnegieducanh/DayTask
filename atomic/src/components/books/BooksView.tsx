@@ -580,29 +580,29 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
                 </button>
               )}
             </div>
+          </div>
 
-            <div className="books-modal-cover-fields">
-              <div className="books-modal-col">
-                <label className="books-modal-label">{t.books.titleLabel}</label>
-                <input
-                  ref={titleRef}
-                  className="books-modal-input"
-                  placeholder={t.books.titlePlaceholder}
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  spellCheck={false}
-                />
-              </div>
-              <div className="books-modal-col">
-                <label className="books-modal-label">{t.books.authorLabel}</label>
-                <input
-                  className="books-modal-input"
-                  placeholder={t.books.authorPlaceholder}
-                  value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
-                  spellCheck={false}
-                />
-              </div>
+          <div className="books-modal-row">
+            <div className="books-modal-col">
+              <label className="books-modal-label">{t.books.titleLabel}</label>
+              <input
+                ref={titleRef}
+                className="books-modal-input"
+                placeholder={t.books.titlePlaceholder}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                spellCheck={false}
+              />
+            </div>
+            <div className="books-modal-col">
+              <label className="books-modal-label">{t.books.authorLabel}</label>
+              <input
+                className="books-modal-input"
+                placeholder={t.books.authorPlaceholder}
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                spellCheck={false}
+              />
             </div>
           </div>
 
