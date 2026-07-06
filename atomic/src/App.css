@@ -9312,7 +9312,7 @@ select {
 
 .books-shelf-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 130px);
+  grid-template-columns: repeat(auto-fill, 112px);
   gap: 18px;
 }
 
@@ -9326,8 +9326,8 @@ select {
 
 .books-card-cover {
   position: relative;
-  width: 130px;
-  height: 196px;
+  width: 112px;
+  height: 169px;
   transition: transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .books-card:hover .books-card-cover {
