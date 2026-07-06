@@ -9305,19 +9305,24 @@ select {
   transform: translateY(-3px);
 }
 
-/* Page-block behind the cover — a full copy of the cover's box, nudged
-   down-right, so the page edges peek out along the right AND bottom sides
-   at once (matches how a real book's paper block sits behind its front
-   cover). A repeating-linear-gradient reads as individual page lines; kept
-   as a plain rounded rect (no clip-path) so the corner where the two
-   exposed edges meet stays a single continuous curve instead of a gap. */
+/* Page-block behind the cover, extending past the right and bottom edges
+   so the page edges peek out on both sides at once (matches how a real
+   book's paper block sits behind its front cover). Left edge stays flush
+   with the cover (spine side, no offset) — offsetting it too would leave
+   an uncovered notch at the bottom-left corner where neither box draws
+   anything. The bottom-left corner is still rounded like the others so
+   that corner reads as a peeking page edge (consistent with bottom-right)
+   instead of a flat notch. A repeating-linear-gradient reads as individual
+   page lines. */
 .books-card-cover::after {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 0;
-  transform: translate(6px, 6px);
-  border-radius: 1px 6px 6px 6px;
+  top: 6px;
+  left: 0;
+  right: -6px;
+  bottom: -6px;
+  border-radius: 0 6px 6px 6px;
   background:
     repeating-linear-gradient(100deg, #e9e2cc 0 1.4px, #d3cab0 1.4px 2.8px),
     linear-gradient(135deg, #efe9d8, #c2b896);
@@ -9891,9 +9896,11 @@ select {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 0;
-  transform: translate(8px, 8px);
-  border-radius: 2px 8px 8px 8px;
+  top: 8px;
+  left: 0;
+  right: -8px;
+  bottom: -8px;
+  border-radius: 0 8px 8px 8px;
   background:
     repeating-linear-gradient(100deg, #e9e2cc 0 1.8px, #d3cab0 1.8px 3.6px),
     linear-gradient(135deg, #efe9d8, #c2b896);
