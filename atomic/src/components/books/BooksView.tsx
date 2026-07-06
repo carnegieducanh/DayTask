@@ -971,14 +971,19 @@ export default function BooksView() {
     setPendingDeleteBook(null);
   }
 
+  async function commitTagDelete(name: string) {
+    await dbDeleteBookTag(name);
+    setPendingDeleteBookTag(null);
+    await loadTagCounts();
+  }
+
   function handleTagDeleted(name: string, undo: () => void) {
     if (tagDeleteTimerRef.current) clearTimeout(tagDeleteTimerRef.current);
+    if (pendingDeleteBookTag) commitTagDelete(pendingDeleteBookTag.name);
+
     setPendingDeleteBookTag({ name, undo });
-    tagDeleteTimerRef.current = setTimeout(async () => {
-      await dbDeleteBookTag(name);
-      setPendingDeleteBookTag(null);
-      tagDeleteTimerRef.current = null;
-      await loadTagCounts();
+    tagDeleteTimerRef.current = setTimeout(() => {
+      commitTagDelete(name);
     }, 4000);
   }
 

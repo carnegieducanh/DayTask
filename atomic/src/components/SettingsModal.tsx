@@ -236,6 +236,7 @@ export default function SettingsModal() {
     const word = vocabWords.find((w) => w.id === id);
     if (!word) return;
     if (deleteVTimerRef.current) clearTimeout(deleteVTimerRef.current);
+    if (pendingDeleteVocab) dbDeleteVocabWord(pendingDeleteVocab.id);
     setVocabWords((prev) => prev.filter((w) => w.id !== id));
     setPendingDeleteVocab(word);
   }

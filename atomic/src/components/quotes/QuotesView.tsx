@@ -514,13 +514,18 @@ export default function QuotesView() {
     await loadHeroQuote(mode);
   }
 
+  async function commitTagDelete(name: string) {
+    await dbDeleteQuoteTag(name);
+    setPendingDeleteQuoteTag(null);
+  }
+
   function handleTagDeleted(name: string, undo: () => void) {
     if (tagDeleteTimerRef.current) clearTimeout(tagDeleteTimerRef.current);
+    if (pendingDeleteQuoteTag) commitTagDelete(pendingDeleteQuoteTag.name);
+
     setPendingDeleteQuoteTag({ name, undo });
-    tagDeleteTimerRef.current = setTimeout(async () => {
-      await dbDeleteQuoteTag(name);
-      setPendingDeleteQuoteTag(null);
-      tagDeleteTimerRef.current = null;
+    tagDeleteTimerRef.current = setTimeout(() => {
+      commitTagDelete(name);
     }, 4000);
   }
 
