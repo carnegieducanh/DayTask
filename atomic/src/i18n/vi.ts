@@ -447,6 +447,8 @@ export const vi = {
     editSave: "Lưu thay đổi",
     cancel: "Hủy",
     addedOn: (date: string) => `Thêm vào tủ sách: ${date}`,
+    seeMore: "Xem thêm",
+    seeLess: "Thu gọn",
   },
   reminder: {
     title: "Nhắc nhở",

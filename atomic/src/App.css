@@ -9911,6 +9911,7 @@ select {
 
 .books-detail-cover {
   position: relative;
+  align-self: flex-start;
   width: 150px;
   min-width: 150px;
   aspect-ratio: 2 / 3;
@@ -10089,7 +10090,15 @@ select {
   gap: 5px;
 }
 
+.books-detail-notes-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
 .books-detail-notes {
+  position: relative;
   font-size: 0.88rem;
   line-height: 1.6;
   color: var(--text-secondary);
@@ -10098,6 +10107,50 @@ select {
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
   padding: 10px 14px;
   white-space: pre-wrap;
+  width: 100%;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.books-detail-notes.has-fade::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 38px;
+  background: linear-gradient(to bottom, transparent, var(--bg-secondary));
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.books-detail-notes.has-fade.expanded::after {
+  opacity: 0;
+}
+
+.books-detail-notes-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 14px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+.books-detail-notes-toggle:hover {
+  color: var(--text-secondary);
+}
+
+.books-detail-notes-chevron {
+  transition: transform 0.15s;
+}
+.books-detail-notes-chevron.open {
+  transform: rotate(180deg);
 }
 
 .books-detail-meta {

@@ -471,6 +471,8 @@ export const en: typeof vi = {
     editSave: "Save changes",
     cancel: "Cancel",
     addedOn: (date: string) => `Added to library: ${date}`,
+    seeMore: "See more",
+    seeLess: "Show less",
   },
   reminder: {
     title: "Reminder",

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { useSmoothScroll, attachSmoothScroll } from '../../hooks/useSmoothScroll';
 import {
@@ -199,10 +199,28 @@ function BookDetailModal({ book, onClose, onEdit, onDelete, onStatusChange }: Bo
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const statusMenuRef = useRef<HTMLDivElement>(null);
   const glowStyle = useCoverGlow(book.cover_image);
+  const [notesExpanded, setNotesExpanded] = useState(false);
+  const [notesOverflow, setNotesOverflow] = useState(false);
+  const [notesCollapsedHeight, setNotesCollapsedHeight] = useState(0);
+  const [notesExpandedHeight, setNotesExpandedHeight] = useState(0);
+  const notesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     closeRef.current?.focus();
   }, []);
+
+  useLayoutEffect(() => {
+    const el = notesRef.current;
+    if (!el) return;
+    const cs = getComputedStyle(el);
+    const lineHeight = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.6;
+    const paddingV = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    const collapsed = lineHeight * 2 + paddingV;
+    const full = el.scrollHeight;
+    setNotesCollapsedHeight(collapsed);
+    setNotesExpandedHeight(full);
+    setNotesOverflow(full - collapsed > 1);
+  }, [book.notes]);
 
   useEffect(() => {
     if (!statusMenuOpen) return;
@@ -308,7 +326,30 @@ function BookDetailModal({ book, onClose, onEdit, onDelete, onStatusChange }: Bo
               </div>
             )}
 
-            {book.notes && <div className="books-detail-notes">{book.notes}</div>}
+            {book.notes && (
+              <div className="books-detail-notes-wrap">
+                <div
+                  ref={notesRef}
+                  className={`books-detail-notes${notesOverflow ? ' has-fade' : ''}${notesExpanded ? ' expanded' : ''}`}
+                  style={{ maxHeight: notesExpanded ? notesExpandedHeight : notesCollapsedHeight || undefined }}
+                >
+                  {book.notes}
+                </div>
+                {notesOverflow && (
+                  <button
+                    type="button"
+                    className="books-detail-notes-toggle"
+                    onClick={() => setNotesExpanded((v) => !v)}
+                  >
+                    {notesExpanded ? t.books.seeLess : t.books.seeMore}
+                    <IconChevronDown
+                      size={12}
+                      className={`books-detail-notes-chevron${notesExpanded ? ' open' : ''}`}
+                    />
+                  </button>
+                )}
+              </div>
+            )}
 
             <div className="books-detail-meta">
               {t.books.addedOn(formatISODate(book.created_at.split(' ')[0]))}
