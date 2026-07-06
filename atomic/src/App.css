@@ -9306,23 +9306,22 @@ select {
   transform: translateY(-3px);
 }
 
-/* Page-block sticking out from the right edge — gives the cover a sense
-   of physical thickness (pages), tucked behind the front cover artwork.
-   A single, muted gradient (darker near the spine, lighter towards the
-   outer edge) reads as a solid paper block. Kept as a plain rectangle —
-   clip-path would desync from box-shadow (shadow always follows the
-   un-clipped border box), which is what made the previous version look
-   broken. */
+/* Page-block behind the cover — a full copy of the cover's box, nudged
+   down-right, so the page edges peek out along the right AND bottom sides
+   at once (matches how a real book's paper block sits behind its front
+   cover). A repeating-linear-gradient reads as individual page lines; kept
+   as a plain rounded rect (no clip-path) so the corner where the two
+   exposed edges meet stays a single continuous curve instead of a gap. */
 .books-card-cover::after {
   content: "";
   position: absolute;
   z-index: -1;
-  top: 2%;
-  right: -6px;
-  width: 8px;
-  height: 96%;
-  border-radius: 0 3px 3px 0;
-  background: linear-gradient(to right, #beb49b 0%, #e9e2d2 55%, #e9e2d2 100%);
+  inset: 0;
+  transform: translate(6px, 6px);
+  border-radius: 1px 6px 6px 6px;
+  background:
+    repeating-linear-gradient(100deg, #e9e2cc 0 1.4px, #d3cab0 1.4px 2.8px),
+    linear-gradient(135deg, #efe9d8, #c2b896);
   box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.35);
 }
 
@@ -9893,12 +9892,12 @@ select {
   content: "";
   position: absolute;
   z-index: -1;
-  top: 2%;
-  right: -9px;
-  width: 11px;
-  height: 96%;
-  border-radius: 0 4px 4px 0;
-  background: linear-gradient(to right, #beb49b 0%, #e9e2d2 55%, #e9e2d2 100%);
+  inset: 0;
+  transform: translate(8px, 8px);
+  border-radius: 2px 8px 8px 8px;
+  background:
+    repeating-linear-gradient(100deg, #e9e2cc 0 1.8px, #d3cab0 1.8px 3.6px),
+    linear-gradient(135deg, #efe9d8, #c2b896);
   box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.35);
 }
 
