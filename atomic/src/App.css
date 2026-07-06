@@ -16,6 +16,8 @@
   --bg-primary: #ffffff;
   --bg-secondary: #f8f7f5;
   --bg-hover: #edeae5;
+  --bg-glass: rgba(255, 255, 255, 0.72);
+  --bg-glass-2: rgba(248, 247, 245, 0.72);
   --text-primary: #1a1a1a;
   --text-secondary: #555555;
   --text-muted: #7a7a75;
@@ -81,6 +83,8 @@
   --bg-primary: #1a1a1a; /* content, cards */
   --bg-secondary: #131314; /* sidebar, kanban columns */
   --bg-hover: #242424;
+  --bg-glass: rgba(26, 26, 26, 0.72);
+  --bg-glass-2: rgba(19, 19, 20, 0.72);
   --text-primary: #f0eeeb;
   --text-secondary: #888888;
   --text-muted: #666666;
@@ -466,7 +470,9 @@ select {
 }
 
 .modal {
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 0.5px solid var(--border-1);
   border-radius: var(--radius-lg);
   width: 440px;
@@ -2686,7 +2692,9 @@ select {
 
 .tag-dropdown-panel {
   position: absolute;
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1.5px solid var(--border-1);
   border-radius: 10px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
@@ -3197,7 +3205,9 @@ select {
   top: 72px;
   right: 16px;
   width: 244px;
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 0.5px solid var(--border-2);
   border-left: 3px solid var(--primary);
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
@@ -4479,7 +4489,9 @@ select {
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 0.5px solid var(--border-2);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
@@ -4575,7 +4587,9 @@ select {
 }
 
 .cat-color-popup {
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 0.5px solid var(--border-2);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
@@ -4671,7 +4685,9 @@ select {
 }
 
 .time-dropdown-panel {
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 0.5px solid var(--border-2);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
@@ -5099,7 +5115,9 @@ select {
 
 /* Popup overlay (+X more) — global selector because rbc renders via portal outside cal-wrap */
 .rbc-overlay {
-  background: var(--bg-primary) !important;
+  background: var(--bg-glass) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border: 0.5px solid var(--border-2) !important;
   border-radius: var(--radius-md) !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18) !important;
@@ -5504,9 +5522,9 @@ select {
 .cal-stats-popup {
   position: fixed;
   z-index: 9999;
-  background: var(--bg-primary);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--border-1);
   border-radius: 8px;
   padding: 10px 12px;
@@ -5666,7 +5684,9 @@ select {
 .cal-day-popover {
   position: fixed;
   z-index: 10000;
-  background: var(--bg-secondary);
+  background: var(--bg-glass-2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--border-2);
   border-radius: 8px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
@@ -6381,7 +6401,9 @@ select {
 .day-context-menu {
   position: fixed;
   z-index: 1000;
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--border-2);
   border-radius: 8px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
@@ -6392,7 +6414,7 @@ select {
 }
 
 [data-theme="dark"] .day-context-menu {
-  background: var(--bg-secondary);
+  background: var(--bg-glass-2);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
@@ -6430,7 +6452,9 @@ select {
 .task-context-menu {
   position: fixed;
   z-index: 1000;
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--border-2);
   border-radius: 8px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
@@ -6441,7 +6465,7 @@ select {
 }
 
 [data-theme="dark"] .task-context-menu {
-  background: var(--bg-secondary);
+  background: var(--bg-glass-2);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
@@ -6724,11 +6748,12 @@ select {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(2px);
   animation: overlay-fade-in 0.16s ease;
 }
 .update-dialog {
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--border-1);
   border-radius: var(--radius-lg);
   padding: 24px;
@@ -7142,7 +7167,9 @@ select {
 }
 
 .color-picker-popup {
-  background: var(--bg-secondary);
+  background: var(--bg-glass-2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--border);
   border-radius: 0.75rem;
   width: 260px;
@@ -7152,7 +7179,7 @@ select {
 }
 
 [data-theme="dark"] .color-picker-popup {
-  background: #2c2c2e;
+  background: rgba(44, 44, 46, 0.72);
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
 }
@@ -8286,7 +8313,9 @@ select {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  background: var(--bg-secondary);
+  background: var(--bg-glass-2);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 0.5px solid var(--border-1);
   border-radius: var(--radius-md);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
@@ -8663,7 +8692,9 @@ select {
 }
 
 .quotes-modal {
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 0.5px solid var(--border-1);
   border-radius: var(--radius-lg);
   width: 100%;
@@ -9498,7 +9529,9 @@ select {
 }
 
 .books-modal {
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 0.5px solid var(--border-1);
   border-radius: var(--radius-lg);
   width: 100%;
@@ -9845,7 +9878,9 @@ select {
 /* ── Book Detail Modal ── */
 .books-detail-modal {
   position: relative;
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 0.5px solid var(--border-1);
   border-radius: var(--radius-lg);
   width: 100%;
@@ -10011,7 +10046,9 @@ select {
   top: calc(100% + 4px);
   left: 0;
   min-width: 150px;
-  background: var(--bg-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 0.5px solid var(--border-1);
   border-radius: var(--radius-md);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
