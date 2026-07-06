@@ -522,11 +522,10 @@ export default function DayView({
             <div
               ref={deckCardsClipRef}
               className="day-deck-cards-clip"
-              style={{ height: displayDeckHeight, overflowY: shouldScroll ? 'auto' : 'hidden' }}
+              style={{ height: displayDeckHeight, overflowY: 'auto' }}
             >
               {unscheduledTasks.map((task, i) => {
                 const color = task.color ?? categoryColors[task.category];
-                const overMax = !deckExpanded && !deckClosing && i >= MAX_DECK;
                 return (
                   <div
                     key={task.id}
@@ -536,9 +535,6 @@ export default function DayView({
                       zIndex: i + 1,
                       backgroundColor: color,
                       borderLeft: `3px solid ${color}`,
-                      opacity: overMax ? 0 : 1,
-                      animation: overMax ? 'none' : undefined,
-                      pointerEvents: overMax ? 'none' : undefined,
                     }}
                     onMouseDown={(e) => handleDeckCardMouseDown(e, task)}
                     onContextMenu={(e) => handleTaskContextMenu(e, task)}
