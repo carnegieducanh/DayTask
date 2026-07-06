@@ -163,9 +163,10 @@ function BookCard({
       {book.author && <div className="books-card-author" title={book.author}>{book.author}</div>}
       {book.tags.length > 0 && (
         <div className="books-card-tags">
-          {book.tags.slice(0, 2).map((tag) => (
-            <span key={tag} className="books-tag-chip-sm">{tag}</span>
-          ))}
+          <span className="books-tag-chip-sm">{book.tags[0]}</span>
+          {book.tags.length > 1 && (
+            <span className="books-tag-chip-sm books-tag-chip-more">+{book.tags.length - 1} more</span>
+          )}
         </div>
       )}
     </div>

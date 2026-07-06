@@ -9479,8 +9479,9 @@ select {
 
 .books-card-tags {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 4px;
+  overflow: hidden;
 }
 
 .books-tag-chip-sm {
@@ -9489,6 +9490,15 @@ select {
   border-radius: 10px;
   background: color-mix(in srgb, var(--primary) 12%, transparent);
   color: var(--primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.books-tag-chip-more {
+  flex-shrink: 0;
 }
 
 /* ── Empty state ── */
