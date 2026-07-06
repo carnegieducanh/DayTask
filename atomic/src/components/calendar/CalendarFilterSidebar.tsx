@@ -90,7 +90,10 @@ export default function CalendarFilterSidebar({
 
       <div className="cal-filter-sections">
         <div className="cal-filter-section">
-          <div className="cal-filter-section-label">{t.calendar.filterCategories}</div>
+          <div className="cal-filter-section-label">
+            {t.calendar.filterCategories}
+            {activeCategories.size > 0 && ` (${activeCategories.size})`}
+          </div>
           <div className="cal-filter-list cal-filter-list--scrollable">
             {catStats.map((s) => {
               const active = activeCategories.has(s.category);
@@ -110,7 +113,10 @@ export default function CalendarFilterSidebar({
 
         {tags.length > 0 && (
           <div className="cal-filter-section">
-            <div className="cal-filter-section-label">{t.calendar.filterTags}</div>
+            <div className="cal-filter-section-label">
+              {t.calendar.filterTags}
+              {activeTags.size > 0 && ` (${activeTags.size})`}
+            </div>
             <input
               className="cal-filter-tag-search"
               type="text"

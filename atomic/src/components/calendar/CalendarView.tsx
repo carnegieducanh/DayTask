@@ -204,7 +204,7 @@ export default function CalendarView() {
     return calendarTasks.filter((task) => {
       const matchCat = activeCategories.size === 0 || activeCategories.has(task.category);
       const tagIds = calendarTaskTags[task.id] ?? [];
-      const matchTag = activeTags.size === 0 || tagIds.some((id) => activeTags.has(id));
+      const matchTag = activeTags.size === 0 || [...activeTags].every((id) => tagIds.includes(id));
       return matchCat && matchTag;
     });
   }, [calendarTasks, calendarTaskTags, activeCategories, activeTags]);

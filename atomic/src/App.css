@@ -5666,8 +5666,8 @@ select {
 .cal-day-popover {
   position: fixed;
   z-index: 10000;
-  background: var(--bg-primary);
-  border: 1px solid var(--border-1);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-2);
   border-radius: 8px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
   min-width: 200px;
@@ -5711,7 +5711,7 @@ select {
   line-height: 1;
 }
 .cal-day-popover-close:hover {
-  background: var(--bg-secondary);
+  background: var(--bg-hover);
   color: var(--text-primary);
 }
 .cal-day-popover-list {
@@ -5728,7 +5728,7 @@ select {
   transition: background 0.1s;
 }
 .cal-day-popover-task:hover {
-  background: var(--bg-secondary);
+  background: var(--bg-hover);
 }
 .cal-day-popover-task-title {
   font-size: 0.85rem;
@@ -6165,7 +6165,7 @@ select {
   background: var(--bg-hover);
 }
 .cal-filter-item.active {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
 }
 .cal-filter-dot {
   width: 8px;
