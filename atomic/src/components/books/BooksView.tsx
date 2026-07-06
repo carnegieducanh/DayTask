@@ -363,6 +363,7 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
   const titleRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
 
   const [allTags, setAllTags] = useState<string[]>([]);
   const [tagDropOpen, setTagDropOpen] = useState(false);
@@ -378,7 +379,10 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
   const newTagInputRef = useRef<HTMLInputElement>(null);
   const tagListRef = useRef<HTMLDivElement>(null);
 
+  const coverGlowStyle = useCoverGlow(coverImage);
+
   useSmoothScroll(bodyRef);
+  useSmoothScroll(notesRef);
 
   useEffect(() => {
     if (!tagDropOpen || !tagListRef.current) return;
@@ -550,20 +554,22 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
               style={{ display: 'none' }}
               onChange={handlePickCover}
             />
-            <button
-              type="button"
-              className={`books-cover-picker${coverDragOver ? ' drag-over' : ''}`}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {coverImage ? (
-                <img src={coverImage} alt="" className="books-cover-picker-img" />
-              ) : (
-                <div className="books-cover-picker-empty">
-                  <IconCameraPlus size={22} />
-                  <span>{coverDragOver ? t.books.coverDrop : t.books.coverUpload}</span>
-                </div>
-              )}
-            </button>
+            <div className={`books-card-cover books-cover-picker${coverDragOver ? ' drag-over' : ''}`} style={coverGlowStyle}>
+              <button
+                type="button"
+                className="books-card-cover-inner books-cover-picker-inner"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {coverImage ? (
+                  <img src={coverImage} alt="" />
+                ) : (
+                  <div className="books-cover-picker-empty">
+                    <IconCameraPlus size={22} />
+                    <span>{coverDragOver ? t.books.coverDrop : t.books.coverUpload}</span>
+                  </div>
+                )}
+              </button>
+            </div>
             <div className="books-cover-actions">
               <button type="button" className="books-cover-action-btn" onClick={() => fileInputRef.current?.click()}>
                 {coverImage ? t.books.coverChange : t.books.coverUpload}
@@ -767,6 +773,7 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
 
           <label className="books-modal-label">{t.books.notesLabel}</label>
           <textarea
+            ref={notesRef}
             className="books-modal-textarea"
             placeholder={t.books.notesPlaceholder}
             value={notes}

@@ -9650,32 +9650,28 @@ select {
 }
 
 .books-cover-picker {
-  width: 84px;
-  height: 126px;
   flex-shrink: 0;
-  border-radius: var(--radius-md);
-  border: 1px dashed var(--border-2);
-  background: var(--bg-secondary);
-  cursor: pointer;
-  padding: 0;
-  overflow: hidden;
-  transition: border-color 0.15s;
-}
-.books-cover-picker:hover {
-  border-color: var(--primary);
 }
 
-.books-cover-picker.drag-over {
-  border-color: var(--primary);
-  border-style: solid;
-  background: color-mix(in srgb, var(--primary) 12%, var(--bg-secondary));
-}
-
-.books-cover-picker-img {
+/* Reuses .books-card-cover / .books-card-cover-inner so the cover picker
+   in the edit form looks like a real book, matching the shelf/detail views,
+   instead of a plain dashed upload box. */
+.books-cover-picker-inner {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  display: block;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.books-cover-picker-inner:hover {
+  border-color: var(--primary);
+}
+
+.books-cover-picker.drag-over .books-cover-picker-inner {
+  border-color: var(--primary);
+  border-style: dashed;
+  background: color-mix(in srgb, var(--primary) 12%, var(--bg-hover));
 }
 
 .books-cover-picker-empty {

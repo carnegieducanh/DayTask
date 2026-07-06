@@ -44,6 +44,14 @@ export function attachSmoothScroll(el: HTMLElement): () => void {
   }
 
   function onWheel(e: WheelEvent) {
+    // Textareas manage their own scroll position to keep the caret in view while typing.
+    // Hijacking a *nested* textarea's wheel scroll from an ancestor's handler fights that
+    // native behavior and makes the caret/content jump around — let the browser handle it
+    // natively (it already chains to the parent scroll container once the textarea hits its
+    // own scroll limit). This only applies when `el` is an ancestor; if `el` IS the textarea
+    // (smooth scroll attached directly to it), let it scroll itself as usual.
+    if (e.target instanceof HTMLTextAreaElement && e.target !== el) return;
+
     const delta =
       e.deltaMode === 0 ? e.deltaY * 0.5 :
       e.deltaMode === 1 ? e.deltaY * 20 :

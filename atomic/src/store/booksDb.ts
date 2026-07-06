@@ -61,19 +61,19 @@ export async function dbGetBooks(opts: {
     params.push(opts.tag);
   }
 
-  if (opts.search?.trim()) {
-    conditions.push(`(LOWER(title) LIKE $${idx} OR LOWER(COALESCE(author,'')) LIKE $${idx})`);
-    params.push(`%${opts.search.trim().toLowerCase()}%`);
-    idx++;
-  }
-
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
   const rows = await db.select<BookRow[]>(
     `SELECT * FROM books ${where} ORDER BY COALESCE(finished_date, created_at) DESC`,
     params
   );
-  return Promise.all(rows.map((r) => rowToBook(db, r)));
+  const books = await Promise.all(rows.map((r) => rowToBook(db, r)));
+
+  const search = opts.search?.trim().toLowerCase();
+  if (!search) return books;
+  return books.filter(
+    (b) => b.title.toLowerCase().includes(search) || (b.author ?? '').toLowerCase().includes(search)
+  );
 }
 
 export async function dbGetBookById(id: number): Promise<Book | null> {

@@ -52,20 +52,23 @@ export async function dbGetQuotes(opts: {
     params.push(opts.language);
   }
 
-  if (opts.search?.trim()) {
-    conditions.push(`(LOWER(text) LIKE $${idx} OR LOWER(COALESCE(author,'')) LIKE $${idx})`);
-    params.push(`%${opts.search.trim().toLowerCase()}%`);
-    idx++;
-  }
-
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-  const limit = opts.filter === 'recent' ? ' LIMIT 20' : '';
 
   const rows = await db.select<QuoteRow[]>(
-    `SELECT * FROM quotes ${where} ORDER BY created_at DESC${limit}`,
+    `SELECT * FROM quotes ${where} ORDER BY created_at DESC`,
     params
   );
-  return Promise.all(rows.map((r) => rowToQuote(db, r)));
+  let quotes = await Promise.all(rows.map((r) => rowToQuote(db, r)));
+
+  const search = opts.search?.trim().toLowerCase();
+  if (search) {
+    quotes = quotes.filter(
+      (q) => q.text.toLowerCase().includes(search) || (q.author ?? '').toLowerCase().includes(search)
+    );
+  }
+
+  if (opts.filter === 'recent') quotes = quotes.slice(0, 20);
+  return quotes;
 }
 
 export async function dbGetQuoteById(id: number): Promise<Quote | null> {
