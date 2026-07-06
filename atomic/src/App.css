@@ -698,7 +698,6 @@ select {
   z-index: 50;
 }
 
-
 .today-topbar-actions .vocab-widget-note .vocab-widget {
   padding: 10px 12px 10px 14px;
   transform: rotate(-0.5deg);
@@ -5865,7 +5864,6 @@ select {
     0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-
 .vocab-widget-note .vocab-widget::after {
   content: "";
   position: absolute;
@@ -9350,13 +9348,12 @@ select {
   position: absolute;
   z-index: -1;
   top: 6px;
-  left: 0;
+  left: 2px;
   right: -6px;
-  bottom: -6px;
+  bottom: -5px;
   border-radius: 0 6px 6px 6px;
   background:
-    repeating-linear-gradient(100deg, #e9e2cc 0 1.4px, #d3cab0 1.4px 2.8px),
-    linear-gradient(135deg, #efe9d8, #c2b896);
+    repeating-linear-gradient(100deg, #e9e2cc 0 1.4px, #d3cab0 1.4px 2.8px), linear-gradient(135deg, #efe9d8, #c2b896);
   box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.35);
 }
 
@@ -9642,7 +9639,9 @@ select {
   border: 1px solid transparent;
   padding: 6px;
   margin: -6px;
-  transition: border-color 0.15s, background-color 0.15s;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
 }
 
 .books-modal-cover-row.drag-over {
@@ -9937,8 +9936,7 @@ select {
   bottom: -8px;
   border-radius: 0 8px 8px 8px;
   background:
-    repeating-linear-gradient(100deg, #e9e2cc 0 1.8px, #d3cab0 1.8px 3.6px),
-    linear-gradient(135deg, #efe9d8, #c2b896);
+    repeating-linear-gradient(100deg, #e9e2cc 0 1.8px, #d3cab0 1.8px 3.6px), linear-gradient(135deg, #efe9d8, #c2b896);
   box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.35);
 }
 
@@ -10023,7 +10021,9 @@ select {
   border: 0.5px solid transparent;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 .books-detail-status-badge:hover {
   background: var(--bg-tertiary, var(--bg-hover));
