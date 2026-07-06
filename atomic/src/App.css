@@ -5792,11 +5792,10 @@ select {
 
 /* ── Calendar Day Sidebar (MiniCalendar) ── */
 .cal-day-sidebar {
-  width: 200px;
+  width: 216px;
   flex-shrink: 0;
   background: var(--bg-primary);
-  /* padding: 10px 8px 12px; */
-  padding: 10px 0;
+  padding: 10px 10px 12px 0;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-gutter: stable;
