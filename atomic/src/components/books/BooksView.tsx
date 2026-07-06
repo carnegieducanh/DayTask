@@ -18,6 +18,7 @@ import {
   IconCameraPlus,
   IconTarget,
   IconTrophy,
+  IconRosetteDiscountCheckFilled,
 } from '@tabler/icons-react';
 import type { Book, BookStatus, NewBook } from '../../types';
 import {
@@ -160,7 +161,12 @@ function BookCard({
         </div>
       </div>
       <div className="books-card-title" title={book.title}>{book.title}</div>
-      {book.author && <div className="books-card-author" title={book.author}>{book.author}</div>}
+      {book.author && (
+        <div className="books-card-author" title={book.author}>
+          <span className="books-card-author-name">{book.author}</span>
+          <IconRosetteDiscountCheckFilled size={14} className="books-card-author-badge" />
+        </div>
+      )}
       {book.tags.length > 0 && (
         <div className="books-card-tags">
           <span className="books-tag-chip-sm">{book.tags[0]}</span>
@@ -284,7 +290,12 @@ function BookDetailModal({ book, onClose, onEdit, onDelete, onStatusChange }: Bo
 
           <div className="books-detail-info">
             <div className="books-detail-title">{book.title}</div>
-            {book.author && <div className="books-detail-author">{book.author}</div>}
+            {book.author && (
+              <div className="books-detail-author">
+                <span className="books-detail-author-name">{book.author}</span>
+                <IconRosetteDiscountCheckFilled size={16} className="books-detail-author-badge" />
+              </div>
+            )}
 
             <div className="books-detail-badges">
               <div className="books-detail-status-dropdown" ref={statusMenuRef}>
@@ -1074,6 +1085,20 @@ export default function BooksView() {
 
   const goalPct = readingGoal ? Math.min(100, Math.round((currentYearCount / readingGoal) * 100)) : 0;
 
+  const headerSubText = useMemo(() => {
+    if (tagFilter) {
+      const count = tagCounts.find((tc) => tc.tag === tagFilter)?.count ?? 0;
+      return t.books.booksCount(count);
+    }
+    if (yearFilter) {
+      const count = years.find((y) => y.year === yearFilter)?.count ?? 0;
+      return t.books.booksCount(count);
+    }
+    if (libraryFilter === 'reading') return t.books.booksCount(stats.reading);
+    if (libraryFilter === 'want_to_read') return t.books.booksCount(stats.wantToRead);
+    return t.books.totalRead(stats.total);
+  }, [tagFilter, yearFilter, libraryFilter, tagCounts, years, stats, t]);
+
   const emptyText = searchQuery
     ? t.books.emptySearch
     : libraryFilter === 'reading'
@@ -1152,15 +1177,9 @@ export default function BooksView() {
         <div className="books-header">
           <div>
             <div className="books-header-title">{t.books.title}</div>
-            <div className="books-header-sub">{t.books.totalRead(stats.total)}</div>
+            <div className="books-header-sub">{headerSubText}</div>
           </div>
-          <button className="books-btn-add" onClick={() => setShowAddModal(true)}>
-            <IconPlus size={13} />
-            {t.books.addBook}
-          </button>
-        </div>
 
-        {libraryFilter === 'all' && !yearFilter && (
           <div className="books-goal-card">
             <div className="books-goal-head">
               <IconTarget size={14} />
@@ -1198,7 +1217,12 @@ export default function BooksView() {
               <button className="books-goal-cta" onClick={handleStartGoalEdit}>{t.books.setGoalCta}</button>
             )}
           </div>
-        )}
+
+          <button className="books-btn-add" onClick={() => setShowAddModal(true)}>
+            <IconPlus size={13} />
+            {t.books.addBook}
+          </button>
+        </div>
 
         <div className="books-toolbar">
           <div className="books-search-wrap">
