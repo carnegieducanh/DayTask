@@ -9049,7 +9049,6 @@ select {
 
 /* ── Reading goal card ── */
 .books-goal-card {
-  border: 0.5px solid var(--border-1);
   border-radius: var(--radius-lg);
   background: var(--bg-secondary);
   padding: 10px 14px;
@@ -9136,8 +9135,10 @@ select {
 }
 
 .books-goal-input {
-  width: 100px;
-  padding: 6px 10px;
+  width: 90px;
+  height: 30px;
+  box-sizing: border-box;
+  padding: 0 10px;
   border-radius: var(--radius-md);
   border: 0.5px solid var(--border-1);
   background: var(--bg-primary);
@@ -9145,22 +9146,38 @@ select {
   font-size: 0.85rem;
   font-family: inherit;
   outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.books-goal-input::-webkit-outer-spin-button,
+.books-goal-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .books-goal-input:focus {
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
 .books-goal-editor-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-sm);
+  width: 30px;
+  height: 30px;
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
   border: 0.5px solid var(--border-1);
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
 }
 .books-goal-editor-btn:hover {
   background: var(--bg-hover);
