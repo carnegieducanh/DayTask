@@ -9085,6 +9085,37 @@ select {
   color: var(--text-primary);
 }
 
+.projects-title-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.projects-title-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.projects-title-tab:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.projects-title-tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--primary);
+}
+
 .books-header-sub {
   font-size: 0.85rem;
   color: var(--text-muted);
@@ -10302,9 +10333,14 @@ select {
     transform: translateX(0);
   }
 }
-.projects-sidebar .projects-year-list,
-.projects-sidebar .projects-tag-list-anim {
+.projects-sidebar .projects-sidebar-anim {
   animation: projects-sidebar-list-in 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.projects-sidebar .projects-year-list {
+  animation: projects-sidebar-list-in 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
+}
+.projects-sidebar .projects-tag-list-anim {
+  animation: projects-sidebar-list-in 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
 }
 
 /* ── "By year" collapsible list (see more / see less) ── */

@@ -972,9 +972,10 @@ export default function ProjectsView() {
   const [category, setCategory] = useState<ProjectCategory>('product');
   const [folders, setFolders] = useState<ProjectFolder[]>([]);
   const [openFolder, setOpenFolder] = useState<ProjectFolder | null>(null);
+  const [viewAllProjects, setViewAllProjects] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [yearFilter, setYearFilter] = useState<number | null>(null);
+  const [yearFilter, setYearFilter] = useState<number | null>(new Date().getFullYear());
   const [tagSearch, setTagSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('date');
@@ -1059,26 +1060,33 @@ export default function ProjectsView() {
   }, [seeded, category, statusFilter, yearFilter]);
 
   useEffect(() => {
-    if (!seeded || !openFolder) return;
-    loadProjects(category, openFolder.name, statusFilter, yearFilter, searchQuery);
+    if (!seeded || (!openFolder && !viewAllProjects)) return;
+    loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, searchQuery);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seeded, category, openFolder, statusFilter, yearFilter]);
+  }, [seeded, category, openFolder, viewAllProjects, statusFilter, yearFilter]);
 
   function handleSearch(q: string) {
     setSearchQuery(q);
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
-      if (openFolder) loadProjects(category, openFolder.name, statusFilter, yearFilter, q);
+      if (openFolder || viewAllProjects) loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, q);
     }, 300);
   }
 
   function handleOpenFolder(folder: ProjectFolder) {
     setOpenFolder(folder);
+    setViewAllProjects(false);
+    setSearchQuery('');
+  }
+
+  function handleShowAllProjects() {
+    setViewAllProjects(true);
     setSearchQuery('');
   }
 
   function handleBack() {
     setOpenFolder(null);
+    setViewAllProjects(false);
     setProjects([]);
     setSearchQuery('');
   }
@@ -1087,9 +1095,10 @@ export default function ProjectsView() {
     if (next === category) return;
     setCategory(next);
     setOpenFolder(null);
+    setViewAllProjects(false);
     setProjects([]);
     setStatusFilter('all');
-    setYearFilter(null);
+    setYearFilter(new Date().getFullYear());
     setSearchQuery('');
     setTagSearch('');
   }
@@ -1100,7 +1109,7 @@ export default function ProjectsView() {
       loadYearStats(category, yearFilter),
       loadYears(category, statusFilter),
       loadFolders(category, statusFilter, yearFilter),
-      openFolder ? loadProjects(category, openFolder.name, statusFilter, yearFilter, searchQuery) : Promise.resolve(),
+      (openFolder || viewAllProjects) ? loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, searchQuery) : Promise.resolve(),
     ]);
   }
 
@@ -1192,8 +1201,8 @@ export default function ProjectsView() {
 
   function handleUndoDeleteProject() {
     if (deleteProjectTimerRef.current) clearTimeout(deleteProjectTimerRef.current);
-    if (!pendingDeleteProject || !openFolder) return;
-    loadProjects(category, openFolder.name, statusFilter, yearFilter, searchQuery);
+    if (!pendingDeleteProject || (!openFolder && !viewAllProjects)) return;
+    loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, searchQuery);
     setPendingDeleteProject(null);
   }
 
@@ -1264,7 +1273,7 @@ export default function ProjectsView() {
     return copy.totalCount(yearStats.total);
   }, [yearStats, copy, statusFilter]);
 
-  const emptyProjectsText = searchQuery ? copy.emptySearch : copy.emptyItems;
+  const emptyProjectsText = searchQuery ? copy.emptySearch : (viewAllProjects ? copy.emptyAll : copy.emptyItems);
 
   return (
     <>
@@ -1283,7 +1292,7 @@ export default function ProjectsView() {
       <div className="books-wrap">
       {/* ── Sidebar ── */}
       <div ref={sidebarRef} className="books-sidebar projects-sidebar">
-        <div className="books-sb-section">
+        <div key={`status-${category}`} className="books-sb-section projects-sidebar-anim">
           <div className="books-sb-label">{t.nav.projects}</div>
           <button
             className={`books-sb-item${statusFilter === 'all' ? ' active' : ''}`}
@@ -1315,7 +1324,7 @@ export default function ProjectsView() {
           <div className="books-sb-section">
             <div className="books-sb-label">{t.projects.byYear}</div>
             <div
-              key={`years-${statusFilter}`}
+              key={`years-${category}-${statusFilter}`}
               ref={yearListRef}
               className={`projects-year-list${years.length > YEAR_LIST_VISIBLE ? ' collapsible' : ''}${yearListExpanded ? ' expanded' : ''}`}
               style={{ maxHeight: yearListExpanded ? yearListFullHeight : (yearListCollapsedHeight ?? yearListFullHeight) }}
@@ -1358,7 +1367,7 @@ export default function ProjectsView() {
                 spellCheck={false}
               />
             </div>
-            <div key={`tags-${statusFilter}-${yearFilter ?? ''}`} className="projects-tag-list-anim">
+            <div key={`tags-${category}-${statusFilter}-${yearFilter ?? ''}`} className="projects-tag-list-anim">
               <div className="books-sb-tag-list">
                 {filteredTagFolders.length === 0 ? (
                   <div className="books-sb-tag-empty">{t.tags.noTags}</div>
@@ -1387,44 +1396,117 @@ export default function ProjectsView() {
           <>
             <div className="books-header">
               <div>
-                <div className="books-header-title">{copy.pageTitle}</div>
-                <div className="books-header-sub">{headerSubText}</div>
-              </div>
-              <button className="books-btn-add" onClick={() => setShowAddFolderModal(true)}>
-                <IconPlus size={13} />
-                {t.projects.addFolder}
-              </button>
-            </div>
-
-            <div key={`${category}-${statusFilter}-${yearFilter ?? ''}`} className="books-content-view">
-              {folders.length === 0 ? (
-                <div className="books-empty-state">
-                  <IconFolderCode size={36} className="books-empty-icon" />
-                  <p className="books-empty-text">{t.projects.emptyFolders}</p>
-                  <button className="books-btn-add" onClick={() => setShowAddFolderModal(true)}>
-                    <IconPlus size={13} />
-                    {t.projects.addFolder}
+                <div className="projects-title-row">
+                  <button
+                    type="button"
+                    className={`projects-title-tab${!viewAllProjects ? ' active' : ''}`}
+                    onClick={() => setViewAllProjects(false)}
+                  >
+                    {copy.pageTitle}
+                  </button>
+                  <button
+                    type="button"
+                    className={`projects-title-tab${viewAllProjects ? ' active' : ''}`}
+                    onClick={handleShowAllProjects}
+                  >
+                    {t.projects.viewAll}
                   </button>
                 </div>
-              ) : visibleFolders.length === 0 ? (
-                <div className="books-empty-state">
-                  <IconFolderCode size={36} className="books-empty-icon" />
-                  <p className="books-empty-text">{t.projects.emptyFolderResults}</p>
-                </div>
+                <div className="books-header-sub">{viewAllProjects ? copy.totalCount(projects.length) : headerSubText}</div>
+              </div>
+              {viewAllProjects ? (
+                <button className="books-btn-add" onClick={() => setShowAddProjectModal(true)}>
+                  <IconPlus size={13} />
+                  {copy.addItem}
+                </button>
               ) : (
-                <div className="projects-folder-grid">
-                  {visibleFolders.map((folder) => (
-                    <FolderCard
-                      key={folder.id}
-                      folder={folder}
-                      onOpen={() => handleOpenFolder(folder)}
-                      onEdit={() => setEditingFolder(folder)}
-                      onDelete={() => handleDeleteFolder(folder)}
-                    />
-                  ))}
-                </div>
+                <button className="books-btn-add" onClick={() => setShowAddFolderModal(true)}>
+                  <IconPlus size={13} />
+                  {t.projects.addFolder}
+                </button>
               )}
             </div>
+
+            {!viewAllProjects ? (
+              <div key={`${category}-${statusFilter}-${yearFilter ?? ''}`} className="books-content-view">
+                {folders.length === 0 ? (
+                  <div className="books-empty-state">
+                    <IconFolderCode size={36} className="books-empty-icon" />
+                    <p className="books-empty-text">{t.projects.emptyFolders}</p>
+                    <button className="books-btn-add" onClick={() => setShowAddFolderModal(true)}>
+                      <IconPlus size={13} />
+                      {t.projects.addFolder}
+                    </button>
+                  </div>
+                ) : visibleFolders.length === 0 ? (
+                  <div className="books-empty-state">
+                    <IconFolderCode size={36} className="books-empty-icon" />
+                    <p className="books-empty-text">{t.projects.emptyFolderResults}</p>
+                  </div>
+                ) : (
+                  <div className="projects-folder-grid">
+                    {visibleFolders.map((folder) => (
+                      <FolderCard
+                        key={folder.id}
+                        folder={folder}
+                        onOpen={() => handleOpenFolder(folder)}
+                        onEdit={() => setEditingFolder(folder)}
+                        onDelete={() => handleDeleteFolder(folder)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="books-toolbar">
+                  <div className="books-search-wrap">
+                    <IconSearch size={13} className="books-search-icon" />
+                    <input
+                      className="books-search-input"
+                      placeholder={copy.searchPlaceholder}
+                      value={searchQuery}
+                      onChange={(e) => handleSearch(e.target.value)}
+                      spellCheck={false}
+                    />
+                    {searchQuery && (
+                      <button
+                        className="books-search-clear"
+                        onClick={() => { setSearchQuery(''); loadProjects(category, '', statusFilter, yearFilter, ''); }}
+                      >
+                        <IconX size={12} />
+                      </button>
+                    )}
+                  </div>
+                  <select className="books-sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
+                    <option value="date">{t.projects.sortDate}</option>
+                    <option value="title">{t.projects.sortTitle}</option>
+                    <option value="status">{t.projects.sortStatus}</option>
+                  </select>
+                </div>
+
+                <div key={`all-${statusFilter}-${yearFilter ?? ''}`} className="books-content-view">
+                  {sortedProjects.length === 0 ? (
+                    <div className="books-empty-state">
+                      <IconFolderCode size={36} className="books-empty-icon" />
+                      <p className="books-empty-text">{emptyProjectsText}</p>
+                    </div>
+                  ) : (
+                    <div className="projects-card-grid">
+                      {sortedProjects.map((project) => (
+                        <ProjectCard
+                          key={project.id}
+                          project={project}
+                          onView={() => setViewingProject(project)}
+                          onEdit={() => setEditingProject(project)}
+                          onDelete={() => handleDeleteProject(project)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </>
         ) : (
           <>
