@@ -516,6 +516,7 @@ export const en: typeof vi = {
     seeMore: "See more",
     seeLess: "Show less",
     viewAll: "View all",
+    back: "Back",
     categoryLabels: {
       product: "Product",
       figma: "Figma",

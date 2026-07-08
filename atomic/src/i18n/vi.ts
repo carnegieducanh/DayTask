@@ -492,6 +492,7 @@ export const vi = {
     seeMore: "Xem thêm",
     seeLess: "Thu gọn",
     viewAll: "Xem tất cả",
+    back: "Quay lại",
     categoryLabels: {
       product: "Lập trình",
       figma: "Figma",

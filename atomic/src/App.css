@@ -9127,6 +9127,13 @@ select {
   margin-top: 2px;
 }
 
+.books-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .books-btn-add {
   display: flex;
   align-items: center;

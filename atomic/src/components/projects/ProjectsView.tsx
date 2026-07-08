@@ -24,6 +24,7 @@ import {
   IconVideo,
   IconExternalLink,
   IconStack2,
+  IconArrowLeft,
 } from '@tabler/icons-react';
 import type { Project, ProjectFolder, ProjectStatus, ProjectCategory, NewProject } from '../../types';
 import {
@@ -1524,10 +1525,16 @@ export default function ProjectsView() {
                 <div className="books-header-title">{openFolder.name}</div>
                 <div className="books-header-sub">{copy.folderCount(projects.length)}</div>
               </div>
-              <button className="books-btn-add" onClick={() => setShowAddProjectModal(true)}>
-                <IconPlus size={13} />
-                {copy.addItem}
-              </button>
+              <div className="books-header-actions">
+                <button className="books-btn-add" onClick={handleBack}>
+                  <IconArrowLeft size={13} />
+                  {t.projects.back}
+                </button>
+                <button className="books-btn-add" onClick={() => setShowAddProjectModal(true)}>
+                  <IconPlus size={13} />
+                  {copy.addItem}
+                </button>
+              </div>
             </div>
 
             <div className="books-toolbar">
