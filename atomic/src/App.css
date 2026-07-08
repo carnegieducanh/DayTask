@@ -10249,6 +10249,22 @@ select {
   animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
 }
 
+/* ── Slide+fade when "by year" / tags list contents change ── */
+@keyframes projects-sidebar-list-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.projects-sidebar .projects-year-list,
+.projects-sidebar .books-sb-tag-list {
+  animation: projects-sidebar-list-in 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
 /* ── Sidebar tag search + scrollable filter list ── */
 .books-sb-tag-search-wrap {
   position: relative;

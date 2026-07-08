@@ -1216,16 +1216,18 @@ export default function ProjectsView() {
         {years.length > 0 && (
           <div className="books-sb-section">
             <div className="books-sb-label">{t.projects.byYear}</div>
-            {years.map(({ year, count }) => (
-              <button
-                key={year}
-                className={`books-sb-item${yearFilter === year ? ' active' : ''}`}
-                onClick={() => handleYearFilter(year)}
-              >
-                <span className="books-year-badge">{year}</span>
-                <span className="books-sb-count">{count}</span>
-              </button>
-            ))}
+            <div key={`years-${statusFilter}`} className="projects-year-list">
+              {years.map(({ year, count }) => (
+                <button
+                  key={year}
+                  className={`books-sb-item${yearFilter === year ? ' active' : ''}`}
+                  onClick={() => handleYearFilter(year)}
+                >
+                  <span className="books-year-badge">{year}</span>
+                  <span className="books-sb-count">{count}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -1243,7 +1245,7 @@ export default function ProjectsView() {
                 spellCheck={false}
               />
             </div>
-            <div className="books-sb-tag-list">
+            <div key={`tags-${statusFilter}-${yearFilter ?? ''}`} className="books-sb-tag-list">
               {filteredTagFolders.length === 0 ? (
                 <div className="books-sb-tag-empty">{t.tags.noTags}</div>
               ) : (
