@@ -10,7 +10,6 @@ import {
   IconPencil,
   IconX,
   IconCheck,
-  IconArrowLeft,
   IconSearch,
   IconTag,
   IconChevronDown,
@@ -1074,6 +1073,10 @@ export default function ProjectsView() {
   }
 
   function handleOpenFolder(folder: ProjectFolder) {
+    if (openFolder?.id === folder.id) {
+      handleBack();
+      return;
+    }
     setOpenFolder(folder);
     setViewAllProjects(false);
     setSearchQuery('');
@@ -1262,9 +1265,15 @@ export default function ProjectsView() {
     [folders, isFiltering]
   );
 
+  // Danh sách tag luôn đầy đủ, không ẩn theo status/year filter — chỉ số đếm
+  // (project_count) trên mỗi tag thay đổi theo filter đang chọn. Thứ tự cố định
+  // theo lúc tạo (id tăng dần), không đổi theo last_activity như lưới folder chính.
   const filteredTagFolders = useMemo(
-    () => visibleFolders.filter((f) => !tagSearch || f.name.toLowerCase().includes(tagSearch.toLowerCase())),
-    [visibleFolders, tagSearch]
+    () =>
+      folders
+        .filter((f) => !tagSearch || f.name.toLowerCase().includes(tagSearch.toLowerCase()))
+        .sort((a, b) => a.id - b.id),
+    [folders, tagSearch]
   );
 
   const headerSubText = useMemo(() => {
@@ -1324,7 +1333,7 @@ export default function ProjectsView() {
           <div className="books-sb-section">
             <div className="books-sb-label">{t.projects.byYear}</div>
             <div
-              key={`years-${category}-${statusFilter}`}
+              key={`years-${category}`}
               ref={yearListRef}
               className={`projects-year-list${years.length > YEAR_LIST_VISIBLE ? ' collapsible' : ''}${yearListExpanded ? ' expanded' : ''}`}
               style={{ maxHeight: yearListExpanded ? yearListFullHeight : (yearListCollapsedHeight ?? yearListFullHeight) }}
@@ -1367,7 +1376,7 @@ export default function ProjectsView() {
                 spellCheck={false}
               />
             </div>
-            <div key={`tags-${category}-${statusFilter}-${yearFilter ?? ''}`} className="projects-tag-list-anim">
+            <div key={`tags-${category}`} className="projects-tag-list-anim">
               <div className="books-sb-tag-list">
                 {filteredTagFolders.length === 0 ? (
                   <div className="books-sb-tag-empty">{t.tags.noTags}</div>
@@ -1402,14 +1411,14 @@ export default function ProjectsView() {
                     className={`projects-title-tab${!viewAllProjects ? ' active' : ''}`}
                     onClick={() => setViewAllProjects(false)}
                   >
-                    {copy.pageTitle}
+                    <span className="projects-title-tab-label">{copy.pageTitle}</span>
                   </button>
                   <button
                     type="button"
                     className={`projects-title-tab${viewAllProjects ? ' active' : ''}`}
                     onClick={handleShowAllProjects}
                   >
-                    {t.projects.viewAll}
+                    <span className="projects-title-tab-label">{t.projects.viewAll}</span>
                   </button>
                 </div>
                 <div className="books-header-sub">{viewAllProjects ? copy.totalCount(projects.length) : headerSubText}</div>
@@ -1510,16 +1519,10 @@ export default function ProjectsView() {
           </>
         ) : (
           <>
-            <div className="books-header projects-detail-header">
-              <div className="projects-back-row">
-                <button className="projects-back-btn" onClick={handleBack}>
-                  <IconArrowLeft size={15} />
-                  {t.projects.back}
-                </button>
-                <div>
-                  <div className="books-header-title">{openFolder.name}</div>
-                  <div className="books-header-sub">{copy.folderCount(projects.length)}</div>
-                </div>
+            <div className="books-header">
+              <div>
+                <div className="books-header-title">{openFolder.name}</div>
+                <div className="books-header-sub">{copy.folderCount(projects.length)}</div>
               </div>
               <button className="books-btn-add" onClick={() => setShowAddProjectModal(true)}>
                 <IconPlus size={13} />

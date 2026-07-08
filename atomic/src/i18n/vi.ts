@@ -462,7 +462,6 @@ export const vi = {
     sortDate: "Ngày bắt đầu",
     sortTitle: "Tên dự án",
     sortStatus: "Trạng thái",
-    back: "Quay lại",
     edit: "Sửa",
     delete: "Xóa",
     done: "Xong",

@@ -9094,7 +9094,7 @@ select {
 .projects-title-tab {
   display: inline-flex;
   align-items: center;
-  padding: 3px 9px 5px;
+  padding: 3px 9px 5px 0;
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -9102,17 +9102,22 @@ select {
   font-weight: 600;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
   transition:
     background 0.12s,
     color 0.12s;
 }
 .projects-title-tab:hover {
-  background: var(--bg-hover);
+  /* background: var(--bg-hover); */
   color: var(--text-primary);
 }
 .projects-title-tab.active {
   color: var(--text-primary);
+}
+.projects-title-tab-label {
+  padding-bottom: 7px;
+  border-bottom: 2px solid transparent;
+}
+.projects-title-tab.active .projects-title-tab-label {
   border-bottom-color: var(--primary);
 }
 
@@ -10322,7 +10327,7 @@ select {
   animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
 }
 
-/* ── Slide+fade when "by year" / tags list contents change ── */
+/* ── Slide+fade when switching Product/Figma/Piano category tab ── */
 @keyframes projects-sidebar-list-in {
   from {
     opacity: 0;
@@ -10619,38 +10624,6 @@ select {
   gap: 6px;
   color: var(--text-muted);
   font-size: 0.78rem;
-}
-
-/* ── Folder detail header (level 2) ── */
-.projects-detail-header {
-  align-items: flex-start;
-}
-
-.projects-back-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.projects-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 10px;
-  border-radius: var(--radius-md);
-  border: 0.5px solid var(--border-1);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition:
-    background 0.12s,
-    color 0.12s;
-  flex-shrink: 0;
-}
-.projects-back-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
 }
 
 /* ── Project card grid (level 2) ── */

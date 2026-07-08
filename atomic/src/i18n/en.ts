@@ -486,7 +486,6 @@ export const en: typeof vi = {
     sortDate: "Start date",
     sortTitle: "Title",
     sortStatus: "Status",
-    back: "Back",
     edit: "Edit",
     delete: "Delete",
     done: "Done",

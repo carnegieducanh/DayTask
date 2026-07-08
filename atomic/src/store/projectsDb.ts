@@ -189,16 +189,18 @@ export async function dbGetYearsWithCounts(
 ): Promise<{ year: number; count: number }[]> {
   if (!isTauri()) return [];
   const db = await getDb();
-  const conditions = ['category = $1'];
   const params: unknown[] = [category];
+  // Đếm có điều kiện (CASE WHEN) thay vì lọc ở WHERE, để danh sách năm luôn đầy đủ
+  // (mọi năm có project trong category) — chỉ có số count thay đổi theo status filter.
+  let countExpr = 'COUNT(*)';
   if (status) {
-    conditions.push('status = $2');
+    countExpr = 'COUNT(CASE WHEN status = $2 THEN 1 END)';
     params.push(status);
   }
   return db.select<{ year: number; count: number }[]>(
-    `SELECT CAST(strftime('%Y', COALESCE(completed_date, start_date, created_at)) AS INTEGER) as year, COUNT(*) as count
+    `SELECT CAST(strftime('%Y', COALESCE(completed_date, start_date, created_at)) AS INTEGER) as year, ${countExpr} as count
      FROM projects
-     WHERE ${conditions.join(' AND ')}
+     WHERE category = $1
      GROUP BY year
      ORDER BY year DESC`,
     params
