@@ -10304,6 +10304,53 @@ select {
   animation: projects-sidebar-list-in 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
+/* ── "By year" collapsible list (see more / see less) ── */
+.projects-year-list.collapsible {
+  position: relative;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.projects-year-list.collapsible::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 24px;
+  background: linear-gradient(to bottom, transparent, var(--bg-secondary));
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+.projects-year-list.collapsible.expanded::after {
+  opacity: 0;
+}
+
+.projects-year-list-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin: 2px 0 0 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.12s;
+}
+.projects-year-list-toggle:hover {
+  color: var(--text-secondary);
+}
+.projects-year-list-chevron {
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.projects-year-list-chevron.open {
+  transform: rotate(180deg);
+}
+
 /* ── Sidebar tag search + scrollable filter list ── */
 .books-sb-tag-search-wrap {
   position: relative;

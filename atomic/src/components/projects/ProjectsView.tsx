@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { useSmoothScroll, attachSmoothScroll } from '../../hooks/useSmoothScroll';
 import ResizableTextarea from '../ResizableTextarea';
@@ -70,6 +70,7 @@ const CATEGORY_LINK_ICON: Record<ProjectCategory, { primary: React.ReactNode; se
 
 const MAX_COVER_DIM = 640;
 const COVER_JPEG_QUALITY = 0.82;
+const YEAR_LIST_VISIBLE = 3;
 
 function compressCoverImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -978,6 +979,9 @@ export default function ProjectsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('date');
   const [years, setYears] = useState<{ year: number; count: number }[]>([]);
+  const [yearListExpanded, setYearListExpanded] = useState(false);
+  const [yearListCollapsedHeight, setYearListCollapsedHeight] = useState<number | undefined>(undefined);
+  const [yearListFullHeight, setYearListFullHeight] = useState<number | undefined>(undefined);
   const [stats, setStats] = useState({ total: 0, inProgress: 0, completed: 0 });
   const [yearStats, setYearStats] = useState({ total: 0, inProgress: 0, completed: 0 });
   const [showAddFolderModal, setShowAddFolderModal] = useState(false);
@@ -992,6 +996,7 @@ export default function ProjectsView() {
 
   const mainRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const yearListRef = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteProjectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteFolderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1221,6 +1226,22 @@ export default function ProjectsView() {
     setYearFilter((prev) => (prev === year ? null : year));
   }
 
+  useLayoutEffect(() => {
+    const el = yearListRef.current;
+    if (!el) return;
+    const items = Array.from(el.children) as HTMLElement[];
+    const full = el.scrollHeight;
+    const collapsed = items.length > YEAR_LIST_VISIBLE
+      ? items[YEAR_LIST_VISIBLE - 1].offsetTop + items[YEAR_LIST_VISIBLE - 1].offsetHeight
+      : full;
+    setYearListFullHeight(full);
+    setYearListCollapsedHeight(collapsed);
+  }, [years]);
+
+  useEffect(() => {
+    setYearListExpanded(false);
+  }, [category, statusFilter]);
+
   const copy = t.projects.categoryCopy[category];
 
   const sortedProjects = useMemo(() => sortProjects(projects, sortBy), [projects, sortBy]);
@@ -1293,7 +1314,12 @@ export default function ProjectsView() {
         {years.length > 0 && (
           <div className="books-sb-section">
             <div className="books-sb-label">{t.projects.byYear}</div>
-            <div key={`years-${statusFilter}`} className="projects-year-list">
+            <div
+              key={`years-${statusFilter}`}
+              ref={yearListRef}
+              className={`projects-year-list${years.length > YEAR_LIST_VISIBLE ? ' collapsible' : ''}${yearListExpanded ? ' expanded' : ''}`}
+              style={{ maxHeight: yearListExpanded ? yearListFullHeight : (yearListCollapsedHeight ?? yearListFullHeight) }}
+            >
               {years.map(({ year, count }) => (
                 <button
                   key={year}
@@ -1305,6 +1331,16 @@ export default function ProjectsView() {
                 </button>
               ))}
             </div>
+            {years.length > YEAR_LIST_VISIBLE && (
+              <button
+                type="button"
+                className="projects-year-list-toggle"
+                onClick={() => setYearListExpanded((v) => !v)}
+              >
+                {yearListExpanded ? t.projects.seeLess : t.projects.seeMore}
+                <IconChevronDown size={12} className={`projects-year-list-chevron${yearListExpanded ? ' open' : ''}`} />
+              </button>
+            )}
           </div>
         )}
 
