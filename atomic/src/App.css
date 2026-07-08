@@ -10279,10 +10279,13 @@ select {
 /* ── Tab enter animations (reuses .books-wrap layout) ── */
 .projects-sidebar {
   animation: today-sidebar-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
-  /* Rộng hơn .books-sidebar (192px) một chút để chỗ cho scrollbar dọc
-     khi app co nhỏ, tránh làm nội dung sidebar bị bóp hẹp lại */
-  width: 208px;
-  min-width: 208px;
+  /* Về lại 192px như .books-sidebar. Root cause của việc "co lại" không phải do
+     thiếu chỗ — box-sizing: border-box đã giữ nguyên bề rộng khung. Vấn đề là
+     thanh scroll dọc chỉ chiếm chỗ MỖI KHI xuất hiện, nên nội dung bên trong bị
+     dồn/co lại đúng lúc đó (layout shift). scrollbar-gutter: stable đặt chỗ sẵn
+     cho scrollbar vĩnh viễn, dù đang hiện hay không, nên nội dung không bao giờ
+     bị xê dịch nữa. */
+  scrollbar-gutter: stable;
 }
 .projects-main {
   animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
