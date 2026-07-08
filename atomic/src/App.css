@@ -10279,6 +10279,10 @@ select {
 /* ── Tab enter animations (reuses .books-wrap layout) ── */
 .projects-sidebar {
   animation: today-sidebar-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
+  /* Rộng hơn .books-sidebar (192px) một chút để chỗ cho scrollbar dọc
+     khi app co nhỏ, tránh làm nội dung sidebar bị bóp hẹp lại */
+  width: 208px;
+  min-width: 208px;
 }
 .projects-main {
   animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
