@@ -464,6 +464,7 @@ export const vi = {
     folderCount: (n: number) => `${n} dự án`,
     folderUpdated: (date: string) => `Cập nhật ${date}`,
     emptyFolders: "Chưa có folder nào. Tạo folder đầu tiên!",
+    emptyFolderResults: "Không có folder nào chứa dự án khớp bộ lọc này",
     emptyProjects: "Chưa có dự án nào trong folder này",
     emptySearch: "Không tìm thấy dự án nào",
     searchPlaceholder: "Tìm theo tên dự án...",

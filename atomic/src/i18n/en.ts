@@ -488,6 +488,7 @@ export const en: typeof vi = {
     folderCount: (n: number) => `${n} projects`,
     folderUpdated: (date: string) => `Updated ${date}`,
     emptyFolders: "No folders yet. Create your first one!",
+    emptyFolderResults: "No folders contain a project matching this filter",
     emptyProjects: "No projects in this folder yet",
     emptySearch: "No projects found",
     searchPlaceholder: "Search by project title...",

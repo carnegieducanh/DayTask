@@ -930,10 +930,12 @@ export default function ProjectsView() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [yearFilter, setYearFilter] = useState<number | null>(null);
+  const [tagSearch, setTagSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('date');
   const [years, setYears] = useState<{ year: number; count: number }[]>([]);
   const [stats, setStats] = useState({ total: 0, inProgress: 0, completed: 0 });
+  const [yearStats, setYearStats] = useState({ total: 0, inProgress: 0, completed: 0 });
   const [showAddFolderModal, setShowAddFolderModal] = useState(false);
   const [editingFolder, setEditingFolder] = useState<ProjectFolder | null>(null);
   const [showAddProjectModal, setShowAddProjectModal] = useState(false);
@@ -958,8 +960,12 @@ export default function ProjectsView() {
     setStats(await dbGetProjectStats());
   }, []);
 
-  const loadYears = useCallback(async () => {
-    setYears(await dbGetYearsWithCounts());
+  const loadYearStats = useCallback(async (year: number | null) => {
+    setYearStats(await dbGetProjectStats(year ?? undefined));
+  }, []);
+
+  const loadYears = useCallback(async (status: StatusFilter) => {
+    setYears(await dbGetYearsWithCounts(status === 'all' ? undefined : status));
   }, []);
 
   const loadFolders = useCallback(async (status: StatusFilter, year: number | null) => {
@@ -987,12 +993,13 @@ export default function ProjectsView() {
   useEffect(() => {
     if (!seeded) return;
     loadStats();
-    loadYears();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seeded]);
 
   useEffect(() => {
     if (!seeded) return;
+    loadYearStats(yearFilter);
+    loadYears(statusFilter);
     loadFolders(statusFilter, yearFilter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seeded, statusFilter, yearFilter]);
@@ -1025,7 +1032,8 @@ export default function ProjectsView() {
   async function refreshAll() {
     await Promise.all([
       loadStats(),
-      loadYears(),
+      loadYearStats(yearFilter),
+      loadYears(statusFilter),
       loadFolders(statusFilter, yearFilter),
       openFolder ? loadProjects(openFolder.name, statusFilter, yearFilter, searchQuery) : Promise.resolve(),
     ]);
@@ -1046,7 +1054,7 @@ export default function ProjectsView() {
   async function commitDeleteFolder(folder: ProjectFolder) {
     await dbDeleteFolder(folder.id);
     setPendingDeleteFolder(null);
-    await Promise.all([loadStats(), loadYears()]);
+    await Promise.all([loadStats(), loadYearStats(yearFilter), loadYears(statusFilter)]);
   }
 
   function handleDeleteFolder(folder: ProjectFolder) {
@@ -1101,7 +1109,7 @@ export default function ProjectsView() {
 
   async function commitDeleteProject(project: Project) {
     await dbDeleteProject(project.id);
-    await Promise.all([loadStats(), loadYears(), loadFolders(statusFilter, yearFilter)]);
+    await Promise.all([loadStats(), loadYearStats(yearFilter), loadYears(statusFilter), loadFolders(statusFilter, yearFilter)]);
     setPendingDeleteProject(null);
   }
 
@@ -1153,11 +1161,23 @@ export default function ProjectsView() {
 
   const sortedProjects = useMemo(() => sortProjects(projects, sortBy), [projects, sortBy]);
 
+  const isFiltering = statusFilter !== 'all' || yearFilter !== null;
+
+  const visibleFolders = useMemo(
+    () => (isFiltering ? folders.filter((f) => f.project_count > 0) : folders),
+    [folders, isFiltering]
+  );
+
+  const filteredTagFolders = useMemo(
+    () => visibleFolders.filter((f) => !tagSearch || f.name.toLowerCase().includes(tagSearch.toLowerCase())),
+    [visibleFolders, tagSearch]
+  );
+
   const headerSubText = useMemo(() => {
-    if (statusFilter === 'in_progress') return t.projects.totalCount(stats.inProgress);
-    if (statusFilter === 'completed') return t.projects.totalCount(stats.completed);
-    return t.projects.totalCount(stats.total);
-  }, [stats, t, statusFilter]);
+    if (statusFilter === 'in_progress') return t.projects.totalCount(yearStats.inProgress);
+    if (statusFilter === 'completed') return t.projects.totalCount(yearStats.completed);
+    return t.projects.totalCount(yearStats.total);
+  }, [yearStats, t, statusFilter]);
 
   const emptyProjectsText = searchQuery ? t.projects.emptySearch : t.projects.emptyProjects;
 
@@ -1208,6 +1228,40 @@ export default function ProjectsView() {
             ))}
           </div>
         )}
+
+        {folders.length > 0 && (
+          <div className="books-sb-section">
+            <div className="books-sb-label">{t.calendar.filterTags}</div>
+            <div className="books-sb-tag-search-wrap">
+              <IconSearch size={12} className="books-sb-tag-search-icon" />
+              <input
+                className="books-sb-tag-search"
+                type="text"
+                placeholder={t.calendar.filterTagSearch}
+                value={tagSearch}
+                onChange={(e) => setTagSearch(e.target.value)}
+                spellCheck={false}
+              />
+            </div>
+            <div className="books-sb-tag-list">
+              {filteredTagFolders.length === 0 ? (
+                <div className="books-sb-tag-empty">{t.tags.noTags}</div>
+              ) : (
+                filteredTagFolders.map((folder) => (
+                  <button
+                    key={folder.id}
+                    className={`books-sb-item${openFolder?.id === folder.id ? ' active' : ''}`}
+                    onClick={() => handleOpenFolder(folder)}
+                  >
+                    <IconTag size={13} />
+                    <span className="books-sb-item-name">{folder.name}</span>
+                    <span className="books-sb-count">{folder.project_count}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Main ── */}
@@ -1235,9 +1289,14 @@ export default function ProjectsView() {
                     {t.projects.addFolder}
                   </button>
                 </div>
+              ) : visibleFolders.length === 0 ? (
+                <div className="books-empty-state">
+                  <IconFolderCode size={36} className="books-empty-icon" />
+                  <p className="books-empty-text">{t.projects.emptyFolderResults}</p>
+                </div>
               ) : (
                 <div className="projects-folder-grid">
-                  {folders.map((folder) => (
+                  {visibleFolders.map((folder) => (
                     <FolderCard
                       key={folder.id}
                       folder={folder}

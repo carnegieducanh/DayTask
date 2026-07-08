@@ -71,7 +71,7 @@ export async function dbGetProjects(opts: {
     params.push(opts.status);
   }
   if (opts.year) {
-    conditions.push(`CAST(strftime('%Y', p.start_date) AS INTEGER) = $${idx++}`);
+    conditions.push(`CAST(strftime('%Y', COALESCE(p.completed_date, p.start_date, p.created_at)) AS INTEGER) = $${idx++}`);
     params.push(opts.year);
   }
   if (opts.folder) {
@@ -147,14 +147,16 @@ export async function dbDeleteProject(id: number): Promise<void> {
   await db.execute('DELETE FROM projects WHERE id = $1', [id]);
 }
 
-export async function dbGetProjectStats(): Promise<{ total: number; inProgress: number; completed: number }> {
+export async function dbGetProjectStats(year?: number): Promise<{ total: number; inProgress: number; completed: number }> {
   if (!isTauri()) return { total: 0, inProgress: 0, completed: 0 };
   const db = await getDb();
+  const where = year ? `WHERE CAST(strftime('%Y', COALESCE(completed_date, start_date, created_at)) AS INTEGER) = $1` : '';
   const rows = await db.select<{ total: number; inProgress: number; completed: number }[]>(
     `SELECT COUNT(*) as total,
        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as inProgress,
        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
-     FROM projects`
+     FROM projects ${where}`,
+    year ? [year] : []
   );
   return {
     total: rows[0]?.total ?? 0,
@@ -163,15 +165,17 @@ export async function dbGetProjectStats(): Promise<{ total: number; inProgress: 
   };
 }
 
-export async function dbGetYearsWithCounts(): Promise<{ year: number; count: number }[]> {
+export async function dbGetYearsWithCounts(status?: ProjectStatus): Promise<{ year: number; count: number }[]> {
   if (!isTauri()) return [];
   const db = await getDb();
+  const where = status ? 'WHERE status = $1' : '';
   return db.select<{ year: number; count: number }[]>(
-    `SELECT CAST(strftime('%Y', start_date) AS INTEGER) as year, COUNT(*) as count
+    `SELECT CAST(strftime('%Y', COALESCE(completed_date, start_date, created_at)) AS INTEGER) as year, COUNT(*) as count
      FROM projects
-     WHERE start_date IS NOT NULL
+     ${where}
      GROUP BY year
-     ORDER BY year DESC`
+     ORDER BY year DESC`,
+    status ? [status] : []
   );
 }
 
@@ -198,7 +202,7 @@ export async function dbGetFolders(opts: { status?: ProjectStatus; year?: number
     params.push(opts.status);
   }
   if (opts.year) {
-    conditions.push(`CAST(strftime('%Y', p.start_date) AS INTEGER) = $${idx++}`);
+    conditions.push(`CAST(strftime('%Y', COALESCE(p.completed_date, p.start_date, p.created_at)) AS INTEGER) = $${idx++}`);
     params.push(opts.year);
   }
   const filterExpr = conditions.join(' AND ');
