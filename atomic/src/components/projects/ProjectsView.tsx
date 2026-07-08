@@ -4,7 +4,6 @@ import { useSmoothScroll, attachSmoothScroll } from '../../hooks/useSmoothScroll
 import ResizableTextarea from '../ResizableTextarea';
 import {
   IconFolderCode,
-  IconFolder,
   IconCode,
   IconPlus,
   IconTrash,
@@ -44,6 +43,7 @@ import {
   dbRenameFolderName,
   dbDeleteFolderByName,
   seedProjectsIfEmpty,
+  defaultFolderCover,
 } from '../../store/projectsDb';
 import { useT } from '../../i18n';
 
@@ -121,13 +121,7 @@ function FolderCard({
   return (
     <div className="projects-folder-card" onClick={onOpen}>
       <div className="projects-folder-cover">
-        {folder.cover_image ? (
-          <img src={folder.cover_image} alt={folder.name} />
-        ) : (
-          <div className="projects-folder-cover-placeholder">
-            <IconFolder size={30} />
-          </div>
-        )}
+        <img src={folder.cover_image ?? defaultFolderCover(folder.name)} alt={folder.name} />
         <div className="projects-folder-actions">
           <button className="projects-folder-action-btn" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
             <IconPencil size={13} />

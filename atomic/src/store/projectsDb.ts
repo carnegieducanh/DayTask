@@ -313,12 +313,25 @@ export async function dbDeleteFolderByName(name: string, category: ProjectCatego
   if (rows.length) await dbDeleteFolder(rows[0].id);
 }
 
-// ── Dev seed data ──────────────────────────────────────────────────────────
+// ── Default covers ──────────────────────────────────────────────────────────
 
-function coverPlaceholder(hex: string): string {
+export function coverPlaceholder(hex: string): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${hex}"/><stop offset="1" stop-color="${hex}" stop-opacity="0.55"/></linearGradient></defs><rect width="320" height="180" fill="url(#g)"/></svg>`;
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
+
+const DEFAULT_FOLDER_COVER_COLORS = [
+  '#F4511E', '#F6BF26', '#3F51B5', '#039BE5', '#546E7A',
+  '#33B679', '#4DB6AC', '#8E24AA', '#E67C73', '#AB47BC',
+];
+
+export function defaultFolderCover(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return coverPlaceholder(DEFAULT_FOLDER_COVER_COLORS[hash % DEFAULT_FOLDER_COVER_COLORS.length]);
+}
+
+// ── Dev seed data ──────────────────────────────────────────────────────────
 
 const PRODUCT_FOLDER_SEED: { name: string; color: string }[] = [
   { name: 'HTML/CSS', color: '#F4511E' },
