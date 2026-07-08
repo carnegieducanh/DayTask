@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { useSmoothScroll, attachSmoothScroll } from '../../hooks/useSmoothScroll';
+import ResizableTextarea from '../ResizableTextarea';
 import {
   IconBooks,
   IconBook2,
@@ -825,7 +826,7 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
           </div>
 
           <label className="books-modal-label">{t.books.notesLabel}</label>
-          <textarea
+          <ResizableTextarea
             ref={notesRef}
             className="books-modal-textarea"
             placeholder={t.books.notesPlaceholder}

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { attachSmoothScroll } from "../../hooks/useSmoothScroll";
 import { useModalClose } from "../../hooks/useModalClose";
+import ResizableTextarea from "../ResizableTextarea";
 import {
   IconChevronDown,
   IconDotsVertical,
@@ -498,14 +499,13 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
 
           <div className="form-group">
             <label className="form-label">{t.taskModal.descLabel}</label>
-            <textarea
+            <ResizableTextarea
               className="form-input"
               value={description}
               onChange={(e) => setDesc(e.target.value)}
               placeholder={t.taskModal.descPlaceholder}
               rows={2}
               spellCheck={false}
-              style={{ resize: "vertical" }}
             />
           </div>
 

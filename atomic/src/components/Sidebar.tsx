@@ -6,6 +6,7 @@ import {
   IconNotebook,
   IconQuote,
   IconBooks,
+  IconFolderCode,
   IconChevronLeft,
   IconChevronRight,
   IconSettings,
@@ -37,6 +38,7 @@ export default function Sidebar() {
     { id: "heatmap",  label: t.nav.heatmap,  icon: <IconChartDots size={16} /> },
     { id: "quotes",   label: t.nav.quotes,   icon: <IconQuote size={16} /> },
     { id: "books",    label: t.nav.books,    icon: <IconBooks size={16} /> },
+    { id: "projects", label: t.nav.projects, icon: <IconFolderCode size={16} /> },
   ];
 
   const pendingCount = tasks.filter((t) => !t.is_done).length;

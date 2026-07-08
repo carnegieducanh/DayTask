@@ -311,6 +311,40 @@ pub fn run() {
             INSERT OR IGNORE INTO book_tag_pool (tag) SELECT DISTINCT tag FROM book_tags;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 20,
+            description: "create_projects_tables",
+            sql: "CREATE TABLE IF NOT EXISTS project_folders (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                name        TEXT NOT NULL UNIQUE,
+                cover_image TEXT DEFAULT NULL,
+                created_at  TEXT DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS projects (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                title          TEXT NOT NULL,
+                status         TEXT NOT NULL CHECK(status IN ('in_progress','completed')) DEFAULT 'in_progress',
+                start_date     TEXT DEFAULT NULL,
+                completed_date TEXT DEFAULT NULL,
+                notes          TEXT DEFAULT NULL,
+                link_repo      TEXT DEFAULT NULL,
+                link_youtube   TEXT DEFAULT NULL,
+                created_at     TEXT DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS project_folder_links (
+                project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                folder_id  INTEGER NOT NULL REFERENCES project_folders(id) ON DELETE CASCADE,
+                PRIMARY KEY (project_id, folder_id)
+            );
+            PRAGMA foreign_keys = ON;",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 21,
+            description: "add_project_cover_image",
+            sql: "ALTER TABLE projects ADD COLUMN cover_image TEXT DEFAULT NULL;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

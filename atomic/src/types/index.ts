@@ -115,7 +115,7 @@ export interface Tag {
   created_at: string;
 }
 
-export type Tab = 'today' | 'kanban' | 'heatmap' | 'calendar' | 'journal' | 'quotes' | 'books';
+export type Tab = 'today' | 'kanban' | 'heatmap' | 'calendar' | 'journal' | 'quotes' | 'books' | 'projects';
 
 export type JournalType = 'gratitude' | 'lesson';
 
@@ -183,6 +183,43 @@ export interface NewBook {
   finished_date?: string | null;
   notes?: string | null;
   tags?: string[];
+}
+
+export type ProjectStatus = 'in_progress' | 'completed';
+
+export interface ProjectFolder {
+  id: number;
+  name: string;
+  cover_image: string | null;
+  project_count: number;
+  last_activity: string | null;
+  created_at: string;
+}
+
+export interface Project {
+  id: number;
+  title: string;
+  status: ProjectStatus;
+  start_date: string | null;
+  completed_date: string | null;
+  notes: string | null;
+  link_repo: string | null;
+  link_youtube: string | null;
+  cover_image: string | null;
+  folders: string[];
+  created_at: string;
+}
+
+export interface NewProject {
+  title: string;
+  status: ProjectStatus;
+  start_date?: string | null;
+  completed_date?: string | null;
+  notes?: string | null;
+  cover_image?: string | null;
+  link_repo?: string | null;
+  link_youtube?: string | null;
+  folders: string[];
 }
 
 export type Theme = 'light' | 'dark';

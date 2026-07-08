@@ -27,6 +27,9 @@ type QuoteTagRow = { quote_id: number; tag: string };
 type BookRow = { id: number; title: string; author: string | null; cover_image: string | null; status: string; finished_date: string | null; notes: string | null; created_at: string };
 type BookTagRow = { book_id: number; tag: string };
 type BookGoalRow = { year: number; goal: number };
+type ProjectFolderRow = { id: number; name: string; cover_image: string | null; created_at: string };
+type ProjectRow = { id: number; title: string; status: string; start_date: string | null; completed_date: string | null; notes: string | null; link_repo: string | null; link_youtube: string | null; cover_image: string | null; created_at: string };
+type ProjectFolderLinkRow = { project_id: number; folder_id: number };
 
 const DEFAULT_CATEGORY_COLORS: CategoryColors = {
   work:         '#7DD3FC',
@@ -1341,6 +1344,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     let books: BookRow[];
     let bookTags: BookTagRow[];
     let bookReadingGoals: BookGoalRow[];
+    let projectFolders: ProjectFolderRow[];
+    let projects: ProjectRow[];
+    let projectFolderLinks: ProjectFolderLinkRow[];
 
     if (!isTauri()) {
       tasks = [...mockTasks];
@@ -1362,6 +1368,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       books = [];
       bookTags = [];
       bookReadingGoals = [];
+      projectFolders = [];
+      projects = [];
+      projectFolderLinks = [];
     } else {
       const db = await getDb();
       tasks = await db.select<Task[]>('SELECT * FROM tasks ORDER BY date ASC, created_at ASC');
@@ -1383,6 +1392,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       books = await db.select<BookRow[]>('SELECT * FROM books ORDER BY id ASC');
       bookTags = await db.select<BookTagRow[]>('SELECT book_id, tag FROM book_tags');
       bookReadingGoals = await db.select<BookGoalRow[]>('SELECT year, goal FROM book_reading_goals ORDER BY year ASC');
+      projectFolders = await db.select<ProjectFolderRow[]>('SELECT * FROM project_folders ORDER BY id ASC');
+      projects = await db.select<ProjectRow[]>('SELECT * FROM projects ORDER BY id ASC');
+      projectFolderLinks = await db.select<ProjectFolderLinkRow[]>('SELECT project_id, folder_id FROM project_folder_links');
     }
 
     const payload = {
@@ -1390,6 +1402,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       exportedAt: new Date().toISOString(),
       tasks, goals, checklistItems, categoryColors, tags, taskTags: taskTagPairs, timeEntries,
       journalEntries, weeklyChecklist, vocabWords, quotes, quoteTags, books, bookTags, bookReadingGoals,
+      projectFolders, projects, projectFolderLinks,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -1410,6 +1423,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       journalEntries?: JournalEntryRow[]; weeklyChecklist?: WeeklyChecklistRow[]; vocabWords?: VocabWordRow[];
       quotes?: QuoteRow[]; quoteTags?: QuoteTagRow[];
       books?: BookRow[]; bookTags?: BookTagRow[]; bookReadingGoals?: BookGoalRow[];
+      projectFolders?: ProjectFolderRow[]; projects?: ProjectRow[]; projectFolderLinks?: ProjectFolderLinkRow[];
     };
     try {
       data = JSON.parse(text);
@@ -1570,6 +1584,34 @@ export const useAppStore = create<AppState>((set, get) => ({
                ON CONFLICT(year) DO UPDATE SET goal = excluded.goal`,
               [g.year, g.goal]
             );
+          }
+        }
+      }
+
+      if (Array.isArray(data.projects)) {
+        await db.execute('DELETE FROM project_folder_links');
+        await db.execute('DELETE FROM project_folders');
+        await db.execute('DELETE FROM projects');
+        if (Array.isArray(data.projectFolders)) {
+          for (const f of data.projectFolders) {
+            await db.execute(
+              'INSERT INTO project_folders (id, name, cover_image, created_at) VALUES ($1,$2,$3,$4)',
+              [f.id, f.name, f.cover_image ?? null, f.created_at]
+            );
+          }
+        }
+        if (Array.isArray(data.projects)) {
+          for (const p of data.projects) {
+            await db.execute(
+              `INSERT INTO projects (id, title, status, start_date, completed_date, notes, link_repo, link_youtube, cover_image, created_at)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+              [p.id, p.title, p.status, p.start_date ?? null, p.completed_date ?? null, p.notes ?? null, p.link_repo ?? null, p.link_youtube ?? null, p.cover_image ?? null, p.created_at]
+            );
+          }
+        }
+        if (Array.isArray(data.projectFolderLinks)) {
+          for (const l of data.projectFolderLinks) {
+            await db.execute('INSERT OR IGNORE INTO project_folder_links (project_id, folder_id) VALUES ($1, $2)', [l.project_id, l.folder_id]);
           }
         }
       }

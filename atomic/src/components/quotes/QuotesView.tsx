@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
+import ResizableTextarea from '../ResizableTextarea';
 import {
   IconQuote,
   IconHeart,
@@ -173,7 +174,7 @@ function AddQuoteModal({ onSave, onClose, initialQuote, onTagDeleted }: AddQuote
 
         <div className="quotes-modal-body">
           <label className="quotes-modal-label">{t.quotes.textLabel}</label>
-          <textarea
+          <ResizableTextarea
             ref={textRef}
             className="quotes-modal-textarea"
             placeholder={t.quotes.textPlaceholder}

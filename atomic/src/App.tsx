@@ -21,6 +21,7 @@ import CalendarView from './components/calendar/CalendarView';
 import JournalView from './components/journal/JournalView';
 import QuotesView from './components/quotes/QuotesView';
 import BooksView from './components/books/BooksView';
+import ProjectsView from './components/projects/ProjectsView';
 import ReminderPopup from './components/ReminderPopup';
 import DeleteToast from './components/DeleteToast';
 import SettingsModal from './components/SettingsModal';
@@ -330,6 +331,7 @@ function App() {
           {activeTab === 'journal' && <JournalView />}
           {activeTab === 'quotes' && <QuotesView />}
           {activeTab === 'books' && <BooksView />}
+          {activeTab === 'projects' && <ProjectsView />}
           <ReminderPopup />
           <DeleteToast />
           <SettingsModal />

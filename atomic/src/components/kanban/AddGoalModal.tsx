@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { attachSmoothScroll } from "../../hooks/useSmoothScroll";
 import { useModalClose } from "../../hooks/useModalClose";
+import ResizableTextarea from "../ResizableTextarea";
 import {
   IconX,
   IconPlus,
@@ -278,13 +279,12 @@ export default function AddGoalModal({
 
           <div className="form-group">
             <label className="form-label">{t.goalModal.descLabel}</label>
-            <textarea
+            <ResizableTextarea
               className="form-input"
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
               rows={2}
               spellCheck={false}
-              style={{ resize: "vertical" }}
             />
           </div>
 
