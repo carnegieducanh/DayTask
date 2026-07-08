@@ -20,9 +20,14 @@ import {
   IconCircleCheck,
   IconBrandGithub,
   IconBrandYoutube,
+  IconBrandFigma,
+  IconPiano,
+  IconFileMusic,
+  IconVideo,
+  IconExternalLink,
   IconStack2,
 } from '@tabler/icons-react';
-import type { Project, ProjectFolder, ProjectStatus, NewProject } from '../../types';
+import type { Project, ProjectFolder, ProjectStatus, ProjectCategory, NewProject } from '../../types';
 import {
   dbGetProjects,
   dbAddProject,
@@ -44,6 +49,24 @@ import { useT } from '../../i18n';
 
 type StatusFilter = 'all' | ProjectStatus;
 type SortBy = 'date' | 'title' | 'status';
+
+const CATEGORY_TAB_ICON: Record<ProjectCategory, React.ReactNode> = {
+  product: <IconCode size={15} />,
+  figma: <IconBrandFigma size={15} />,
+  piano: <IconPiano size={15} />,
+};
+
+const CATEGORY_CARD_ICON: Record<ProjectCategory, React.ReactNode> = {
+  product: <IconCode size={26} />,
+  figma: <IconBrandFigma size={26} />,
+  piano: <IconPiano size={26} />,
+};
+
+const CATEGORY_LINK_ICON: Record<ProjectCategory, { primary: React.ReactNode; secondary: React.ReactNode }> = {
+  product: { primary: <IconBrandGithub size={14} />, secondary: <IconBrandYoutube size={14} /> },
+  figma: { primary: <IconBrandFigma size={14} />, secondary: <IconExternalLink size={14} /> },
+  piano: { primary: <IconFileMusic size={14} />, secondary: <IconVideo size={14} /> },
+};
 
 const MAX_COVER_DIM = 640;
 const COVER_JPEG_QUALITY = 0.82;
@@ -94,6 +117,7 @@ function FolderCard({
   folder: ProjectFolder; onOpen: () => void; onEdit: () => void; onDelete: () => void;
 }) {
   const t = useT();
+  const copy = t.projects.categoryCopy[folder.category];
   return (
     <div className="projects-folder-card" onClick={onOpen}>
       <div className="projects-folder-cover">
@@ -116,7 +140,7 @@ function FolderCard({
       <div className="projects-folder-body">
         <div className="projects-folder-name" title={folder.name}>{folder.name}</div>
         <div className="projects-folder-meta">
-          <span>{t.projects.folderCount(folder.project_count)}</span>
+          <span>{copy.folderCount(folder.project_count)}</span>
           {folder.last_activity && <span>{t.projects.folderUpdated(formatISODate(folder.last_activity.split(' ')[0]))}</span>}
         </div>
       </div>
@@ -127,13 +151,15 @@ function FolderCard({
 // ── AddFolderModal ───────────────────────────────────────────────────────────
 
 interface AddFolderModalProps {
+  category: ProjectCategory;
   onSave: (name: string, coverImage: string | null) => Promise<void>;
   onClose: () => void;
   initialFolder?: ProjectFolder;
 }
 
-function AddFolderModal({ onSave, onClose, initialFolder }: AddFolderModalProps) {
+function AddFolderModal({ category, onSave, onClose, initialFolder }: AddFolderModalProps) {
   const t = useT();
+  const copy = t.projects.categoryCopy[category];
   const isEdit = !!initialFolder;
   const [name, setName] = useState(initialFolder?.name ?? '');
   const [coverImage, setCoverImage] = useState<string | null>(initialFolder?.cover_image ?? null);
@@ -234,7 +260,7 @@ function AddFolderModal({ onSave, onClose, initialFolder }: AddFolderModalProps)
           <input
             ref={nameRef}
             className="books-modal-input"
-            placeholder={t.projects.folderNamePlaceholder}
+            placeholder={copy.folderNamePlaceholder}
             value={name}
             onChange={(e) => setName(e.target.value)}
             spellCheck={false}
@@ -265,7 +291,8 @@ function ProjectCard({
   project: Project; onView: () => void; onEdit: () => void; onDelete: () => void;
 }) {
   const t = useT();
-  const statusLabel = project.status === 'completed' ? t.projects.statusCompleted : t.projects.statusInProgress;
+  const copy = t.projects.categoryCopy[project.category];
+  const statusLabel = project.status === 'completed' ? copy.statusCompleted : copy.statusInProgress;
   const dateText = project.status === 'completed' && project.completed_date
     ? formatISODate(project.completed_date)
     : project.start_date
@@ -279,7 +306,7 @@ function ProjectCard({
           <img src={project.cover_image} alt={project.title} />
         ) : (
           <div className="projects-folder-cover-placeholder">
-            <IconCode size={26} />
+            {CATEGORY_CARD_ICON[project.category]}
           </div>
         )}
         <div className="projects-folder-actions">
@@ -300,6 +327,7 @@ function ProjectCard({
           {dateText && <span className="projects-card-date">{dateText}</span>}
         </div>
         <div className="projects-card-title" title={project.title}>{project.title}</div>
+        {project.composer && <div className="projects-card-composer">{project.composer}</div>}
         {project.notes && <div className="projects-card-notes">{project.notes}</div>}
         {project.folders.length > 0 && (
           <div className="projects-card-tags">
@@ -340,10 +368,12 @@ function ProjectDetailModal({ project, onClose, onEdit, onDelete, onStatusChange
     return () => document.removeEventListener('mousedown', handler);
   }, [statusMenuOpen]);
 
-  const statusLabel = project.status === 'completed' ? t.projects.statusCompleted : t.projects.statusInProgress;
+  const copy = t.projects.categoryCopy[project.category];
+  const linkIcons = CATEGORY_LINK_ICON[project.category];
+  const statusLabel = project.status === 'completed' ? copy.statusCompleted : copy.statusInProgress;
   const statusOptions: { id: ProjectStatus; label: string }[] = [
-    { id: 'in_progress', label: t.projects.statusInProgress },
-    { id: 'completed', label: t.projects.statusCompleted },
+    { id: 'in_progress', label: copy.statusInProgress },
+    { id: 'completed', label: copy.statusCompleted },
   ];
 
   function handleStatusPick(next: ProjectStatus) {
@@ -387,6 +417,7 @@ function ProjectDetailModal({ project, onClose, onEdit, onDelete, onStatusChange
             </div>
           )}
           <div className="projects-detail-title">{project.title}</div>
+          {project.composer && <div className="projects-detail-composer">{project.composer}</div>}
 
           <div className="books-detail-badges">
             <div className="books-detail-status-dropdown" ref={statusMenuRef}>
@@ -431,14 +462,14 @@ function ProjectDetailModal({ project, onClose, onEdit, onDelete, onStatusChange
             <div className="projects-detail-links">
               {project.link_repo && (
                 <button className="projects-detail-link-btn" onClick={() => openLink(project.link_repo!)}>
-                  <IconBrandGithub size={14} />
-                  {t.projects.openRepo}
+                  {linkIcons.primary}
+                  {copy.openPrimary}
                 </button>
               )}
               {project.link_youtube && (
                 <button className="projects-detail-link-btn" onClick={() => openLink(project.link_youtube!)}>
-                  <IconBrandYoutube size={14} />
-                  {t.projects.openYoutube}
+                  {linkIcons.secondary}
+                  {copy.openSecondary}
                 </button>
               )}
             </div>
@@ -470,15 +501,17 @@ function ProjectDetailModal({ project, onClose, onEdit, onDelete, onStatusChange
 // ── AddProjectModal ──────────────────────────────────────────────────────────
 
 interface AddProjectModalProps {
+  category: ProjectCategory;
   onSave: (data: NewProject) => Promise<void>;
   onClose: () => void;
   initialProject?: Project;
   initialFolders?: string[];
-  onFolderDeleted: (name: string, undo: () => void) => void;
+  onFolderDeleted: (name: string, category: ProjectCategory, undo: () => void) => void;
 }
 
-function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFolderDeleted }: AddProjectModalProps) {
+function AddProjectModal({ category, onSave, onClose, initialProject, initialFolders, onFolderDeleted }: AddProjectModalProps) {
   const t = useT();
+  const copy = t.projects.categoryCopy[category];
   const isEdit = !!initialProject;
   const [title, setTitle] = useState(initialProject?.title ?? '');
   const [status, setStatus] = useState<ProjectStatus>(initialProject?.status ?? 'in_progress');
@@ -487,6 +520,7 @@ function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFo
   const [notes, setNotes] = useState(initialProject?.notes ?? '');
   const [linkRepo, setLinkRepo] = useState(initialProject?.link_repo ?? '');
   const [linkYoutube, setLinkYoutube] = useState(initialProject?.link_youtube ?? '');
+  const [composer, setComposer] = useState(initialProject?.composer ?? '');
   const [folders, setFolders] = useState<string[]>(initialProject?.folders ?? initialFolders ?? []);
   const [coverImage, setCoverImage] = useState<string | null>(initialProject?.cover_image ?? null);
   const [coverDragOver, setCoverDragOver] = useState(false);
@@ -521,8 +555,8 @@ function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFo
 
   useEffect(() => {
     titleRef.current?.focus();
-    dbGetAllFolderNames().then(setAllFolders);
-  }, []);
+    dbGetAllFolderNames(category).then(setAllFolders);
+  }, [category]);
 
   useEffect(() => {
     if (!folderDropOpen) return;
@@ -556,7 +590,7 @@ function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFo
     if (!name) return;
     if (!allFolders.includes(name)) {
       setAllFolders((prev) => [...prev, name].sort());
-      dbCreateFolderTag(name);
+      dbCreateFolderTag(name, category);
     }
     if (!folders.includes(name)) setFolders((prev) => [...prev, name]);
     setNewFolderInput('');
@@ -572,7 +606,7 @@ function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFo
     const newName = renameInput.trim();
     setRenamingFolder(null);
     if (!newName || newName === oldName) return;
-    await dbRenameFolderName(oldName, newName);
+    await dbRenameFolderName(oldName, newName, category);
     setAllFolders((prev) => prev.map((f) => (f === oldName ? newName : f)).sort());
     setFolders((prev) => prev.map((f) => (f === oldName ? newName : f)));
   }
@@ -582,7 +616,7 @@ function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFo
     const wasSelected = folders.includes(name);
     setAllFolders((prev) => prev.filter((f) => f !== name));
     if (wasSelected) setFolders((prev) => prev.filter((f) => f !== name));
-    onFolderDeleted(name, () => {
+    onFolderDeleted(name, category, () => {
       setAllFolders((prev) => [...prev, name].sort());
       if (wasSelected) setFolders((prev) => [...prev, name]);
     });
@@ -635,12 +669,14 @@ function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFo
     setSaving(true);
     await onSave({
       title: title.trim(),
+      category,
       status,
       start_date: startDate || null,
       completed_date: status === 'completed' ? completedDate : null,
       notes: notes.trim() || undefined,
       link_repo: linkRepo.trim() || undefined,
       link_youtube: linkYoutube.trim() || undefined,
+      composer: category === 'piano' ? (composer.trim() || undefined) : undefined,
       cover_image: coverImage,
       folders,
     });
@@ -657,7 +693,7 @@ function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFo
     <div className="books-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown}>
       <div className="books-modal">
         <div className="books-modal-header">
-          <span className="books-modal-title">{isEdit ? t.projects.modalEditProjectTitle : t.projects.modalAddProjectTitle}</span>
+          <span className="books-modal-title">{isEdit ? copy.editModalTitle : copy.addModalTitle}</span>
           <button className="books-modal-close" onClick={onClose}><IconX size={16} /></button>
         </div>
 
@@ -692,15 +728,28 @@ function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFo
             </div>
           </div>
 
-          <label className="books-modal-label">{t.projects.titleLabel}</label>
+          <label className="books-modal-label">{copy.titleLabel}</label>
           <input
             ref={titleRef}
             className="books-modal-input"
-            placeholder={t.projects.titlePlaceholder}
+            placeholder={copy.titlePlaceholder}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             spellCheck={false}
           />
+
+          {category === 'piano' && (
+            <>
+              <label className="books-modal-label">{t.projects.categoryCopy.piano.composerLabel}</label>
+              <input
+                className="books-modal-input"
+                placeholder={t.projects.categoryCopy.piano.composerPlaceholder}
+                value={composer}
+                onChange={(e) => setComposer(e.target.value)}
+                spellCheck={false}
+              />
+            </>
+          )}
 
           <div className="books-modal-row">
             <div className="books-modal-col">
@@ -708,8 +757,8 @@ function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFo
               <div className="books-status-toggle">
                 {(
                   [
-                    { id: 'in_progress', label: t.projects.statusInProgress },
-                    { id: 'completed', label: t.projects.statusCompleted },
+                    { id: 'in_progress', label: copy.statusInProgress },
+                    { id: 'completed', label: copy.statusCompleted },
                   ] as { id: ProjectStatus; label: string }[]
                 ).map((s) => (
                   <button
@@ -883,20 +932,20 @@ function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFo
 
           <div className="books-modal-row">
             <div className="books-modal-col">
-              <label className="books-modal-label">{t.projects.linkRepoLabel}</label>
+              <label className="books-modal-label">{copy.linkPrimaryLabel}</label>
               <input
                 className="books-modal-input"
-                placeholder={t.projects.linkRepoPlaceholder}
+                placeholder={copy.linkPrimaryPlaceholder}
                 value={linkRepo}
                 onChange={(e) => setLinkRepo(e.target.value)}
                 spellCheck={false}
               />
             </div>
             <div className="books-modal-col">
-              <label className="books-modal-label">{t.projects.linkYoutubeLabel}</label>
+              <label className="books-modal-label">{copy.linkSecondaryLabel}</label>
               <input
                 className="books-modal-input"
-                placeholder={t.projects.linkYoutubePlaceholder}
+                placeholder={copy.linkSecondaryPlaceholder}
                 value={linkYoutube}
                 onChange={(e) => setLinkYoutube(e.target.value)}
                 spellCheck={false}
@@ -912,7 +961,7 @@ function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFo
             onClick={handleSave}
             disabled={!title.trim() || folders.length === 0 || saving}
           >
-            {saving ? '...' : isEdit ? t.projects.editSave : t.projects.save}
+            {saving ? '...' : isEdit ? t.projects.editSave : copy.addItem}
           </button>
         </div>
       </div>
@@ -925,6 +974,7 @@ function AddProjectModal({ onSave, onClose, initialProject, initialFolders, onFo
 export default function ProjectsView() {
   const t = useT();
 
+  const [category, setCategory] = useState<ProjectCategory>('product');
   const [folders, setFolders] = useState<ProjectFolder[]>([]);
   const [openFolder, setOpenFolder] = useState<ProjectFolder | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -943,7 +993,7 @@ export default function ProjectsView() {
   const [viewingProject, setViewingProject] = useState<Project | null>(null);
   const [pendingDeleteProject, setPendingDeleteProject] = useState<Project | null>(null);
   const [pendingDeleteFolder, setPendingDeleteFolder] = useState<ProjectFolder | null>(null);
-  const [pendingDeleteFolderTag, setPendingDeleteFolderTag] = useState<{ name: string; undo: () => void } | null>(null);
+  const [pendingDeleteFolderTag, setPendingDeleteFolderTag] = useState<{ name: string; category: ProjectCategory; undo: () => void } | null>(null);
   const [seeded, setSeeded] = useState(false);
 
   const mainRef = useRef<HTMLDivElement>(null);
@@ -952,33 +1002,36 @@ export default function ProjectsView() {
   const deleteProjectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteFolderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteFolderTagTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seedStartedRef = useRef(false);
 
   useSmoothScroll(mainRef);
   useSmoothScroll(sidebarRef);
 
-  const loadStats = useCallback(async () => {
-    setStats(await dbGetProjectStats());
+  const loadStats = useCallback(async (cat: ProjectCategory) => {
+    setStats(await dbGetProjectStats(cat));
   }, []);
 
-  const loadYearStats = useCallback(async (year: number | null) => {
-    setYearStats(await dbGetProjectStats(year ?? undefined));
+  const loadYearStats = useCallback(async (cat: ProjectCategory, year: number | null) => {
+    setYearStats(await dbGetProjectStats(cat, year ?? undefined));
   }, []);
 
-  const loadYears = useCallback(async (status: StatusFilter) => {
-    setYears(await dbGetYearsWithCounts(status === 'all' ? undefined : status));
+  const loadYears = useCallback(async (cat: ProjectCategory, status: StatusFilter) => {
+    setYears(await dbGetYearsWithCounts(cat, status === 'all' ? undefined : status));
   }, []);
 
-  const loadFolders = useCallback(async (status: StatusFilter, year: number | null) => {
-    setFolders(await dbGetFolders({ status: status === 'all' ? undefined : status, year: year ?? undefined }));
+  const loadFolders = useCallback(async (cat: ProjectCategory, status: StatusFilter, year: number | null) => {
+    setFolders(await dbGetFolders({ category: cat, status: status === 'all' ? undefined : status, year: year ?? undefined }));
   }, []);
 
   const loadProjects = useCallback(async (
+    cat: ProjectCategory,
     folderName: string,
     status: StatusFilter,
     year: number | null,
     search: string
   ) => {
     setProjects(await dbGetProjects({
+      category: cat,
       folder: folderName,
       status: status === 'all' ? undefined : status,
       year: year ?? undefined,
@@ -987,34 +1040,36 @@ export default function ProjectsView() {
   }, []);
 
   useEffect(() => {
+    if (seedStartedRef.current) return;
+    seedStartedRef.current = true;
     seedProjectsIfEmpty().then(() => setSeeded(true));
   }, []);
 
   useEffect(() => {
     if (!seeded) return;
-    loadStats();
+    loadStats(category);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seeded]);
+  }, [seeded, category]);
 
   useEffect(() => {
     if (!seeded) return;
-    loadYearStats(yearFilter);
-    loadYears(statusFilter);
-    loadFolders(statusFilter, yearFilter);
+    loadYearStats(category, yearFilter);
+    loadYears(category, statusFilter);
+    loadFolders(category, statusFilter, yearFilter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seeded, statusFilter, yearFilter]);
+  }, [seeded, category, statusFilter, yearFilter]);
 
   useEffect(() => {
     if (!seeded || !openFolder) return;
-    loadProjects(openFolder.name, statusFilter, yearFilter, searchQuery);
+    loadProjects(category, openFolder.name, statusFilter, yearFilter, searchQuery);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seeded, openFolder, statusFilter, yearFilter]);
+  }, [seeded, category, openFolder, statusFilter, yearFilter]);
 
   function handleSearch(q: string) {
     setSearchQuery(q);
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
-      if (openFolder) loadProjects(openFolder.name, statusFilter, yearFilter, q);
+      if (openFolder) loadProjects(category, openFolder.name, statusFilter, yearFilter, q);
     }, 300);
   }
 
@@ -1029,13 +1084,24 @@ export default function ProjectsView() {
     setSearchQuery('');
   }
 
+  function handleCategoryChange(next: ProjectCategory) {
+    if (next === category) return;
+    setCategory(next);
+    setOpenFolder(null);
+    setProjects([]);
+    setStatusFilter('all');
+    setYearFilter(null);
+    setSearchQuery('');
+    setTagSearch('');
+  }
+
   async function refreshAll() {
     await Promise.all([
-      loadStats(),
-      loadYearStats(yearFilter),
-      loadYears(statusFilter),
-      loadFolders(statusFilter, yearFilter),
-      openFolder ? loadProjects(openFolder.name, statusFilter, yearFilter, searchQuery) : Promise.resolve(),
+      loadStats(category),
+      loadYearStats(category, yearFilter),
+      loadYears(category, statusFilter),
+      loadFolders(category, statusFilter, yearFilter),
+      openFolder ? loadProjects(category, openFolder.name, statusFilter, yearFilter, searchQuery) : Promise.resolve(),
     ]);
   }
 
@@ -1045,16 +1111,16 @@ export default function ProjectsView() {
       setEditingFolder(null);
       if (openFolder && openFolder.id === editingFolder.id) setOpenFolder({ ...openFolder, name, cover_image: coverImage });
     } else {
-      await dbAddFolder(name, coverImage);
+      await dbAddFolder(name, coverImage, category);
       setShowAddFolderModal(false);
     }
-    await loadFolders(statusFilter, yearFilter);
+    await loadFolders(category, statusFilter, yearFilter);
   }
 
   async function commitDeleteFolder(folder: ProjectFolder) {
     await dbDeleteFolder(folder.id);
     setPendingDeleteFolder(null);
-    await Promise.all([loadStats(), loadYearStats(yearFilter), loadYears(statusFilter)]);
+    await Promise.all([loadStats(category), loadYearStats(category, yearFilter), loadYears(category, statusFilter)]);
   }
 
   function handleDeleteFolder(folder: ProjectFolder) {
@@ -1071,7 +1137,7 @@ export default function ProjectsView() {
   function handleUndoDeleteFolder() {
     if (deleteFolderTimerRef.current) clearTimeout(deleteFolderTimerRef.current);
     if (!pendingDeleteFolder) return;
-    loadFolders(statusFilter, yearFilter);
+    loadFolders(category, statusFilter, yearFilter);
     setPendingDeleteFolder(null);
   }
 
@@ -1094,12 +1160,14 @@ export default function ProjectsView() {
     const completed_date = status === 'completed' ? project.completed_date ?? format(new Date(), 'yyyy-MM-dd') : null;
     await dbUpdateProject(project.id, {
       title: project.title,
+      category: project.category,
       status,
       start_date: project.start_date,
       completed_date,
       notes: project.notes ?? undefined,
       link_repo: project.link_repo ?? undefined,
       link_youtube: project.link_youtube ?? undefined,
+      composer: project.composer ?? undefined,
       cover_image: project.cover_image,
       folders: project.folders,
     });
@@ -1109,7 +1177,7 @@ export default function ProjectsView() {
 
   async function commitDeleteProject(project: Project) {
     await dbDeleteProject(project.id);
-    await Promise.all([loadStats(), loadYearStats(yearFilter), loadYears(statusFilter), loadFolders(statusFilter, yearFilter)]);
+    await Promise.all([loadStats(category), loadYearStats(category, yearFilter), loadYears(category, statusFilter), loadFolders(category, statusFilter, yearFilter)]);
     setPendingDeleteProject(null);
   }
 
@@ -1126,22 +1194,22 @@ export default function ProjectsView() {
   function handleUndoDeleteProject() {
     if (deleteProjectTimerRef.current) clearTimeout(deleteProjectTimerRef.current);
     if (!pendingDeleteProject || !openFolder) return;
-    loadProjects(openFolder.name, statusFilter, yearFilter, searchQuery);
+    loadProjects(category, openFolder.name, statusFilter, yearFilter, searchQuery);
     setPendingDeleteProject(null);
   }
 
-  async function commitDeleteFolderTag(name: string) {
-    await dbDeleteFolderByName(name);
+  async function commitDeleteFolderTag(name: string, cat: ProjectCategory) {
+    await dbDeleteFolderByName(name, cat);
     setPendingDeleteFolderTag(null);
-    await loadFolders(statusFilter, yearFilter);
+    await loadFolders(category, statusFilter, yearFilter);
   }
 
-  function handleFolderTagDeleted(name: string, undo: () => void) {
+  function handleFolderTagDeleted(name: string, cat: ProjectCategory, undo: () => void) {
     if (deleteFolderTagTimerRef.current) clearTimeout(deleteFolderTagTimerRef.current);
-    if (pendingDeleteFolderTag) commitDeleteFolderTag(pendingDeleteFolderTag.name);
+    if (pendingDeleteFolderTag) commitDeleteFolderTag(pendingDeleteFolderTag.name, pendingDeleteFolderTag.category);
 
-    setPendingDeleteFolderTag({ name, undo });
-    deleteFolderTagTimerRef.current = setTimeout(() => commitDeleteFolderTag(name), 4000);
+    setPendingDeleteFolderTag({ name, category: cat, undo });
+    deleteFolderTagTimerRef.current = setTimeout(() => commitDeleteFolderTag(name, cat), 4000);
   }
 
   function handleUndoFolderTagDelete() {
@@ -1159,6 +1227,8 @@ export default function ProjectsView() {
     setYearFilter((prev) => (prev === year ? null : year));
   }
 
+  const copy = t.projects.categoryCopy[category];
+
   const sortedProjects = useMemo(() => sortProjects(projects, sortBy), [projects, sortBy]);
 
   const isFiltering = statusFilter !== 'all' || yearFilter !== null;
@@ -1174,15 +1244,28 @@ export default function ProjectsView() {
   );
 
   const headerSubText = useMemo(() => {
-    if (statusFilter === 'in_progress') return t.projects.totalCount(yearStats.inProgress);
-    if (statusFilter === 'completed') return t.projects.totalCount(yearStats.completed);
-    return t.projects.totalCount(yearStats.total);
-  }, [yearStats, t, statusFilter]);
+    if (statusFilter === 'in_progress') return copy.totalCount(yearStats.inProgress);
+    if (statusFilter === 'completed') return copy.totalCount(yearStats.completed);
+    return copy.totalCount(yearStats.total);
+  }, [yearStats, copy, statusFilter]);
 
-  const emptyProjectsText = searchQuery ? t.projects.emptySearch : t.projects.emptyProjects;
+  const emptyProjectsText = searchQuery ? copy.emptySearch : copy.emptyItems;
 
   return (
-    <div className="books-wrap">
+    <>
+      <div className="projects-category-tabs">
+        {(['product', 'figma', 'piano'] as ProjectCategory[]).map((cat) => (
+          <button
+            key={cat}
+            className={`projects-category-tab${category === cat ? ' active' : ''}`}
+            onClick={() => handleCategoryChange(cat)}
+          >
+            {CATEGORY_TAB_ICON[cat]}
+            {t.projects.categoryLabels[cat]}
+          </button>
+        ))}
+      </div>
+      <div className="books-wrap">
       {/* ── Sidebar ── */}
       <div ref={sidebarRef} className="books-sidebar projects-sidebar">
         <div className="books-sb-section">
@@ -1200,7 +1283,7 @@ export default function ProjectsView() {
             onClick={() => handleStatusFilter('in_progress')}
           >
             <IconClockHour4 size={14} />
-            {t.projects.statusInProgress}
+            {copy.statusInProgress}
             <span className="books-sb-count">{stats.inProgress}</span>
           </button>
           <button
@@ -1208,7 +1291,7 @@ export default function ProjectsView() {
             onClick={() => handleStatusFilter('completed')}
           >
             <IconCircleCheck size={14} />
-            {t.projects.statusCompleted}
+            {copy.statusCompleted}
             <span className="books-sb-count">{stats.completed}</span>
           </button>
         </div>
@@ -1272,7 +1355,7 @@ export default function ProjectsView() {
           <>
             <div className="books-header">
               <div>
-                <div className="books-header-title">{t.projects.title}</div>
+                <div className="books-header-title">{copy.pageTitle}</div>
                 <div className="books-header-sub">{headerSubText}</div>
               </div>
               <button className="books-btn-add" onClick={() => setShowAddFolderModal(true)}>
@@ -1281,7 +1364,7 @@ export default function ProjectsView() {
               </button>
             </div>
 
-            <div key={`${statusFilter}-${yearFilter ?? ''}`} className="books-content-view">
+            <div key={`${category}-${statusFilter}-${yearFilter ?? ''}`} className="books-content-view">
               {folders.length === 0 ? (
                 <div className="books-empty-state">
                   <IconFolderCode size={36} className="books-empty-icon" />
@@ -1321,12 +1404,12 @@ export default function ProjectsView() {
                 </button>
                 <div>
                   <div className="books-header-title">{openFolder.name}</div>
-                  <div className="books-header-sub">{t.projects.folderCount(projects.length)}</div>
+                  <div className="books-header-sub">{copy.folderCount(projects.length)}</div>
                 </div>
               </div>
               <button className="books-btn-add" onClick={() => setShowAddProjectModal(true)}>
                 <IconPlus size={13} />
-                {t.projects.addProject}
+                {copy.addItem}
               </button>
             </div>
 
@@ -1335,7 +1418,7 @@ export default function ProjectsView() {
                 <IconSearch size={13} className="books-search-icon" />
                 <input
                   className="books-search-input"
-                  placeholder={t.projects.searchPlaceholder}
+                  placeholder={copy.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   spellCheck={false}
@@ -1343,7 +1426,7 @@ export default function ProjectsView() {
                 {searchQuery && (
                   <button
                     className="books-search-clear"
-                    onClick={() => { setSearchQuery(''); loadProjects(openFolder.name, statusFilter, yearFilter, ''); }}
+                    onClick={() => { setSearchQuery(''); loadProjects(category, openFolder.name, statusFilter, yearFilter, ''); }}
                   >
                     <IconX size={12} />
                   </button>
@@ -1381,15 +1464,16 @@ export default function ProjectsView() {
       </div>
 
       {showAddFolderModal && (
-        <AddFolderModal onSave={handleSaveFolder} onClose={() => setShowAddFolderModal(false)} />
+        <AddFolderModal category={category} onSave={handleSaveFolder} onClose={() => setShowAddFolderModal(false)} />
       )}
 
       {editingFolder && (
-        <AddFolderModal onSave={handleSaveFolder} onClose={() => setEditingFolder(null)} initialFolder={editingFolder} />
+        <AddFolderModal category={editingFolder.category} onSave={handleSaveFolder} onClose={() => setEditingFolder(null)} initialFolder={editingFolder} />
       )}
 
       {showAddProjectModal && (
         <AddProjectModal
+          category={category}
           onSave={handleAddProject}
           onClose={() => setShowAddProjectModal(false)}
           initialFolders={openFolder ? [openFolder.name] : undefined}
@@ -1399,6 +1483,7 @@ export default function ProjectsView() {
 
       {editingProject && (
         <AddProjectModal
+          category={editingProject.category}
           onSave={handleUpdateProject}
           onClose={() => setEditingProject(null)}
           initialProject={editingProject}
@@ -1436,6 +1521,7 @@ export default function ProjectsView() {
           <button className="delete-toast-undo" onClick={handleUndoFolderTagDelete}>{t.toast.undo}</button>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

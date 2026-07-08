@@ -10241,6 +10241,41 @@ select {
 
 /* ══════════════════════ Projects Tab ══════════════════════ */
 
+/* ── Category topbar (Product / Figma / Piano) ── */
+.projects-category-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 24px 0;
+  border-bottom: 0.5px solid var(--border-1);
+  flex-shrink: 0;
+}
+
+.projects-category-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 500;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.projects-category-tab:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.projects-category-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
 /* ── Tab enter animations (reuses .books-wrap layout) ── */
 .projects-sidebar {
   animation: today-sidebar-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
@@ -10620,6 +10655,12 @@ select {
   line-height: 1.35;
 }
 
+.projects-card-composer {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 .projects-card-notes {
   font-size: 0.8rem;
   color: var(--text-muted);
@@ -10656,6 +10697,13 @@ select {
   color: var(--text-primary);
   line-height: 1.35;
   padding-right: 20px;
+}
+
+.projects-detail-composer {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: -8px;
 }
 
 .projects-detail-cover {

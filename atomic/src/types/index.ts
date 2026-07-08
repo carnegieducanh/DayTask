@@ -186,10 +186,12 @@ export interface NewBook {
 }
 
 export type ProjectStatus = 'in_progress' | 'completed';
+export type ProjectCategory = 'product' | 'figma' | 'piano';
 
 export interface ProjectFolder {
   id: number;
   name: string;
+  category: ProjectCategory;
   cover_image: string | null;
   project_count: number;
   last_activity: string | null;
@@ -199,12 +201,14 @@ export interface ProjectFolder {
 export interface Project {
   id: number;
   title: string;
+  category: ProjectCategory;
   status: ProjectStatus;
   start_date: string | null;
   completed_date: string | null;
   notes: string | null;
   link_repo: string | null;
   link_youtube: string | null;
+  composer: string | null;
   cover_image: string | null;
   folders: string[];
   created_at: string;
@@ -212,6 +216,7 @@ export interface Project {
 
 export interface NewProject {
   title: string;
+  category: ProjectCategory;
   status: ProjectStatus;
   start_date?: string | null;
   completed_date?: string | null;
@@ -219,6 +224,7 @@ export interface NewProject {
   cover_image?: string | null;
   link_repo?: string | null;
   link_youtube?: string | null;
+  composer?: string | null;
   folders: string[];
 }
 

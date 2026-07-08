@@ -345,6 +345,27 @@ pub fn run() {
             sql: "ALTER TABLE projects ADD COLUMN cover_image TEXT DEFAULT NULL;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 22,
+            description: "add_project_category_and_composer",
+            sql: "ALTER TABLE projects ADD COLUMN category TEXT NOT NULL DEFAULT 'product' CHECK(category IN ('product','figma','piano'));
+                ALTER TABLE projects ADD COLUMN composer TEXT DEFAULT NULL;
+                PRAGMA foreign_keys = OFF;
+                CREATE TABLE project_folders_new (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name        TEXT NOT NULL,
+                    category    TEXT NOT NULL CHECK(category IN ('product','figma','piano')) DEFAULT 'product',
+                    cover_image TEXT DEFAULT NULL,
+                    created_at  TEXT DEFAULT (datetime('now')),
+                    UNIQUE(name, category)
+                );
+                INSERT INTO project_folders_new (id, name, category, cover_image, created_at)
+                    SELECT id, name, 'product', cover_image, created_at FROM project_folders;
+                DROP TABLE project_folders;
+                ALTER TABLE project_folders_new RENAME TO project_folders;
+                PRAGMA foreign_keys = ON;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]
