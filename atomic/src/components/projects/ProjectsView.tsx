@@ -1322,22 +1322,24 @@ export default function ProjectsView() {
                 spellCheck={false}
               />
             </div>
-            <div key={`tags-${statusFilter}-${yearFilter ?? ''}`} className="books-sb-tag-list">
-              {filteredTagFolders.length === 0 ? (
-                <div className="books-sb-tag-empty">{t.tags.noTags}</div>
-              ) : (
-                filteredTagFolders.map((folder) => (
-                  <button
-                    key={folder.id}
-                    className={`books-sb-item${openFolder?.id === folder.id ? ' active' : ''}`}
-                    onClick={() => handleOpenFolder(folder)}
-                  >
-                    <IconTag size={13} />
-                    <span className="books-sb-item-name">{folder.name}</span>
-                    <span className="books-sb-count">{folder.project_count}</span>
-                  </button>
-                ))
-              )}
+            <div key={`tags-${statusFilter}-${yearFilter ?? ''}`} className="projects-tag-list-anim">
+              <div className="books-sb-tag-list">
+                {filteredTagFolders.length === 0 ? (
+                  <div className="books-sb-tag-empty">{t.tags.noTags}</div>
+                ) : (
+                  filteredTagFolders.map((folder) => (
+                    <button
+                      key={folder.id}
+                      className={`books-sb-item${openFolder?.id === folder.id ? ' active' : ''}`}
+                      onClick={() => handleOpenFolder(folder)}
+                    >
+                      <IconTag size={13} />
+                      <span className="books-sb-item-name">{folder.name}</span>
+                      <span className="books-sb-count">{folder.project_count}</span>
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}
