@@ -33,12 +33,12 @@ export default function Sidebar() {
   const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "today",    label: t.nav.today,    icon: <IconSun size={16} /> },
     { id: "calendar", label: t.nav.calendar, icon: <IconCalendar size={16} /> },
-    { id: "journal",  label: t.nav.journal,  icon: <IconNotebook size={16} /> },
     { id: "kanban",   label: t.nav.yearPlan, icon: <IconCalendarStats size={16} /> },
-    { id: "heatmap",  label: t.nav.heatmap,  icon: <IconChartDots size={16} /> },
-    { id: "quotes",   label: t.nav.quotes,   icon: <IconQuote size={16} /> },
-    { id: "books",    label: t.nav.books,    icon: <IconBooks size={16} /> },
     { id: "projects", label: t.nav.projects, icon: <IconFolderCode size={16} /> },
+    { id: "books",    label: t.nav.books,    icon: <IconBooks size={16} /> },
+    { id: "journal",  label: t.nav.journal,  icon: <IconNotebook size={16} /> },
+    { id: "quotes",   label: t.nav.quotes,   icon: <IconQuote size={16} /> },
+    { id: "heatmap",  label: t.nav.heatmap,  icon: <IconChartDots size={16} /> },
   ];
 
   const pendingCount = tasks.filter((t) => !t.is_done).length;
