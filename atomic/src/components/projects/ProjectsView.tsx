@@ -584,15 +584,69 @@ function ProjectCard({
         <div className="projects-card-title" title={project.title}>{project.title}</div>
         {project.composer && <div className="projects-card-composer">{project.composer}</div>}
         {project.notes && <div className="projects-card-notes">{project.notes}</div>}
-        {project.folders.length > 0 && (
-          <div className="projects-card-tags">
-            {project.folders.map((f) => (
-              <span key={f} className="books-tag-chip-sm">{f}</span>
-            ))}
-          </div>
-        )}
+        {project.folders.length > 0 && <ProjectCardTags folders={project.folders} />}
       </div>
     </div>
+  );
+}
+
+function ProjectCardTags({ folders }: { folders: string[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rulerRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(folders.length);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const ruler = rulerRef.current;
+    if (!container || !ruler) return;
+
+    function recalc() {
+      if (!container || !ruler) return;
+      const chips = Array.from(ruler.querySelectorAll<HTMLElement>('[data-tag-chip]'));
+      const moreEl = ruler.querySelector<HTMLElement>('[data-tag-more]');
+      const containerWidth = container.clientWidth;
+      const gap = 4;
+      const moreWidth = moreEl?.offsetWidth ?? 0;
+
+      let total = 0;
+      let count = 0;
+      for (let i = 0; i < chips.length; i++) {
+        const w = chips[i].offsetWidth;
+        const isLast = i === chips.length - 1;
+        const reserve = isLast ? 0 : moreWidth + gap;
+        const next = total + (i > 0 ? gap : 0) + w;
+        if (next + reserve <= containerWidth) {
+          total = next;
+          count = i + 1;
+        } else break;
+      }
+      setVisibleCount(Math.max(count, 1));
+    }
+
+    recalc();
+    const ro = new ResizeObserver(recalc);
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [folders]);
+
+  const hiddenCount = Math.max(folders.length - visibleCount, 0);
+
+  return (
+    <>
+      <div className="projects-card-tags" ref={containerRef}>
+        {folders.slice(0, visibleCount).map((f) => (
+          <span key={f} className="books-tag-chip-sm">{f}</span>
+        ))}
+        {hiddenCount > 0 && <span className="books-tag-chip-sm projects-card-tag-more">+{hiddenCount}</span>}
+      </div>
+      {/* Off-screen ruler: measures true chip widths regardless of what's currently visible */}
+      <div className="projects-card-tags-ruler" ref={rulerRef} aria-hidden>
+        {folders.map((f) => (
+          <span key={f} data-tag-chip className="books-tag-chip-sm">{f}</span>
+        ))}
+        <span data-tag-more className="books-tag-chip-sm projects-card-tag-more">+{folders.length}</span>
+      </div>
+    </>
   );
 }
 
@@ -1333,6 +1387,9 @@ export default function ProjectsView() {
   const deleteFolderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteFolderTagTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seedStartedRef = useRef(false);
+  const titleRowRef = useRef<HTMLDivElement>(null);
+  const titleTabLabelRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const [titleIndicatorStyle, setTitleIndicatorStyle] = useState<{ left: number; top: number; width: number } | null>(null);
 
   useSmoothScroll(mainRef);
   useSmoothScroll(sidebarRef);
@@ -1602,6 +1659,15 @@ export default function ProjectsView() {
 
   const copy = t.projects.categoryCopy[category];
 
+  useLayoutEffect(() => {
+    const row = titleRowRef.current;
+    const label = titleTabLabelRefs.current[viewAllProjects ? 1 : 0];
+    if (!row || !label) return;
+    const rowRect = row.getBoundingClientRect();
+    const labelRect = label.getBoundingClientRect();
+    setTitleIndicatorStyle({ left: labelRect.left - rowRect.left, top: labelRect.bottom - rowRect.top - 2, width: labelRect.width });
+  }, [viewAllProjects, copy.pageTitle, t.projects.viewAll]);
+
   const sortedProjects = useMemo(() => sortProjects(projects, sortBy), [projects, sortBy]);
 
   const isFiltering = statusFilter !== 'all' || yearFilter !== null;
@@ -1751,21 +1817,30 @@ export default function ProjectsView() {
           <>
             <div className="books-header">
               <div>
-                <div className="projects-title-row">
+                <div className="projects-title-row" ref={titleRowRef}>
                   <button
                     type="button"
                     className={`projects-title-tab${!viewAllProjects ? ' active' : ''}`}
                     onClick={() => setViewAllProjects(false)}
                   >
-                    <span className="projects-title-tab-label">{copy.pageTitle}</span>
+                    <span className="projects-title-tab-label" ref={(el) => { titleTabLabelRefs.current[0] = el; }}>{copy.pageTitle}</span>
                   </button>
                   <button
                     type="button"
                     className={`projects-title-tab${viewAllProjects ? ' active' : ''}`}
                     onClick={handleShowAllProjects}
                   >
-                    <span className="projects-title-tab-label">{t.projects.viewAll}</span>
+                    <span className="projects-title-tab-label" ref={(el) => { titleTabLabelRefs.current[1] = el; }}>{t.projects.viewAll}</span>
                   </button>
+                  {titleIndicatorStyle && (
+                    <span
+                      className="projects-title-indicator"
+                      style={{
+                        transform: `translate(${titleIndicatorStyle.left}px, ${titleIndicatorStyle.top}px)`,
+                        width: titleIndicatorStyle.width,
+                      }}
+                    />
+                  )}
                 </div>
                 <div className="books-header-sub">{viewAllProjects ? copy.totalCount(projects.length) : headerSubText}</div>
               </div>

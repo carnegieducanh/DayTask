@@ -860,7 +860,7 @@ export default function BooksView() {
 
   const [books, setBooks] = useState<Book[]>([]);
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>('all');
-  const [yearFilter, setYearFilter] = useState<number | null>(null);
+  const [yearFilter, setYearFilter] = useState<number | null>(currentYear);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('date');
@@ -1193,29 +1193,32 @@ export default function BooksView() {
                   </button>
                 </>
               )}
+              {editingGoal && (
+                <div className="books-goal-editor books-goal-editor-inline">
+                  <input
+                    type="number"
+                    min={1}
+                    className="books-goal-input"
+                    placeholder={t.books.goalPlaceholder}
+                    value={goalInput}
+                    onChange={(e) => setGoalInput(e.target.value)}
+                    autoFocus
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveGoal(); if (e.key === 'Escape') setEditingGoal(false); }}
+                  />
+                  <button className="books-goal-editor-btn" onClick={handleSaveGoal}><IconCheck size={13} /></button>
+                  <button className="books-goal-editor-btn" onClick={() => setEditingGoal(false)}><IconX size={13} /></button>
+                </div>
+              )}
             </div>
 
-            {editingGoal ? (
-              <div className="books-goal-editor">
-                <input
-                  type="number"
-                  min={1}
-                  className="books-goal-input"
-                  placeholder={t.books.goalPlaceholder}
-                  value={goalInput}
-                  onChange={(e) => setGoalInput(e.target.value)}
-                  autoFocus
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveGoal(); if (e.key === 'Escape') setEditingGoal(false); }}
-                />
-                <button className="books-goal-editor-btn" onClick={handleSaveGoal}><IconCheck size={13} /></button>
-                <button className="books-goal-editor-btn" onClick={() => setEditingGoal(false)}><IconX size={13} /></button>
-              </div>
-            ) : readingGoal ? (
-              <div className="books-goal-bar-track">
-                <div className="books-goal-bar-fill" style={{ width: `${goalPct}%` }} />
-              </div>
-            ) : (
-              <button className="books-goal-cta" onClick={handleStartGoalEdit}>{t.books.setGoalCta}</button>
+            {!editingGoal && (
+              readingGoal ? (
+                <div className="books-goal-bar-track">
+                  <div className="books-goal-bar-fill" style={{ width: `${goalPct}%` }} />
+                </div>
+              ) : (
+                <button className="books-goal-cta" onClick={handleStartGoalEdit}>{t.books.setGoalCta}</button>
+              )
             )}
           </div>
 
