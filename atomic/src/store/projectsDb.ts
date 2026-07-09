@@ -25,6 +25,7 @@ type ProjectRow = {
   link_youtube: string | null;
   composer: string | null;
   cover_image: string | null;
+  cover_position: string | null;
   created_at: string;
 };
 
@@ -150,6 +151,12 @@ export async function dbUpdateProject(id: number, data: NewProject): Promise<voi
   await linkFolders(db, id, data.category, data.folders);
 }
 
+export async function dbUpdateProjectCoverPosition(id: number, position: string | null): Promise<void> {
+  if (!isTauri()) return;
+  const db = await getDb();
+  await db.execute('UPDATE projects SET cover_position = $1 WHERE id = $2', [position, id]);
+}
+
 export async function dbDeleteProject(id: number): Promise<void> {
   if (!isTauri()) return;
   const db = await getDb();
@@ -214,6 +221,7 @@ type FolderRow = {
   name: string;
   category: ProjectCategory;
   cover_image: string | null;
+  cover_position: string | null;
   created_at: string;
   project_count: number;
   last_activity: string | null;
@@ -244,7 +252,7 @@ export async function dbGetFolders(opts: {
   params.push(opts.category);
 
   return db.select<FolderRow[]>(
-    `SELECT f.id, f.name, f.category, f.cover_image, f.created_at,
+    `SELECT f.id, f.name, f.category, f.cover_image, f.cover_position, f.created_at,
        COUNT(CASE WHEN ${filterExpr} THEN 1 END) as project_count,
        MAX(CASE WHEN ${filterExpr} THEN COALESCE(p.completed_date, p.start_date, p.created_at) END) as last_activity
      FROM project_folders f
@@ -273,20 +281,34 @@ export async function dbCreateFolderTag(name: string, category: ProjectCategory)
   await db.execute('INSERT OR IGNORE INTO project_folders (name, category) VALUES ($1, $2)', [name, category]);
 }
 
-export async function dbAddFolder(name: string, coverImage: string | null, category: ProjectCategory): Promise<void> {
+export async function dbAddFolder(
+  name: string,
+  coverImage: string | null,
+  category: ProjectCategory,
+  coverPosition: string | null = null
+): Promise<void> {
   if (!isTauri()) return;
   const db = await getDb();
   await db.execute(
-    `INSERT INTO project_folders (name, category, cover_image) VALUES ($1, $2, $3)
-     ON CONFLICT(name, category) DO UPDATE SET cover_image = excluded.cover_image`,
-    [name, category, coverImage]
+    `INSERT INTO project_folders (name, category, cover_image, cover_position) VALUES ($1, $2, $3, $4)
+     ON CONFLICT(name, category) DO UPDATE SET cover_image = excluded.cover_image, cover_position = excluded.cover_position`,
+    [name, category, coverImage, coverPosition]
   );
 }
 
-export async function dbUpdateFolder(id: number, name: string, coverImage: string | null): Promise<void> {
+export async function dbUpdateFolder(id: number, name: string, coverImage: string | null, coverPosition: string | null): Promise<void> {
   if (!isTauri()) return;
   const db = await getDb();
-  await db.execute('UPDATE project_folders SET name = $1, cover_image = $2 WHERE id = $3', [name, coverImage, id]);
+  await db.execute(
+    'UPDATE project_folders SET name = $1, cover_image = $2, cover_position = $3 WHERE id = $4',
+    [name, coverImage, coverPosition, id]
+  );
+}
+
+export async function dbUpdateFolderCoverPosition(id: number, position: string | null): Promise<void> {
+  if (!isTauri()) return;
+  const db = await getDb();
+  await db.execute('UPDATE project_folders SET cover_position = $1 WHERE id = $2', [position, id]);
 }
 
 export async function dbDeleteFolder(id: number): Promise<void> {

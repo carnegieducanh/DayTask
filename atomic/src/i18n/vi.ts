@@ -493,6 +493,8 @@ export const vi = {
     seeLess: "Thu gọn",
     viewAll: "Xem tất cả",
     back: "Quay lại",
+    coverReposition: "Căn chỉnh vị trí ảnh",
+    coverRepositionHint: "Kéo ảnh để căn chỉnh vị trí",
     categoryLabels: {
       product: "Lập trình",
       figma: "Figma",

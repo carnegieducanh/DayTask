@@ -9085,6 +9085,12 @@ select {
   color: var(--text-primary);
 }
 
+.projects-header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .projects-title-row {
   display: flex;
   align-items: center;
@@ -9799,6 +9805,9 @@ select {
 }
 
 .books-cover-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 6px 12px;
   border-radius: var(--radius-md);
   border: 0.5px solid var(--border-1);
@@ -10488,6 +10497,13 @@ select {
   transform: translateY(-3px);
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
 }
+.projects-folder-card.is-repositioning {
+  cursor: default;
+}
+.projects-folder-card.is-repositioning:hover {
+  transform: none;
+  box-shadow: none;
+}
 
 .projects-folder-cover {
   position: relative;
@@ -10500,6 +10516,7 @@ select {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  touch-action: none;
   display: block;
 }
 
@@ -10523,7 +10540,9 @@ select {
   transition: opacity 0.12s;
 }
 .projects-folder-card:hover .projects-folder-actions,
-.projects-card:hover .projects-folder-actions {
+.projects-folder-card.is-repositioning .projects-folder-actions,
+.projects-card:hover .projects-folder-actions,
+.projects-card.is-repositioning .projects-folder-actions {
   opacity: 1;
 }
 
@@ -10657,6 +10676,13 @@ select {
   transform: translateY(-2px);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
 }
+.projects-card.is-repositioning {
+  cursor: default;
+}
+.projects-card.is-repositioning:hover {
+  transform: none;
+  box-shadow: none;
+}
 
 .projects-card-cover {
   position: relative;
@@ -10670,6 +10696,22 @@ select {
   height: 100%;
   object-fit: cover;
   display: block;
+  touch-action: none;
+}
+
+.projects-cover-reposition-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.68rem;
+  white-space: nowrap;
+  pointer-events: none;
+  backdrop-filter: blur(2px);
 }
 
 .projects-card-body {
@@ -10723,6 +10765,11 @@ select {
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .projects-card-composer {
@@ -10737,6 +10784,7 @@ select {
   line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

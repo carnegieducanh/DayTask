@@ -366,6 +366,18 @@ pub fn run() {
                 PRAGMA foreign_keys = ON;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 23,
+            description: "add_project_cover_position",
+            sql: "ALTER TABLE projects ADD COLUMN cover_position TEXT DEFAULT NULL;",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 24,
+            description: "add_project_folder_cover_position",
+            sql: "ALTER TABLE project_folders ADD COLUMN cover_position TEXT DEFAULT NULL;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

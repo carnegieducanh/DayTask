@@ -517,6 +517,8 @@ export const en: typeof vi = {
     seeLess: "Show less",
     viewAll: "View all",
     back: "Back",
+    coverReposition: "Reposition cover image",
+    coverRepositionHint: "Drag image to reposition",
     categoryLabels: {
       product: "Product",
       figma: "Figma",

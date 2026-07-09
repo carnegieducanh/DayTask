@@ -193,6 +193,7 @@ export interface ProjectFolder {
   name: string;
   category: ProjectCategory;
   cover_image: string | null;
+  cover_position: string | null;
   project_count: number;
   last_activity: string | null;
   created_at: string;
@@ -210,6 +211,7 @@ export interface Project {
   link_youtube: string | null;
   composer: string | null;
   cover_image: string | null;
+  cover_position: string | null;
   folders: string[];
   created_at: string;
 }

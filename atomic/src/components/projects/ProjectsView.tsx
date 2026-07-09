@@ -25,18 +25,21 @@ import {
   IconExternalLink,
   IconStack2,
   IconArrowLeft,
+  IconArrowsMove,
 } from '@tabler/icons-react';
 import type { Project, ProjectFolder, ProjectStatus, ProjectCategory, NewProject } from '../../types';
 import {
   dbGetProjects,
   dbAddProject,
   dbUpdateProject,
+  dbUpdateProjectCoverPosition,
   dbDeleteProject,
   dbGetProjectStats,
   dbGetYearsWithCounts,
   dbGetFolders,
   dbAddFolder,
   dbUpdateFolder,
+  dbUpdateFolderCoverPosition,
   dbDeleteFolder,
   dbGetAllFolderNames,
   dbCreateFolderTag,
@@ -110,27 +113,126 @@ function sortProjects(list: Project[], sortBy: SortBy): Project[] {
   return arr;
 }
 
+function clampPercent(v: number): number {
+  return Math.min(100, Math.max(0, v));
+}
+
+function parseCoverPosition(pos: string | null): { x: number; y: number } {
+  const m = pos?.match(/(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/);
+  if (!m) return { x: 50, y: 50 };
+  return { x: clampPercent(parseFloat(m[1])), y: clampPercent(parseFloat(m[2])) };
+}
+
 // ── FolderCard ───────────────────────────────────────────────────────────────
 
 function FolderCard({
-  folder, onOpen, onEdit, onDelete,
+  folder, onOpen, onEdit, onDelete, onRepositionCover,
 }: {
   folder: ProjectFolder; onOpen: () => void; onEdit: () => void; onDelete: () => void;
+  onRepositionCover: (position: string) => void;
 }) {
   const t = useT();
   const copy = t.projects.categoryCopy[folder.category];
+
+  const [repositioning, setRepositioning] = useState(false);
+  const [pos, setPos] = useState(() => parseCoverPosition(folder.cover_position));
+  const coverRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const dragRef = useRef<{ startX: number; startY: number; fromX: number; fromY: number; overflowX: number; overflowY: number } | null>(null);
+
+  useEffect(() => {
+    if (!repositioning) setPos(parseCoverPosition(folder.cover_position));
+  }, [folder.cover_position, repositioning]);
+
+  function startReposition(e: React.MouseEvent) {
+    e.stopPropagation();
+    setRepositioning(true);
+  }
+
+  function cancelReposition(e: React.MouseEvent) {
+    e.stopPropagation();
+    setRepositioning(false);
+    setPos(parseCoverPosition(folder.cover_position));
+  }
+
+  function confirmReposition(e: React.MouseEvent) {
+    e.stopPropagation();
+    setRepositioning(false);
+    onRepositionCover(`${pos.x.toFixed(1)}% ${pos.y.toFixed(1)}%`);
+  }
+
+  function handleCoverClick(e: React.MouseEvent) {
+    if (repositioning) e.stopPropagation();
+  }
+
+  function handlePointerDown(e: React.PointerEvent<HTMLImageElement>) {
+    if (!repositioning || !coverRef.current || !imgRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = coverRef.current.getBoundingClientRect();
+    const img = imgRef.current;
+    const scale = Math.max(rect.width / img.naturalWidth, rect.height / img.naturalHeight) || 1;
+    const overflowX = Math.max(img.naturalWidth * scale - rect.width, 0);
+    const overflowY = Math.max(img.naturalHeight * scale - rect.height, 0);
+    dragRef.current = { startX: e.clientX, startY: e.clientY, fromX: pos.x, fromY: pos.y, overflowX, overflowY };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLImageElement>) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    e.preventDefault();
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    const nextX = drag.overflowX > 0 ? clampPercent(drag.fromX - (dx / drag.overflowX) * 100) : drag.fromX;
+    const nextY = drag.overflowY > 0 ? clampPercent(drag.fromY - (dy / drag.overflowY) * 100) : drag.fromY;
+    setPos({ x: nextX, y: nextY });
+  }
+
+  function handlePointerUp() {
+    dragRef.current = null;
+  }
+
   return (
-    <div className="projects-folder-card" onClick={onOpen}>
-      <div className="projects-folder-cover">
-        <img src={folder.cover_image ?? defaultFolderCover(folder.name)} alt={folder.name} />
-        <div className="projects-folder-actions">
-          <button className="projects-folder-action-btn" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
-            <IconPencil size={13} />
-          </button>
-          <button className="projects-folder-action-btn danger" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
-            <IconTrash size={13} />
-          </button>
-        </div>
+    <div className={`projects-folder-card${repositioning ? ' is-repositioning' : ''}`} onClick={onOpen}>
+      <div className="projects-folder-cover" ref={coverRef} onClick={handleCoverClick}>
+        <img
+          ref={imgRef}
+          src={folder.cover_image ?? defaultFolderCover(folder.name)}
+          alt={folder.name}
+          draggable={false}
+          style={{ objectPosition: `${pos.x}% ${pos.y}%`, cursor: repositioning ? 'grab' : undefined }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        />
+        {repositioning ? (
+          <>
+            <div className="projects-cover-reposition-hint">{t.projects.coverRepositionHint}</div>
+            <div className="projects-folder-actions">
+              <button className="projects-folder-action-btn" onClick={confirmReposition} title={t.projects.done}>
+                <IconCheck size={13} />
+              </button>
+              <button className="projects-folder-action-btn danger" onClick={cancelReposition} title={t.projects.cancel}>
+                <IconX size={13} />
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="projects-folder-actions">
+            {folder.cover_image && (
+              <button className="projects-folder-action-btn" onClick={startReposition} title={t.projects.coverReposition}>
+                <IconArrowsMove size={13} />
+              </button>
+            )}
+            <button className="projects-folder-action-btn" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+              <IconPencil size={13} />
+            </button>
+            <button className="projects-folder-action-btn danger" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+              <IconTrash size={13} />
+            </button>
+          </div>
+        )}
       </div>
       <div className="projects-folder-body">
         <div className="projects-folder-name" title={folder.name}>{folder.name}</div>
@@ -147,7 +249,7 @@ function FolderCard({
 
 interface AddFolderModalProps {
   category: ProjectCategory;
-  onSave: (name: string, coverImage: string | null) => Promise<void>;
+  onSave: (name: string, coverImage: string | null, coverPosition: string | null) => Promise<void>;
   onClose: () => void;
   initialFolder?: ProjectFolder;
 }
@@ -158,11 +260,16 @@ function AddFolderModal({ category, onSave, onClose, initialFolder }: AddFolderM
   const isEdit = !!initialFolder;
   const [name, setName] = useState(initialFolder?.name ?? '');
   const [coverImage, setCoverImage] = useState<string | null>(initialFolder?.cover_image ?? null);
+  const [coverPos, setCoverPos] = useState(() => parseCoverPosition(initialFolder?.cover_position ?? null));
+  const [repositioningCover, setRepositioningCover] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const dragCounterRef = useRef(0);
   const nameRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverPreviewRef = useRef<HTMLButtonElement>(null);
+  const coverImgRef = useRef<HTMLImageElement>(null);
+  const coverDragStateRef = useRef<{ startX: number; startY: number; fromX: number; fromY: number; overflowX: number; overflowY: number } | null>(null);
 
   useEffect(() => { nameRef.current?.focus(); }, []);
 
@@ -170,9 +277,17 @@ function AddFolderModal({ category, onSave, onClose, initialFolder }: AddFolderM
     if (!file.type.startsWith('image/')) return;
     try {
       setCoverImage(await compressCoverImage(file));
+      setCoverPos({ x: 50, y: 50 });
+      setRepositioningCover(false);
     } catch {
       // ignore unreadable image
     }
+  }
+
+  function removeCover() {
+    setCoverImage(null);
+    setCoverPos({ x: 50, y: 50 });
+    setRepositioningCover(false);
   }
 
   async function handlePickCover(e: React.ChangeEvent<HTMLInputElement>) {
@@ -201,10 +316,38 @@ function AddFolderModal({ category, onSave, onClose, initialFolder }: AddFolderM
     if (file) await applyCoverFile(file);
   }
 
+  function handleCoverPointerDown(e: React.PointerEvent<HTMLImageElement>) {
+    if (!repositioningCover || !coverPreviewRef.current || !coverImgRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = coverPreviewRef.current.getBoundingClientRect();
+    const img = coverImgRef.current;
+    const scale = Math.max(rect.width / img.naturalWidth, rect.height / img.naturalHeight) || 1;
+    const overflowX = Math.max(img.naturalWidth * scale - rect.width, 0);
+    const overflowY = Math.max(img.naturalHeight * scale - rect.height, 0);
+    coverDragStateRef.current = { startX: e.clientX, startY: e.clientY, fromX: coverPos.x, fromY: coverPos.y, overflowX, overflowY };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function handleCoverPointerMove(e: React.PointerEvent<HTMLImageElement>) {
+    const drag = coverDragStateRef.current;
+    if (!drag) return;
+    e.preventDefault();
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    const nextX = drag.overflowX > 0 ? clampPercent(drag.fromX - (dx / drag.overflowX) * 100) : drag.fromX;
+    const nextY = drag.overflowY > 0 ? clampPercent(drag.fromY - (dy / drag.overflowY) * 100) : drag.fromY;
+    setCoverPos({ x: nextX, y: nextY });
+  }
+
+  function handleCoverPointerUp() {
+    coverDragStateRef.current = null;
+  }
+
   async function handleSave() {
     if (!name.trim()) return;
     setSaving(true);
-    await onSave(name.trim(), coverImage);
+    await onSave(name.trim(), coverImage, coverImage ? `${coverPos.x.toFixed(1)}% ${coverPos.y.toFixed(1)}%` : null);
     setSaving(false);
   }
 
@@ -229,24 +372,53 @@ function AddFolderModal({ category, onSave, onClose, initialFolder }: AddFolderM
             onDrop={handleDrop}
           >
             <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePickCover} />
-            <button type="button" className="projects-folder-cover-picker" onClick={() => fileInputRef.current?.click()}>
+            <button
+              type="button"
+              ref={coverPreviewRef}
+              className="projects-folder-cover-picker"
+              onClick={() => { if (!repositioningCover) fileInputRef.current?.click(); }}
+            >
               {coverImage ? (
-                <img src={coverImage} alt="" />
+                <img
+                  ref={coverImgRef}
+                  src={coverImage}
+                  alt=""
+                  draggable={false}
+                  style={{ objectPosition: `${coverPos.x}% ${coverPos.y}%`, cursor: repositioningCover ? 'grab' : undefined }}
+                  onPointerDown={handleCoverPointerDown}
+                  onPointerMove={handleCoverPointerMove}
+                  onPointerUp={handleCoverPointerUp}
+                />
               ) : (
                 <div className="projects-folder-cover-picker-empty">
                   <IconCameraPlus size={22} />
                   <span>{dragOver ? t.projects.coverDrop : t.projects.coverUpload}</span>
                 </div>
               )}
+              {repositioningCover && <div className="projects-cover-reposition-hint">{t.projects.coverRepositionHint}</div>}
             </button>
             <div className="books-cover-actions">
-              <button type="button" className="books-cover-action-btn" onClick={() => fileInputRef.current?.click()}>
-                {coverImage ? t.projects.coverChange : t.projects.coverUpload}
-              </button>
-              {coverImage && (
-                <button type="button" className="books-cover-action-btn danger" onClick={() => setCoverImage(null)}>
-                  {t.projects.coverRemove}
+              {repositioningCover ? (
+                <button type="button" className="books-cover-action-btn" onClick={() => setRepositioningCover(false)}>
+                  {t.projects.done}
                 </button>
+              ) : (
+                <>
+                  <button type="button" className="books-cover-action-btn" onClick={() => fileInputRef.current?.click()}>
+                    {coverImage ? t.projects.coverChange : t.projects.coverUpload}
+                  </button>
+                  {coverImage && (
+                    <>
+                      <button type="button" className="books-cover-action-btn" onClick={() => setRepositioningCover(true)}>
+                        <IconArrowsMove size={13} />
+                        {t.projects.coverReposition}
+                      </button>
+                      <button type="button" className="books-cover-action-btn danger" onClick={removeCover}>
+                        {t.projects.coverRemove}
+                      </button>
+                    </>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -281,9 +453,10 @@ const STATUS_ICON: Record<ProjectStatus, React.ReactNode> = {
 };
 
 function ProjectCard({
-  project, onView, onEdit, onDelete,
+  project, onView, onEdit, onDelete, onRepositionCover,
 }: {
   project: Project; onView: () => void; onEdit: () => void; onDelete: () => void;
+  onRepositionCover: (position: string) => void;
 }) {
   const t = useT();
   const copy = t.projects.categoryCopy[project.category];
@@ -294,24 +467,111 @@ function ProjectCard({
     ? t.projects.inProgressSince(formatISODate(project.start_date))
     : null;
 
+  const [repositioning, setRepositioning] = useState(false);
+  const [pos, setPos] = useState(() => parseCoverPosition(project.cover_position));
+  const coverRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const dragRef = useRef<{ startX: number; startY: number; fromX: number; fromY: number; overflowX: number; overflowY: number } | null>(null);
+
+  useEffect(() => {
+    if (!repositioning) setPos(parseCoverPosition(project.cover_position));
+  }, [project.cover_position, repositioning]);
+
+  function startReposition(e: React.MouseEvent) {
+    e.stopPropagation();
+    setRepositioning(true);
+  }
+
+  function cancelReposition(e: React.MouseEvent) {
+    e.stopPropagation();
+    setRepositioning(false);
+    setPos(parseCoverPosition(project.cover_position));
+  }
+
+  function confirmReposition(e: React.MouseEvent) {
+    e.stopPropagation();
+    setRepositioning(false);
+    onRepositionCover(`${pos.x.toFixed(1)}% ${pos.y.toFixed(1)}%`);
+  }
+
+  function handleCoverClick(e: React.MouseEvent) {
+    if (repositioning) e.stopPropagation();
+  }
+
+  function handlePointerDown(e: React.PointerEvent<HTMLImageElement>) {
+    if (!repositioning || !coverRef.current || !imgRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = coverRef.current.getBoundingClientRect();
+    const img = imgRef.current;
+    const scale = Math.max(rect.width / img.naturalWidth, rect.height / img.naturalHeight) || 1;
+    const overflowX = Math.max(img.naturalWidth * scale - rect.width, 0);
+    const overflowY = Math.max(img.naturalHeight * scale - rect.height, 0);
+    dragRef.current = { startX: e.clientX, startY: e.clientY, fromX: pos.x, fromY: pos.y, overflowX, overflowY };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLImageElement>) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    e.preventDefault();
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    const nextX = drag.overflowX > 0 ? clampPercent(drag.fromX - (dx / drag.overflowX) * 100) : drag.fromX;
+    const nextY = drag.overflowY > 0 ? clampPercent(drag.fromY - (dy / drag.overflowY) * 100) : drag.fromY;
+    setPos({ x: nextX, y: nextY });
+  }
+
+  function handlePointerUp() {
+    dragRef.current = null;
+  }
+
   return (
-    <div className="projects-card" onClick={onView}>
-      <div className="projects-card-cover">
+    <div className={`projects-card${repositioning ? ' is-repositioning' : ''}`} onClick={onView}>
+      <div className="projects-card-cover" ref={coverRef} onClick={handleCoverClick}>
         {project.cover_image ? (
-          <img src={project.cover_image} alt={project.title} />
+          <img
+            ref={imgRef}
+            src={project.cover_image}
+            alt={project.title}
+            draggable={false}
+            style={{ objectPosition: `${pos.x}% ${pos.y}%`, cursor: repositioning ? 'grab' : undefined }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+          />
         ) : (
           <div className="projects-folder-cover-placeholder">
             {CATEGORY_CARD_ICON[project.category]}
           </div>
         )}
-        <div className="projects-folder-actions">
-          <button className="projects-folder-action-btn" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
-            <IconPencil size={13} />
-          </button>
-          <button className="projects-folder-action-btn danger" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
-            <IconTrash size={13} />
-          </button>
-        </div>
+        {repositioning ? (
+          <>
+            <div className="projects-cover-reposition-hint">{t.projects.coverRepositionHint}</div>
+            <div className="projects-folder-actions">
+              <button className="projects-folder-action-btn" onClick={confirmReposition} title={t.projects.done}>
+                <IconCheck size={13} />
+              </button>
+              <button className="projects-folder-action-btn danger" onClick={cancelReposition} title={t.projects.cancel}>
+                <IconX size={13} />
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="projects-folder-actions">
+            {project.cover_image && (
+              <button className="projects-folder-action-btn" onClick={startReposition} title={t.projects.coverReposition}>
+                <IconArrowsMove size={13} />
+              </button>
+            )}
+            <button className="projects-folder-action-btn" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+              <IconPencil size={13} />
+            </button>
+            <button className="projects-folder-action-btn danger" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+              <IconTrash size={13} />
+            </button>
+          </div>
+        )}
       </div>
       <div className="projects-card-body">
         <div className="projects-card-head">
@@ -408,7 +668,7 @@ function ProjectDetailModal({ project, onClose, onEdit, onDelete, onStatusChange
         <div className="projects-detail-body">
           {project.cover_image && (
             <div className="projects-detail-cover">
-              <img src={project.cover_image} alt={project.title} />
+              <img src={project.cover_image} alt={project.title} style={{ objectPosition: project.cover_position ?? '50% 50%' }} />
             </div>
           )}
           <div className="projects-detail-title">{project.title}</div>
@@ -497,7 +757,7 @@ function ProjectDetailModal({ project, onClose, onEdit, onDelete, onStatusChange
 
 interface AddProjectModalProps {
   category: ProjectCategory;
-  onSave: (data: NewProject) => Promise<void>;
+  onSave: (data: NewProject, coverPosition: string | null) => Promise<void>;
   onClose: () => void;
   initialProject?: Project;
   initialFolders?: string[];
@@ -518,9 +778,14 @@ function AddProjectModal({ category, onSave, onClose, initialProject, initialFol
   const [composer, setComposer] = useState(initialProject?.composer ?? '');
   const [folders, setFolders] = useState<string[]>(initialProject?.folders ?? initialFolders ?? []);
   const [coverImage, setCoverImage] = useState<string | null>(initialProject?.cover_image ?? null);
+  const [coverPos, setCoverPos] = useState(() => parseCoverPosition(initialProject?.cover_position ?? null));
+  const [repositioningCover, setRepositioningCover] = useState(false);
   const [coverDragOver, setCoverDragOver] = useState(false);
   const coverDragCounterRef = useRef(0);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
+  const coverPreviewRef = useRef<HTMLButtonElement>(null);
+  const coverImgRef = useRef<HTMLImageElement>(null);
+  const coverDragStateRef = useRef<{ startX: number; startY: number; fromX: number; fromY: number; overflowX: number; overflowY: number } | null>(null);
   const [saving, setSaving] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -628,9 +893,17 @@ function AddProjectModal({ category, onSave, onClose, initialProject, initialFol
     if (!file.type.startsWith('image/')) return;
     try {
       setCoverImage(await compressCoverImage(file));
+      setCoverPos({ x: 50, y: 50 });
+      setRepositioningCover(false);
     } catch {
       // ignore unreadable image
     }
+  }
+
+  function removeCover() {
+    setCoverImage(null);
+    setCoverPos({ x: 50, y: 50 });
+    setRepositioningCover(false);
   }
 
   async function handlePickCover(e: React.ChangeEvent<HTMLInputElement>) {
@@ -659,6 +932,34 @@ function AddProjectModal({ category, onSave, onClose, initialProject, initialFol
     if (file) await applyCoverFile(file);
   }
 
+  function handleCoverPointerDown(e: React.PointerEvent<HTMLImageElement>) {
+    if (!repositioningCover || !coverPreviewRef.current || !coverImgRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = coverPreviewRef.current.getBoundingClientRect();
+    const img = coverImgRef.current;
+    const scale = Math.max(rect.width / img.naturalWidth, rect.height / img.naturalHeight) || 1;
+    const overflowX = Math.max(img.naturalWidth * scale - rect.width, 0);
+    const overflowY = Math.max(img.naturalHeight * scale - rect.height, 0);
+    coverDragStateRef.current = { startX: e.clientX, startY: e.clientY, fromX: coverPos.x, fromY: coverPos.y, overflowX, overflowY };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function handleCoverPointerMove(e: React.PointerEvent<HTMLImageElement>) {
+    const drag = coverDragStateRef.current;
+    if (!drag) return;
+    e.preventDefault();
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    const nextX = drag.overflowX > 0 ? clampPercent(drag.fromX - (dx / drag.overflowX) * 100) : drag.fromX;
+    const nextY = drag.overflowY > 0 ? clampPercent(drag.fromY - (dy / drag.overflowY) * 100) : drag.fromY;
+    setCoverPos({ x: nextX, y: nextY });
+  }
+
+  function handleCoverPointerUp() {
+    coverDragStateRef.current = null;
+  }
+
   async function handleSave() {
     if (!title.trim() || folders.length === 0) return;
     setSaving(true);
@@ -674,7 +975,7 @@ function AddProjectModal({ category, onSave, onClose, initialProject, initialFol
       composer: category === 'piano' ? (composer.trim() || undefined) : undefined,
       cover_image: coverImage,
       folders,
-    });
+    }, coverImage ? `${coverPos.x.toFixed(1)}% ${coverPos.y.toFixed(1)}%` : null);
     setSaving(false);
   }
 
@@ -701,24 +1002,53 @@ function AddProjectModal({ category, onSave, onClose, initialProject, initialFol
             onDrop={handleCoverDrop}
           >
             <input ref={coverFileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePickCover} />
-            <button type="button" className="projects-folder-cover-picker" onClick={() => coverFileInputRef.current?.click()}>
+            <button
+              type="button"
+              ref={coverPreviewRef}
+              className="projects-folder-cover-picker"
+              onClick={() => { if (!repositioningCover) coverFileInputRef.current?.click(); }}
+            >
               {coverImage ? (
-                <img src={coverImage} alt="" />
+                <img
+                  ref={coverImgRef}
+                  src={coverImage}
+                  alt=""
+                  draggable={false}
+                  style={{ objectPosition: `${coverPos.x}% ${coverPos.y}%`, cursor: repositioningCover ? 'grab' : undefined }}
+                  onPointerDown={handleCoverPointerDown}
+                  onPointerMove={handleCoverPointerMove}
+                  onPointerUp={handleCoverPointerUp}
+                />
               ) : (
                 <div className="projects-folder-cover-picker-empty">
                   <IconCameraPlus size={22} />
                   <span>{coverDragOver ? t.projects.coverDrop : t.projects.coverUpload}</span>
                 </div>
               )}
+              {repositioningCover && <div className="projects-cover-reposition-hint">{t.projects.coverRepositionHint}</div>}
             </button>
             <div className="books-cover-actions">
-              <button type="button" className="books-cover-action-btn" onClick={() => coverFileInputRef.current?.click()}>
-                {coverImage ? t.projects.coverChange : t.projects.coverUpload}
-              </button>
-              {coverImage && (
-                <button type="button" className="books-cover-action-btn danger" onClick={() => setCoverImage(null)}>
-                  {t.projects.coverRemove}
+              {repositioningCover ? (
+                <button type="button" className="books-cover-action-btn" onClick={() => setRepositioningCover(false)}>
+                  {t.projects.done}
                 </button>
+              ) : (
+                <>
+                  <button type="button" className="books-cover-action-btn" onClick={() => coverFileInputRef.current?.click()}>
+                    {coverImage ? t.projects.coverChange : t.projects.coverUpload}
+                  </button>
+                  {coverImage && (
+                    <>
+                      <button type="button" className="books-cover-action-btn" onClick={() => setRepositioningCover(true)}>
+                        <IconArrowsMove size={13} />
+                        {t.projects.coverReposition}
+                      </button>
+                      <button type="button" className="books-cover-action-btn danger" onClick={removeCover}>
+                        {t.projects.coverRemove}
+                      </button>
+                    </>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -1117,16 +1447,23 @@ export default function ProjectsView() {
     ]);
   }
 
-  async function handleSaveFolder(name: string, coverImage: string | null) {
+  async function handleSaveFolder(name: string, coverImage: string | null, coverPosition: string | null) {
     if (editingFolder) {
-      await dbUpdateFolder(editingFolder.id, name, coverImage);
+      await dbUpdateFolder(editingFolder.id, name, coverImage, coverPosition);
       setEditingFolder(null);
-      if (openFolder && openFolder.id === editingFolder.id) setOpenFolder({ ...openFolder, name, cover_image: coverImage });
+      if (openFolder && openFolder.id === editingFolder.id) {
+        setOpenFolder({ ...openFolder, name, cover_image: coverImage, cover_position: coverPosition });
+      }
     } else {
-      await dbAddFolder(name, coverImage, category);
+      await dbAddFolder(name, coverImage, category, coverPosition);
       setShowAddFolderModal(false);
     }
     await loadFolders(category, statusFilter, yearFilter);
+  }
+
+  async function handleRepositionFolderCover(folder: ProjectFolder, position: string) {
+    await dbUpdateFolderCoverPosition(folder.id, position);
+    setFolders((prev) => prev.map((f) => (f.id === folder.id ? { ...f, cover_position: position } : f)));
   }
 
   async function commitDeleteFolder(folder: ProjectFolder) {
@@ -1153,19 +1490,27 @@ export default function ProjectsView() {
     setPendingDeleteFolder(null);
   }
 
-  async function handleAddProject(data: NewProject) {
+  async function handleAddProject(data: NewProject, coverPosition: string | null) {
     const p = await dbAddProject(data);
     if (p) {
+      if (coverPosition) await dbUpdateProjectCoverPosition(p.id, coverPosition);
       setShowAddProjectModal(false);
       await refreshAll();
     }
   }
 
-  async function handleUpdateProject(data: NewProject) {
+  async function handleUpdateProject(data: NewProject, coverPosition: string | null) {
     if (!editingProject) return;
     await dbUpdateProject(editingProject.id, data);
+    await dbUpdateProjectCoverPosition(editingProject.id, coverPosition);
     setEditingProject(null);
     await refreshAll();
+  }
+
+  async function handleRepositionCover(project: Project, position: string) {
+    await dbUpdateProjectCoverPosition(project.id, position);
+    setProjects((prev) => prev.map((p) => (p.id === project.id ? { ...p, cover_position: position } : p)));
+    setViewingProject((prev) => (prev && prev.id === project.id ? { ...prev, cover_position: position } : prev));
   }
 
   async function handleQuickStatusChange(project: Project, status: ProjectStatus) {
@@ -1462,6 +1807,7 @@ export default function ProjectsView() {
                         onOpen={() => handleOpenFolder(folder)}
                         onEdit={() => setEditingFolder(folder)}
                         onDelete={() => handleDeleteFolder(folder)}
+                        onRepositionCover={(position) => handleRepositionFolderCover(folder, position)}
                       />
                     ))}
                   </div>
@@ -1510,6 +1856,7 @@ export default function ProjectsView() {
                           onView={() => setViewingProject(project)}
                           onEdit={() => setEditingProject(project)}
                           onDelete={() => handleDeleteProject(project)}
+                          onRepositionCover={(position) => handleRepositionCover(project, position)}
                         />
                       ))}
                     </div>
@@ -1521,15 +1868,16 @@ export default function ProjectsView() {
         ) : (
           <>
             <div className="books-header">
-              <div>
-                <div className="books-header-title">{openFolder.name}</div>
-                <div className="books-header-sub">{copy.folderCount(projects.length)}</div>
+              <div className="projects-header-title-group">
+                <button className="icon-btn" onClick={handleBack} title={t.projects.back}>
+                  <IconArrowLeft size={16} />
+                </button>
+                <div>
+                  <div className="books-header-title">{openFolder.name}</div>
+                  <div className="books-header-sub">{copy.folderCount(projects.length)}</div>
+                </div>
               </div>
               <div className="books-header-actions">
-                <button className="books-btn-add" onClick={handleBack}>
-                  <IconArrowLeft size={13} />
-                  {t.projects.back}
-                </button>
                 <button className="books-btn-add" onClick={() => setShowAddProjectModal(true)}>
                   <IconPlus size={13} />
                   {copy.addItem}
@@ -1578,6 +1926,7 @@ export default function ProjectsView() {
                       onView={() => setViewingProject(project)}
                       onEdit={() => setEditingProject(project)}
                       onDelete={() => handleDeleteProject(project)}
+                      onRepositionCover={(position) => handleRepositionCover(project, position)}
                     />
                   ))}
                 </div>
