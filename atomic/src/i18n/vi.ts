@@ -151,6 +151,7 @@ export const vi = {
     title: "Kế hoạch tuần",
     weekLabel: (w: number) => `Tuần ${w}`,
     addPlaceholder: "Thêm mục tiêu tuần này...",
+    addLabel: "Thêm mục tiêu",
     hintEmpty: "Thêm kế hoạch cho tuần này...",
     done: "hoàn thành",
   },

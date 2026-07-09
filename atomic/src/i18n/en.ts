@@ -153,6 +153,7 @@ export const en: typeof vi = {
     title: "Week Plan",
     weekLabel: (w: number) => `Week ${w}`,
     addPlaceholder: "Add a goal for this week...",
+    addLabel: "Add a goal",
     hintEmpty: "Add a plan for this week...",
     done: "done",
   },

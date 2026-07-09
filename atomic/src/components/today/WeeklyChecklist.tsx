@@ -173,6 +173,7 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
                 title={t.weeklyChecklist.addPlaceholder}
               >
                 <IconPlus size={13} />
+                <span>{t.weeklyChecklist.addLabel}</span>
               </button>
             )}
           </div>
@@ -195,6 +196,7 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
                     onChange={e => setEditText(e.target.value)}
                     onKeyDown={handleEditKeyDown}
                     onBlur={handleSaveEdit}
+                    spellCheck={false}
                   />
                 ) : (
                   <span className="wc-text"><span className="wc-text-inner">{item.text}</span></span>
@@ -223,6 +225,7 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
                   onKeyDown={handleKeyDown}
                   onBlur={() => handleAdd()}
                   placeholder={t.weeklyChecklist.addPlaceholder}
+                  spellCheck={false}
                 />
               </div>
             )}
