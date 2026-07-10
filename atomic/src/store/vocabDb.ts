@@ -20,6 +20,14 @@ export function saveVocabInterval(minutes: number): void {
   window.dispatchEvent(new CustomEvent('vocabSettingsChanged'));
 }
 
+export function getVocabIndex(): number {
+  return Math.max(0, parseInt(localStorage.getItem('vocabCurrentIndex') ?? '0') || 0);
+}
+
+export function saveVocabIndex(index: number): void {
+  localStorage.setItem('vocabCurrentIndex', String(index));
+}
+
 export async function dbGetVocabWords(): Promise<VocabWord[]> {
   if (!isTauri()) return [];
   const db = await getDb();

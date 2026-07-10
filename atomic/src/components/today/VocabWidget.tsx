@@ -1,16 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { dbGetVocabWords, getVocabInterval } from '../../store/vocabDb';
+import { dbGetVocabWords, getVocabInterval, getVocabIndex, saveVocabIndex } from '../../store/vocabDb';
 import { useT } from '../../i18n';
 import type { VocabWord } from '../../types';
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 export default function VocabWidget({ noteStyle = false }: { noteStyle?: boolean }) {
   const t = useT();
@@ -29,9 +20,10 @@ export default function VocabWidget({ noteStyle = false }: { noteStyle?: boolean
       setLoaded(false);
       return;
     }
-    wordsRef.current = shuffle(ws);
-    indexRef.current = 0;
-    setCurrent(wordsRef.current[0]);
+    wordsRef.current = ws;
+    const idx = getVocabIndex() % ws.length;
+    indexRef.current = idx;
+    setCurrent(ws[idx]);
     setContentKey((k) => k + 1);
     setLoaded(true);
   }, []);
@@ -54,13 +46,10 @@ export default function VocabWidget({ noteStyle = false }: { noteStyle?: boolean
   const advance = useCallback(() => {
     const words = wordsRef.current;
     if (words.length === 0) return;
-    let next = indexRef.current + 1;
-    if (next >= words.length) {
-      wordsRef.current = shuffle(words);
-      next = 0;
-    }
+    const next = (indexRef.current + 1) % words.length;
     indexRef.current = next;
-    setCurrent(wordsRef.current[next]);
+    saveVocabIndex(next);
+    setCurrent(words[next]);
     setContentKey((k) => k + 1);
   }, []);
 
