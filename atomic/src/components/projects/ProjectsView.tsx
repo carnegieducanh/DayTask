@@ -24,8 +24,10 @@ import {
   IconStack2,
   IconArrowLeft,
   IconArrowsMove,
+  IconChevronLeft,
+  IconChevronRight,
 } from '@tabler/icons-react';
-import type { Project, ProjectFolder, ProjectStatus, ProjectCategory, NewProject } from '../../types';
+import type { Project, ProjectFolder, FolderTag, ProjectStatus, ProjectCategory, NewProject } from '../../types';
 import {
   dbGetProjects,
   dbAddProject,
@@ -35,6 +37,7 @@ import {
   dbGetProjectStats,
   dbGetYearsWithCounts,
   dbGetFolders,
+  dbGetFolderTags,
   dbAddFolder,
   dbUpdateFolder,
   dbUpdateFolderCoverPosition,
@@ -137,9 +140,11 @@ const CATEGORY_LINK_ICON: Record<ProjectCategory, { primary: React.ReactNode; se
   piano: { primary: <IconFileMusic size={14} />, secondary: <IconVideo size={14} /> },
 };
 
-const MAX_COVER_DIM = 640;
-const COVER_JPEG_QUALITY = 0.82;
+const MAX_COVER_DIM = 1600;
+const COVER_JPEG_QUALITY = 0.92;
 const YEAR_LIST_VISIBLE = 3;
+const FOLDER_PAGE_SIZE = 12;
+const PROJECT_PAGE_SIZE = 12;
 
 function compressCoverImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -171,14 +176,6 @@ function formatISODate(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
-function sortProjects(list: Project[], sortBy: SortBy): Project[] {
-  const arr = [...list];
-  if (sortBy === 'title') arr.sort((a, b) => a.title.localeCompare(b.title));
-  else if (sortBy === 'status') arr.sort((a, b) => a.status.localeCompare(b.status));
-  else arr.sort((a, b) => (b.completed_date ?? b.start_date ?? b.created_at).localeCompare(a.completed_date ?? a.start_date ?? a.created_at));
-  return arr;
-}
-
 function clampPercent(v: number): number {
   return Math.min(100, Math.max(0, v));
 }
@@ -187,6 +184,36 @@ function parseCoverPosition(pos: string | null): { x: number; y: number } {
   const m = pos?.match(/(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/);
   if (!m) return { x: 50, y: 50 };
   return { x: clampPercent(parseFloat(m[1])), y: clampPercent(parseFloat(m[2])) };
+}
+
+function Pagination({
+  page, total, pageSize, onChange,
+}: {
+  page: number; total: number; pageSize: number; onChange: (page: number) => void;
+}) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (totalPages <= 1) return null;
+  return (
+    <div className="projects-pagination">
+      <button
+        type="button"
+        className="projects-pagination-btn"
+        onClick={() => onChange(page - 1)}
+        disabled={page <= 1}
+      >
+        <IconChevronLeft size={14} />
+      </button>
+      <span className="projects-pagination-label">{page} / {totalPages}</span>
+      <button
+        type="button"
+        className="projects-pagination-btn"
+        onClick={() => onChange(page + 1)}
+        disabled={page >= totalPages}
+      >
+        <IconChevronRight size={14} />
+      </button>
+    </div>
+  );
 }
 
 // ── FolderCard ───────────────────────────────────────────────────────────────
@@ -1421,9 +1448,14 @@ export default function ProjectsView() {
 
   const [category, setCategory] = useState<ProjectCategory>('product');
   const [folders, setFolders] = useState<ProjectFolder[]>([]);
-  const [openFolder, setOpenFolder] = useState<ProjectFolder | null>(null);
+  const [foldersTotal, setFoldersTotal] = useState(0);
+  const [folderPage, setFolderPage] = useState(1);
+  const [folderTags, setFolderTags] = useState<FolderTag[]>([]);
+  const [openFolder, setOpenFolder] = useState<{ id: number; name: string } | null>(null);
   const [viewAllProjects, setViewAllProjects] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsTotal, setProjectsTotal] = useState(0);
+  const [projectPage, setProjectPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [yearFilter, setYearFilter] = useState<number | null>(new Date().getFullYear());
   const [tagSearch, setTagSearch] = useState('');
@@ -1472,8 +1504,26 @@ export default function ProjectsView() {
     setYears(await dbGetYearsWithCounts(cat, status === 'all' ? undefined : status));
   }, []);
 
-  const loadFolders = useCallback(async (cat: ProjectCategory, status: StatusFilter, year: number | null) => {
-    setFolders(await dbGetFolders({ category: cat, status: status === 'all' ? undefined : status, year: year ?? undefined }));
+  const loadFolders = useCallback(async (cat: ProjectCategory, status: StatusFilter, year: number | null, page: number) => {
+    const onlyActive = status !== 'all' || year !== null;
+    const res = await dbGetFolders({
+      category: cat,
+      status: status === 'all' ? undefined : status,
+      year: year ?? undefined,
+      onlyActive,
+      limit: FOLDER_PAGE_SIZE,
+      offset: (page - 1) * FOLDER_PAGE_SIZE,
+    });
+    if (res.items.length === 0 && page > 1 && res.total > 0) {
+      setFolderPage(Math.max(1, Math.ceil(res.total / FOLDER_PAGE_SIZE)));
+      return;
+    }
+    setFolders(res.items);
+    setFoldersTotal(res.total);
+  }, []);
+
+  const loadFolderTags = useCallback(async (cat: ProjectCategory, status: StatusFilter, year: number | null) => {
+    setFolderTags(await dbGetFolderTags({ category: cat, status: status === 'all' ? undefined : status, year: year ?? undefined }));
   }, []);
 
   const loadProjects = useCallback(async (
@@ -1481,15 +1531,26 @@ export default function ProjectsView() {
     folderName: string,
     status: StatusFilter,
     year: number | null,
-    search: string
+    search: string,
+    sort: SortBy,
+    page: number
   ) => {
-    setProjects(await dbGetProjects({
+    const res = await dbGetProjects({
       category: cat,
       folder: folderName,
       status: status === 'all' ? undefined : status,
       year: year ?? undefined,
       search,
-    }));
+      sortBy: sort,
+      limit: PROJECT_PAGE_SIZE,
+      offset: (page - 1) * PROJECT_PAGE_SIZE,
+    });
+    if (res.items.length === 0 && page > 1 && res.total > 0) {
+      setProjectPage(Math.max(1, Math.ceil(res.total / PROJECT_PAGE_SIZE)));
+      return;
+    }
+    setProjects(res.items);
+    setProjectsTotal(res.total);
   }, []);
 
   useEffect(() => {
@@ -1508,25 +1569,27 @@ export default function ProjectsView() {
     if (!seeded) return;
     loadYearStats(category, yearFilter);
     loadYears(category, statusFilter);
-    loadFolders(category, statusFilter, yearFilter);
+    loadFolders(category, statusFilter, yearFilter, folderPage);
+    loadFolderTags(category, statusFilter, yearFilter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seeded, category, statusFilter, yearFilter]);
+  }, [seeded, category, statusFilter, yearFilter, folderPage]);
 
   useEffect(() => {
     if (!seeded || (!openFolder && !viewAllProjects)) return;
-    loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, searchQuery);
+    loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, searchQuery, sortBy, projectPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seeded, category, openFolder, viewAllProjects, statusFilter, yearFilter]);
+  }, [seeded, category, openFolder, viewAllProjects, statusFilter, yearFilter, sortBy, projectPage]);
 
   function handleSearch(q: string) {
     setSearchQuery(q);
+    setProjectPage(1);
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
-      if (openFolder || viewAllProjects) loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, q);
+      if (openFolder || viewAllProjects) loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, q, sortBy, 1);
     }, 300);
   }
 
-  function handleOpenFolder(folder: ProjectFolder) {
+  function handleOpenFolder(folder: { id: number; name: string }) {
     if (openFolder?.id === folder.id) {
       handleBack();
       return;
@@ -1534,11 +1597,13 @@ export default function ProjectsView() {
     setOpenFolder(folder);
     setViewAllProjects(false);
     setSearchQuery('');
+    setProjectPage(1);
   }
 
   function handleShowAllProjects() {
     setViewAllProjects(true);
     setSearchQuery('');
+    setProjectPage(1);
   }
 
   function handleBack() {
@@ -1546,6 +1611,7 @@ export default function ProjectsView() {
     setViewAllProjects(false);
     setProjects([]);
     setSearchQuery('');
+    setProjectPage(1);
   }
 
   function handleCategoryChange(next: ProjectCategory) {
@@ -1558,6 +1624,8 @@ export default function ProjectsView() {
     setYearFilter(new Date().getFullYear());
     setSearchQuery('');
     setTagSearch('');
+    setFolderPage(1);
+    setProjectPage(1);
   }
 
   async function refreshAll() {
@@ -1565,8 +1633,9 @@ export default function ProjectsView() {
       loadStats(category),
       loadYearStats(category, yearFilter),
       loadYears(category, statusFilter),
-      loadFolders(category, statusFilter, yearFilter),
-      (openFolder || viewAllProjects) ? loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, searchQuery) : Promise.resolve(),
+      loadFolders(category, statusFilter, yearFilter, folderPage),
+      loadFolderTags(category, statusFilter, yearFilter),
+      (openFolder || viewAllProjects) ? loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, searchQuery, sortBy, projectPage) : Promise.resolve(),
     ]);
   }
 
@@ -1575,13 +1644,16 @@ export default function ProjectsView() {
       await dbUpdateFolder(editingFolder.id, name, coverImage, coverPosition);
       setEditingFolder(null);
       if (openFolder && openFolder.id === editingFolder.id) {
-        setOpenFolder({ ...openFolder, name, cover_image: coverImage, cover_position: coverPosition });
+        setOpenFolder({ ...openFolder, name });
       }
     } else {
       await dbAddFolder(name, coverImage, category, coverPosition);
       setShowAddFolderModal(false);
     }
-    await loadFolders(category, statusFilter, yearFilter);
+    await Promise.all([
+      loadFolders(category, statusFilter, yearFilter, folderPage),
+      loadFolderTags(category, statusFilter, yearFilter),
+    ]);
   }
 
   async function handleRepositionFolderCover(folder: ProjectFolder, position: string) {
@@ -1592,7 +1664,13 @@ export default function ProjectsView() {
   async function commitDeleteFolder(folder: ProjectFolder) {
     await dbDeleteFolder(folder.id);
     setPendingDeleteFolder(null);
-    await Promise.all([loadStats(category), loadYearStats(category, yearFilter), loadYears(category, statusFilter)]);
+    await Promise.all([
+      loadStats(category),
+      loadYearStats(category, yearFilter),
+      loadYears(category, statusFilter),
+      loadFolders(category, statusFilter, yearFilter, folderPage),
+      loadFolderTags(category, statusFilter, yearFilter),
+    ]);
   }
 
   function handleDeleteFolder(folder: ProjectFolder) {
@@ -1600,6 +1678,7 @@ export default function ProjectsView() {
     if (pendingDeleteFolder) commitDeleteFolder(pendingDeleteFolder);
 
     setFolders((prev) => prev.filter((f) => f.id !== folder.id));
+    setFolderTags((prev) => prev.filter((f) => f.id !== folder.id));
     setPendingDeleteFolder(folder);
     if (openFolder && openFolder.id === folder.id) handleBack();
 
@@ -1609,7 +1688,8 @@ export default function ProjectsView() {
   function handleUndoDeleteFolder() {
     if (deleteFolderTimerRef.current) clearTimeout(deleteFolderTimerRef.current);
     if (!pendingDeleteFolder) return;
-    loadFolders(category, statusFilter, yearFilter);
+    loadFolders(category, statusFilter, yearFilter, folderPage);
+    loadFolderTags(category, statusFilter, yearFilter);
     setPendingDeleteFolder(null);
   }
 
@@ -1657,7 +1737,16 @@ export default function ProjectsView() {
 
   async function commitDeleteProject(project: Project) {
     await dbDeleteProject(project.id);
-    await Promise.all([loadStats(category), loadYearStats(category, yearFilter), loadYears(category, statusFilter), loadFolders(category, statusFilter, yearFilter)]);
+    await Promise.all([
+      loadStats(category),
+      loadYearStats(category, yearFilter),
+      loadYears(category, statusFilter),
+      loadFolders(category, statusFilter, yearFilter, folderPage),
+      loadFolderTags(category, statusFilter, yearFilter),
+      (openFolder || viewAllProjects)
+        ? loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, searchQuery, sortBy, projectPage)
+        : Promise.resolve(),
+    ]);
     setPendingDeleteProject(null);
   }
 
@@ -1674,14 +1763,17 @@ export default function ProjectsView() {
   function handleUndoDeleteProject() {
     if (deleteProjectTimerRef.current) clearTimeout(deleteProjectTimerRef.current);
     if (!pendingDeleteProject || (!openFolder && !viewAllProjects)) return;
-    loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, searchQuery);
+    loadProjects(category, openFolder ? openFolder.name : '', statusFilter, yearFilter, searchQuery, sortBy, projectPage);
     setPendingDeleteProject(null);
   }
 
   async function commitDeleteFolderTag(name: string, cat: ProjectCategory) {
     await dbDeleteFolderByName(name, cat);
     setPendingDeleteFolderTag(null);
-    await loadFolders(category, statusFilter, yearFilter);
+    await Promise.all([
+      loadFolders(category, statusFilter, yearFilter, folderPage),
+      loadFolderTags(category, statusFilter, yearFilter),
+    ]);
   }
 
   function handleFolderTagDeleted(name: string, cat: ProjectCategory, undo: () => void) {
@@ -1701,10 +1793,14 @@ export default function ProjectsView() {
 
   function handleStatusFilter(f: StatusFilter) {
     setStatusFilter(f);
+    setFolderPage(1);
+    setProjectPage(1);
   }
 
   function handleYearFilter(year: number) {
     setYearFilter((prev) => (prev === year ? null : year));
+    setFolderPage(1);
+    setProjectPage(1);
   }
 
   useLayoutEffect(() => {
@@ -1734,24 +1830,13 @@ export default function ProjectsView() {
     setTitleIndicatorStyle({ left: labelRect.left - rowRect.left, top: labelRect.bottom - rowRect.top - 2, width: labelRect.width });
   }, [viewAllProjects, copy.pageTitle, t.projects.viewAll]);
 
-  const sortedProjects = useMemo(() => sortProjects(projects, sortBy), [projects, sortBy]);
-
-  const isFiltering = statusFilter !== 'all' || yearFilter !== null;
-
-  const visibleFolders = useMemo(
-    () => (isFiltering ? folders.filter((f) => f.project_count > 0) : folders),
-    [folders, isFiltering]
-  );
-
-  // Danh sách tag luôn đầy đủ, không ẩn theo status/year filter — chỉ số đếm
-  // (project_count) trên mỗi tag thay đổi theo filter đang chọn. Thứ tự cố định
-  // theo lúc tạo (id tăng dần), không đổi theo last_activity như lưới folder chính.
+  // Danh sách tag luôn đầy đủ, không ẩn theo status/year filter và không phân trang
+  // — chỉ số đếm (project_count) trên mỗi tag thay đổi theo filter đang chọn.
+  // Thứ tự cố định theo lúc tạo (id tăng dần, đã sort ở SQL), không đổi theo
+  // last_activity như lưới folder chính (folder chính có phân trang riêng).
   const filteredTagFolders = useMemo(
-    () =>
-      folders
-        .filter((f) => !tagSearch || f.name.toLowerCase().includes(tagSearch.toLowerCase()))
-        .sort((a, b) => a.id - b.id),
-    [folders, tagSearch]
+    () => folderTags.filter((f) => !tagSearch || f.name.toLowerCase().includes(tagSearch.toLowerCase())),
+    [folderTags, tagSearch]
   );
 
   const headerSubText = useMemo(() => {
@@ -1840,7 +1925,7 @@ export default function ProjectsView() {
           </div>
         )}
 
-        {folders.length > 0 && (
+        {folderTags.length > 0 && (
           <div className="books-sb-section">
             <div className="books-sb-label">{t.calendar.filterTags}</div>
             <div className="books-sb-tag-search-wrap">
@@ -1908,7 +1993,7 @@ export default function ProjectsView() {
                     />
                   )}
                 </div>
-                <div className="books-header-sub">{viewAllProjects ? copy.totalCount(projects.length) : headerSubText}</div>
+                <div className="books-header-sub">{viewAllProjects ? copy.totalCount(projectsTotal) : headerSubText}</div>
               </div>
               {viewAllProjects ? (
                 <button className="books-btn-add" onClick={() => setShowAddProjectModal(true)}>
@@ -1925,7 +2010,7 @@ export default function ProjectsView() {
 
             {!viewAllProjects ? (
               <div key={`${category}-${statusFilter}-${yearFilter ?? ''}`} className="books-content-view">
-                {folders.length === 0 ? (
+                {folderTags.length === 0 ? (
                   <div className="books-empty-state">
                     <IconFolderCode size={36} className="books-empty-icon" />
                     <p className="books-empty-text">{t.projects.emptyFolders}</p>
@@ -1934,24 +2019,27 @@ export default function ProjectsView() {
                       {t.projects.addFolder}
                     </button>
                   </div>
-                ) : visibleFolders.length === 0 ? (
+                ) : folders.length === 0 ? (
                   <div className="books-empty-state">
                     <IconFolderCode size={36} className="books-empty-icon" />
                     <p className="books-empty-text">{t.projects.emptyFolderResults}</p>
                   </div>
                 ) : (
-                  <div className="projects-folder-grid">
-                    {visibleFolders.map((folder) => (
-                      <FolderCard
-                        key={folder.id}
-                        folder={folder}
-                        onOpen={() => handleOpenFolder(folder)}
-                        onEdit={() => setEditingFolder(folder)}
-                        onDelete={() => handleDeleteFolder(folder)}
-                        onRepositionCover={(position) => handleRepositionFolderCover(folder, position)}
-                      />
-                    ))}
-                  </div>
+                  <>
+                    <div className="projects-folder-grid">
+                      {folders.map((folder) => (
+                        <FolderCard
+                          key={folder.id}
+                          folder={folder}
+                          onOpen={() => handleOpenFolder(folder)}
+                          onEdit={() => setEditingFolder(folder)}
+                          onDelete={() => handleDeleteFolder(folder)}
+                          onRepositionCover={(position) => handleRepositionFolderCover(folder, position)}
+                        />
+                      ))}
+                    </div>
+                    <Pagination page={folderPage} total={foldersTotal} pageSize={FOLDER_PAGE_SIZE} onChange={setFolderPage} />
+                  </>
                 )}
               </div>
             ) : (
@@ -1969,13 +2057,17 @@ export default function ProjectsView() {
                     {searchQuery && (
                       <button
                         className="books-search-clear"
-                        onClick={() => { setSearchQuery(''); loadProjects(category, '', statusFilter, yearFilter, ''); }}
+                        onClick={() => { setSearchQuery(''); setProjectPage(1); loadProjects(category, '', statusFilter, yearFilter, '', sortBy, 1); }}
                       >
                         <IconX size={12} />
                       </button>
                     )}
                   </div>
-                  <select className="books-sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
+                  <select
+                    className="books-sort-select"
+                    value={sortBy}
+                    onChange={(e) => { setSortBy(e.target.value as SortBy); setProjectPage(1); }}
+                  >
                     <option value="date">{t.projects.sortDate}</option>
                     <option value="title">{t.projects.sortTitle}</option>
                     <option value="status">{t.projects.sortStatus}</option>
@@ -1983,24 +2075,27 @@ export default function ProjectsView() {
                 </div>
 
                 <div key={`all-${statusFilter}-${yearFilter ?? ''}`} className="books-content-view">
-                  {sortedProjects.length === 0 ? (
+                  {projects.length === 0 ? (
                     <div className="books-empty-state">
                       <IconFolderCode size={36} className="books-empty-icon" />
                       <p className="books-empty-text">{emptyProjectsText}</p>
                     </div>
                   ) : (
-                    <div className="projects-card-grid">
-                      {sortedProjects.map((project) => (
-                        <ProjectCard
-                          key={project.id}
-                          project={project}
-                          onView={() => setViewingProject(project)}
-                          onEdit={() => setEditingProject(project)}
-                          onDelete={() => handleDeleteProject(project)}
-                          onRepositionCover={(position) => handleRepositionCover(project, position)}
-                        />
-                      ))}
-                    </div>
+                    <>
+                      <div className="projects-card-grid">
+                        {projects.map((project) => (
+                          <ProjectCard
+                            key={project.id}
+                            project={project}
+                            onView={() => setViewingProject(project)}
+                            onEdit={() => setEditingProject(project)}
+                            onDelete={() => handleDeleteProject(project)}
+                            onRepositionCover={(position) => handleRepositionCover(project, position)}
+                          />
+                        ))}
+                      </div>
+                      <Pagination page={projectPage} total={projectsTotal} pageSize={PROJECT_PAGE_SIZE} onChange={setProjectPage} />
+                    </>
                   )}
                 </div>
               </>
@@ -2015,7 +2110,7 @@ export default function ProjectsView() {
                 </button>
                 <div>
                   <div className="books-header-title">{openFolder.name}</div>
-                  <div className="books-header-sub">{copy.folderCount(projects.length)}</div>
+                  <div className="books-header-sub">{copy.folderCount(projectsTotal)}</div>
                 </div>
               </div>
               <div className="books-header-actions">
@@ -2039,13 +2134,17 @@ export default function ProjectsView() {
                 {searchQuery && (
                   <button
                     className="books-search-clear"
-                    onClick={() => { setSearchQuery(''); loadProjects(category, openFolder.name, statusFilter, yearFilter, ''); }}
+                    onClick={() => { setSearchQuery(''); setProjectPage(1); loadProjects(category, openFolder.name, statusFilter, yearFilter, '', sortBy, 1); }}
                   >
                     <IconX size={12} />
                   </button>
                 )}
               </div>
-              <select className="books-sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
+              <select
+                className="books-sort-select"
+                value={sortBy}
+                onChange={(e) => { setSortBy(e.target.value as SortBy); setProjectPage(1); }}
+              >
                 <option value="date">{t.projects.sortDate}</option>
                 <option value="title">{t.projects.sortTitle}</option>
                 <option value="status">{t.projects.sortStatus}</option>
@@ -2053,24 +2152,27 @@ export default function ProjectsView() {
             </div>
 
             <div key={`${openFolder.id}-${statusFilter}-${yearFilter ?? ''}`} className="books-content-view">
-              {sortedProjects.length === 0 ? (
+              {projects.length === 0 ? (
                 <div className="books-empty-state">
                   <IconFolderCode size={36} className="books-empty-icon" />
                   <p className="books-empty-text">{emptyProjectsText}</p>
                 </div>
               ) : (
-                <div className="projects-card-grid">
-                  {sortedProjects.map((project) => (
-                    <ProjectCard
-                      key={project.id}
-                      project={project}
-                      onView={() => setViewingProject(project)}
-                      onEdit={() => setEditingProject(project)}
-                      onDelete={() => handleDeleteProject(project)}
-                      onRepositionCover={(position) => handleRepositionCover(project, position)}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="projects-card-grid">
+                    {projects.map((project) => (
+                      <ProjectCard
+                        key={project.id}
+                        project={project}
+                        onView={() => setViewingProject(project)}
+                        onEdit={() => setEditingProject(project)}
+                        onDelete={() => handleDeleteProject(project)}
+                        onRepositionCover={(position) => handleRepositionCover(project, position)}
+                      />
+                    ))}
+                  </div>
+                  <Pagination page={projectPage} total={projectsTotal} pageSize={PROJECT_PAGE_SIZE} onChange={setProjectPage} />
+                </>
               )}
             </div>
           </>

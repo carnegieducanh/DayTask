@@ -1,5 +1,5 @@
 import { isTauri } from './mockDb';
-import type { Project, ProjectFolder, ProjectStatus, ProjectCategory, NewProject } from '../types';
+import type { Project, ProjectFolder, FolderTag, ProjectStatus, ProjectCategory, NewProject } from '../types';
 
 let _db: import('@tauri-apps/plugin-sql').default | null = null;
 
@@ -65,8 +65,11 @@ export async function dbGetProjects(opts: {
   status?: ProjectStatus;
   year?: number;
   search?: string;
-}): Promise<Project[]> {
-  if (!isTauri()) return [];
+  sortBy?: 'date' | 'title' | 'status';
+  limit: number;
+  offset: number;
+}): Promise<{ items: Project[]; total: number }> {
+  if (!isTauri()) return { items: [], total: 0 };
   const db = await getDb();
 
   const conditions: string[] = ['p.category = $1'];
@@ -87,19 +90,31 @@ export async function dbGetProjects(opts: {
     );
     params.push(opts.folder, opts.category);
   }
+  const search = opts.search?.trim().toLowerCase();
+  if (search) {
+    conditions.push(`LOWER(p.title) LIKE $${idx++}`);
+    params.push(`%${search}%`);
+  }
 
   const where = `WHERE ${conditions.join(' AND ')}`;
 
+  const countRows = await db.select<{ c: number }[]>(`SELECT COUNT(*) as c FROM projects p ${where}`, params);
+  const total = countRows[0]?.c ?? 0;
+
+  let orderBy = 'COALESCE(p.completed_date, p.start_date, p.created_at) DESC';
+  if (opts.sortBy === 'title') orderBy = 'p.title COLLATE NOCASE ASC';
+  else if (opts.sortBy === 'status') orderBy = 'p.status ASC';
+
+  const limitIdx = idx++;
+  const offsetIdx = idx++;
   const rows = await db.select<ProjectRow[]>(
     `SELECT p.* FROM projects p ${where}
-     ORDER BY COALESCE(p.completed_date, p.start_date, p.created_at) DESC`,
-    params
+     ORDER BY ${orderBy}
+     LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+    [...params, opts.limit, opts.offset]
   );
-  const projects = await Promise.all(rows.map((r) => rowToProject(db, r)));
-
-  const search = opts.search?.trim().toLowerCase();
-  if (!search) return projects;
-  return projects.filter((p) => p.title.toLowerCase().includes(search));
+  const items = await Promise.all(rows.map((r) => rowToProject(db, r)));
+  return { items, total };
 }
 
 export async function dbAddProject(data: NewProject): Promise<Project | null> {
@@ -231,7 +246,63 @@ export async function dbGetFolders(opts: {
   category: ProjectCategory;
   status?: ProjectStatus;
   year?: number;
-}): Promise<ProjectFolder[]> {
+  onlyActive?: boolean;
+  limit: number;
+  offset: number;
+}): Promise<{ items: ProjectFolder[]; total: number }> {
+  if (!isTauri()) return { items: [], total: 0 };
+  const db = await getDb();
+
+  const conditions: string[] = ['p.id IS NOT NULL'];
+  const params: unknown[] = [];
+  let idx = 1;
+  if (opts.status) {
+    conditions.push(`p.status = $${idx++}`);
+    params.push(opts.status);
+  }
+  if (opts.year) {
+    conditions.push(`CAST(strftime('%Y', COALESCE(p.completed_date, p.start_date, p.created_at)) AS INTEGER) = $${idx++}`);
+    params.push(opts.year);
+  }
+  const filterExpr = conditions.join(' AND ');
+
+  const categoryParamIdx = idx++;
+  params.push(opts.category);
+
+  const having = opts.onlyActive ? `HAVING COUNT(CASE WHEN ${filterExpr} THEN 1 END) > 0` : '';
+
+  const baseFrom = `
+    FROM project_folders f
+    LEFT JOIN project_folder_links l ON l.folder_id = f.id
+    LEFT JOIN projects p ON p.id = l.project_id
+    WHERE f.category = $${categoryParamIdx}
+    GROUP BY f.id
+    ${having}
+  `;
+
+  const countRows = await db.select<{ c: number }[]>(`SELECT COUNT(*) as c FROM (SELECT f.id ${baseFrom})`, params);
+  const total = countRows[0]?.c ?? 0;
+
+  const limitIdx = idx++;
+  const offsetIdx = idx++;
+  const rows = await db.select<FolderRow[]>(
+    `SELECT f.id, f.name, f.category, f.cover_image, f.cover_position, f.created_at,
+       COUNT(CASE WHEN ${filterExpr} THEN 1 END) as project_count,
+       MAX(CASE WHEN ${filterExpr} THEN COALESCE(p.completed_date, p.start_date, p.created_at) END) as last_activity
+     ${baseFrom}
+     ORDER BY (last_activity IS NULL), last_activity DESC, f.name ASC
+     LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+    [...params, opts.limit, opts.offset]
+  );
+  return { items: rows, total };
+}
+
+// Lightweight, unpaginated, no cover images — feeds the always-complete sidebar tag list.
+export async function dbGetFolderTags(opts: {
+  category: ProjectCategory;
+  status?: ProjectStatus;
+  year?: number;
+}): Promise<FolderTag[]> {
   if (!isTauri()) return [];
   const db = await getDb();
 
@@ -251,16 +322,14 @@ export async function dbGetFolders(opts: {
   const categoryParamIdx = idx;
   params.push(opts.category);
 
-  return db.select<FolderRow[]>(
-    `SELECT f.id, f.name, f.category, f.cover_image, f.cover_position, f.created_at,
-       COUNT(CASE WHEN ${filterExpr} THEN 1 END) as project_count,
-       MAX(CASE WHEN ${filterExpr} THEN COALESCE(p.completed_date, p.start_date, p.created_at) END) as last_activity
+  return db.select<FolderTag[]>(
+    `SELECT f.id, f.name, COUNT(CASE WHEN ${filterExpr} THEN 1 END) as project_count
      FROM project_folders f
      LEFT JOIN project_folder_links l ON l.folder_id = f.id
      LEFT JOIN projects p ON p.id = l.project_id
      WHERE f.category = $${categoryParamIdx}
      GROUP BY f.id
-     ORDER BY (last_activity IS NULL), last_activity DESC, f.name ASC`,
+     ORDER BY f.id ASC`,
     params
   );
 }

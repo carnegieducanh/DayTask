@@ -199,6 +199,12 @@ export interface ProjectFolder {
   created_at: string;
 }
 
+export interface FolderTag {
+  id: number;
+  name: string;
+  project_count: number;
+}
+
 export interface Project {
   id: number;
   title: string;

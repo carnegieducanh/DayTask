@@ -10993,3 +10993,39 @@ select {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
+
+/* ── Pagination (folder grid + project grid) ── */
+.projects-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.projects-pagination-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.5px solid var(--border-1);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.projects-pagination-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.projects-pagination-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.projects-pagination-label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  min-width: 3.5em;
+  text-align: center;
+}
