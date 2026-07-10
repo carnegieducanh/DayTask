@@ -109,7 +109,6 @@ function CalToolbar({
 }
 
 export default function CalendarView() {
-  const t = useT();
   const language = useAppStore((s) => s.language);
   const {
     calendarTasks,
@@ -253,7 +252,6 @@ export default function CalendarView() {
                 </div>
               </div>
               <div style={{ padding: "0 8px" }}>
-                <div className="vocab-widget-label" style={{ marginBottom: 6 }}>{t.vocab.widgetHeader}</div>
                 <VocabWidget noteStyle />
               </div>
             </div>

@@ -721,8 +721,15 @@ select {
   inset: 6px 0;
   margin-top: 0;
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
   z-index: 10;
+}
+
+.today-topbar-actions .vocab-widget-note .vocab-widget-label {
+  margin-bottom: 5px;
+  font-size: 0.68rem;
+  flex-shrink: 0;
 }
 
 /* On hover: remove bottom constraint so card expands downward */
@@ -5866,7 +5873,7 @@ select {
 }
 
 .vocab-widget-note .vocab-widget-label {
-  display: none;
+  order: -1;
 }
 
 .vocab-widget-note .vocab-widget {
