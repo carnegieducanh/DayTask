@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { IconGripHorizontal } from '@tabler/icons-react';
+import { IconGripHorizontal, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
 import KanbanColumn from './KanbanColumn';
@@ -14,7 +14,7 @@ const STATUSES: GoalStatus[] = ['todo', 'doing', 'review', 'done'];
 
 export default function KanbanView({ liveGoals }: Props) {
   const t = useT();
-  const { goals, openAddGoalModal, setOpenAddGoalModal } = useAppStore();
+  const { goals, openAddGoalModal, setOpenAddGoalModal, selectedYear, setSelectedYear } = useAppStore();
   const displayGoals = liveGoals ?? goals;
   const [showModal, setShowModal]         = useState(false);
   const [editGoal, setEditGoal]           = useState<Goal | null>(null);
@@ -71,10 +71,40 @@ export default function KanbanView({ liveGoals }: Props) {
         </div>
       </div>
 
-      {/* Drag hint */}
+      {/* Drag hint + Year pill */}
       <div className="kanban-drag-hint">
-        <IconGripHorizontal size={13} />
-        {t.kanban.dragHint}
+        <div className="kanban-drag-hint-text">
+          <IconGripHorizontal size={13} />
+          {t.kanban.dragHint}
+        </div>
+        <div className="year-pill">
+          <button
+            className="icon-btn"
+            style={{ border: "none" }}
+            onClick={() => setSelectedYear(selectedYear - 1)}
+            title={t.nav.prevYear}
+          >
+            <IconChevronLeft size={14} />
+          </button>
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              minWidth: 36,
+              textAlign: "center",
+            }}
+          >
+            {selectedYear}
+          </span>
+          <button
+            className="icon-btn"
+            style={{ border: "none" }}
+            onClick={() => setSelectedYear(selectedYear + 1)}
+            title={t.nav.nextYear}
+          >
+            <IconChevronRight size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Kanban board — DndContext + DragOverlay sống ở App.tsx (ngoài scale wrapper) */}

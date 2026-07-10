@@ -2271,15 +2271,23 @@ select {
 .kanban-drag-hint {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
-  padding: 5px 20px;
+  padding: 15px 20px 0;
+  /* padding-top: 10px; */
   font-size: 0.86rem;
   color: var(--text-secondary);
   /* border-bottom: 0.5px solid var(--border-1); */
   flex-shrink: 0;
 }
 
-.kanban-drag-hint svg {
+.kanban-drag-hint-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kanban-drag-hint-text svg {
   width: 1.5em;
   height: 1.5em;
 }
@@ -2539,7 +2547,7 @@ select {
   font-family: inherit;
 }
 
-/* ── Year pill (Kanban topbar) ── */
+/* ── Year pill (Kanban drag-hint row) ── */
 .year-pill {
   display: flex;
   align-items: center;

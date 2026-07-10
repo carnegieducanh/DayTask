@@ -26,8 +26,6 @@ export default function Sidebar() {
     setSelectedDate,
     theme,
     toggleTheme,
-    selectedYear,
-    setSelectedYear,
     setOpenSettingsModal,
   } = useAppStore();
 
@@ -160,38 +158,6 @@ export default function Sidebar() {
 
       {/* Right side controls */}
       <div className="sidebar-footer">
-        {activeTab === "kanban" && (
-          <>
-            <div className="year-pill">
-              <button
-                className="icon-btn"
-                style={{ border: "none" }}
-                onClick={() => setSelectedYear(selectedYear - 1)}
-                title={t.nav.prevYear}
-              >
-                <IconChevronLeft size={14} />
-              </button>
-              <span
-                style={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                  minWidth: 36,
-                  textAlign: "center",
-                }}
-              >
-                {selectedYear}
-              </span>
-              <button
-                className="icon-btn"
-                style={{ border: "none" }}
-                onClick={() => setSelectedYear(selectedYear + 1)}
-                title={t.nav.nextYear}
-              >
-                <IconChevronRight size={14} />
-              </button>
-            </div>
-          </>
-        )}
         <button
           className="icon-btn"
           title={t.nav.settings}
