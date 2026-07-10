@@ -145,14 +145,34 @@ export async function dbToggleQuoteFavorite(id: number, currentValue: number): P
   ]);
 }
 
-export async function dbGetRandomQuote(favoritesOnly: boolean): Promise<Quote | null> {
+export async function dbGetRandomQuote(favoritesOnly: boolean, excludeId?: number): Promise<Quote | null> {
   if (!isTauri()) return null;
   const db = await getDb();
-  const where = favoritesOnly ? 'WHERE is_favorite = 1' : '';
+
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  if (favoritesOnly) conditions.push('is_favorite = 1');
+  if (excludeId != null) {
+    conditions.push(`id != $${params.length + 1}`);
+    params.push(excludeId);
+  }
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
   const rows = await db.select<QuoteRow[]>(
-    `SELECT * FROM quotes ${where} ORDER BY RANDOM() LIMIT 1`
+    `SELECT * FROM quotes ${where} ORDER BY RANDOM() LIMIT 1`,
+    params
   );
-  return rows.length ? rowToQuote(db, rows[0]) : null;
+  if (rows.length) return rowToQuote(db, rows[0]);
+
+  // Only quote in the pool is the excluded one (e.g. library has just 1 entry) — fall back to it.
+  if (excludeId != null) {
+    const fallbackWhere = favoritesOnly ? 'WHERE is_favorite = 1' : '';
+    const fallbackRows = await db.select<QuoteRow[]>(
+      `SELECT * FROM quotes ${fallbackWhere} ORDER BY RANDOM() LIMIT 1`
+    );
+    return fallbackRows.length ? rowToQuote(db, fallbackRows[0]) : null;
+  }
+  return null;
 }
 
 export async function dbGetLanguageCounts(): Promise<{ language: string; count: number }[]> {
@@ -229,7 +249,7 @@ export async function dbGetHeroQuote(mode: QuoteHeroMode): Promise<Quote | null>
     if (q) return q;
   }
 
-  const q = await dbGetRandomQuote(mode === 'random_favorites');
+  const q = await dbGetRandomQuote(mode === 'random_favorites', cached?.id);
   if (q) setDailyCache(cacheKey, q.id);
   return q;
 }

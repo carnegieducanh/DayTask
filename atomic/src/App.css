@@ -296,10 +296,10 @@ select {
 }
 
 .nav-item.active {
-  background: color-mix(in srgb, var(--primary) 16%, var(--bg-primary));
-  color: var(--primary);
+  background: var(--primary);
+  color: #fff;
   font-weight: 500;
-  border: 0.5px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  border-color: var(--primary);
 }
 
 .nav-icon {
