@@ -10581,7 +10581,7 @@ select {
 /* ── Folder grid (level 1) ── */
 .projects-folder-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 216px);
+  grid-template-columns: repeat(auto-fill, minmax(216px, 1fr));
   gap: 18px;
 }
 
