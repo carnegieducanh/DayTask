@@ -237,6 +237,7 @@ select {
   height: 44px;
   /* border-right: 0.5px solid var(--border-1); */
   margin-right: 6px;
+  cursor: pointer;
 }
 
 .app-logo {

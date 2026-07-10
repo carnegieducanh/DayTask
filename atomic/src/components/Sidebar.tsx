@@ -111,7 +111,13 @@ export default function Sidebar() {
   return (
     <nav className="sidebar">
       {/* Logo */}
-      <div className="sidebar-header">
+      <div
+        className="sidebar-header"
+        onClick={() => {
+          setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
+          setActiveTab('today');
+        }}
+      >
         <div className="app-logo">
           <img src="/atom-icon.svg" width="30" height="30" alt="Atomic" />
           Atomic
