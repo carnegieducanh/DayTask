@@ -3,7 +3,7 @@ import { format, getDaysInMonth, getDay, addMonths, subMonths } from 'date-fns';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 
-const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function MiniCalendar() {
   const { selectedDate, setSelectedDate } = useAppStore();
@@ -25,8 +25,8 @@ export default function MiniCalendar() {
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
     const firstDay = new Date(year, month, 1);
-    // Convert Sunday=0 to Monday=0 offset
-    const offset = (getDay(firstDay) + 6) % 7;
+    // Sunday=0 is already the start of the week
+    const offset = getDay(firstDay);
     const allCells: Date[] = [];
     const gridStart = new Date(year, month, 1 - offset);
     for (let i = 0; i < 42; i++) {
@@ -78,6 +78,7 @@ export default function MiniCalendar() {
           const isToday = isSame(day, today);
           const isSelected = isSame(day, selectedD);
           const isCurrentMonth = day.getMonth() === viewDate.getMonth();
+          const isSunday = i % 7 === 0;
 
           return (
             <button
@@ -86,6 +87,7 @@ export default function MiniCalendar() {
                 'mini-cal-day',
                 isSelected ? 'selected' : isToday ? 'today' : '',
                 !isCurrentMonth ? 'other-month' : '',
+                isSunday ? 'sunday' : '',
               ].filter(Boolean).join(' ')}
               onClick={() => setSelectedDate(ds)}
             >

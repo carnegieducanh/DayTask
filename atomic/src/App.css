@@ -5018,6 +5018,19 @@ select {
   opacity: 1;
 }
 
+.mini-cal-day.sunday {
+  color: var(--primary);
+}
+
+.mini-cal-day.sunday.other-month {
+  color: var(--primary);
+  opacity: 0.45;
+}
+
+.mini-cal-day.sunday.selected {
+  color: #fff;
+}
+
 /* ── Calendar View (react-big-calendar overrides) ── */
 .cal-wrap {
   flex: 1;
