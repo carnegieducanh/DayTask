@@ -6508,14 +6508,21 @@ select {
   pointer-events: none;
 }
 
-.day-now-dot {
+.day-now-badge {
   position: absolute;
-  left: -5px;
-  top: -4px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  left: -47px;
+  top: 50%;
+  transform: translateY(-50%);
   background: #ea4335;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.3;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
 }
 
 .day-task-block {

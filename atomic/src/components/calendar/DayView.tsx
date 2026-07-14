@@ -805,7 +805,7 @@ export default function DayView({
           {/* Current-time indicator — rendered last so it always appears above task blocks */}
           {isToday && (
             <div className="day-now-line" style={{ top: minToPx(currentTimeMin) }}>
-              <div className="day-now-dot" />
+              <div className="day-now-badge">{minToTime(currentTimeMin)}</div>
             </div>
           )}
         </div>
