@@ -52,7 +52,7 @@ export async function dbGetBooks(opts: {
   }
 
   if (opts.year) {
-    conditions.push(`CAST(strftime('%Y', finished_date) AS INTEGER) = $${idx++}`);
+    conditions.push(`CAST(strftime('%Y', COALESCE(finished_date, created_at)) AS INTEGER) = $${idx++}`);
     params.push(opts.year);
   }
 
@@ -149,30 +149,38 @@ export async function dbDeleteBook(id: number): Promise<void> {
   await db.execute('DELETE FROM books WHERE id = $1', [id]);
 }
 
-export async function dbGetYearsWithCounts(): Promise<{ year: number; count: number }[]> {
+export async function dbGetYearsWithCounts(): Promise<
+  { year: number; total: number; finished: number; reading: number; wantToRead: number }[]
+> {
   if (!isTauri()) return [];
   const db = await getDb();
-  return db.select<{ year: number; count: number }[]>(
-    `SELECT CAST(strftime('%Y', finished_date) AS INTEGER) as year, COUNT(*) as count
+  return db.select<{ year: number; total: number; finished: number; reading: number; wantToRead: number }[]>(
+    `SELECT
+       CAST(strftime('%Y', COALESCE(finished_date, created_at)) AS INTEGER) as year,
+       COUNT(*) as total,
+       SUM(CASE WHEN status = 'finished' THEN 1 ELSE 0 END) as finished,
+       SUM(CASE WHEN status = 'reading' THEN 1 ELSE 0 END) as reading,
+       SUM(CASE WHEN status = 'want_to_read' THEN 1 ELSE 0 END) as wantToRead
      FROM books
-     WHERE status = 'finished' AND finished_date IS NOT NULL
      GROUP BY year
      ORDER BY year DESC`
   );
 }
 
-export async function dbGetBookStats(): Promise<{ total: number; reading: number; wantToRead: number }> {
-  if (!isTauri()) return { total: 0, reading: 0, wantToRead: 0 };
+export async function dbGetBookStats(): Promise<{ total: number; finished: number; reading: number; wantToRead: number }> {
+  if (!isTauri()) return { total: 0, finished: 0, reading: 0, wantToRead: 0 };
   const db = await getDb();
-  const rows = await db.select<{ total: number; reading: number; wantToRead: number }[]>(
+  const rows = await db.select<{ total: number; finished: number; reading: number; wantToRead: number }[]>(
     `SELECT
-       SUM(CASE WHEN status = 'finished' THEN 1 ELSE 0 END) as total,
+       COUNT(*) as total,
+       SUM(CASE WHEN status = 'finished' THEN 1 ELSE 0 END) as finished,
        SUM(CASE WHEN status = 'reading' THEN 1 ELSE 0 END) as reading,
        SUM(CASE WHEN status = 'want_to_read' THEN 1 ELSE 0 END) as wantToRead
      FROM books`
   );
   return {
     total: rows[0]?.total ?? 0,
+    finished: rows[0]?.finished ?? 0,
     reading: rows[0]?.reading ?? 0,
     wantToRead: rows[0]?.wantToRead ?? 0,
   };
@@ -193,9 +201,19 @@ export async function dbCreateBookTag(name: string): Promise<void> {
   await db.execute('INSERT OR IGNORE INTO book_tag_pool (tag) VALUES ($1)', [name]);
 }
 
-export async function dbGetTagCounts(): Promise<{ tag: string; count: number }[]> {
+export async function dbGetTagCounts(year?: number): Promise<{ tag: string; count: number }[]> {
   if (!isTauri()) return [];
   const db = await getDb();
+  if (year) {
+    return db.select<{ tag: string; count: number }[]>(
+      `SELECT bt.tag as tag, COUNT(*) as count
+       FROM book_tags bt
+       JOIN books b ON b.id = bt.book_id
+       WHERE CAST(strftime('%Y', COALESCE(b.finished_date, b.created_at)) AS INTEGER) = $1
+       GROUP BY bt.tag ORDER BY count DESC`,
+      [year]
+    );
+  }
   return db.select<{ tag: string; count: number }[]>(
     'SELECT tag, COUNT(*) as count FROM book_tags GROUP BY tag ORDER BY count DESC'
   );

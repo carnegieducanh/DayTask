@@ -399,7 +399,8 @@ export const vi = {
   books: {
     navLabel: "Sách",
     library: "Thư viện",
-    filterAll: "Đã đọc",
+    filterAll: "Tất cả",
+    filterFinished: "Đã đọc",
     filterReading: "Đang đọc",
     filterWantToRead: "Muốn đọc",
     byYear: "Theo năm",

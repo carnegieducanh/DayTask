@@ -423,7 +423,8 @@ export const en: typeof vi = {
   books: {
     navLabel: "Books",
     library: "Library",
-    filterAll: "Finished",
+    filterAll: "All",
+    filterFinished: "Finished",
     filterReading: "Reading",
     filterWantToRead: "Want to read",
     byYear: "By year",

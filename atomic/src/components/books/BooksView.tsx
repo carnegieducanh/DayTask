@@ -40,7 +40,7 @@ import {
 } from '../../store/booksDb';
 import { useT } from '../../i18n';
 
-type LibraryFilter = 'all' | 'reading' | 'want_to_read';
+type LibraryFilter = 'all' | BookStatus;
 type SortBy = 'date' | 'title' | 'author';
 
 const MAX_COVER_DIM = 500;
@@ -859,14 +859,16 @@ export default function BooksView() {
   const currentYear = new Date().getFullYear();
 
   const [books, setBooks] = useState<Book[]>([]);
-  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>('all');
+  const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>('finished');
   const [yearFilter, setYearFilter] = useState<number | null>(currentYear);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortBy>('date');
-  const [years, setYears] = useState<{ year: number; count: number }[]>([]);
+  const [years, setYears] = useState<
+    { year: number; total: number; finished: number; reading: number; wantToRead: number }[]
+  >([]);
   const [tagCounts, setTagCounts] = useState<{ tag: string; count: number }[]>([]);
-  const [stats, setStats] = useState({ total: 0, reading: 0, wantToRead: 0 });
+  const [stats, setStats] = useState({ total: 0, finished: 0, reading: 0, wantToRead: 0 });
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [viewingBook, setViewingBook] = useState<Book | null>(null);
@@ -895,8 +897,8 @@ export default function BooksView() {
     setYears(await dbGetYearsWithCounts());
   }, []);
 
-  const loadTagCounts = useCallback(async () => {
-    setTagCounts(await dbGetTagCounts());
+  const loadTagCounts = useCallback(async (year: number | null) => {
+    setTagCounts(await dbGetTagCounts(year ?? undefined));
   }, []);
 
   const loadGoal = useCallback(async () => {
@@ -910,10 +912,8 @@ export default function BooksView() {
     tag: string | null,
     search: string
   ) => {
-    const opts = filter === 'all'
-      ? { status: 'finished' as BookStatus, year: year ?? undefined, tag: tag ?? undefined, search }
-      : { status: filter as BookStatus, tag: tag ?? undefined, search };
-    setBooks(await dbGetBooks(opts));
+    const status = filter === 'all' ? undefined : (filter as BookStatus);
+    setBooks(await dbGetBooks({ status, year: year ?? undefined, tag: tag ?? undefined, search }));
   }, []);
 
   useEffect(() => {
@@ -924,10 +924,15 @@ export default function BooksView() {
     if (!seeded) return;
     loadStats();
     loadYears();
-    loadTagCounts();
     loadGoal();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seeded]);
+
+  useEffect(() => {
+    if (!seeded) return;
+    loadTagCounts(yearFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seeded, yearFilter]);
 
   useEffect(() => {
     if (!seeded) return;
@@ -935,7 +940,7 @@ export default function BooksView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seeded, libraryFilter, yearFilter, tagFilter]);
 
-  const currentYearCount = years.find((y) => y.year === currentYear)?.count ?? 0;
+  const currentYearCount = years.find((y) => y.year === currentYear)?.finished ?? 0;
 
   useEffect(() => {
     if (!readingGoal || readingGoal <= 0 || currentYearCount < readingGoal) return;
@@ -955,24 +960,26 @@ export default function BooksView() {
 
   function handleLibraryFilter(f: LibraryFilter) {
     setLibraryFilter(f);
-    setYearFilter(null);
     if (searchQuery) setSearchQuery('');
   }
 
   function handleYearFilter(year: number) {
-    setLibraryFilter('all');
     setYearFilter((prev) => (prev === year ? null : year));
   }
 
   function handleTagFilter(tag: string) {
-    setTagFilter((prev) => (prev === tag ? null : tag));
+    const next = tagFilter === tag ? null : tag;
+    setTagFilter(next);
+    if (next) {
+      setLibraryFilter('all');
+    }
   }
 
   async function refreshAll() {
     await Promise.all([
       loadStats(),
       loadYears(),
-      loadTagCounts(),
+      loadTagCounts(yearFilter),
       loadBooks(libraryFilter, yearFilter, tagFilter, searchQuery),
     ]);
   }
@@ -1009,7 +1016,7 @@ export default function BooksView() {
 
   async function commitDelete(book: Book) {
     await dbDeleteBook(book.id);
-    await Promise.all([loadStats(), loadYears(), loadTagCounts()]);
+    await Promise.all([loadStats(), loadYears(), loadTagCounts(yearFilter)]);
     setPendingDeleteBook(null);
   }
 
@@ -1035,7 +1042,7 @@ export default function BooksView() {
   async function commitTagDelete(name: string) {
     await dbDeleteBookTag(name);
     setPendingDeleteBookTag(null);
-    await loadTagCounts();
+    await loadTagCounts(yearFilter);
   }
 
   function handleTagDeleted(name: string, undo: () => void) {
@@ -1072,7 +1079,7 @@ export default function BooksView() {
   }
 
   const grouped = useMemo(() => {
-    if (libraryFilter !== 'all') return [];
+    if (libraryFilter !== 'finished') return [];
     const map = new Map<string, Book[]>();
     for (const b of sortBooks(books, sortBy)) {
       const y = b.finished_date?.slice(0, 4) ?? String(currentYear);
@@ -1092,13 +1099,18 @@ export default function BooksView() {
       return t.books.booksCount(count);
     }
     if (yearFilter) {
-      const count = years.find((y) => y.year === yearFilter)?.count ?? 0;
-      return t.books.booksCount(count);
+      const entry = years.find((y) => y.year === yearFilter);
+      const count = libraryFilter === 'finished' ? entry?.finished
+        : libraryFilter === 'reading' ? entry?.reading
+        : libraryFilter === 'want_to_read' ? entry?.wantToRead
+        : entry?.total;
+      return t.books.booksCount(count ?? 0);
     }
     if (libraryFilter === 'reading') return t.books.booksCount(stats.reading);
     if (libraryFilter === 'want_to_read') return t.books.booksCount(stats.wantToRead);
-    return t.books.totalRead(stats.total);
-  }, [tagFilter, yearFilter, libraryFilter, tagCounts, years, stats, t]);
+    if (libraryFilter === 'finished') return t.books.totalRead(stats.finished);
+    return t.books.booksCount(stats.total);
+  }, [tagFilter, yearFilter, libraryFilter, tagCounts, years, stats, books, t]);
 
   const emptyText = searchQuery
     ? t.books.emptySearch
@@ -1123,6 +1135,14 @@ export default function BooksView() {
             <span className="books-sb-count">{stats.total}</span>
           </button>
           <button
+            className={`books-sb-item${libraryFilter === 'finished' ? ' active' : ''}`}
+            onClick={() => handleLibraryFilter('finished')}
+          >
+            <IconCircleCheck size={14} />
+            {t.books.filterFinished}
+            <span className="books-sb-count">{stats.finished}</span>
+          </button>
+          <button
             className={`books-sb-item${libraryFilter === 'reading' ? ' active' : ''}`}
             onClick={() => handleLibraryFilter('reading')}
           >
@@ -1143,16 +1163,22 @@ export default function BooksView() {
         {years.length > 0 && (
           <div className="books-sb-section">
             <div className="books-sb-label">{t.books.byYear}</div>
-            {years.map(({ year, count }) => (
-              <button
-                key={year}
-                className={`books-sb-item${libraryFilter === 'all' && yearFilter === year ? ' active' : ''}`}
-                onClick={() => handleYearFilter(year)}
-              >
-                <span className="books-year-badge">{year}</span>
-                <span className="books-sb-count">{count}</span>
-              </button>
-            ))}
+            {years.map(({ year, total, finished, reading, wantToRead }) => {
+              const badgeCount = libraryFilter === 'finished' ? finished
+                : libraryFilter === 'reading' ? reading
+                : libraryFilter === 'want_to_read' ? wantToRead
+                : total;
+              return (
+                <button
+                  key={year}
+                  className={`books-sb-item${yearFilter === year ? ' active' : ''}`}
+                  onClick={() => handleYearFilter(year)}
+                >
+                  <span className="books-year-badge">{year}</span>
+                  <span className="books-sb-count">{badgeCount}</span>
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -1266,7 +1292,7 @@ export default function BooksView() {
                 </button>
               )}
             </div>
-          ) : libraryFilter === 'all' ? (
+          ) : libraryFilter === 'finished' ? (
             grouped.map(([year, list]) => (
               <div key={year} className="books-year-section">
                 <div className="books-year-heading">

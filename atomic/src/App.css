@@ -9540,8 +9540,14 @@ select {
 
 .books-shelf-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 112px);
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
   gap: 18px;
+}
+
+.books-shelf-grid .books-card-cover {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 112 / 169;
 }
 
 /* ── Book card ── */
