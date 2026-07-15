@@ -246,7 +246,7 @@ select {
   gap: 8px;
   font-size: 1.07rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--greeting-color);
   white-space: nowrap;
 }
 
