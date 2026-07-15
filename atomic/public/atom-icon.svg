@@ -1,11 +1,27 @@
-<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <g transform="translate(50,50)">
-    <ellipse rx="38" ry="14" fill="none" stroke="#DA7756" stroke-width="3.2"/>
-    <ellipse rx="38" ry="14" fill="none" stroke="#DA7756" stroke-width="3.2" transform="rotate(60)"/>
-    <ellipse rx="38" ry="14" fill="none" stroke="#DA7756" stroke-width="3.2" transform="rotate(120)"/>
-    <circle r="6.5" fill="#DA7756"/>
-    <circle cx="38" cy="0" r="5" fill="#DA7756"/>
-    <circle cx="-19" cy="32.9" r="5" fill="#DA7756" transform="rotate(60) translate(38,0) rotate(-60)"/>
-    <circle cx="-19" cy="-32.9" r="5" fill="#DA7756" transform="rotate(120) translate(38,0) rotate(-120)"/>
-  </g>
+<svg viewBox="0 0 534 534" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="atomGradient" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%"  stop-color="#6A3E8C"/>
+      <stop offset="50%" stop-color="#B24C63"/>
+      <stop offset="100%" stop-color="#DA7756"/>
+    </linearGradient>
+  </defs>
+
+  <path transform="translate(267 260) rotate(-42) scale(1.15)"
+        d="M230,0
+           C230,-24.85 127.03,-45 0,-45
+           C-82.85,-45 -150,-24.85 -150,0
+           C-150,24.85 -82.85,45 0,45
+           C127.03,45 230,24.85 230,0
+           Z"
+        fill="none" stroke="url(#atomGradient)" stroke-width="40" stroke-linejoin="round"/>
+
+  <path transform="translate(267 260) rotate(42) scale(1.15)"
+        d="M230,0
+           C230,-24.85 127.03,-45 0,-45
+           C-82.85,-45 -150,-24.85 -150,0
+           C-150,24.85 -82.85,45 0,45
+           C127.03,45 230,24.85 230,0
+           Z"
+        fill="none" stroke="url(#atomGradient)" stroke-width="40" stroke-linejoin="round"/>
 </svg>

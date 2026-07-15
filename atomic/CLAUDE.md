@@ -178,10 +178,19 @@ Thêm key mới: sửa `vi.ts` trước (là source of truth cho TypeScript type
 
 ## App Icon
 
-**Source:** SVG trong `src/assets/atomic_icon_final.html` (tag `<svg id="daytask-icon">`).
-**Design:** Nền trong suốt (không có background rect). 3 ellipse orbit + nucleus + 2 electrons, màu `#DA7756`.
-**Tham số:** stroke-width=7, nucleus r=11, electron r=7.5, ellipse rx=43 ry=16, electrons cx=±42.
-**viewBox:** `"0 6 100 88"` — tight crop, fills ~97% width, ~93% height trong square canvas.
+**Source:** SVG trong `public/atom-icon.svg` (cũng là favicon + logo sidebar, xem `index.html` + `Sidebar.tsx`).
+**Design:** Nền trong suốt (không có background rect). 2 vòng oval bất đối xứng (đầu dài R=230, đầu ngắn R=150) xoay ±42°, stroke gradient.
+**Gradient `atomGradient`:** `#6A3E8C` (tím) → `#B24C63` (hồng) → `#DA7756` (cam), góc 15%,0% → 85%,100%.
+**Tham số hiện tại (đã revert về đúng bản này, 2026-07-15):** viewBox `0 0 534 534`, tâm xoay `translate(267 260)`, mỗi path có `scale(1.15)` trong transform + `stroke-width="40"`. Fill ~82-89% canvas, margin an toàn mọi phía (không chạm mép).
+- Lần 1: thử `scale(1.2)` + giữ nguyên `stroke-width="28"` → to hơn (fill ~86-93%) nhưng vẫn bị chê "nhỏ và mờ" ở taskbar thật.
+- Lần 2: tăng `stroke-width` 28→40 (ring dày hơn hẳn) + giảm `scale` 1.2→1.15 (bù lại để không tràn mép, vì stroke dày hơn cũng làm bbox phình ra). Bài học quan trọng: **độ dày nét ảnh hưởng đến cảm giác "to/rõ" nhiều hơn là chỉ phóng to bounding box** — icon dạng "vòng nét mảnh" (thin ring outline) luôn có nhiều khoảng trống rỗng bên trong/giữa các nét dù bounding box đã lấp đầy canvas, nên nhìn vẫn "mờ/nhỏ" so với icon dạng khối đặc (như VS Code). Muốn kiểm tra nhanh không cần rebuild Tauri: dựng script sharp render icon ở size thật (16/32/48) rồi composite lên nền tối `#1c1c1c`, phóng to bằng `kernel: 'nearest'` để xem rõ pixel — mô phỏng đúng cách taskbar hiển thị.
+- **Lần 3 (2026-07-15, session sau — VẤN ĐỀ CHƯA GIẢI QUYẾT, cần session khác tiếp tục):** User vẫn chê icon nhỏ/mờ so với VSCode ở taskbar thật (ảnh chụp thực tế, kể cả sau khi đã `ie4uinit.exe -ClearIconCache` + restart explorer.exe — nên **xác nhận đây không phải do Windows icon cache**, mà do bản chất thiết kế). Đã verify bằng cách trích icon trực tiếp từ `.exe` đã build (PowerShell `[System.Drawing.Icon]::ExtractAssociatedIcon(...)`) — không qua Explorer/taskbar cache — vẫn thấy hình mảnh/mờ y hệt.
+  - Đã giải thích cho user: navbar dùng `<img src="/atom-icon.svg">` (Sidebar.tsx:122) — trình duyệt render vector trực tiếp ở bất kỳ size CSS nào nên luôn nét; còn taskbar dùng bitmap cố định trong `.ico` ở ô size nhỏ do **Windows shell quyết định** (app không kiểm soát được kích thước ô hiển thị) — đây là lý do 2 chỗ khó dễ khác nhau.
+  - Đã test rider "chỉ tăng `scale` giữ nguyên `stroke-width=40`" (scale 1.4, `translate(228.8 267.3)`) — render preview 24px thật vẫn còn lỗ hổng rõ giữa các nét, **không đủ để giải quyết** — xác nhận lại bài học lần 2: bounding box to hơn không tương đương "đặc/rõ" hơn.
+  - **2 phương án đã dựng preview và xác nhận rõ/đậm hơn hẳn ở size thật (16/24/32px, dùng script sharp render + composite nền `#1c1c1c` + `kernel:'nearest'`), nhưng CHƯA áp vào file thật (đã bị revert theo yêu cầu user để giữ nguyên trạng chờ quyết định):**
+    - **A. Outline đậm hơn:** `translate(231 267) rotate(±42) scale(1.25)`, `stroke-width="70"` (giữ `fill="none"` + stroke). Margin còn lại: ~42.5px ngang, ~26.5px dọc (an toàn, không tràn viewBox 534). Rõ hơn hẳn bản hiện tại nhưng vẫn là dạng outline nên không đặc bằng phương án B.
+    - **B. Khối đặc (khuyến nghị — giống cách VSCode/Slack làm, transparent bg + solid mark thay vì thin outline):** `translate(223.8 267.3) rotate(±42) scale(1.5)`, **bỏ stroke, đổi `fill="url(#atomGradient)"` trực tiếp trên path** (path gốc vốn là 1 contour khép kín dạng vesica/stadium — fill thẳng sẽ ra 2 hình oval đặc chồng nhau tạo khối "X"/pinwheel đặc màu). Margin: ~50px ngang, ~30px dọc. Đậm/rõ nhất trong các phương án đã thử, gần với độ "nặng" của icon cũ (bản circle+electron trước redesign).
+  - **Việc cần làm tiếp:** (1) hỏi user chọn phương án A hay B (hoặc đề xuất thêm), (2) sửa `public/atom-icon.svg` theo tham số đã chốt, (3) tạo lại script `export-icons.mjs` (mẫu ở dưới) để regenerate toàn bộ `src-tauri/icons/*` + `public/atom-icon.png`, (4) `cargo clean -p atomic` rồi `npm run tauri dev` để rebuild sạch, verify bằng cách extract icon từ `.exe` (không cần mở app), (5) **quan trọng: phải release + cài bản installer thật rồi mới kết luận** — icon trên taskbar của app đã cài (pinned) khác với dev exe, cần test đúng bản cài đặt thật trước khi coi là đã xong.
 **ICO format:** PNG-in-ICO (KHÔNG dùng png-to-ico — nó tạo BMP-in-ICO, mất alpha → nền đen trên taskbar).
 
 **Cách regenerate icon khi cần thay đổi:**
@@ -193,6 +202,8 @@ node export-icons.mjs
 Remove-Item export-icons.mjs
 ```
 Dependencies đã có: `sharp`. `.ico` phải có đủ: **16, 32, 48, 64, 128, 256px** (48 bắt buộc cho Windows desktop/taskbar).
+
+**QUAN TRỌNG — icon không tự nhúng lại khi chỉ sửa file ảnh:** Nếu `npm run tauri dev` đang chạy sẵn (watcher live), ghi đè file trong `src-tauri/icons/` sẽ tự trigger rebuild (build.rs rerun-if-changed bắt được). Nhưng nếu **restart** `npm run tauri dev` từ đầu (kill rồi chạy lại) mà không có gì trong `src-tauri/src/` thay đổi, Cargo có thể coi là "nothing to do" (~0.4s, không compile) và **giữ nguyên icon cũ đã link trong binary trước đó** — vì `tauri.conf.json` (thứ build.rs thực sự theo dõi) không đổi, chỉ nội dung icon file đổi. Cách fix chắc chắn: `cd src-tauri && cargo clean -p atomic` rồi chạy lại `npm run tauri dev` (rebuild đầy đủ ~20-25s). Cách verify nhanh không cần mở app: extract icon trực tiếp từ exe bằng PowerShell `[System.Drawing.Icon]::ExtractAssociatedIcon("src-tauri\target\debug\atomic.exe")`.
 
 ## Task Color (Right-click Context Menu)
 
@@ -276,35 +287,7 @@ CREATE INDEX idx_journal_date ON journal_entries(date, type);
 - ✅ Entry Cards: hiển thị lịch sử, edit inline, xóa
 - ✅ Streak counter + stats tháng kết nối DB
 - ✅ Mini calendar highlight ngày có entry
-- ⏳ Seed data giả để test UI (việc tiếp theo — xem Next Steps)
-
-## Next Steps
-
-**Việc tiếp theo: Thêm seed data giả cho Journal để test UI**
-
-Thêm hàm `seedJournalIfEmpty()` vào `src/store/journalDb.ts`:
-- Check: `SELECT COUNT(*) FROM journal_entries` — nếu = 0 thì seed
-- Seed 14 ngày gần nhất (tính từ hôm nay - 1, không seed hôm nay)
-- Mỗi ngày seed entry cho cả 2 loại: `gratitude` (3 items) và `lesson` (1 item)
-- Dùng nội dung tiếng Việt thực tế, đa dạng (không lặp lại)
-- Gọi hàm này từ `JournalView.tsx` trong `useEffect` mount, TRƯỚC `loadAll()`
-- Pattern tương tự `seedMockData` trong `appStore.ts`
-
-```typescript
-// journalDb.ts — thêm hàm này
-export async function seedJournalIfEmpty(): Promise<void> {
-  if (!isTauri()) return;
-  const db = await getDb();
-  const rows = await db.select<{ c: number }[]>('SELECT COUNT(*) as c FROM journal_entries');
-  if (rows[0].c > 0) return;
-  // seed 14 ngày...
-}
-
-// JournalView.tsx — trong useEffect mount
-useEffect(() => {
-  seedJournalIfEmpty().then(() => loadAll(activeType));
-}, []);
-```
+- ✅ Seed data giả để test UI — `seedJournalIfEmpty()` trong `journalDb.ts`, gọi từ `JournalView.tsx`
 
 ## Known Patterns & Fixes
 
