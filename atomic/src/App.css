@@ -759,10 +759,17 @@ select {
   margin-top: 2px;
 }
 
-/* ── Today topbar 3-column layout ── */
+/* ── Today topbar 3-column layout ──
+   Independent from --today-cols (used by .today-layout below): the side
+   columns grow with the available width instead of staying pinned at a
+   fixed 270px, so today-hero-quote-body gets more room and wraps less.
+   Both sides share the same minmax(270px, 1fr) track, so any extra space
+   splits evenly between them and daily-greeting (the auto-sized middle
+   column) stays perfectly centered in the app. */
 .today-topbar {
   display: grid;
-  grid-template-columns: var(--today-cols);
+  grid-template-columns: minmax(270px, 1fr) auto minmax(270px, 1fr);
+  column-gap: 25px;
   align-items: center;
   animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
