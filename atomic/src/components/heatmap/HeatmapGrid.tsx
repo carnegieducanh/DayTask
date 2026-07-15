@@ -32,7 +32,7 @@ interface Props {
 export default function HeatmapGrid({ year, data, mode = 'count', durations = [] }: Props) {
   const t = useT();
   const { theme, language, accentColor, customAccentColor } = useAppStore();
-  const LEVEL_COLORS = getHeatmapColors(accentColor, theme, undefined, customAccentColor);
+  const LEVEL_COLORS = getHeatmapColors(accentColor, theme, 'var(--border-2)', customAccentColor);
 
   const activityMap = useMemo(() => {
     const m: Record<string, number> = {};
@@ -79,7 +79,7 @@ export default function HeatmapGrid({ year, data, mode = 'count', durations = []
             <div className="heatmap-month-block-label">{t.heatmap.monthsShort[month]}</div>
             <div className="heatmap-month-block-grid">
               {weeks.map((week, wi) => (
-                <div key={wi} className="heatmap-month-block-row">
+                <div key={wi} className="heatmap-month-block-col">
                   {week.map((day, di) => {
                     if (!day) return <div key={di} className="hm-cell" style={{ background: 'transparent' }} />;
                     const dateStr = format(day, 'yyyy-MM-dd');
