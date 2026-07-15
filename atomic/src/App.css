@@ -3484,42 +3484,32 @@ select {
   padding-bottom: 4px;
 }
 
-.heatmap-months {
-  position: relative;
-  height: 16px;
+.heatmap-months-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 20px 16px;
+}
+
+.heatmap-month-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.heatmap-month-block-label {
   font-size: 0.79rem;
+  font-weight: 600;
   color: var(--text-secondary);
 }
 
-.heatmap-month-label {
-  position: absolute;
-  white-space: nowrap;
-}
-
-.heatmap-days {
+.heatmap-month-block-grid {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  width: 24px;
-  flex-shrink: 0;
 }
 
-.heatmap-days span {
-  font-size: 0.71rem;
-  color: var(--text-secondary);
-  height: 12px;
-  line-height: 12px;
-  text-align: right;
-}
-
-.heatmap-grid {
+.heatmap-month-block-row {
   display: flex;
-  gap: 3px;
-}
-
-.heatmap-week {
-  display: flex;
-  flex-direction: column;
   gap: 3px;
 }
 
@@ -3548,6 +3538,50 @@ select {
   width: 10px;
   height: 10px;
   border-radius: 2px;
+}
+
+/* ── Mini Heatmap (Today sidebar) ── */
+.mini-heatmap-months {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.mini-heatmap-month-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mini-heatmap-month-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.mini-heatmap-month-grid {
+  display: flex;
+  gap: 2px;
+}
+
+.mini-heatmap-month-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mini-hm-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  cursor: default;
+  flex-shrink: 0;
+}
+
+.mini-hm-cell:hover {
+  opacity: 0.8;
 }
 
 /* ── Monthly bar chart ── */

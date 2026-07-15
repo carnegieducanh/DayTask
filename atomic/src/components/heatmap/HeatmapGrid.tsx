@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { startOfYear, endOfYear, eachDayOfInterval, getDay, format, isToday } from 'date-fns';
+import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, format, isToday } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
@@ -46,105 +46,77 @@ export default function HeatmapGrid({ year, data, mode = 'count', durations = []
     return m;
   }, [durations]);
 
-  const weeks = useMemo(() => {
-    const start = startOfYear(new Date(year, 0, 1));
-    const end   = endOfYear(new Date(year, 0, 1));
-    const days  = eachDayOfInterval({ start, end });
+  const monthsData = useMemo(() => {
+    return Array.from({ length: 12 }, (_, month) => {
+      const start = startOfMonth(new Date(year, month, 1));
+      const end   = endOfMonth(start);
+      const days  = eachDayOfInterval({ start, end });
 
-    const allWeeks: (Date | null)[][] = [];
-    let week: (Date | null)[] = Array(getDay(days[0])).fill(null);
+      const weeks: (Date | null)[][] = [];
+      let week: (Date | null)[] = Array(getDay(days[0])).fill(null);
 
-    for (const day of days) {
-      week.push(day);
-      if (week.length === 7) {
-        allWeeks.push(week);
-        week = [];
-      }
-    }
-    if (week.length > 0) {
-      while (week.length < 7) week.push(null);
-      allWeeks.push(week);
-    }
-    return allWeeks;
-  }, [year]);
-
-  const monthLabels = useMemo(() => {
-    const labels: { month: string; col: number }[] = [];
-    let lastMonth = -1;
-    weeks.forEach((week, col) => {
-      const firstReal = week.find((d) => d !== null);
-      if (firstReal) {
-        const m = firstReal.getMonth();
-        if (m !== lastMonth) {
-          labels.push({ month: t.heatmap.monthsShort[m], col });
-          lastMonth = m;
+      for (const day of days) {
+        week.push(day);
+        if (week.length === 7) {
+          weeks.push(week);
+          week = [];
         }
       }
+      if (week.length > 0) {
+        while (week.length < 7) week.push(null);
+        weeks.push(week);
+      }
+      return { month, weeks };
     });
-    return labels;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weeks, t]);
+  }, [year]);
 
   return (
     <div className="heatmap-wrap">
       {/* Month labels */}
-      <div className="heatmap-months" style={{ marginLeft: 28 }}>
-        {monthLabels.map(({ month, col }) => (
-          <span key={col} className="heatmap-month-label" style={{ left: col * 15 }}>
-            {month}
-          </span>
-        ))}
-      </div>
+      <div className="heatmap-months-grid">
+        {monthsData.map(({ month, weeks }) => (
+          <div key={month} className="heatmap-month-block">
+            <div className="heatmap-month-block-label">{t.heatmap.monthsShort[month]}</div>
+            <div className="heatmap-month-block-grid">
+              {weeks.map((week, wi) => (
+                <div key={wi} className="heatmap-month-block-row">
+                  {week.map((day, di) => {
+                    if (!day) return <div key={di} className="hm-cell" style={{ background: 'transparent' }} />;
+                    const dateStr = format(day, 'yyyy-MM-dd');
+                    const todayBorder = isToday(day) ? '1.5px solid var(--primary)' : undefined;
+                    const formattedDate = language === 'vi'
+                      ? format(day, 'd MMM', { locale: viLocale })
+                      : format(day, 'MMM d');
 
-      <div style={{ display: 'flex', gap: 4 }}>
-        {/* Day-of-week labels */}
-        <div className="heatmap-days">
-          {t.heatmap.weekDowShort.map((d, i) => (
-            <span key={d} style={{ visibility: i % 2 === 0 ? 'hidden' : 'visible' }}>
-              {d}
-            </span>
-          ))}
-        </div>
+                    let level: number;
+                    let tooltipText: string;
 
-        {/* Grid */}
-        <div className="heatmap-grid">
-          {weeks.map((week, wi) => (
-            <div key={wi} className="heatmap-week">
-              {week.map((day, di) => {
-                if (!day) return <div key={di} className="hm-cell" style={{ background: 'transparent' }} />;
-                const dateStr = format(day, 'yyyy-MM-dd');
-                const todayBorder = isToday(day) ? '1.5px solid var(--primary)' : undefined;
-                const formattedDate = language === 'vi'
-                  ? format(day, 'd MMM', { locale: viLocale })
-                  : format(day, 'MMM d');
+                    if (mode === 'hours') {
+                      const mins = durationMap[dateStr] ?? 0;
+                      level = getHoursLevel(mins);
+                      const h = Math.floor(mins / 60);
+                      const m = mins % 60;
+                      tooltipText = t.heatmap.cellTooltipHours(formattedDate, h, m);
+                    } else {
+                      const count = activityMap[dateStr] ?? 0;
+                      level = getCountLevel(count);
+                      tooltipText = t.heatmap.cellTooltip(formattedDate, count);
+                    }
 
-                let level: number;
-                let tooltipText: string;
-
-                if (mode === 'hours') {
-                  const mins = durationMap[dateStr] ?? 0;
-                  level = getHoursLevel(mins);
-                  const h = Math.floor(mins / 60);
-                  const m = mins % 60;
-                  tooltipText = t.heatmap.cellTooltipHours(formattedDate, h, m);
-                } else {
-                  const count = activityMap[dateStr] ?? 0;
-                  level = getCountLevel(count);
-                  tooltipText = t.heatmap.cellTooltip(formattedDate, count);
-                }
-
-                return (
-                  <div
-                    key={di}
-                    className="hm-cell"
-                    style={{ background: LEVEL_COLORS[level], outline: todayBorder }}
-                    title={tooltipText}
-                  />
-                );
-              })}
+                    return (
+                      <div
+                        key={di}
+                        className="hm-cell"
+                        style={{ background: LEVEL_COLORS[level], outline: todayBorder }}
+                        title={tooltipText}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
       {/* Legend */}

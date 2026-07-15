@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { format, subDays, addDays } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
@@ -18,95 +18,66 @@ export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
     [data]
   );
 
-  // Last 3 calendar months (current + 2 previous), aligned to Sunday
-  const weeks = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const anchor = new Date(today.getFullYear(), today.getMonth() - 2, 1);
-    const startSun = subDays(anchor, anchor.getDay());
+  // Current month + 2 previous months, each rendered as its own calendar block
+  const monthsData = useMemo(() => {
+    const today = new Date();
+    return [2, 1, 0].map((offset) => {
+      const monthDate = new Date(today.getFullYear(), today.getMonth() - offset, 1);
+      const start = startOfMonth(monthDate);
+      const end   = endOfMonth(monthDate);
+      const days  = eachDayOfInterval({ start, end });
 
-    const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0); // last day of current month
-
-    const result: (Date | null)[][] = [];
-    let cur = new Date(startSun);
-    while (cur <= endDate) {
-      const week: (Date | null)[] = [];
-      for (let i = 0; i < 7; i++) {
-        week.push(cur <= endDate ? new Date(cur) : null);
-        cur = addDays(cur, 1);
+      const weeks: (Date | null)[][] = [];
+      let week: (Date | null)[] = Array(getDay(days[0])).fill(null);
+      for (const day of days) {
+        week.push(day);
+        if (week.length === 7) { weeks.push(week); week = []; }
       }
-      result.push(week);
-    }
-    return result;
-  }, []);
-
-  const monthLabels = useMemo(() => {
-    const out: { label: string; col: number }[] = [];
-    let last = -1;
-    weeks.forEach((week, col) => {
-      for (const d of week) {
-        if (!d) continue;
-        const m = d.getMonth();
-        if (d.getDate() === 1 && m !== last) {
-          out.push({ label: t.heatmap.monthsShort[m], col });
-          last = m;
-          break;
-        }
+      if (week.length > 0) {
+        while (week.length < 7) week.push(null);
+        weeks.push(week);
       }
+      return { label: t.heatmap.monthsShort[monthDate.getMonth()], weeks };
     });
-    return out;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weeks, t]);
+  }, [t]);
 
   return (
-    <div style={{ overflowX: 'auto' }}>
-      {/* Month labels */}
-      <div style={{ position: 'relative', height: 16, marginLeft: 28, fontSize: 10, color: 'var(--text-secondary)' }}>
-        {monthLabels.map(({ label, col }) => (
-          <span key={col} style={{ position: 'absolute', left: col * 15 }}>{label}</span>
+    <div>
+      <div className="mini-heatmap-months">
+        {monthsData.map(({ label, weeks }, mi) => (
+          <div key={mi} className="mini-heatmap-month-block">
+            <div className="mini-heatmap-month-label">{label}</div>
+            <div className="mini-heatmap-month-grid">
+              {weeks.map((week, wi) => (
+                <div key={wi} className="mini-heatmap-month-col">
+                  {week.map((day, di) => {
+                    if (!day) return <div key={di} className="mini-hm-cell" style={{ background: 'transparent' }} />;
+                    const ds = format(day, 'yyyy-MM-dd');
+                    const n = map[ds] ?? 0;
+                    const formattedDate = language === 'vi'
+                      ? format(day, 'd MMM', { locale: viLocale })
+                      : format(day, 'MMM d');
+                    return (
+                      <div
+                        key={di}
+                        className="mini-hm-cell"
+                        style={{ background: COLORS[level(n)] }}
+                        title={t.heatmap.cellTooltip(formattedDate, n)}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: 4 }}>
-        {/* Day-of-week labels */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: 24, flexShrink: 0 }}>
-          {t.heatmap.weekDowShort.map((d, i) => (
-            <span key={i} style={{ fontSize: 9, color: 'var(--text-secondary)', height: 12, lineHeight: '12px', textAlign: 'right', visibility: i % 2 === 0 ? 'hidden' : 'visible' }}>
-              {d}
-            </span>
-          ))}
-        </div>
-
-        {/* Grid */}
-        <div style={{ display: 'flex', gap: 3 }}>
-          {weeks.map((week, wi) => (
-            <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {week.map((day, di) =>
-                !day
-                  ? <div key={di} style={{ width: 12, height: 12 }} />
-                  : (() => {
-                      const ds = format(day, 'yyyy-MM-dd');
-                      const n = map[ds] ?? 0;
-                      const formattedDate = language === 'vi'
-                        ? format(day, 'd MMM', { locale: viLocale })
-                        : format(day, 'MMM d');
-                      return (
-                        <div
-                          key={di}
-                          style={{ width: 12, height: 12, borderRadius: 2, background: COLORS[level(n)], flexShrink: 0, cursor: 'default' }}
-                          title={t.heatmap.cellTooltip(formattedDate, n)}
-                        />
-                      );
-                    })()
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Legend */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, fontSize: 10, color: 'var(--text-secondary)' }}>
+      <div className="heatmap-legend" style={{ marginTop: 6, fontSize: 10 }}>
         <span>{t.heatmap.legendLess}</span>
-        {COLORS.map((c, i) => <div key={i} style={{ width: 10, height: 10, borderRadius: 2, background: c }} />)}
+        {COLORS.map((c, i) => <div key={i} className="hm-legend-cell" style={{ background: c }} />)}
         <span>{t.heatmap.legendMore}</span>
       </div>
     </div>
