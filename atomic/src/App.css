@@ -9592,7 +9592,9 @@ select {
 }
 
 .books-card-cover-inner {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   z-index: 1;
   width: 100%;
   height: 100%;
@@ -10191,7 +10193,9 @@ select {
 }
 
 .books-detail-cover-inner {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   z-index: 1;
   width: 100%;
   height: 100%;
