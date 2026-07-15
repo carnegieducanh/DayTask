@@ -3556,7 +3556,7 @@ select {
 }
 
 .mini-heatmap-month-label {
-  font-size: 0.68rem;
+  font-size: 0.74rem;
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -3573,8 +3573,8 @@ select {
 }
 
 .mini-hm-cell {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 2px;
   cursor: default;
   flex-shrink: 0;
