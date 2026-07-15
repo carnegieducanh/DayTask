@@ -9544,6 +9544,18 @@ select {
   gap: 18px;
 }
 
+.books-load-more {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
+  min-height: 1px;
+}
+
+.books-load-more-text {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 .books-shelf-grid .books-card-cover {
   width: 100%;
   height: auto;

@@ -476,6 +476,7 @@ export const en: typeof vi = {
     addedOn: (date: string) => `Added to library: ${date}`,
     seeMore: "See more",
     seeLess: "Show less",
+    loadingMore: "Loading more books...",
   },
   projects: {
     navLabel: "Projects",

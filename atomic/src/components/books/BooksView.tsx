@@ -45,6 +45,7 @@ type SortBy = 'date' | 'title' | 'author';
 
 const MAX_COVER_DIM = 500;
 const COVER_JPEG_QUALITY = 0.82;
+const BOOKS_PAGE_SIZE = 60;
 
 function compressCoverImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -879,12 +880,16 @@ export default function BooksView() {
   const [goalInput, setGoalInput] = useState('');
   const [goalCelebration, setGoalCelebration] = useState(false);
   const [seeded, setSeeded] = useState(false);
+  const [hasMoreBooks, setHasMoreBooks] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const mainRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tagDeleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const booksOffsetRef = useRef(0);
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
 
   useSmoothScroll(mainRef);
   useSmoothScroll(sidebarRef);
@@ -913,8 +918,39 @@ export default function BooksView() {
     search: string
   ) => {
     const status = filter === 'all' ? undefined : (filter as BookStatus);
-    setBooks(await dbGetBooks({ status, year: year ?? undefined, tag: tag ?? undefined, search }));
+    const { items, hasMore } = await dbGetBooks({
+      status, year: year ?? undefined, tag: tag ?? undefined, search,
+      limit: BOOKS_PAGE_SIZE, offset: 0,
+    });
+    setBooks(items);
+    setHasMoreBooks(hasMore);
+    booksOffsetRef.current = items.length;
   }, []);
+
+  const loadMoreBooks = useCallback(async () => {
+    if (loadingMore || !hasMoreBooks) return;
+    setLoadingMore(true);
+    const status = libraryFilter === 'all' ? undefined : (libraryFilter as BookStatus);
+    const { items, hasMore } = await dbGetBooks({
+      status, year: yearFilter ?? undefined, tag: tagFilter ?? undefined, search: searchQuery,
+      limit: BOOKS_PAGE_SIZE, offset: booksOffsetRef.current,
+    });
+    setBooks((prev) => [...prev, ...items]);
+    booksOffsetRef.current += items.length;
+    setHasMoreBooks(hasMore);
+    setLoadingMore(false);
+  }, [libraryFilter, yearFilter, tagFilter, searchQuery, hasMoreBooks, loadingMore]);
+
+  useEffect(() => {
+    const el = loadMoreSentinelRef.current;
+    if (!el || !hasMoreBooks) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMoreBooks(); },
+      { root: mainRef.current, rootMargin: '400px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMoreBooks, loadMoreBooks]);
 
   useEffect(() => {
     seedBooksIfEmpty().then(() => setSeeded(true));
@@ -1078,16 +1114,18 @@ export default function BooksView() {
     }
   }
 
+  const groupByYear = libraryFilter === 'finished' || libraryFilter === 'all';
+
   const grouped = useMemo(() => {
-    if (libraryFilter !== 'finished') return [];
+    if (!groupByYear) return [];
     const map = new Map<string, Book[]>();
     for (const b of sortBooks(books, sortBy)) {
-      const y = b.finished_date?.slice(0, 4) ?? String(currentYear);
+      const y = (b.finished_date ?? b.created_at).slice(0, 4);
       if (!map.has(y)) map.set(y, []);
       map.get(y)!.push(b);
     }
     return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
-  }, [books, sortBy, libraryFilter, currentYear]);
+  }, [books, sortBy, groupByYear]);
 
   const flatList = useMemo(() => sortBooks(books, sortBy), [books, sortBy]);
 
@@ -1292,7 +1330,7 @@ export default function BooksView() {
                 </button>
               )}
             </div>
-          ) : libraryFilter === 'finished' ? (
+          ) : groupByYear ? (
             grouped.map(([year, list]) => (
               <div key={year} className="books-year-section">
                 <div className="books-year-heading">
@@ -1323,6 +1361,11 @@ export default function BooksView() {
                   onDelete={() => handleDelete(book)}
                 />
               ))}
+            </div>
+          )}
+          {hasMoreBooks && (
+            <div ref={loadMoreSentinelRef} className="books-load-more">
+              {loadingMore && <span className="books-load-more-text">{t.books.loadingMore}</span>}
             </div>
           )}
         </div>

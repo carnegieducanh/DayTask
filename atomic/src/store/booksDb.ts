@@ -38,8 +38,10 @@ export async function dbGetBooks(opts: {
   year?: number;
   tag?: string;
   search?: string;
-} = {}): Promise<Book[]> {
-  if (!isTauri()) return [];
+  limit?: number;
+  offset?: number;
+} = {}): Promise<{ items: Book[]; hasMore: boolean }> {
+  if (!isTauri()) return { items: [], hasMore: false };
   const db = await getDb();
 
   const conditions: string[] = [];
@@ -62,18 +64,36 @@ export async function dbGetBooks(opts: {
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const search = opts.search?.trim().toLowerCase();
+
+  // Free-text search is matched in JS below (Unicode-aware, unlike SQLite's
+  // ASCII-only LOWER/LIKE which would mangle Vietnamese diacritics), so a
+  // search query always fetches the full matching set — pagination only
+  // applies to the plain browse case where SQL can safely LIMIT/OFFSET.
+  const paginate = !search && opts.limit != null;
+  let limitClause = '';
+  if (paginate) {
+    limitClause = `LIMIT $${idx++} OFFSET $${idx++}`;
+    params.push(opts.limit! + 1, opts.offset ?? 0);
+  }
 
   const rows = await db.select<BookRow[]>(
-    `SELECT * FROM books ${where} ORDER BY COALESCE(finished_date, created_at) DESC`,
+    `SELECT * FROM books ${where} ORDER BY COALESCE(finished_date, created_at) DESC ${limitClause}`,
     params
   );
-  const books = await Promise.all(rows.map((r) => rowToBook(db, r)));
+  let books = await Promise.all(rows.map((r) => rowToBook(db, r)));
 
-  const search = opts.search?.trim().toLowerCase();
-  if (!search) return books;
-  return books.filter(
+  let hasMore = false;
+  if (paginate) {
+    hasMore = books.length > opts.limit!;
+    if (hasMore) books = books.slice(0, opts.limit!);
+  }
+
+  if (!search) return { items: books, hasMore };
+  const filtered = books.filter(
     (b) => b.title.toLowerCase().includes(search) || (b.author ?? '').toLowerCase().includes(search)
   );
+  return { items: filtered, hasMore: false };
 }
 
 export async function dbGetBookById(id: number): Promise<Book | null> {

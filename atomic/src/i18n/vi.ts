@@ -452,6 +452,7 @@ export const vi = {
     addedOn: (date: string) => `Thêm vào tủ sách: ${date}`,
     seeMore: "Xem thêm",
     seeLess: "Thu gọn",
+    loadingMore: "Đang tải thêm sách...",
   },
   projects: {
     navLabel: "Dự án",
