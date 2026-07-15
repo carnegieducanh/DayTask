@@ -6513,6 +6513,9 @@ select {
   left: -47px;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: rgba(234, 67, 53, 0.82);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
