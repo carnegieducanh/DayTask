@@ -492,6 +492,13 @@ select {
   height: 1em;
 }
 
+/* Heatmap topbar prev/next-year buttons use raw "←"/"→" glyphs (not an
+   svg icon), whose font box isn't vertically symmetric around its own
+   center — flex centering alone still leaves it sitting high. */
+.view-topbar .icon-btn {
+  line-height: 1;
+}
+
 .icon-btn:hover {
   background: var(--border-1);
   color: var(--text-primary);
@@ -11199,21 +11206,41 @@ html.has-bg-image .sidebar {
 html.has-bg-image .today-sidebar,
 html.has-bg-image .today-right,
 html.has-bg-image .kanban-column,
+html.has-bg-image .kanban-stats-bar,
 html.has-bg-image .journal-sidebar,
 html.has-bg-image .quotes-sidebar,
-html.has-bg-image .books-sidebar {
+html.has-bg-image .books-sidebar,
+html.has-bg-image .stat-card,
+html.has-bg-image .stat-card-sm,
+html.has-bg-image .heatmap-month-summary,
+html.has-bg-image .weekly-strip-cell,
+html.has-bg-image .cal-main,
+html.has-bg-image .cal-week-grid,
+html.has-bg-image .cal-filter-sidebar,
+html.has-bg-image .cal-month-dow-row,
+html.has-bg-image .cal-month-day-cell.off-range,
+html.has-bg-image .cal-week-header,
+html.has-bg-image .day-grid,
+html.has-bg-image .day-gutter,
+html.has-bg-image .books-goal-card,
+html.has-bg-image .books-search-input,
+html.has-bg-image .books-sort-select {
   background: var(--bg-glass-panel-2) !important;
 }
 
+/* .cal-wrap plays the "outer canvas" role for the Calendar tab, and
+   .journal-view for the Journal tab (tint only — the real blur already
+   comes from .main-wrap behind them). Month/Week/Day are custom-built (no
+   react-big-calendar), so their real grid classes are listed here directly
+   rather than rbc-* library classes. */
 html.has-bg-image .cal-wrap,
-html.has-bg-image .cal-wrap .rbc-month-view,
-html.has-bg-image .cal-wrap .rbc-time-view,
-html.has-bg-image .cal-wrap .rbc-day-bg,
-html.has-bg-image .cal-wrap .rbc-off-range-bg,
-html.has-bg-image .cal-wrap .rbc-time-header,
-html.has-bg-image .cal-wrap .rbc-allday-cell,
-html.has-bg-image .cal-wrap .rbc-time-gutter,
-html.has-bg-image .cal-wrap .rbc-label,
-html.has-bg-image .cal-week-col {
+html.has-bg-image .journal-view,
+html.has-bg-image .cal-week-col,
+html.has-bg-image .cal-week-col .cal-week-stats,
+html.has-bg-image .jsc-streak,
+html.has-bg-image .cal-day-sidebar,
+html.has-bg-image .cal-month-grid,
+html.has-bg-image .cal-month-day-cell,
+html.has-bg-image .day-deck-row {
   background: var(--bg-glass-panel) !important;
 }
