@@ -104,16 +104,16 @@
   /* Kanban columns — all neutral dark, no color tinting */
   --col-todo-bg: #1a1a1a;
   --col-todo-badge: #2e2e2e;
-  --col-todo-title: #a0a09a;
+  --col-todo-title: #cfcec8;
   --col-doing-bg: #1a1a1a;
   --col-doing-badge: #2e2e2e;
   --col-doing-title: var(--primary);
   --col-review-bg: #1a1a1a;
   --col-review-badge: #2e2e2e;
-  --col-review-title: #d4904a;
+  --col-review-title: #f0a860;
   --col-done-bg: #1a1a1a;
   --col-done-badge: #2e2e2e;
-  --col-done-title: #80b85a;
+  --col-done-title: #8ed36a;
 
   /* Journal accent tints on dark bg */
   --journal-secondary: #5b9fd6;
@@ -11178,8 +11178,6 @@ html.has-bg-image .books-sidebar {
   background: var(--bg-glass-panel-2) !important;
 }
 
-html.has-bg-image .goal-card,
-html.has-bg-image [data-theme="dark"] .goal-card,
 html.has-bg-image .cal-wrap,
 html.has-bg-image .cal-wrap .rbc-month-view,
 html.has-bg-image .cal-wrap .rbc-time-view,
