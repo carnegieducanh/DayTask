@@ -807,18 +807,18 @@ select {
   align-self: stretch;
 }
 
-.today-topbar-actions:has(.vocab-widget-note:hover) {
+.today-topbar-actions:has(.vocab-widget:hover) {
   overflow: visible;
 }
 
 /* Lift topbar above .today-content (which is painted later in DOM order) */
-.today-topbar:has(.vocab-widget-note:hover) {
+.today-topbar:has(.vocab-widget:hover) {
   position: relative;
   z-index: 100;
 }
 
 /* Remove the scroll-container clip so note can expand below topbar */
-.main-wrap:has(.vocab-widget-note:hover) {
+.main-wrap:has(.vocab-widget:hover) {
   overflow: visible;
 }
 
@@ -829,18 +829,23 @@ select {
   margin-top: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: flex-end;
   z-index: 10;
+  /* Wrapper spans the full column width but the card only occupies its
+     own max-width on the right — keep the empty space to its left from
+     eating hover/click (re-enabled on the actual card + label below). */
+  pointer-events: none;
 }
 
 .today-topbar-actions .vocab-widget-note .vocab-widget-label {
   margin-bottom: 5px;
   font-size: 0.68rem;
   flex-shrink: 0;
+  pointer-events: auto;
 }
 
 /* On hover: remove bottom constraint so card expands downward */
-.today-topbar-actions .vocab-widget-note:hover {
+.today-topbar-actions .vocab-widget-note:has(.vocab-widget:hover) {
   bottom: auto;
   z-index: 50;
 }
@@ -849,6 +854,8 @@ select {
   padding: 10px 12px 10px 14px;
   transform: rotate(-0.5deg);
   width: 100%;
+  max-width: 270px;
+  pointer-events: auto;
 }
 
 .today-topbar-actions .vocab-widget-note .vocab-widget-word-row {
@@ -878,7 +885,7 @@ select {
 }
 
 /* On hover: show full meaning */
-.today-topbar-actions .vocab-widget-note:hover .vocab-widget-meaning {
+.today-topbar-actions .vocab-widget:hover .vocab-widget-meaning {
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
@@ -895,7 +902,7 @@ select {
   transition: max-height 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.today-topbar-actions .vocab-widget-note:hover .vocab-widget-content {
+.today-topbar-actions .vocab-widget:hover .vocab-widget-content {
   max-height: 14em;
 }
 
@@ -1012,7 +1019,7 @@ select {
   background: color-mix(in srgb, var(--primary) 4%, transparent);
   transition: background 0.15s;
 }
-.vocab-widget-outer:hover .vocab-widget {
+.vocab-widget-outer:not(.vocab-widget-note):hover .vocab-widget {
   background: color-mix(in srgb, var(--primary) 9%, transparent);
 }
 .vocab-widget-content {
@@ -6084,7 +6091,7 @@ select {
   overflow: visible;
 }
 
-.vocab-widget-note:hover .vocab-widget {
+.vocab-widget-note .vocab-widget:hover {
   transform: rotate(0deg);
   background: radial-gradient(ellipse at 50% 38%, #e8d9a8 0%, #e2ce9a 55%, #dac48a 100%);
   box-shadow:
