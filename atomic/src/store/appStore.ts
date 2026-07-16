@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { format, subDays } from 'date-fns';
 import { invoke } from '@tauri-apps/api/core';
+import { writeFile, readFile, remove, exists, BaseDirectory } from '@tauri-apps/plugin-fs';
+import { compressBackgroundImage, dataUrlToBytes, BG_FILENAME } from './backgroundImage';
 import type { Task, Goal, NewTask, NewGoal, TaskUpdate, GoalUpdate, DayActivity, DayDuration, TagStat, MonthStat, Tab, Theme, Language, AccentColor, GoalChecklistItem, Category, CategoryColors, TaskTimeEntry, Tag } from '../types';
 import {
   isTauri,
@@ -163,6 +165,9 @@ interface AppState {
   savedAccentColors: string[];
   tags: Tag[];
   taskTags: Record<number, number[]>;
+  backgroundEnabled: boolean;
+  backgroundOpacity: number;
+  backgroundImageUrl: string | null;
 
   setActiveTab: (tab: Tab) => void;
   toggleTheme: () => void;
@@ -182,6 +187,12 @@ interface AppState {
   setKanbanDragActiveId: (id: number | null) => void;
   initAutostart: () => Promise<void>;
   setAutostart: (v: boolean) => Promise<void>;
+
+  loadBackgroundImage: () => Promise<void>;
+  setBackgroundImage: (file: File) => Promise<void>;
+  removeBackgroundImage: () => Promise<void>;
+  setBackgroundOpacity: (n: number) => void;
+  setBackgroundEnabled: (v: boolean) => void;
 
   loadTags: () => Promise<void>;
   loadTaskTagsForDate: (date: string) => Promise<void>;
@@ -276,6 +287,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   savedAccentColors: JSON.parse(localStorage.getItem('savedAccentColors') ?? '[]'),
   tags: [],
   taskTags: {},
+  backgroundEnabled: localStorage.getItem('backgroundEnabled') === '1',
+  backgroundOpacity: parseInt(localStorage.getItem('backgroundOpacity') ?? '60', 10),
+  backgroundImageUrl: null,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -366,6 +380,54 @@ export const useAppStore = create<AppState>((set, get) => ({
     } else {
       await invoke('plugin:autostart|disable');
     }
+  },
+
+  // --- Background image ---
+
+  loadBackgroundImage: async () => {
+    if (!isTauri()) return;
+    if (localStorage.getItem('backgroundHasImage') !== '1') return;
+    const has = await exists(BG_FILENAME, { baseDir: BaseDirectory.AppData });
+    if (!has) return;
+    const bytes = await readFile(BG_FILENAME, { baseDir: BaseDirectory.AppData });
+    const blob = new Blob([bytes], { type: 'image/jpeg' });
+    const url = URL.createObjectURL(blob);
+    const prev = get().backgroundImageUrl;
+    if (prev) URL.revokeObjectURL(prev);
+    set({ backgroundImageUrl: url });
+  },
+
+  setBackgroundImage: async (file) => {
+    if (!isTauri()) return;
+    const dataUrl = await compressBackgroundImage(file);
+    const bytes = dataUrlToBytes(dataUrl);
+    await writeFile(BG_FILENAME, bytes, { baseDir: BaseDirectory.AppData });
+    localStorage.setItem('backgroundHasImage', '1');
+    const blob = new Blob([bytes], { type: 'image/jpeg' });
+    const url = URL.createObjectURL(blob);
+    const prev = get().backgroundImageUrl;
+    if (prev) URL.revokeObjectURL(prev);
+    set({ backgroundImageUrl: url });
+  },
+
+  removeBackgroundImage: async () => {
+    const prev = get().backgroundImageUrl;
+    if (prev) URL.revokeObjectURL(prev);
+    set({ backgroundImageUrl: null });
+    localStorage.removeItem('backgroundHasImage');
+    if (!isTauri()) return;
+    const has = await exists(BG_FILENAME, { baseDir: BaseDirectory.AppData });
+    if (has) await remove(BG_FILENAME, { baseDir: BaseDirectory.AppData });
+  },
+
+  setBackgroundOpacity: (n) => {
+    localStorage.setItem('backgroundOpacity', String(n));
+    set({ backgroundOpacity: n });
+  },
+
+  setBackgroundEnabled: (v) => {
+    localStorage.setItem('backgroundEnabled', v ? '1' : '0');
+    set({ backgroundEnabled: v });
   },
 
   // --- Tags ---

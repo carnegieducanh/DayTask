@@ -12,8 +12,10 @@ import {
   IconPencil,
   IconChevronRight,
   IconAlertTriangle,
+  IconPhoto,
 } from "@tabler/icons-react";
 import { useAppStore } from "../store/appStore";
+import { isTauri } from "../store/mockDb";
 import { useT } from "../i18n";
 import { loadGreetings, saveGreetings, resetGreetings } from "../store/greetingsStore";
 import type { Period, GreetingItem, GreetingsStore } from "../store/greetingsStore";
@@ -28,7 +30,7 @@ import {
 } from "../store/vocabDb";
 import type { Language, AccentColor, VocabWord } from "../types";
 
-type ActiveTab = "general" | "greeting" | "data" | "vocab";
+type ActiveTab = "general" | "greeting" | "data" | "vocab" | "background";
 
 export default function SettingsModal() {
   const {
@@ -53,9 +55,18 @@ export default function SettingsModal() {
     addTag,
     updateTag,
     softDeleteTag,
+    backgroundEnabled,
+    backgroundOpacity,
+    backgroundImageUrl,
+    setBackgroundImage,
+    removeBackgroundImage,
+    setBackgroundOpacity,
+    setBackgroundEnabled,
   } = useAppStore();
   const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
+  const [bgUploading, setBgUploading] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
   const overlayHandlers = useModalClose(() => setOpenSettingsModal(false));
   useEffect(() => {
@@ -322,6 +333,24 @@ export default function SettingsModal() {
     }
   }
 
+  // ── Background image ──
+  function handleBgChooseClick() {
+    bgFileInputRef.current?.click();
+  }
+
+  async function handleBgFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setBgUploading(true);
+    try {
+      await setBackgroundImage(file);
+      setBackgroundEnabled(true);
+    } finally {
+      setBgUploading(false);
+    }
+  }
+
   async function handleExport() {
     setExportStatus("loading");
     setExportError("");
@@ -456,6 +485,12 @@ export default function SettingsModal() {
             onClick={() => setActiveTab("vocab")}
           >
             {t.vocab.tabLabel}
+          </button>
+          <button
+            className={`settings-tab-btn${activeTab === "background" ? " active" : ""}`}
+            onClick={() => setActiveTab("background")}
+          >
+            {t.settings.backgroundTab}
           </button>
         </div>
 
@@ -1039,6 +1074,80 @@ export default function SettingsModal() {
               </div>
             </div>
           )}
+
+          {/* ── Tab: Nền ── */}
+          {activeTab === "background" && (
+            <div className="settings-tab-panel">
+              {!isTauri() ? (
+                <p className="settings-backup-hint" style={{ padding: "10px 16px" }}>
+                  {t.settings.backgroundUnavailable}
+                </p>
+              ) : (
+                <>
+                  <div className="settings-section">
+                    <div className="settings-row">
+                      <div>
+                        <div className="settings-row-label">{t.settings.backgroundEnable}</div>
+                        <div className="settings-row-sub">{t.settings.backgroundEnableDesc}</div>
+                      </div>
+                      <button
+                        className={`settings-toggle${backgroundEnabled ? " active" : ""}`}
+                        onClick={() => setBackgroundEnabled(!backgroundEnabled)}
+                        disabled={!backgroundImageUrl}
+                        aria-label={t.settings.backgroundEnable}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="settings-divider" />
+
+                  <div className="settings-section">
+                    <div className="settings-section-label">{t.settings.backgroundImage}</div>
+
+                    {backgroundImageUrl && (
+                      <div style={{ padding: "6px 16px 10px" }}>
+                        <img src={backgroundImageUrl} alt="" className="settings-bg-preview" />
+                      </div>
+                    )}
+
+                    <div className="settings-action-group">
+                      <button className="settings-action-btn" onClick={handleBgChooseClick} disabled={bgUploading}>
+                        <IconPhoto size={14} />
+                        {bgUploading ? t.settings.backgroundUploading : t.settings.backgroundChoose}
+                      </button>
+                      {backgroundImageUrl && (
+                        <button className="settings-action-btn" onClick={removeBackgroundImage}>
+                          <IconTrash size={14} />
+                          {t.settings.backgroundRemove}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {backgroundImageUrl && (
+                    <>
+                      <div className="settings-divider" />
+                      <div className="settings-section">
+                        <div className="settings-section-label">{t.settings.backgroundOpacity}</div>
+                        <div className="vocab-interval-row">
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={backgroundOpacity}
+                            className="vocab-interval-slider"
+                            onChange={(e) => setBackgroundOpacity(Number(e.target.value))}
+                          />
+                          <span className="vocab-interval-label">{backgroundOpacity}%</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="settings-version">Atomic v{version}</div>
@@ -1049,6 +1158,13 @@ export default function SettingsModal() {
           accept=".json,application/json"
           style={{ display: "none" }}
           onChange={handleFileChange}
+        />
+        <input
+          ref={bgFileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={handleBgFileChange}
         />
       </div>
 

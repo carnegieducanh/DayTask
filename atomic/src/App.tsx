@@ -71,6 +71,7 @@ function App() {
     activeTab, theme, uiScale, language, accentColor, customAccentColor, selectedDate, selectedYear,
     loadTasks, loadGoals, loadCategoryColors, loadTags, initAutostart,
     goals, reorderGoal, kanbanDragActiveId, setKanbanDragActiveId,
+    backgroundEnabled, backgroundOpacity, backgroundImageUrl, loadBackgroundImage,
   } = useAppStore();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -121,6 +122,14 @@ function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-lang', language);
   }, [language]);
+
+  useEffect(() => {
+    loadBackgroundImage();
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('has-bg-image', backgroundEnabled && !!backgroundImageUrl);
+  }, [backgroundEnabled, backgroundImageUrl]);
 
   // Dùng root font-size để scale UI. Tất cả giá trị font/icon/padding dùng rem/em
   // sẽ tự scale theo. Layout px (column width, sidebar...) giữ nguyên.
@@ -319,6 +328,13 @@ function App() {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
+      {backgroundEnabled && backgroundImageUrl && (
+        <div
+          className="app-bg-image-layer"
+          style={{ backgroundImage: `url(${backgroundImageUrl})`, opacity: backgroundOpacity / 100 }}
+        />
+      )}
+
       {/* Không còn scale wrapper — UI scale dùng native webview zoom (xem useEffect).
           @dnd-kit thấy toạ độ 1:1 nên kéo thả chính xác. */}
       <div className="app-shell">

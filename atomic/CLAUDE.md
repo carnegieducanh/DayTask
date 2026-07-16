@@ -289,6 +289,35 @@ CREATE INDEX idx_journal_date ON journal_entries(date, type);
 - ✅ Mini calendar highlight ngày có entry
 - ✅ Seed data giả để test UI — `seedJournalIfEmpty()` trong `journalDb.ts`, gọi từ `JournalView.tsx`
 
+## Background Settings (Custom Wallpaper + Glass UI)
+
+### Mô tả
+Settings → tab "Hình nền": chọn ảnh từ máy → dùng làm background toàn app, có toggle bật/tắt + slider opacity (0-100%, điều khiển độ mờ của chính ảnh). Size luôn là `cover` (không có lựa chọn khác). Panel chính (topbar, sidebar phụ từng tab, kanban column, goal card, calendar canvas...) chuyển sang hiệu ứng kính mờ (glass) khi bật nền — tái dùng token `--bg-glass`/`--bg-glass-2` đã có sẵn (vốn dùng cho `.modal`), không phải thiết kế mới.
+
+### Lưu trữ — khác với Books cover (base64 trong SQLite)
+Ảnh được nén/resize qua canvas (`backgroundImage.ts`, giống hệt `compressCoverImage` trong `BooksView.tsx` nhưng `MAX_BG_DIM=2560`, JPEG quality 0.85) rồi ghi thành **file thật** `background_image.jpg` trong `%APPDATA%\com.atomic.app\` qua `tauri-plugin-fs` (`writeFile`/`readFile`/`remove`, `BaseDirectory.AppData`). Đây là lựa chọn có chủ đích của user, không phải bug — do đó ảnh nền **không** nằm trong JSON export/import backup.
+`backgroundEnabled` + `backgroundOpacity` lưu `localStorage` (giống `uiScale`/`accentColor`). `backgroundImageUrl` (blob URL) **không** persist — được dựng lại mỗi lần mở app bằng `loadBackgroundImage()` (đọc file AppData → `Blob` → `URL.createObjectURL`).
+
+### Plugin mới
+`tauri-plugin-fs` (Cargo.toml + `lib.rs` `.plugin(tauri_plugin_fs::init())` + `capabilities/default.json` — 4 permission `fs:allow-write-file`/`read-file`/`exists`/`remove`, scope `$APPDATA/*`). Không cần `tauri-plugin-dialog` — tái dùng pattern `<input type="file">` ẩn đã có sẵn trong `SettingsModal.tsx` (giống JSON import).
+
+### CSS — glass mode
+Toggle qua class `html.has-bg-image` (set trong `App.tsx` dựa trên `backgroundEnabled && !!backgroundImageUrl`). Toàn bộ rule nằm trong 1 block cuối `App.css` ("Background Image / Glass Mode"), **thuần additive** — không sửa rule cũ nào, nên khi tắt nền mọi thứ y hệt trước đây.
+- **Blur thật** (`backdrop-filter: blur(20px) saturate(180%)`) chỉ đặt ở 2 nơi: `.main-wrap` + `.sidebar` (topbar) — đây là "canvas" chung của mọi tab.
+- **Tint-only** (chỉ đổi màu, KHÔNG thêm `backdrop-filter`) cho các panel con nằm trên canvas đã blur sẵn: `.today-sidebar`, `.today-right`, `.kanban-column`, `.goal-card`, `.journal-sidebar`, `.quotes-sidebar`, `.books-sidebar`, `.cal-wrap` + các class `.rbc-*` của react-big-calendar. Lý do: `backdrop-filter` tốn GPU, áp lên hàng chục card/cell cùng lúc (vd. nhiều goal-card trên kanban) sẽ giật — tint-only vẫn nhìn "kính" vì nó chồng lên lớp đã blur phía dưới, mà gần như miễn phí về hiệu năng.
+- **Token riêng cho panel, KHÔNG dùng `--bg-glass`/`--bg-glass-2` gốc:** `--bg-glass-panel`/`--bg-glass-panel-2` (opacity 0.9, định nghĩa cạnh `--bg-glass` gốc trong `:root`/`[data-theme="dark"]`). Lý do phải tách riêng (bug thật đã gặp, fix ngày 2026-07-16): `.modal` dùng `--bg-glass` (0.72) OK vì nó luôn nằm trên `.modal-overlay` — một lớp scrim đen `rgba(0,0,0,0.3)` đã làm tối nền phía sau trước rồi. Các panel nền ảnh (kanban column, goal card...) thì KHÔNG có lớp scrim đó, nằm trực tiếp trên ảnh gốc — nên 0.72 không đủ, chữ bị mờ/khó đọc ở vùng ảnh sáng/nhiều màu. Nếu sau này thêm panel glass mới, dùng `--bg-glass-panel(-2)`, đừng dùng lại `--bg-glass` gốc.
+- Các phần tử nhỏ (button, input, dropdown item, badge, `.task-item`) **giữ nguyên đặc màu** — không đụng, giống cách `.modal` hiện tại vẫn đặc màu ở input/button bên trong dù modal ngoài là kính mờ.
+
+### Files đã sửa
+- `src-tauri/Cargo.toml`, `src-tauri/src/lib.rs`, `src-tauri/capabilities/default.json` — plugin fs
+- `package.json` — `@tauri-apps/plugin-fs`
+- `src/store/backgroundImage.ts` — helper nén ảnh (canvas) + decode data URL → bytes
+- `src/store/appStore.ts` — state (`backgroundEnabled`, `backgroundOpacity`, `backgroundImageUrl`) + actions (`loadBackgroundImage`, `setBackgroundImage`, `removeBackgroundImage`, `setBackgroundOpacity`, `setBackgroundEnabled`)
+- `src/App.tsx` — load on mount, toggle `has-bg-image` class, render `.app-bg-image-layer`
+- `src/App.css` — section "Background Image / Glass Mode" (cuối file) + `.settings-bg-preview`
+- `src/components/SettingsModal.tsx` — tab "Hình nền" (toggle, chọn ảnh, preview, opacity slider, remove)
+- `src/i18n/vi.ts` + `en.ts` — key `background*`
+
 ## Known Patterns & Fixes
 
 ### Tray Popup Flickering — Pre-warm Window
