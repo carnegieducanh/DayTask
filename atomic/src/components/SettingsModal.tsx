@@ -13,6 +13,7 @@ import {
   IconChevronRight,
   IconAlertTriangle,
   IconPhoto,
+  IconFolderOpen,
 } from "@tabler/icons-react";
 import { useAppStore } from "../store/appStore";
 import { isTauri } from "../store/mockDb";
@@ -62,6 +63,9 @@ export default function SettingsModal() {
     removeBackgroundImage,
     setBackgroundOpacity,
     setBackgroundEnabled,
+    uiTransparency,
+    setUiTransparency,
+    openBackgroundImageFolder,
   } = useAppStore();
   const t = useT();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1116,6 +1120,12 @@ export default function SettingsModal() {
                         {bgUploading ? t.settings.backgroundUploading : t.settings.backgroundChoose}
                       </button>
                       {backgroundImageUrl && (
+                        <button className="settings-action-btn" onClick={openBackgroundImageFolder}>
+                          <IconFolderOpen size={14} />
+                          {t.settings.backgroundOpenFolder}
+                        </button>
+                      )}
+                      {backgroundImageUrl && (
                         <button className="settings-action-btn" onClick={removeBackgroundImage}>
                           <IconTrash size={14} />
                           {t.settings.backgroundRemove}
@@ -1140,6 +1150,26 @@ export default function SettingsModal() {
                             onChange={(e) => setBackgroundOpacity(Number(e.target.value))}
                           />
                           <span className="vocab-interval-label">{backgroundOpacity}%</span>
+                        </div>
+                      </div>
+
+                      <div className="settings-divider" />
+                      <div className="settings-section">
+                        <div className="settings-section-label">{t.settings.backgroundUiTransparency}</div>
+                        <div className="settings-row-sub" style={{ padding: "0 16px 6px" }}>
+                          {t.settings.backgroundUiTransparencyDesc}
+                        </div>
+                        <div className="vocab-interval-row">
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={uiTransparency}
+                            className="vocab-interval-slider"
+                            onChange={(e) => setUiTransparency(Number(e.target.value))}
+                          />
+                          <span className="vocab-interval-label">{uiTransparency}%</span>
                         </div>
                       </div>
                     </>

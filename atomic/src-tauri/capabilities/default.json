@@ -20,18 +20,22 @@
     "autostart:allow-is-enabled",
     {
       "identifier": "fs:allow-write-file",
-      "allow": [{ "path": "$APPDATA/*" }]
+      "allow": [{ "path": "$APPDATA/*" }, { "path": "$APPDATA/background/*" }]
     },
     {
       "identifier": "fs:allow-read-file",
-      "allow": [{ "path": "$APPDATA/*" }]
+      "allow": [{ "path": "$APPDATA/*" }, { "path": "$APPDATA/background/*" }]
     },
     {
       "identifier": "fs:allow-exists",
-      "allow": [{ "path": "$APPDATA/*" }]
+      "allow": [{ "path": "$APPDATA/*" }, { "path": "$APPDATA/background/*" }]
     },
     {
       "identifier": "fs:allow-remove",
+      "allow": [{ "path": "$APPDATA/*" }, { "path": "$APPDATA/background/*" }]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
       "allow": [{ "path": "$APPDATA/*" }]
     }
   ]

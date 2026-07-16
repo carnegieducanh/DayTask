@@ -3,6 +3,10 @@
   --font: "Segoe UI", system-ui, -apple-system, sans-serif;
   /* --today-cols: 297px 1fr minmax(0, 250px); */
   --today-cols: 270px 1fr 270px;
+  /* Overridden inline by App.tsx from the "UI transparency" slider (Settings → Background).
+     Defaults here reproduce the original fixed glass-panel look. */
+  --bg-glass-panel-alpha: 0.9;
+  --bg-glass-blur: 20px;
 }
 
 [data-lang="en"] {
@@ -21,8 +25,8 @@
   /* Higher-opacity variants for background-image panels (sidebar, kanban column, cards...).
      Unlike .modal, these sit directly over the raw photo with no dark scrim behind them,
      so 72% isn't enough to keep text legible over bright/busy wallpaper regions. */
-  --bg-glass-panel: rgba(255, 255, 255, 0.9);
-  --bg-glass-panel-2: rgba(248, 247, 245, 0.9);
+  --bg-glass-panel: rgba(255, 255, 255, var(--bg-glass-panel-alpha));
+  --bg-glass-panel-2: rgba(248, 247, 245, var(--bg-glass-panel-alpha));
   --text-primary: #1a1a1a;
   --text-secondary: #555555;
   --text-muted: #7a7a75;
@@ -90,8 +94,8 @@
   --bg-hover: #242424;
   --bg-glass: rgba(26, 26, 26, 0.72);
   --bg-glass-2: rgba(19, 19, 20, 0.72);
-  --bg-glass-panel: rgba(26, 26, 26, 0.9);
-  --bg-glass-panel-2: rgba(19, 19, 20, 0.9);
+  --bg-glass-panel: rgba(26, 26, 26, var(--bg-glass-panel-alpha));
+  --bg-glass-panel-2: rgba(19, 19, 20, var(--bg-glass-panel-alpha));
   --text-primary: #f0eeeb;
   --text-secondary: #888888;
   --text-muted: #666666;
@@ -11147,6 +11151,9 @@ select {
    by .modal isn't enough to keep text legible over bright/busy wallpaper areas.
    Everything nested inside just gets a cheap translucent tint (no extra
    backdrop-filter) so we don't stack GPU blur across dozens of cards/cells.
+   --bg-glass-panel-alpha / --bg-glass-blur (defined in :root, top of file) are
+   set inline by App.tsx from the "UI transparency" slider (Settings → Background),
+   so raising it lowers alpha + blur together to let the wallpaper show through more.
    Disabled = zero visual change. */
 
 .app-bg-image-layer {
@@ -11165,8 +11172,8 @@ html.has-bg-image .app-shell {
 html.has-bg-image .main-wrap,
 html.has-bg-image .sidebar {
   background: var(--bg-glass-panel) !important;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(var(--bg-glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--bg-glass-blur)) saturate(180%);
 }
 
 html.has-bg-image .today-sidebar,

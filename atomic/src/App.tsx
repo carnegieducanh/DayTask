@@ -71,7 +71,7 @@ function App() {
     activeTab, theme, uiScale, language, accentColor, customAccentColor, selectedDate, selectedYear,
     loadTasks, loadGoals, loadCategoryColors, loadTags, initAutostart,
     goals, reorderGoal, kanbanDragActiveId, setKanbanDragActiveId,
-    backgroundEnabled, backgroundOpacity, backgroundImageUrl, loadBackgroundImage,
+    backgroundEnabled, backgroundOpacity, backgroundImageUrl, loadBackgroundImage, uiTransparency,
   } = useAppStore();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -130,6 +130,17 @@ function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('has-bg-image', backgroundEnabled && !!backgroundImageUrl);
   }, [backgroundEnabled, backgroundImageUrl]);
+
+  // "UI transparency" slider (0-100): 0 keeps the original glass panel look
+  // (alpha 0.9 / blur 20px), 100 removes the panel filter entirely (alpha 0 /
+  // blur 0) so the wallpaper shows at full clarity. Alpha and blur scale together.
+  useEffect(() => {
+    const t = uiTransparency / 100;
+    const alpha = 0.9 * (1 - t);
+    const blur = 20 * (1 - t);
+    document.documentElement.style.setProperty('--bg-glass-panel-alpha', alpha.toFixed(2));
+    document.documentElement.style.setProperty('--bg-glass-blur', `${blur.toFixed(1)}px`);
+  }, [uiTransparency]);
 
   // Dùng root font-size để scale UI. Tất cả giá trị font/icon/padding dùng rem/em
   // sẽ tự scale theo. Layout px (column width, sidebar...) giữ nguyên.
