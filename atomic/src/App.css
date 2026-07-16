@@ -11252,6 +11252,21 @@ html.has-bg-image .day-deck-row {
   background: var(--bg-glass-panel) !important;
 }
 
+/* .cal-week-grid's 1px gap background (var(--border-1)) is how day columns
+   get separated normally, but in glass mode both the grid's gap color
+   (--bg-glass-panel-2) and the column color (--bg-glass-panel) are
+   near-identical translucent whites/blacks, so the gap stops reading as a
+   line once it's sitting over a busy wallpaper. Add an explicit divider
+   instead, same frosted-white-overlay convention as .sidebar-nav-arrow-icon
+   above (works regardless of the wallpaper's own color). */
+html.has-bg-image .cal-week-col:not(:last-child) {
+  border-right: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+html.has-bg-image[data-theme="dark"] .cal-week-col:not(:last-child) {
+  border-right-color: rgba(255, 255, 255, 0.16);
+}
+
 /* .sidebar-nav-arrow-icon normally needs an opaque bg to stay legible over
    the sliding nav items behind it, but .sidebar already gets real blur in
    glass mode — an opaque circle + solid --border-1 ring on top of that reads
