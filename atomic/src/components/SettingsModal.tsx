@@ -1108,29 +1108,28 @@ export default function SettingsModal() {
                   <div className="settings-section">
                     <div className="settings-section-label">{t.settings.backgroundImage}</div>
 
-                    {backgroundImageUrl && (
-                      <div style={{ padding: "6px 16px 10px" }}>
+                    <div className="settings-bg-preview-row">
+                      {backgroundImageUrl && (
                         <img src={backgroundImageUrl} alt="" className="settings-bg-preview" />
+                      )}
+                      <div className="settings-action-group">
+                        <button className="settings-action-btn" onClick={handleBgChooseClick} disabled={bgUploading}>
+                          <IconPhoto size={14} />
+                          {bgUploading ? t.settings.backgroundUploading : t.settings.backgroundChoose}
+                        </button>
+                        {backgroundImageUrl && (
+                          <button className="settings-action-btn" onClick={openBackgroundImageFolder}>
+                            <IconFolderOpen size={14} />
+                            {t.settings.backgroundOpenFolder}
+                          </button>
+                        )}
+                        {backgroundImageUrl && (
+                          <button className="settings-action-btn" onClick={removeBackgroundImage}>
+                            <IconTrash size={14} />
+                            {t.settings.backgroundRemove}
+                          </button>
+                        )}
                       </div>
-                    )}
-
-                    <div className="settings-action-group">
-                      <button className="settings-action-btn" onClick={handleBgChooseClick} disabled={bgUploading}>
-                        <IconPhoto size={14} />
-                        {bgUploading ? t.settings.backgroundUploading : t.settings.backgroundChoose}
-                      </button>
-                      {backgroundImageUrl && (
-                        <button className="settings-action-btn" onClick={openBackgroundImageFolder}>
-                          <IconFolderOpen size={14} />
-                          {t.settings.backgroundOpenFolder}
-                        </button>
-                      )}
-                      {backgroundImageUrl && (
-                        <button className="settings-action-btn" onClick={removeBackgroundImage}>
-                          <IconTrash size={14} />
-                          {t.settings.backgroundRemove}
-                        </button>
-                      )}
                     </div>
                   </div>
 

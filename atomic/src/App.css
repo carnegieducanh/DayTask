@@ -4290,6 +4290,26 @@ select {
   gap: 3px;
 }
 
+.settings-bg-preview-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 6px 16px 10px;
+}
+
+.settings-bg-preview-row .settings-bg-preview {
+  flex: 1;
+}
+
+.settings-bg-preview-row .settings-action-group {
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.settings-bg-preview-row .settings-action-btn {
+  width: auto;
+}
+
 .settings-action-btn {
   display: flex;
   align-items: center;
