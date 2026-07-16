@@ -3516,9 +3516,10 @@ select {
 }
 
 .heatmap-months-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 10px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 14px;
 }
 
 .heatmap-month-block {
