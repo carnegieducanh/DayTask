@@ -361,18 +361,25 @@ function App() {
           {activeTab === 'projects' && <ProjectsView />}
           <ReminderPopup />
           <DeleteToast />
-          <SettingsModal />
-          {updateVersion && (
-            <UpdateDialog
-              version={updateVersion}
-              downloading={updateDownloading}
-              progress={updateProgress}
-              onConfirm={handleInstallUpdate}
-              onDismiss={() => setUpdateVersion(null)}
-            />
-          )}
         </div>
       </div>
+
+      {/* SettingsModal/UpdateDialog render ở đây, KHÔNG bên trong .main-wrap:
+          .main-wrap nhận backdrop-filter khi html.has-bg-image (xem App.css),
+          và backdrop-filter tạo containing block mới cho position:fixed —
+          nếu modal nằm bên trong, nó sẽ tự center lại theo box .main-wrap
+          (thay vì viewport) mỗi khi bật/tắt background, gây hiện tượng
+          modal nhảy lên/xuống lúc toggle. */}
+      <SettingsModal />
+      {updateVersion && (
+        <UpdateDialog
+          version={updateVersion}
+          downloading={updateDownloading}
+          progress={updateProgress}
+          onConfirm={handleInstallUpdate}
+          onDismiss={() => setUpdateVersion(null)}
+        />
+      )}
 
       {/* DragOverlay: không scale content nữa. Webview zoom đã phóng to mọi thứ,
           BCR của card gốc trả về kích thước đúng → overlay khớp 1:1. */}

@@ -11251,3 +11251,42 @@ html.has-bg-image .cal-month-day-cell,
 html.has-bg-image .day-deck-row {
   background: var(--bg-glass-panel) !important;
 }
+
+/* .sidebar-nav-arrow-icon normally needs an opaque bg to stay legible over
+   the sliding nav items behind it, but .sidebar already gets real blur in
+   glass mode — an opaque circle + solid --border-1 ring on top of that reads
+   as a hard black blob instead of glass. Tinting it to match the sidebar's
+   own glass tone (--bg-glass-panel-2, tried first) made it nearly invisible
+   instead — both tokens share --bg-glass-panel-alpha, so at higher "UI
+   transparency" settings the arrow fades out together with the panel behind
+   it. Give it its own fixed-opacity frosted chip instead (same white-overlay
+   trick as .tag) so it keeps enough contrast to read as a button regardless
+   of wallpaper brightness or the transparency slider. */
+html.has-bg-image .sidebar-nav-arrow-icon {
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 0.5px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+}
+
+html.has-bg-image[data-theme="dark"] .sidebar-nav-arrow-icon {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+html.has-bg-image .sidebar-nav-arrow:hover .sidebar-nav-arrow-icon {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+html.has-bg-image[data-theme="dark"] .sidebar-nav-arrow:hover .sidebar-nav-arrow-icon {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+html.has-bg-image .sidebar-nav-arrow-left {
+  background: linear-gradient(to right, var(--bg-glass-panel) 60%, transparent);
+}
+
+html.has-bg-image .sidebar-nav-arrow-right {
+  background: linear-gradient(to left, var(--bg-glass-panel) 60%, transparent);
+}
