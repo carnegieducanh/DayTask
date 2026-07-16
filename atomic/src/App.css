@@ -1272,9 +1272,9 @@ select {
 .today-sidebar .stat-label {
   font-size: 0.72rem;
   letter-spacing: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.25;
+  /* word-break: break-word; */
 }
 
 .today-sidebar .stat-value {
@@ -1392,7 +1392,7 @@ select {
 .stat-label {
   font-size: 0.86rem;
   color: var(--text-secondary);
-  text-transform: uppercase;
+  /* text-transform: uppercase; */
   letter-spacing: 0.5px;
   margin-bottom: 4px;
 }
