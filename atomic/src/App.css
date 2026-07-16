@@ -7,6 +7,7 @@
      Defaults here reproduce the original fixed glass-panel look. */
   --bg-glass-panel-alpha: 0.9;
   --bg-glass-blur: 20px;
+  --bg-glass-saturate: 180%;
 }
 
 [data-lang="en"] {
@@ -379,13 +380,18 @@ select {
   white-space: nowrap;
   flex-shrink: 0;
   transition:
-    background 0.1s,
-    color 0.1s;
+    background 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .nav-item:hover {
   background: var(--border-1);
   color: var(--text-primary);
+}
+
+.nav-item:active {
+  transform: scale(0.96);
 }
 
 .nav-item.active {
@@ -11185,10 +11191,11 @@ select {
    by .modal isn't enough to keep text legible over bright/busy wallpaper areas.
    Everything nested inside just gets a cheap translucent tint (no extra
    backdrop-filter) so we don't stack GPU blur across dozens of cards/cells.
-   --bg-glass-panel-alpha / --bg-glass-blur (defined in :root, top of file) are
-   set inline by App.tsx from the "UI transparency" slider (Settings → Background),
-   so raising it lowers alpha + blur together to let the wallpaper show through more.
-   Disabled = zero visual change. */
+   --bg-glass-panel-alpha / --bg-glass-blur / --bg-glass-saturate (defined in
+   :root, top of file) are set inline by App.tsx from the "UI transparency"
+   slider (Settings → Background), so raising it lowers alpha + blur and
+   brings saturate back down to 100% together, letting the wallpaper show
+   through at its original color. Disabled = zero visual change. */
 
 .app-bg-image-layer {
   position: fixed;
@@ -11206,8 +11213,8 @@ html.has-bg-image .app-shell {
 html.has-bg-image .main-wrap,
 html.has-bg-image .sidebar {
   background: var(--bg-glass-panel) !important;
-  backdrop-filter: blur(var(--bg-glass-blur)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--bg-glass-blur)) saturate(180%);
+  backdrop-filter: blur(var(--bg-glass-blur)) saturate(var(--bg-glass-saturate));
+  -webkit-backdrop-filter: blur(var(--bg-glass-blur)) saturate(var(--bg-glass-saturate));
 }
 
 html.has-bg-image .today-sidebar,
@@ -11231,7 +11238,8 @@ html.has-bg-image .day-grid,
 html.has-bg-image .day-gutter,
 html.has-bg-image .books-goal-card,
 html.has-bg-image .books-search-input,
-html.has-bg-image .books-sort-select {
+html.has-bg-image .books-sort-select,
+html.has-bg-image .quotes-search-input {
   background: var(--bg-glass-panel-2) !important;
 }
 

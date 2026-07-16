@@ -132,14 +132,20 @@ function App() {
   }, [backgroundEnabled, backgroundImageUrl]);
 
   // "UI transparency" slider (0-100): 0 keeps the original glass panel look
-  // (alpha 0.9 / blur 20px), 100 removes the panel filter entirely (alpha 0 /
-  // blur 0) so the wallpaper shows at full clarity. Alpha and blur scale together.
+  // (alpha 0.9 / blur 20px / saturate 180%), 100 removes the panel filter
+  // entirely (alpha 0 / blur 0 / saturate 100%) so the wallpaper shows at
+  // full clarity with its original colors. All three scale together — the
+  // saturate boost previously stayed hard-coded at 180% even at t=1, which
+  // made the wallpaper look more vivid than the source file no matter how
+  // high both sliders were set.
   useEffect(() => {
     const t = uiTransparency / 100;
     const alpha = 0.9 * (1 - t);
     const blur = 20 * (1 - t);
+    const saturate = 180 - 80 * t;
     document.documentElement.style.setProperty('--bg-glass-panel-alpha', alpha.toFixed(2));
     document.documentElement.style.setProperty('--bg-glass-blur', `${blur.toFixed(1)}px`);
+    document.documentElement.style.setProperty('--bg-glass-saturate', `${saturate.toFixed(0)}%`);
   }, [uiTransparency]);
 
   // Dùng root font-size để scale UI. Tất cả giá trị font/icon/padding dùng rem/em
