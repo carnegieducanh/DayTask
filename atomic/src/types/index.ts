@@ -217,6 +217,7 @@ export interface Project {
   link_youtube: string | null;
   composer: string | null;
   cover_image: string | null;
+  cover_image_thumb: string | null;
   cover_position: string | null;
   folders: string[];
   created_at: string;
@@ -230,6 +231,7 @@ export interface NewProject {
   completed_date?: string | null;
   notes?: string | null;
   cover_image?: string | null;
+  cover_image_thumb?: string | null;
   link_repo?: string | null;
   link_youtube?: string | null;
   composer?: string | null;

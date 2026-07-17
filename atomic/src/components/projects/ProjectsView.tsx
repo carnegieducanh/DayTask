@@ -33,6 +33,8 @@ import {
   dbAddProject,
   dbUpdateProject,
   dbUpdateProjectCoverPosition,
+  dbGetProjectsMissingCoverThumb,
+  dbSetProjectCoverThumb,
   dbDeleteProject,
   dbGetProjectStats,
   dbGetYearsWithCounts,
@@ -142,33 +144,115 @@ const CATEGORY_LINK_ICON: Record<ProjectCategory, { primary: React.ReactNode; se
 
 const MAX_COVER_DIM = 1600;
 const COVER_JPEG_QUALITY = 0.92;
+// Project card grid has no container max-width (can stretch past 800px CSS on a wide
+// monitor with few cards), so this stays well above typical thumbnail display size —
+// smaller than MAX_COVER_DIM for real decode/payload savings, but not so small that a
+// stretched grid row upscales it (see the 2026-07-10 note this project's memory keeps
+// on MAX_COVER_DIM itself, which hit exactly that bug at 640px).
+const MAX_COVER_THUMB_DIM = 960;
+const COVER_THUMB_JPEG_QUALITY = 0.85;
+// Unsharp-mask tuning for the thumb only — same idea as the taskbar icon's post-resize
+// .sharpen({sigma:0.6}) pass. Downscaling alone doesn't make a thumb read as "crisper", it
+// just uses fewer pixels; this actively boosts edge contrast to compensate.
+const THUMB_SHARPEN_RADIUS = 0.7; // px, blur radius used to derive the "detail" layer
+const THUMB_SHARPEN_AMOUNT = 0.55; // 0-1, how much of the detail layer to add back
 const YEAR_LIST_VISIBLE = 3;
 const FOLDER_PAGE_SIZE = 12;
 const PROJECT_PAGE_SIZE = 12;
 
-function compressCoverImage(file: File): Promise<string> {
+function clamp255(v: number): number {
+  return v < 0 ? 0 : v > 255 ? 255 : v;
+}
+
+// Unsharp mask: blur a copy (native canvas filter, cheap), then add back amount * (original -
+// blurred) per channel. Mutates `canvas` in place.
+function applyUnsharpMask(canvas: HTMLCanvasElement, radius: number, amount: number): void {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const { width, height } = canvas;
+  const original = ctx.getImageData(0, 0, width, height);
+
+  const blurCanvas = document.createElement('canvas');
+  blurCanvas.width = width;
+  blurCanvas.height = height;
+  const blurCtx = blurCanvas.getContext('2d');
+  if (!blurCtx) return;
+  blurCtx.filter = `blur(${radius}px)`;
+  blurCtx.drawImage(canvas, 0, 0);
+  const blurred = blurCtx.getImageData(0, 0, width, height);
+
+  const out = ctx.createImageData(width, height);
+  const o = original.data, b = blurred.data, d = out.data;
+  for (let i = 0; i < o.length; i += 4) {
+    d[i] = clamp255(o[i] + amount * (o[i] - b[i]));
+    d[i + 1] = clamp255(o[i + 1] + amount * (o[i + 1] - b[i + 1]));
+    d[i + 2] = clamp255(o[i + 2] + amount * (o[i + 2] - b[i + 2]));
+    d[i + 3] = o[i + 3];
+  }
+  ctx.putImageData(out, 0, 0);
+}
+
+function resizeImageToDataUrl(img: HTMLImageElement, maxDim: number, quality: number, sharpen = false): string {
+  const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+  const w = Math.round(img.width * scale);
+  const h = Math.round(img.height * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('no canvas context');
+  ctx.drawImage(img, 0, 0, w, h);
+  if (sharpen) applyUnsharpMask(canvas, THUMB_SHARPEN_RADIUS, THUMB_SHARPEN_AMOUNT);
+  return canvas.toDataURL('image/jpeg', quality);
+}
+
+function loadImageFromFile(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(reader.error);
     reader.onload = () => {
       const img = new Image();
       img.onerror = () => reject(new Error('image load failed'));
-      img.onload = () => {
-        const scale = Math.min(1, MAX_COVER_DIM / Math.max(img.width, img.height));
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) { reject(new Error('no canvas context')); return; }
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', COVER_JPEG_QUALITY));
-      };
+      img.onload = () => resolve(img);
       img.src = reader.result as string;
     };
     reader.readAsDataURL(file);
   });
+}
+
+function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error('image load failed'));
+    img.onload = () => resolve(img);
+    img.src = dataUrl;
+  });
+}
+
+function compressCoverImage(file: File): Promise<string> {
+  return loadImageFromFile(file).then((img) => resizeImageToDataUrl(img, MAX_COVER_DIM, COVER_JPEG_QUALITY));
+}
+
+// Project covers need both sizes: full-res for the detail modal, a lighter thumb for the card grid.
+// If the source is already <= the thumb cap, resizing again would just re-encode the same
+// pixels at a lower quality (net negative: same/worse detail, sometimes even larger — JPEG
+// re-encoding a already-lossy image doesn't shrink monotonically) — reuse `full` as-is instead.
+function compressProjectCover(file: File): Promise<{ full: string; thumb: string }> {
+  return loadImageFromFile(file).then((img) => {
+    const full = resizeImageToDataUrl(img, MAX_COVER_DIM, COVER_JPEG_QUALITY);
+    const thumb = Math.max(img.width, img.height) > MAX_COVER_THUMB_DIM
+      ? resizeImageToDataUrl(img, MAX_COVER_THUMB_DIM, COVER_THUMB_JPEG_QUALITY, true)
+      : full;
+    return { full, thumb };
+  });
+}
+
+function resizeCoverThumbFromDataUrl(dataUrl: string): Promise<string> {
+  return loadImageFromDataUrl(dataUrl).then((img) =>
+    Math.max(img.width, img.height) > MAX_COVER_THUMB_DIM
+      ? resizeImageToDataUrl(img, MAX_COVER_THUMB_DIM, COVER_THUMB_JPEG_QUALITY, true)
+      : dataUrl
+  );
 }
 
 function formatISODate(iso: string): string {
@@ -625,7 +709,7 @@ function ProjectCard({
         {project.cover_image ? (
           <img
             ref={imgRef}
-            src={project.cover_image}
+            src={project.cover_image_thumb ?? project.cover_image}
             alt={project.title}
             draggable={false}
             style={{ objectPosition: `${pos.x}% ${pos.y}%`, cursor: repositioning ? 'grab' : undefined }}
@@ -925,6 +1009,7 @@ function AddProjectModal({ category, onSave, onClose, initialProject, initialFol
   const [composer, setComposer] = useState(initialProject?.composer ?? '');
   const [folders, setFolders] = useState<string[]>(initialProject?.folders ?? initialFolders ?? []);
   const [coverImage, setCoverImage] = useState<string | null>(initialProject?.cover_image ?? null);
+  const [coverThumb, setCoverThumb] = useState<string | null>(initialProject?.cover_image_thumb ?? null);
   const [coverPos, setCoverPos] = useState(() => parseCoverPosition(initialProject?.cover_position ?? null));
   const [repositioningCover, setRepositioningCover] = useState(false);
   const [coverDragOver, setCoverDragOver] = useState(false);
@@ -1039,7 +1124,9 @@ function AddProjectModal({ category, onSave, onClose, initialProject, initialFol
   async function applyCoverFile(file: File) {
     if (!file.type.startsWith('image/')) return;
     try {
-      setCoverImage(await compressCoverImage(file));
+      const { full, thumb } = await compressProjectCover(file);
+      setCoverImage(full);
+      setCoverThumb(thumb);
       setCoverPos({ x: 50, y: 50 });
       setRepositioningCover(false);
     } catch {
@@ -1049,6 +1136,7 @@ function AddProjectModal({ category, onSave, onClose, initialProject, initialFol
 
   function removeCover() {
     setCoverImage(null);
+    setCoverThumb(null);
     setCoverPos({ x: 50, y: 50 });
     setRepositioningCover(false);
   }
@@ -1121,6 +1209,7 @@ function AddProjectModal({ category, onSave, onClose, initialProject, initialFol
       link_youtube: linkYoutube.trim() || undefined,
       composer: category === 'piano' ? (composer.trim() || undefined) : undefined,
       cover_image: coverImage,
+      cover_image_thumb: coverThumb,
       folders,
     }, coverImage ? `${coverPos.x.toFixed(1)}% ${coverPos.y.toFixed(1)}%` : null);
     setSaving(false);
@@ -1556,8 +1645,30 @@ export default function ProjectsView() {
   useEffect(() => {
     if (seedStartedRef.current) return;
     seedStartedRef.current = true;
-    seedProjectsIfEmpty().then(() => setSeeded(true));
+    seedProjectsIfEmpty().then(() => {
+      setSeeded(true);
+      backfillMissingCoverThumbs();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // One-time (per project) backfill: projects saved before cover_image_thumb existed, or
+  // restored from an older backup, have cover_image but no thumb yet. Regenerate the thumb
+  // client-side from the already-stored full-res cover — no re-upload needed. Cheap no-op
+  // on every later mount since the WHERE clause only matches rows still missing a thumb.
+  async function backfillMissingCoverThumbs() {
+    const rows = await dbGetProjectsMissingCoverThumb();
+    if (!rows.length) return;
+    for (const row of rows) {
+      try {
+        const thumb = await resizeCoverThumbFromDataUrl(row.cover_image);
+        await dbSetProjectCoverThumb(row.id, thumb);
+      } catch {
+        // unreadable image — leave thumb null, card falls back to the full-res cover
+      }
+    }
+    await refreshAll();
+  }
 
   useEffect(() => {
     if (!seeded) return;
@@ -1729,6 +1840,7 @@ export default function ProjectsView() {
       link_youtube: project.link_youtube ?? undefined,
       composer: project.composer ?? undefined,
       cover_image: project.cover_image,
+      cover_image_thumb: project.cover_image_thumb,
       folders: project.folders,
     });
     setViewingProject((prev) => (prev && prev.id === project.id ? { ...prev, status, completed_date } : prev));

@@ -44,7 +44,7 @@ type BookRow = { id: number; title: string; author: string | null; cover_image: 
 type BookTagRow = { book_id: number; tag: string };
 type BookGoalRow = { year: number; goal: number };
 type ProjectFolderRow = { id: number; name: string; category?: string; cover_image: string | null; created_at: string };
-type ProjectRow = { id: number; title: string; category?: string; status: string; start_date: string | null; completed_date: string | null; notes: string | null; link_repo: string | null; link_youtube: string | null; composer?: string | null; cover_image: string | null; created_at: string };
+type ProjectRow = { id: number; title: string; category?: string; status: string; start_date: string | null; completed_date: string | null; notes: string | null; link_repo: string | null; link_youtube: string | null; composer?: string | null; cover_image: string | null; cover_image_thumb?: string | null; created_at: string };
 type ProjectFolderLinkRow = { project_id: number; folder_id: number };
 
 const DEFAULT_CATEGORY_COLORS: CategoryColors = {
@@ -1725,9 +1725,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         if (Array.isArray(data.projects)) {
           for (const p of data.projects) {
             await db.execute(
-              `INSERT INTO projects (id, title, category, status, start_date, completed_date, notes, link_repo, link_youtube, composer, cover_image, created_at)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-              [p.id, p.title, p.category ?? 'product', p.status, p.start_date ?? null, p.completed_date ?? null, p.notes ?? null, p.link_repo ?? null, p.link_youtube ?? null, p.composer ?? null, p.cover_image ?? null, p.created_at]
+              `INSERT INTO projects (id, title, category, status, start_date, completed_date, notes, link_repo, link_youtube, composer, cover_image, cover_image_thumb, created_at)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+              [p.id, p.title, p.category ?? 'product', p.status, p.start_date ?? null, p.completed_date ?? null, p.notes ?? null, p.link_repo ?? null, p.link_youtube ?? null, p.composer ?? null, p.cover_image ?? null, p.cover_image_thumb ?? null, p.created_at]
             );
           }
         }

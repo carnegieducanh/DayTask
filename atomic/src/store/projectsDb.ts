@@ -25,6 +25,7 @@ type ProjectRow = {
   link_youtube: string | null;
   composer: string | null;
   cover_image: string | null;
+  cover_image_thumb: string | null;
   cover_position: string | null;
   created_at: string;
 };
@@ -121,8 +122,8 @@ export async function dbAddProject(data: NewProject): Promise<Project | null> {
   if (!isTauri()) return null;
   const db = await getDb();
   const result = await db.execute(
-    `INSERT INTO projects (title, category, status, start_date, completed_date, notes, link_repo, link_youtube, composer, cover_image)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    `INSERT INTO projects (title, category, status, start_date, completed_date, notes, link_repo, link_youtube, composer, cover_image, cover_image_thumb)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
     [
       data.title,
       data.category,
@@ -134,6 +135,7 @@ export async function dbAddProject(data: NewProject): Promise<Project | null> {
       data.link_youtube || null,
       data.composer || null,
       data.cover_image || null,
+      data.cover_image_thumb || null,
     ]
   );
   const id = result.lastInsertId as number;
@@ -147,7 +149,7 @@ export async function dbUpdateProject(id: number, data: NewProject): Promise<voi
   const db = await getDb();
   await db.execute(
     `UPDATE projects SET title = $1, category = $2, status = $3, start_date = $4, completed_date = $5,
-     notes = $6, link_repo = $7, link_youtube = $8, composer = $9, cover_image = $10 WHERE id = $11`,
+     notes = $6, link_repo = $7, link_youtube = $8, composer = $9, cover_image = $10, cover_image_thumb = $11 WHERE id = $12`,
     [
       data.title,
       data.category,
@@ -159,6 +161,7 @@ export async function dbUpdateProject(id: number, data: NewProject): Promise<voi
       data.link_youtube || null,
       data.composer || null,
       data.cover_image || null,
+      data.cover_image_thumb || null,
       id,
     ]
   );
@@ -170,6 +173,21 @@ export async function dbUpdateProjectCoverPosition(id: number, position: string 
   if (!isTauri()) return;
   const db = await getDb();
   await db.execute('UPDATE projects SET cover_position = $1 WHERE id = $2', [position, id]);
+}
+
+// Backfill for projects saved before cover_image_thumb existed (or restored from an old backup).
+export async function dbGetProjectsMissingCoverThumb(): Promise<{ id: number; cover_image: string }[]> {
+  if (!isTauri()) return [];
+  const db = await getDb();
+  return db.select<{ id: number; cover_image: string }[]>(
+    'SELECT id, cover_image FROM projects WHERE cover_image IS NOT NULL AND cover_image_thumb IS NULL'
+  );
+}
+
+export async function dbSetProjectCoverThumb(id: number, thumb: string): Promise<void> {
+  if (!isTauri()) return;
+  const db = await getDb();
+  await db.execute('UPDATE projects SET cover_image_thumb = $1 WHERE id = $2', [thumb, id]);
 }
 
 export async function dbDeleteProject(id: number): Promise<void> {

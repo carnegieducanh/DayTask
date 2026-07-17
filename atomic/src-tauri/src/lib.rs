@@ -378,6 +378,12 @@ pub fn run() {
             sql: "ALTER TABLE project_folders ADD COLUMN cover_position TEXT DEFAULT NULL;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 25,
+            description: "add_project_cover_thumb",
+            sql: "ALTER TABLE projects ADD COLUMN cover_image_thumb TEXT DEFAULT NULL;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]
