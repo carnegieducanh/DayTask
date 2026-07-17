@@ -11267,7 +11267,7 @@ html.has-bg-image .day-deck-row {
    near-identical translucent whites/blacks, so the gap stops reading as a
    line once it's sitting over a busy wallpaper. Add an explicit divider
    instead, same frosted-white-overlay convention as .sidebar-nav-arrow-icon
-   above (works regardless of the wallpaper's own color). */
+   below (works regardless of the wallpaper's own color). */
 html.has-bg-image .cal-week-col:not(:last-child) {
   border-right: 1px solid rgba(255, 255, 255, 0.35);
 }
@@ -11285,26 +11285,39 @@ html.has-bg-image[data-theme="dark"] .cal-week-col:not(:last-child) {
    transparency" settings the arrow fades out together with the panel behind
    it. Give it its own fixed-opacity frosted chip instead (same white-overlay
    trick as .tag) so it keeps enough contrast to read as a button regardless
-   of wallpaper brightness or the transparency slider. */
+   of wallpaper brightness or the transparency slider. Alpha bumped up from
+   the original 0.28/0.14 — at that opacity the sliding nav item text was
+   still legible (just blurred) underneath, defeating the point of the chip
+   as an occluder. */
 html.has-bg-image .sidebar-nav-arrow-icon {
-  background: rgba(255, 255, 255, 0.28);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
   border: 0.5px solid rgba(255, 255, 255, 0.45);
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+  /* Chip is a light frosted white in both themes, but the chevron inherits
+     var(--text-secondary) which is #888 in dark theme — too close to the
+     chip's own tone to read. Pin it to a dark tone in both themes instead of
+     relying on the theme variable. */
+  color: rgba(26, 26, 26, 0.85);
 }
 
 html.has-bg-image[data-theme="dark"] .sidebar-nav-arrow-icon {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.32);
   border-color: rgba(255, 255, 255, 0.24);
 }
 
 html.has-bg-image .sidebar-nav-arrow:hover .sidebar-nav-arrow-icon {
-  background: rgba(255, 255, 255, 0.42);
+  /* Base .sidebar-nav-arrow:hover rule sets color: var(--text-primary) at
+     higher specificity than the plain html.has-bg-image .sidebar-nav-arrow-icon
+     rule above, which would flip the icon back to a light color on hover in
+     dark theme. Re-pin it here (matches specificity: html + 3 classes). */
+  background: rgba(255, 255, 255, 0.72);
+  color: rgba(26, 26, 26, 0.85);
 }
 
 html.has-bg-image[data-theme="dark"] .sidebar-nav-arrow:hover .sidebar-nav-arrow-icon {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.42);
 }
 
 html.has-bg-image .sidebar-nav-arrow-left {
