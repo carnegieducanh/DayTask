@@ -3518,8 +3518,8 @@ select {
 .heatmap-months-grid {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 10px 14px;
+  justify-content: flex-start;
+  gap: 10px 22px;
 }
 
 .heatmap-month-block {
