@@ -532,8 +532,23 @@ function AddFolderModal({ category, onSave, onClose, initialFolder }: AddFolderM
     if (e.key === 'Escape') onClose();
   }
 
+  async function handlePaste(e: React.ClipboardEvent) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          await applyCoverFile(file);
+        }
+        break;
+      }
+    }
+  }
+
   return (
-    <div className="books-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown}>
+    <div className="books-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown} onPaste={handlePaste}>
       <div className="books-modal projects-folder-modal">
         <div className="books-modal-header">
           <span className="books-modal-title">{isEdit ? t.projects.modalEditFolderTitle : t.projects.modalAddFolderTitle}</span>
@@ -1219,10 +1234,25 @@ function AddProjectModal({ category, onSave, onClose, initialProject, initialFol
     if (e.key === 'Escape' && !folderDropOpen) onClose();
   }
 
+  async function handlePaste(e: React.ClipboardEvent) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          await applyCoverFile(file);
+        }
+        break;
+      }
+    }
+  }
+
   const filteredFolders = allFolders.filter((f) => !folderSearch || f.toLowerCase().includes(folderSearch.toLowerCase()));
 
   return (
-    <div className="books-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown}>
+    <div className="books-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown} onPaste={handlePaste}>
       <div className="books-modal">
         <div className="books-modal-header">
           <span className="books-modal-title">{isEdit ? copy.editModalTitle : copy.addModalTitle}</span>
