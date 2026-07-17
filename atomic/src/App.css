@@ -905,11 +905,12 @@ select {
   padding-bottom: 0;
   overflow: hidden;
   max-height: 6em;
-  transition: max-height 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .today-topbar-actions .vocab-widget:hover .vocab-widget-content {
   max-height: 14em;
+  transition: max-height 0.4s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .today-topbar-actions .vocab-note-botanical,
@@ -9773,7 +9774,7 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  color: var(--primary);
   opacity: 0.4;
 }
 
@@ -10058,7 +10059,7 @@ select {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  color: var(--text-muted);
+  color: var(--primary);
   font-size: 0.7rem;
   text-align: center;
   padding: 6px;
@@ -10341,7 +10342,7 @@ select {
   display: block;
 }
 .books-detail-cover .books-card-cover-placeholder {
-  color: var(--text-muted);
+  color: var(--primary);
   opacity: 0.4;
 }
 
