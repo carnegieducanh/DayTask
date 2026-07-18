@@ -384,6 +384,18 @@ pub fn run() {
             sql: "ALTER TABLE projects ADD COLUMN cover_image_thumb TEXT DEFAULT NULL;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 26,
+            description: "add_book_want_to_read_date",
+            sql: "ALTER TABLE books ADD COLUMN want_to_read_date TEXT DEFAULT NULL;",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 27,
+            description: "rename_book_want_to_read_date_to_started_date",
+            sql: "ALTER TABLE books RENAME COLUMN want_to_read_date TO started_date;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

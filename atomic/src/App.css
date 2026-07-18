@@ -10552,8 +10552,7 @@ select {
 .books-detail-meta {
   font-size: 0.76rem;
   color: var(--text-muted);
-  margin-top: auto;
-  padding-top: 4px;
+  margin-top: -4px;
 }
 
 .books-detail-delete:hover {

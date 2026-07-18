@@ -125,11 +125,15 @@ function useCoverGlow(coverImage: string | null | undefined): React.CSSPropertie
   return glow ? ({ '--book-glow': `rgba(${glow}, 0.4)` } as React.CSSProperties) : {};
 }
 
+function bookSortKey(book: Book): string {
+  return book.finished_date ?? book.started_date ?? book.created_at;
+}
+
 function sortBooks(list: Book[], sortBy: SortBy): Book[] {
   const arr = [...list];
   if (sortBy === 'title') arr.sort((a, b) => a.title.localeCompare(b.title));
   else if (sortBy === 'author') arr.sort((a, b) => (a.author ?? '').localeCompare(b.author ?? ''));
-  else arr.sort((a, b) => (b.finished_date ?? b.created_at).localeCompare(a.finished_date ?? a.created_at));
+  else arr.sort((a, b) => bookSortKey(b).localeCompare(bookSortKey(a)));
   return arr;
 }
 
@@ -299,6 +303,12 @@ function BookDetailModal({ book, onClose, onEdit, onDelete, onStatusChange }: Bo
               </div>
             )}
 
+            {book.started_date && (
+              <div className="books-detail-meta">
+                {t.books.startedOn(formatISODate(book.started_date))}
+              </div>
+            )}
+
             <div className="books-detail-badges">
               <div className="books-detail-status-dropdown" ref={statusMenuRef}>
                 <button
@@ -364,10 +374,6 @@ function BookDetailModal({ book, onClose, onEdit, onDelete, onStatusChange }: Bo
                 )}
               </div>
             )}
-
-            <div className="books-detail-meta">
-              {t.books.addedOn(formatISODate(book.created_at.split(' ')[0]))}
-            </div>
           </div>
         </div>
 
@@ -409,6 +415,9 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
   const [status, setStatus] = useState<BookStatus>(initialBook?.status ?? 'want_to_read');
   const [finishedDate, setFinishedDate] = useState(
     initialBook?.finished_date ?? format(new Date(), 'yyyy-MM-dd')
+  );
+  const [startDate, setStartDate] = useState(
+    initialBook?.started_date ?? format(new Date(), 'yyyy-MM-dd')
   );
   const [notes, setNotes] = useState(initialBook?.notes ?? '');
   const [tags, setTags] = useState<string[]>(initialBook?.tags ?? []);
@@ -573,6 +582,7 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
       author: author.trim() || undefined,
       cover_image: coverImage,
       status,
+      started_date: startDate || null,
       finished_date: status === 'finished' ? finishedDate : null,
       notes: notes.trim() || undefined,
       tags,
@@ -683,7 +693,18 @@ function AddBookModal({ onSave, onClose, initialBook, onTagDeleted }: AddBookMod
                 ))}
               </div>
             </div>
+          </div>
 
+          <div className="books-modal-row">
+            <div className="books-modal-col">
+              <label className="books-modal-label">{t.books.startDateLabel}</label>
+              <input
+                type="date"
+                className="books-modal-input"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
             {status === 'finished' && (
               <div className="books-modal-col">
                 <label className="books-modal-label">{t.books.finishedDateLabel}</label>
@@ -1037,16 +1058,18 @@ export default function BooksView() {
 
   async function handleQuickStatusChange(book: Book, status: BookStatus) {
     const finished_date = status === 'finished' ? book.finished_date ?? format(new Date(), 'yyyy-MM-dd') : null;
+    const started_date = book.started_date ?? format(new Date(), 'yyyy-MM-dd');
     await dbUpdateBook(book.id, {
       title: book.title,
       author: book.author,
       cover_image: book.cover_image,
       status,
+      started_date,
       finished_date,
       notes: book.notes,
       tags: book.tags,
     });
-    setViewingBook((prev) => (prev && prev.id === book.id ? { ...prev, status, finished_date } : prev));
+    setViewingBook((prev) => (prev && prev.id === book.id ? { ...prev, status, started_date, finished_date } : prev));
     await refreshAll();
   }
 
@@ -1120,7 +1143,7 @@ export default function BooksView() {
     if (!groupByYear) return [];
     const map = new Map<string, Book[]>();
     for (const b of sortBooks(books, sortBy)) {
-      const y = (b.finished_date ?? b.created_at).slice(0, 4);
+      const y = bookSortKey(b).slice(0, 4);
       if (!map.has(y)) map.set(y, []);
       map.get(y)!.push(b);
     }

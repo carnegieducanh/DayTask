@@ -40,7 +40,7 @@ type WeeklyChecklistRow = { id: number; week_key: string; text: string; is_done:
 type VocabWordRow = { id: number; word: string; ipa: string; meaning: string; meaning_en: string; part_of_speech: string; position: number; created_at: string };
 type QuoteRow = { id: number; text: string; author: string | null; language: string; is_favorite: number; created_at: string };
 type QuoteTagRow = { quote_id: number; tag: string };
-type BookRow = { id: number; title: string; author: string | null; cover_image: string | null; status: string; finished_date: string | null; notes: string | null; created_at: string };
+type BookRow = { id: number; title: string; author: string | null; cover_image: string | null; status: string; started_date: string | null; finished_date: string | null; notes: string | null; created_at: string };
 type BookTagRow = { book_id: number; tag: string };
 type BookGoalRow = { year: number; goal: number };
 type ProjectFolderRow = { id: number; name: string; category?: string; cover_image: string | null; created_at: string };
@@ -1690,8 +1690,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         await db.execute('DELETE FROM book_reading_goals');
         for (const b of data.books) {
           await db.execute(
-            'INSERT INTO books (id, title, author, cover_image, status, finished_date, notes, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
-            [b.id, b.title, b.author ?? null, b.cover_image ?? null, b.status, b.finished_date ?? null, b.notes ?? null, b.created_at]
+            'INSERT INTO books (id, title, author, cover_image, status, started_date, finished_date, notes, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+            [b.id, b.title, b.author ?? null, b.cover_image ?? null, b.status, b.started_date ?? null, b.finished_date ?? null, b.notes ?? null, b.created_at]
           );
         }
         if (Array.isArray(data.bookTags)) {

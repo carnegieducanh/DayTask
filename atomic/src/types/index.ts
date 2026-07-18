@@ -169,6 +169,7 @@ export interface Book {
   author: string | null;
   cover_image: string | null;
   status: BookStatus;
+  started_date: string | null;
   finished_date: string | null;
   notes: string | null;
   tags: string[];
@@ -180,6 +181,7 @@ export interface NewBook {
   author?: string | null;
   cover_image?: string | null;
   status: BookStatus;
+  started_date?: string | null;
   finished_date?: string | null;
   notes?: string | null;
   tags?: string[];
