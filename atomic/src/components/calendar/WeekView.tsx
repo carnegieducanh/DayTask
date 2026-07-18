@@ -137,9 +137,6 @@ export default function WeekView({
                     onContextMenu={(e) => handleTaskContextMenu(e, task)}
                   >
                     <span className="cal-week-task-title">{task.title}</span>
-                    {task.description && (
-                      <span className="cal-week-task-desc">{task.description}</span>
-                    )}
                     <div className="cal-week-task-footer">
                       <span
                         className="cal-week-task-badge"

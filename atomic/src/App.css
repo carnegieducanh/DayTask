@@ -28,6 +28,11 @@
      so 72% isn't enough to keep text legible over bright/busy wallpaper regions. */
   --bg-glass-panel: rgba(255, 255, 255, var(--bg-glass-panel-alpha));
   --bg-glass-panel-2: rgba(248, 247, 245, var(--bg-glass-panel-alpha));
+  /* Fixed alpha (NOT --bg-glass-panel-alpha) — reminder-popup must stay opaque
+     even when the user cranks the "UI transparency" slider toward full
+     wallpaper visibility, since that slider drives --bg-glass-panel-alpha too
+     and would otherwise make the reminder unreadable along with it. */
+  --reminder-glass-bg: rgba(255, 255, 255, 0.96);
   --text-primary: #1a1a1a;
   --text-secondary: #555555;
   --text-muted: #7a7a75;
@@ -97,6 +102,7 @@
   --bg-glass-2: rgba(19, 19, 20, 0.72);
   --bg-glass-panel: rgba(26, 26, 26, var(--bg-glass-panel-alpha));
   --bg-glass-panel-2: rgba(19, 19, 20, var(--bg-glass-panel-alpha));
+  --reminder-glass-bg: rgba(26, 26, 26, 0.96);
   --text-primary: #f0eeeb;
   --text-secondary: #888888;
   --text-muted: #666666;
@@ -3364,12 +3370,17 @@ select {
 }
 
 /* ── Reminder Popup ── */
+/* Uses --reminder-glass-bg (fixed 0.96 alpha), not --bg-glass or
+   --bg-glass-panel: it has no dark scrim behind it like .modal does, and its
+   alpha must NOT track the "UI transparency" slider like --bg-glass-panel
+   does — a reminder has to stay legible no matter how transparent the user
+   has made the rest of the glass UI. */
 .reminder-popup {
   position: absolute;
   top: 72px;
   right: 16px;
   width: 244px;
-  background: var(--bg-glass);
+  background: var(--reminder-glass-bg);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 0.5px solid var(--border-2);
@@ -3427,6 +3438,7 @@ select {
   font-size: 0.82rem;
   padding: 5px 6px;
   white-space: nowrap;
+  text-align: center;
   border-radius: var(--radius-md);
   border: 0.5px solid var(--border-1);
   background: transparent;
@@ -5589,9 +5601,6 @@ select {
 .cal-week-task-card .cal-week-task-title {
   color: rgba(0, 0, 0, 0.88);
 }
-.cal-week-task-card .cal-week-task-desc {
-  color: rgba(0, 0, 0, 0.65);
-}
 .cal-week-task-card .cal-week-task-duration {
   color: rgba(0, 0, 0, 0.55);
 }
@@ -5599,13 +5608,6 @@ select {
   font-size: 0.86rem;
   font-weight: 600;
   color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.cal-week-task-desc {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
