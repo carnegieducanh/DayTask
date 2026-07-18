@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import './ReminderPopup.css';
 import { IconBellRinging, IconX } from '@tabler/icons-react';
 import { useAppStore } from '../store/appStore';
 import { useT } from '../i18n';

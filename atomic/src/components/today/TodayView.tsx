@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import "./today.css";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import { format } from "date-fns";
 import { vi as viLocale } from "date-fns/locale";

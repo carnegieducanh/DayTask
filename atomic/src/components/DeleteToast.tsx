@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import './DeleteToast.css';
 import { useAppStore } from '../store/appStore';
 import { useT } from '../i18n';
 

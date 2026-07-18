@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import './TrayContextMenu.css';
 import { invoke } from '@tauri-apps/api/core';
 import { useAppStore } from '../store/appStore';
 

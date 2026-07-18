@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import './TrayPopup.css';
 import { format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
 import { invoke } from '@tauri-apps/api/core';

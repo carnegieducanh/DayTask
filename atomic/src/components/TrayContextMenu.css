@@ -1,0 +1,71 @@
+/* ── Tray Context Menu (right-click) ── */
+.tcm {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 5px;
+  background: rgba(18, 18, 22, 0.82);
+  color: var(--text-primary);
+  font-family: var(--font);
+  box-sizing: border-box;
+  overflow: hidden;
+  user-select: none;
+  border-radius: var(--radius-lg);
+}
+
+[data-theme="light"] .tcm {
+  background: rgba(248, 246, 242, 0.82);
+}
+
+.tcm-item {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  height: 34px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.1s;
+  flex-shrink: 0;
+}
+
+.tcm-item:hover {
+  background: var(--bg-hover);
+}
+
+.tcm-item-quit {
+  color: #da7756;
+}
+
+.tcm-item-quit:hover {
+  background: rgba(218, 119, 86, 0.1);
+  color: #da7756;
+}
+
+.tcm-divider {
+  height: 1px;
+  background: var(--border-1);
+  margin: 3px 4px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   Journal Tab
+   ═══════════════════════════════════════════════ */
+
+.journal-view {
+  position: relative;
+  display: flex;
+  height: 100%;
+  background: var(--bg-primary);
+  overflow: hidden;
+}

@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+// Must load before any component's own CSS import below: App.css holds the shared/base
+// rules (.view-topbar, .modal, etc.) that feature CSS files are meant to override via
+// later cascade position, same relative order as the original single-file App.css.
+import './App.css';
 import {
   DndContext,
   DragEndEvent,
@@ -28,7 +32,6 @@ import SettingsModal from './components/SettingsModal';
 import UpdateDialog from './components/UpdateDialog';
 import { useReminder } from './hooks/useReminder';
 import type { Goal, GoalStatus } from './types';
-import './App.css';
 
 const STATUSES: GoalStatus[] = ['todo', 'doing', 'review', 'done'];
 

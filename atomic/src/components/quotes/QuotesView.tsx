@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import './quotes.css';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import ResizableTextarea from '../ResizableTextarea';
 import {

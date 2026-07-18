@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import './journal.css';
 import {
   IconHeart, IconBulb, IconPencil,
   IconTrash, IconX, IconPlus, IconCheck,

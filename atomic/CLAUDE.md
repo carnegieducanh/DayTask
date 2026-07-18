@@ -103,6 +103,8 @@ Hàng 4 (tím/xám):   #AB47BC  #CE93D8  #78909C  #9E9E9E  #616161  #546E7A
 
 ## Cấu trúc thư mục chính
 
+**Refactor lớn 2026-07-18** (xem `feedback_patterns.md` memory): App.css (11.3k dòng) → tách theo feature; `appStore.ts` (1.8k dòng) → tách slice Zustand; `ProjectsView.tsx`/`BooksView.tsx`/`SettingsModal.tsx` → tách subcomponent theo modal/tab. Quy tắc từ giờ: **CSS mới của 1 feature nằm cạnh component đó** (`components/<feature>/<feature>.css`, tự `import` trong file `.tsx` chính, không thêm vào `App.css` — `App.css` giờ chỉ chứa style dùng chung ≥2 feature), và **modal/card lớn tách riêng file** thay vì viết nội tuyến trong view chính.
+
 ```
 atomic/
 ├── .github/workflows/release.yml   # GitHub Actions: build + upload khi push tag v*.*.*
@@ -112,42 +114,62 @@ atomic/
 │   └── tray.rs          # System tray icon + menu
 └── src/
     ├── App.tsx           # Root: theme, tab routing, DndContext, auto-update, DeleteToast
-    ├── App.css           # Tất cả CSS (variables, layout, components, rbc-overrides)
+    ├── App.css           # CHỈ style dùng chung (variables, layout, modal, form, dropdown...) — style riêng feature nằm trong components/<feature>/*.css
     ├── types/index.ts    # TypeScript interfaces
-    ├── store/appStore.ts # Zustand store — state + SQL + pendingDeleteTask
-    ├── store/journalDb.ts # Journal DB functions — không dùng Zustand, self-contained
+    ├── utils/imageUtils.ts  # Helper ảnh dùng chung: loadImageFromFile/resizeImageToDataUrl/compressImageToDataUrl/formatISODate (Books/Projects cover + background wallpaper đều gọi vào đây)
+    ├── store/
+    │   ├── appStore.ts   # Chỉ compose slice: create<AppState>((...a) => ({...createXSlice(...a), ...}))
+    │   ├── db.ts          # getDb() singleton (SQLite connection) dùng chung mọi slice
+    │   ├── slices/        # uiSlice / backgroundSlice / tagSlice / taskSlice / goalSlice / heatmapSlice / dataSlice — mỗi slice tự export interface + createXSlice, xem Zustand slices pattern
+    │   └── journalDb.ts   # Journal DB functions — không dùng Zustand, self-contained
     ├── hooks/useReminder.ts  # Background reminder check mỗi phút + snooze logic
     ├── i18n/
     │   ├── vi.ts         # Tiếng Việt (source of truth cho type)
     │   ├── en.ts         # English (typeof vi)
     │   └── index.ts      # useT() hook → trả về vi hoặc en theo language state
     └── components/
-        ├── Sidebar.tsx           # Nav với Tabler icons — 5 tab (thêm journal giữa kanban/heatmap)
-        ├── ReminderPopup.tsx     # In-app reminder overlay (góc phải màn hình)
-        ├── DeleteToast.tsx       # Toast xóa task + nút Hoàn tác (4 giây auto-confirm)
-        ├── SettingsModal.tsx     # Font size, language, export/import backup
-        ├── UpdateDialog.tsx      # Auto-update dialog với progress bar
+        ├── Sidebar.tsx + Sidebar.css   # Nav với Tabler icons — 9 tab
+        ├── ReminderPopup.tsx + .css    # In-app reminder overlay (góc phải màn hình)
+        ├── DeleteToast.tsx + .css      # Toast xóa task + nút Hoàn tác (4 giây auto-confirm)
+        ├── SettingsModal.tsx + .css    # Chỉ còn: modal shell, tab bar, custom color picker popup (lý do giữ ở đây thay vì GeneralTab — xem note bên dưới)
+        ├── settings/                   # GeneralTab / GreetingTab / DataTab / VocabTab / BackgroundTab.tsx — mỗi tab tự đọc useAppStore()/state riêng, không prop-drill từ SettingsModal
+        ├── UpdateDialog.tsx + .css     # Auto-update dialog với progress bar
         ├── today/
-        │   ├── TodayView.tsx     # Layout + topbar + mini heatmap
+        │   ├── TodayView.tsx + today.css  # Layout + topbar + mini heatmap
         │   ├── TaskCard.tsx      # Card task — gọi softDeleteTask (không deleteTask)
         │   ├── AddTaskModal.tsx  # Form thêm/sửa task
         │   ├── DailyGreeting.tsx # Lời chào theo giờ
         │   └── MiniHeatmap.tsx   # Heatmap nhỏ trong TodayView
         ├── kanban/
-        │   ├── KanbanView.tsx    # Layout kanban — không chứa DndContext
+        │   ├── KanbanView.tsx + kanban.css  # Layout kanban — không chứa DndContext
         │   ├── KanbanColumn.tsx  # Cột droppable
         │   ├── GoalCard.tsx      # Card mục tiêu draggable
         │   ├── GoalCardOverlay.tsx  # DragOverlay content (render trong App.tsx)
         │   └── AddGoalModal.tsx  # Form thêm/sửa mục tiêu
         ├── heatmap/
-        │   ├── HeatmapView.tsx
+        │   ├── HeatmapView.tsx + heatmap.css
         │   └── HeatmapGrid.tsx
         ├── calendar/
-        │   ├── CalendarView.tsx  # Toolbar + toggle Month/Week + load calendarTasks
-        │   └── WeekView.tsx      # Week view tùy chỉnh — 7 cột, card đồng đều, không time grid
-        └── journal/
-            └── JournalView.tsx   # Full Journal tab: layout 2 cột, tất cả sub-components nội tuyến
+        │   ├── CalendarView.tsx + calendar.css  # Toolbar + toggle Month/Week + load calendarTasks
+        │   ├── DayView.tsx, MonthView.tsx, WeekView.tsx
+        │   └── CalendarFilterSidebar.tsx, DayStatsSection.tsx
+        ├── journal/
+        │   └── JournalView.tsx + journal.css   # Full Journal tab: layout 2 cột, sub-components nội tuyến
+        ├── quotes/
+        │   └── QuotesView.tsx + quotes.css
+        ├── books/
+        │   ├── BooksView.tsx + books.css   # Chỉ còn layout/filter/pagination
+        │   ├── BookCard.tsx, BookDetailModal.tsx, AddBookModal.tsx
+        │   └── bookUtils.ts   # compressCoverImage/useCoverGlow/sortBooks/bookSortKey — dùng chung 3 file trên
+        └── projects/
+            ├── ProjectsView.tsx + projects.css   # Chỉ còn layout/filter/pagination — import thêm books.css vì tái dùng .books-sidebar/.books-wrap
+            ├── FolderCard.tsx, AddFolderModal.tsx, ProjectCard.tsx, ProjectDetailModal.tsx, AddProjectModal.tsx
+            ├── icons.tsx           # VsCodeLogoIcon/FigmaLogoIcon/PianoKeysIcon + CATEGORY_*_ICON/STATUS_ICON maps
+            ├── projectImageUtils.ts  # compressProjectCover (full+thumb)/resizeCoverThumbFromDataUrl/parseCoverPosition — riêng Projects vì cần 2 size ảnh + cover-position drag, khác bookUtils.ts
+            └── Pagination.tsx
 ```
+
+**Note vị trí custom color picker popup:** `.color-picker-popup-wrap` dùng `position: fixed`, còn `.modal` có `backdrop-filter` — theo spec CSS, `backdrop-filter`/`filter` khác `none` tạo containing block mới cho phần tử `position:fixed` bên trong. Nếu đưa popup này vào trong cây JSX của `GeneralTab` (nằm trong `.modal`), nó sẽ bị định vị/clip theo khung modal 440px thay vì giữa viewport. Vì vậy state + JSX của popup này **cố ý giữ ở `SettingsModal.tsx`** (sibling của `.modal`, không nested), `GeneralTab` chỉ nhận callback `onCustomSwatchClick`/`onSwatchClick` để trigger. `.delete-toast` thì an toàn để nested sâu hơn vì nó dùng `position: absolute` và mọi ancestor liên quan (`.modal`, `.settings-body`, `.settings-tab-panel`) đều `position: static` — không tạo containing block mới.
 
 ## Kiến trúc quan trọng
 
@@ -230,7 +252,7 @@ Mọi nơi render màu task đều dùng pattern: `task.color ?? categoryColors[
 - `AddTaskModal.tsx` — dot trong trigger và item đang chọn của category dropdown
 
 ### CSS
-Classes trong `App.css`: `.task-context-menu`, `.task-context-divider`, `.task-context-colors`, `.task-context-color-btn`
+Classes trong `components/calendar/calendar.css` (nằm cạnh `.day-context-item` gốc, xem note refactor CSS đầu file): `.task-context-menu`, `.task-context-divider`, `.task-context-colors`, `.task-context-color-btn`
 Reuse `.day-context-item` và `.day-context-item-danger` từ DayView context menu.
 
 ### Files đã sửa
@@ -243,7 +265,7 @@ Reuse `.day-context-item` và `.day-context-item-danger` từ DayView context me
 - `src/components/calendar/MonthView.tsx` — effective color (2 chỗ)
 - `src/components/calendar/DayView.tsx` — effective color (3 chỗ)
 - `src/components/today/AddTaskModal.tsx` — effective color trên dot
-- `src/App.css` — CSS context menu
+- `src/components/calendar/calendar.css` — CSS context menu
 
 ## Journal Tab
 
@@ -320,7 +342,7 @@ Toggle qua class `html.has-bg-image` (set trong `App.tsx` dựa trên `backgroun
 User báo `stats-row` sidebar Today chưa kính mờ → audit lan ra toàn app, phát hiện 2 loại lỗ hổng thật:
 1. **`.stat-card` (Today + Heatmap dùng chung class)**: nằm trong panel đã tint (`.today-sidebar`) hoặc trực tiếp trên canvas blur (`.view-content` của Heatmap) nhưng tự nó vẫn `background: var(--bg-secondary)` cứng → chặn hết hiệu ứng. Cùng bệnh: `.stat-card-sm`, `.heatmap-month-summary`, `.weekly-strip-cell` (Heatmap), `.jsc-streak` (Journal sidebar), `.kanban-stats-bar` (Kanban header).
 2. **Calendar gần như KHÔNG có kính mờ nào hoạt động**: block override gốc nhắm vào class của `react-big-calendar` (`.rbc-month-view`, `.rbc-day-bg`...) nhưng **thư viện này không được dùng** — `MonthView.tsx`/`WeekView.tsx`/`DayView.tsx` là component tự viết (`CalendarView.tsx` chỉ import 3 file này, không có `react-big-calendar` ở đâu cả). Toàn bộ selector đó là dead code không match gì trong DOM thật. Đã thay bằng đúng class thật: `.cal-main`, `.cal-day-sidebar`, `.cal-filter-sidebar` (2 sidebar của Calendar, trước đó hoàn toàn chưa tint), `.cal-month-grid`/`.cal-month-dow-row`/`.cal-month-day-cell` (Month view), `.cal-week-header`/`.cal-week-stats` trong `.cal-week-col` (Week view), `.day-grid`/`.day-gutter`/`.day-deck-row` (Day view).
-- **Lưu ý cho session sau:** App.css còn nguyên 1 block CSS cũ (~5127-5368, style `.rbc-*` cho toolbar/event/time-slot...) là tàn dư từ thời còn dùng react-big-calendar trước khi viết lại Calendar thành custom component — cũng là dead code, nhưng KHÔNG đụng tới trong lần fix này (ngoài phạm vi yêu cầu, chỉ dọn phần liên quan glass mode). Nếu dọn dẹp CSS sau này, đây là ứng viên xóa.
+- **Đã dọn (2026-07-18, refactor CSS split):** khối `.rbc-*` dead code nói trên (37 rule, tàn dư react-big-calendar) đã bị xóa hẳn khi tách `App.css` thành `components/<feature>/*.css` — verify bằng cách so brace-count selector giữa file gốc và file tách, chỉ lệch đúng 37 rule `.rbc-*`, không rule thật nào bị mất.
 - Projects tab không cần sửa riêng vì tái dùng class `.books-sidebar`/`.books-wrap` (chỉ thêm modifier `.projects-sidebar` không đụng `background`) nên tự động ăn theo fix của Books.
 
 ### Files đã sửa
@@ -329,7 +351,8 @@ User báo `stats-row` sidebar Today chưa kính mờ → audit lan ra toàn app,
 - `src/store/backgroundImage.ts` — helper nén ảnh (canvas) + decode data URL → bytes
 - `src/store/appStore.ts` — state (`backgroundEnabled`, `backgroundOpacity`, `backgroundImageUrl`) + actions (`loadBackgroundImage`, `setBackgroundImage`, `removeBackgroundImage`, `setBackgroundOpacity`, `setBackgroundEnabled`)
 - `src/App.tsx` — load on mount, toggle `has-bg-image` class, render `.app-bg-image-layer`
-- `src/App.css` — section "Background Image / Glass Mode" (cuối file) + `.settings-bg-preview`
+- `src/App.css` — section "Background Image / Glass Mode" (cuối file, global/cross-cutting nên vẫn ở đây sau refactor CSS split)
+- `src/components/SettingsModal.css` — `.settings-bg-preview`
 - `src/components/SettingsModal.tsx` — tab "Hình nền" (toggle, chọn ảnh, preview, opacity slider, remove)
 - `src/i18n/vi.ts` + `en.ts` — key `background*`
 
@@ -372,7 +395,7 @@ let _ = tauri::WebviewWindowBuilder::new(app, "tray-popup", ...)
 
 **Cách hoạt động:** Vì mỗi tab view được render bằng `{activeTab === 'x' && <XView />}`, component remount mỗi lần switch tab → CSS `animation` tự phát lại mà không cần thêm logic JS nào.
 
-**Keyframes dùng chung (đã có trong `App.css`):**
+**Keyframes dùng chung (nằm trong `components/today/today.css` — dù nhiều tab khác dùng, keyframes CSS là global nên vẫn hoạt động vì mọi view đều import tĩnh, không lazy-load):**
 ```css
 @keyframes today-topbar-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes today-sidebar-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
@@ -399,7 +422,7 @@ let _ = tauri::WebviewWindowBuilder::new(app, "tray-popup", ...)
 
 **Template thêm animation cho tab mới:**
 ```css
-/* Trong App.css — thêm vào block "Tab Enter Animations" */
+/* Trong components/<feature>/<feature>.css của tab đó (không phải App.css — xem note refactor CSS đầu file) */
 .ten-class-wrapper {
   animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) Xms both;
 }

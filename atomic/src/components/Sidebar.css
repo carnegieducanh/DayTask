@@ -1,0 +1,212 @@
+/* ── Top Nav Bar (was Sidebar) ── */
+.sidebar {
+  width: 100%;
+  background: var(--bg-secondary);
+  border-bottom: 0.5px solid var(--border-1);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 12px;
+  gap: 0;
+}
+
+.sidebar-header {
+  padding: 0 12px 0 4px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 48px;
+  /* border-right: 0.5px solid var(--border-1); */
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.07rem;
+  font-weight: 500;
+  color: var(--greeting-color);
+  white-space: nowrap;
+}
+
+.app-logo-icon {
+  width: 28px;
+  height: 28px;
+  background: var(--primary);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.sidebar-nav-viewport {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  margin-right: 8px;
+}
+
+.sidebar-nav {
+  padding: 5px 0;
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar-nav-arrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 2;
+  opacity: 0;
+  transform: translateX(0);
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.sidebar-nav-arrow.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar-nav-arrow-left {
+  left: 0;
+  justify-content: flex-start;
+  background: linear-gradient(to right, var(--bg-secondary) 60%, transparent);
+}
+
+.sidebar-nav-arrow-right {
+  right: 0;
+  justify-content: flex-end;
+  background: linear-gradient(to left, var(--bg-secondary) 60%, transparent);
+}
+
+.sidebar-nav-arrow-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+  transition:
+    background 0.1s,
+    color 0.1s,
+    transform 0.1s;
+}
+
+.sidebar-nav-arrow-icon svg {
+  width: 1em;
+  height: 1em;
+}
+
+.sidebar-nav-arrow:hover .sidebar-nav-arrow-icon {
+  background: var(--border-1);
+  color: var(--text-primary);
+}
+
+.sidebar-nav-arrow:active .sidebar-nav-arrow-icon {
+  transform: scale(0.9);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.93rem;
+  background: transparent;
+  border: none;
+  width: auto;
+  text-align: left;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition:
+    background 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.nav-item:hover {
+  background: var(--border-1);
+  color: var(--text-primary);
+}
+
+.nav-item:active {
+  transform: scale(0.96);
+}
+
+.nav-item.active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 500;
+  border-color: var(--primary);
+}
+
+.nav-icon {
+  font-size: 1.14rem; /* 16px at base scale, scales with uiScale */
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* Nav icon SVGs: 1em relative to nav-icon's font-size = 1.14rem → 16px default */
+.nav-icon svg {
+  width: 1em;
+  height: 1em;
+}
+
+.nav-badge {
+  margin-left: 2px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.79rem;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-weight: 500;
+  box-sizing: border-box;
+}
+
+.sidebar-footer {
+  padding: 5px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}

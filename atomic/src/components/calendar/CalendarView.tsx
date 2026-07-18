@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import "./calendar.css";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import {
   format,

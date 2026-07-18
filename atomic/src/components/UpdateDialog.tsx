@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import './UpdateDialog.css';
 import { IconDownload, IconX, IconRefresh } from '@tabler/icons-react';
 import { useT } from '../i18n';
 

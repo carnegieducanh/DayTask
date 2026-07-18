@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import './kanban.css';
 import { IconGripHorizontal, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';

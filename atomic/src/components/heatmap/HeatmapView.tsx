@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import './heatmap.css';
 import { startOfWeek, endOfWeek, addDays, isToday, format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
