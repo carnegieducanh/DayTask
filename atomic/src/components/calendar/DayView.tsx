@@ -40,6 +40,7 @@ const MIN_DRAG_DURATION = 15; // minimum minutes to trigger task creation
 const DEFAULT_DURATION = 60; // default task duration in minutes for tasks without time entry
 const DRAG_MOVE_THRESHOLD = 4; // px before a mousedown on a task is treated as a move
 const MIN_RESIZE_DURATION = 15; // minimum minutes when resizing
+const FIXED_HEIGHT_DURATION = 25; // durations <= this render at a fixed block height instead of scaling
 const DECK_OFFSET = 28; // px each unscheduled card is offset from the one below
 const CARD_HEIGHT = 52; // px height of each deck card
 const MAX_DECK = 3; // max visible cards in deck
@@ -63,6 +64,10 @@ function minToPx(min: number): number {
 
 function pxToMin(px: number): number {
   return (px / HOUR_HEIGHT) * 60;
+}
+
+function blockHeight(durationMin: number): number {
+  return minToPx(Math.max(durationMin, FIXED_HEIGHT_DURATION));
 }
 
 const OVERLAP_OFFSET = 18; // px offset per overlap level
@@ -618,7 +623,7 @@ export default function DayView({
             const startMin = isMoving ? dragMove!.newStartMin : isResizing ? dragResize!.newStartMin : item.startMin;
             const endMin = isMoving ? dragMove!.newEndMin : isResizing ? dragResize!.newEndMin : item.endMin;
             const top = minToPx(startMin);
-            const height = Math.max(minToPx(endMin - startMin), 22);
+            const height = blockHeight(endMin - startMin);
             const color = item.task.color ?? categoryColors[item.task.category];
             const tagIds = taskTags[item.task.id] ?? [];
             const taskTagObjects = tags.filter((t) => tagIds.includes(t.id));
@@ -712,7 +717,7 @@ export default function DayView({
               style={{
                 // `top` intentionally omitted — owned entirely by direct DOM (mousemove + useLayoutEffect).
                 // If it were here, React would overwrite our cursor-following value on every re-render.
-                height: Math.max(minToPx(dragDeckTask.endMin - dragDeckTask.startMin), 22),
+                height: blockHeight(dragDeckTask.endMin - dragDeckTask.startMin),
                 left: "0.5%",
                 width: "98%",
                 backgroundColor: dragDeckTask.task.color ?? categoryColors[dragDeckTask.task.category],
@@ -772,13 +777,13 @@ export default function DayView({
           {pendingCreate &&
             (() => {
               const color = categoryColors["work"];
-              const h = minToPx(pendingCreate.endMin - pendingCreate.startMin);
+              const h = blockHeight(pendingCreate.endMin - pendingCreate.startMin);
               return (
                 <div
                   className="day-task-block day-task-block-pending"
                   style={{
                     top: minToPx(pendingCreate.startMin),
-                    height: Math.max(h, 22),
+                    height: h,
                     left: "0.5%",
                     width: "98%",
                     backgroundColor: color,
