@@ -99,6 +99,7 @@ export default function TodayView() {
     (s) => s.totalMins > 0 && s.category !== "other",
   );
   const otherDayMins = calcOtherDayMins(tasks, taskTimeEntries, selectedDate);
+  const otherDoneMins = calcDayDoneMins(otherTasks, taskTimeEntries, selectedDate);
   const dayDoneMins = calcDayDoneMins(habitTasks, taskTimeEntries, selectedDate);
   const dayTotalMins = calcWeekTotalMins(habitTasks, taskTimeEntries, selectedDate, selectedDate);
 
@@ -321,7 +322,7 @@ export default function TodayView() {
                   <DayStatsSection stats={dayStats} doneMins={dayDoneMins} totalMins={dayTotalMins} showCatDone />
                 )}
                 {otherDayMins > 0 && (
-                  <OtherStatsSection totalMins={otherDayMins} hasBorderTop={dayStats.length > 0} />
+                  <OtherStatsSection totalMins={otherDayMins} doneMins={otherDoneMins} hasBorderTop={dayStats.length > 0} />
                 )}
               </div>
             )}

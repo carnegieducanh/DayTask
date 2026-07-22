@@ -27,7 +27,7 @@ import MiniCalendar from "../today/MiniCalendar";
 import VocabWidget from "../today/VocabWidget";
 import DayStatsSection from "./DayStatsSection";
 import OtherStatsSection from "./OtherStatsSection";
-import { calcDayStats, calcOtherDayMins } from "./calendarUtils";
+import { calcDayStats, calcOtherDoneDayMins } from "./calendarUtils";
 
 type CalViewType = "day" | "week" | "month";
 
@@ -231,7 +231,7 @@ export default function CalendarView() {
   };
 
   const dayStats = calcDayStats(calendarTasks, calendarTimeEntries, selectedDate, categoryColors).filter(s => s.category !== 'other');
-  const otherDayMins = calcOtherDayMins(calendarTasks, calendarTimeEntries, selectedDate);
+  const otherDayMins = calcOtherDoneDayMins(calendarTasks, calendarTimeEntries, selectedDate);
 
   return (
     <div className="cal-wrap">

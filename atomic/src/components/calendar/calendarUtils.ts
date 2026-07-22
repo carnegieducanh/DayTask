@@ -104,6 +104,24 @@ export function calcOtherDayMins(
   return total;
 }
 
+export function calcOtherDoneDayMins(
+  tasks: Task[],
+  timeEntries: TaskTimeEntry[],
+  dateStr: string,
+): number {
+  let total = 0;
+  for (const entry of timeEntries) {
+    if (entry.date !== dateStr) continue;
+    const task = tasks.find((t) => t.id === entry.task_id);
+    if (task?.category === 'other' && task.is_done === 1) {
+      const [sh, sm] = entry.start_time.split(':').map(Number);
+      const [eh, em] = entry.end_time.split(':').map(Number);
+      total += Math.max(0, eh * 60 + em - (sh * 60 + sm));
+    }
+  }
+  return total;
+}
+
 export function calcRangeOtherMins(
   tasks: Task[],
   timeEntries: TaskTimeEntry[],
