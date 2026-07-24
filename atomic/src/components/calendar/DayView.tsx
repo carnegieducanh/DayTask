@@ -218,6 +218,11 @@ export default function DayView({
   const floatingCardRef = useRef<HTMLDivElement | null>(null);
   // Same pattern, for a scheduled task being dragged back up toward the deck (unschedule)
   const floatingMoveCardRef = useRef<HTMLDivElement | null>(null);
+  // Direct DOM ref for the task block currently being moved within the timeline — `top` is
+  // owned entirely by direct DOM writes (see handleWindowMouseMove) so it follows the cursor
+  // smoothly instead of stepping in 15-min/re-render increments.
+  const movingBlockRef = useRef<HTMLDivElement | null>(null);
+  const moveTopRef = useRef<number>(0);
   // Direct DOM ref for the timeline ghost — same approach, smooth follow + only state when time changes
   const ghostRef = useRef<HTMLDivElement | null>(null);
   // Stores cardTop at the moment startMin last changed — used to set initial ghost position via useLayoutEffect
@@ -408,19 +413,30 @@ export default function DayView({
         } else {
           const y = getRelY(e.clientY);
           const duration = dragMove.origEndMin - dragMove.origStartMin;
-          const rawStart = Math.max(0, Math.min(pxToMin(y - dragMove.offsetPx), 1440 - duration));
-          const newStartMin = Math.round(rawStart / 15) * 15;
-          setDragMove((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  newStartMin,
-                  newEndMin: newStartMin + duration,
-                  moved: prev.moved || dy > DRAG_MOVE_THRESHOLD,
-                  overDeck: false,
-                }
-              : null,
-          );
+          // Raw, unsnapped px — written straight to the DOM every frame so the block
+          // follows the cursor 1:1 (no setState/re-render in the hot path, no 15-min stepping).
+          const rawTopPx = Math.max(0, Math.min(y - dragMove.offsetPx, minToPx(1440 - duration)));
+          moveTopRef.current = rawTopPx;
+          if (movingBlockRef.current) {
+            movingBlockRef.current.style.top = `${rawTopPx}px`;
+          }
+          const newStartMin = Math.round(pxToMin(rawTopPx) / 15) * 15;
+          const movedNow = dragMove.moved || dy > DRAG_MOVE_THRESHOLD;
+          // Only touch React state when the snapped time (for the label) or moved/overDeck
+          // flag actually changes — this is what keeps re-renders out of the drag hot path.
+          if (newStartMin !== dragMove.newStartMin || movedNow !== dragMove.moved || dragMove.overDeck) {
+            setDragMove((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    newStartMin,
+                    newEndMin: newStartMin + duration,
+                    moved: movedNow,
+                    overDeck: false,
+                  }
+                : null,
+            );
+          }
         }
       }
       if (dragResize) {
@@ -552,6 +568,16 @@ export default function DayView({
       ghostRef.current.style.top = `${ghostInitialTopRef.current}px`;
     }
   }, [dragDeckTask?.startMin]); // fires whenever startMin changes (boundary crossing or first mount)
+
+  // Same restore trick for the task block being moved within the timeline: `top` is excluded
+  // from its style prop while isMoving (see render below), so any re-render this causes
+  // (moved flips true, snapped label changes, overDeck toggles) would otherwise reset/clear
+  // the DOM `top` React never wrote — this puts the last direct-DOM value back before paint.
+  useLayoutEffect(() => {
+    if (movingBlockRef.current) {
+      movingBlockRef.current.style.top = `${moveTopRef.current}px`;
+    }
+  }, [dragMove?.moved, dragMove?.newStartMin, dragMove?.overDeck]);
 
   const tzOffset = -new Date().getTimezoneOffset() / 60;
   const tzLabel = `GMT${tzOffset >= 0 ? "+" : ""}${tzOffset}`;
@@ -686,9 +712,14 @@ export default function DayView({
             return (
               <div
                 key={item.task.id}
+                ref={(el) => {
+                  if (isMoving) movingBlockRef.current = el;
+                }}
                 className={`day-task-block${isMoving ? " dragging" : ""}${isResizing ? " resizing" : ""}`}
                 style={{
-                  top,
+                  // While isMoving, `top` is owned by direct DOM writes in handleWindowMouseMove
+                  // (see the useLayoutEffect restore above) — omitted here so React never fights it.
+                  ...(isMoving ? {} : { top }),
                   height,
                   left: `calc(0.5% + ${leftPx}px)`,
                   width: `calc(97% - ${leftPx}px)`,
