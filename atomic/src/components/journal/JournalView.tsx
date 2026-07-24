@@ -19,6 +19,7 @@ import {
 
 const ACCENT_GRATITUDE = 'var(--primary)';
 const ACCENT_LESSON = 'var(--journal-secondary)';
+const LESSON_GROUP_SIZE = 4; // Vấn đề · Nguyên nhân · Trạng thái mong muốn · Hành động
 type JTab = 'gratitude' | 'lesson';
 
 interface TabCfg {
@@ -27,7 +28,6 @@ interface TabCfg {
   bgPrompt: string;
   borderPrompt: string;
   borderWrite: string;
-  activeBg: string;
   saveBg: string;
   saveColor: string;
   defaultCount: number;
@@ -40,7 +40,6 @@ const TABS: Record<JTab, TabCfg> = {
     bgPrompt: 'var(--journal-gratitude-tint-bg)',
     borderPrompt: 'var(--journal-gratitude-tint-border)',
     borderWrite: 'var(--journal-gratitude-write-border)',
-    activeBg: 'var(--journal-gratitude-active-bg)',
     saveBg: 'var(--primary)',
     saveColor: '#fff',
     defaultCount: 3,
@@ -51,10 +50,9 @@ const TABS: Record<JTab, TabCfg> = {
     bgPrompt: 'var(--journal-lesson-tint-bg)',
     borderPrompt: 'var(--journal-lesson-tint-border)',
     borderWrite: 'var(--journal-lesson-write-border)',
-    activeBg: 'var(--journal-lesson-active-bg)',
     saveBg: 'var(--journal-secondary)',
     saveColor: '#1a1a1a',
-    defaultCount: 3,
+    defaultCount: LESSON_GROUP_SIZE,
   },
 };
 
@@ -95,16 +93,18 @@ function autoResize(el: HTMLTextAreaElement | null) {
 }
 
 function ensureLessonItems(items: string[]): string[] {
-  if (items.length === 0) return ['', '', ''];
-  const extra = items.length % 3;
-  return extra === 0 ? items : [...items, ...Array(3 - extra).fill('')];
+  if (items.length === 0) return Array(LESSON_GROUP_SIZE).fill('');
+  const extra = items.length % LESSON_GROUP_SIZE;
+  return extra === 0 ? items : [...items, ...Array(LESSON_GROUP_SIZE - extra).fill('')];
 }
 
 function chunkLessons(items: string[]): string[][] {
-  if (items.length === 0) return [['', '', '']];
+  if (items.length === 0) return [Array(LESSON_GROUP_SIZE).fill('')];
   const groups: string[][] = [];
-  for (let i = 0; i < items.length; i += 3) {
-    groups.push([items[i] ?? '', items[i + 1] ?? '', items[i + 2] ?? '']);
+  for (let i = 0; i < items.length; i += LESSON_GROUP_SIZE) {
+    const group: string[] = [];
+    for (let f = 0; f < LESSON_GROUP_SIZE; f++) group.push(items[i + f] ?? '');
+    groups.push(group);
   }
   return groups;
 }
@@ -249,14 +249,14 @@ function LessonWriteCard({
 
   function updateField(groupIdx: number, fieldIdx: number, val: string) {
     const next = [...items];
-    next[groupIdx * 3 + fieldIdx] = val;
+    next[groupIdx * LESSON_GROUP_SIZE + fieldIdx] = val;
     setItems(next);
   }
-  function addGroup() { setItems([...items, '', '', '']); }
+  function addGroup() { setItems([...items, ...Array(LESSON_GROUP_SIZE).fill('')]); }
   function removeGroup(groupIdx: number) {
     const next = [...items];
-    next.splice(groupIdx * 3, 3);
-    const result = next.length ? next : ['', '', ''];
+    next.splice(groupIdx * LESSON_GROUP_SIZE, LESSON_GROUP_SIZE);
+    const result = next.length ? next : Array(LESSON_GROUP_SIZE).fill('');
     setItems(result);
     if (todayEntry && !result.some(i => i.trim())) onClear();
   }
@@ -399,7 +399,7 @@ function LessonEntryCard({
                     value={group[fieldIdx] ?? ''}
                     onChange={v => {
                       const next = [...editItems];
-                      next[groupIdx * 3 + fieldIdx] = v;
+                      next[groupIdx * LESSON_GROUP_SIZE + fieldIdx] = v;
                       setEditItems(next);
                     }}
                     className="jm-wc-ta"
@@ -579,7 +579,7 @@ export default function JournalView() {
       setItems(type === 'lesson' ? ensureLessonItems(entry.items) : [...entry.items]);
       setShowPrompt(false);
     } else {
-      setItems(type === 'lesson' ? ['', '', ''] : Array(TABS[type].defaultCount).fill(''));
+      setItems(type === 'lesson' ? Array(LESSON_GROUP_SIZE).fill('') : Array(TABS[type].defaultCount).fill(''));
       setShowPrompt(true);
     }
 
@@ -651,7 +651,7 @@ export default function JournalView() {
       setItems(activeType === 'lesson' ? ensureLessonItems(entry.items) : [...entry.items]);
       setShowPrompt(false);
     } else {
-      setItems(activeType === 'lesson' ? ['', '', ''] : Array(TABS[activeType].defaultCount).fill(''));
+      setItems(activeType === 'lesson' ? Array(LESSON_GROUP_SIZE).fill('') : Array(TABS[activeType].defaultCount).fill(''));
       setShowPrompt(true);
     }
     setHistory(hist);
@@ -730,7 +730,7 @@ export default function JournalView() {
       wasSelected = true;
       prevItems = [...items];
       setSelectedEntry(null);
-      setItems(activeType === 'lesson' ? ['', '', ''] : Array(TABS[activeType].defaultCount).fill(''));
+      setItems(activeType === 'lesson' ? Array(LESSON_GROUP_SIZE).fill('') : Array(TABS[activeType].defaultCount).fill(''));
       setShowPrompt(true);
     } else {
       entryToDelete = history.find(e => e.id === id) ?? null;
@@ -883,7 +883,7 @@ export default function JournalView() {
             <div className="jm-date-sub">
               {selectedDate === todayStr ? jt.todayLabel : dateLabel} · {selectedEntry
                 ? jt.itemCount(activeType === 'lesson'
-                    ? Math.ceil(selectedEntry.items.length / 3)
+                    ? Math.ceil(selectedEntry.items.length / LESSON_GROUP_SIZE)
                     : selectedEntry.items.length)
                 : jt.noNotes}
             </div>
@@ -892,7 +892,7 @@ export default function JournalView() {
             <button
               className={`jm-tt-btn${activeType === 'gratitude' ? ' jm-tt-btn--active' : ''}`}
               style={activeType === 'gratitude'
-                ? { background: TABS.gratitude.activeBg, color: TABS.gratitude.accent, fontWeight: 500 }
+                ? { background: TABS.gratitude.saveBg, color: TABS.gratitude.saveColor, fontWeight: 500 }
                 : {}}
               onClick={() => { setActiveType('gratitude'); mainRef.current?.scrollTo({ top: 0 }); }}
             >
@@ -901,7 +901,7 @@ export default function JournalView() {
             <button
               className={`jm-tt-btn${activeType === 'lesson' ? ' jm-tt-btn--active' : ''}`}
               style={activeType === 'lesson'
-                ? { background: TABS.lesson.activeBg, color: TABS.lesson.accent, fontWeight: 500 }
+                ? { background: TABS.lesson.saveBg, color: TABS.lesson.saveColor, fontWeight: 500 }
                 : {}}
               onClick={() => { setActiveType('lesson'); mainRef.current?.scrollTo({ top: 0 }); }}
             >

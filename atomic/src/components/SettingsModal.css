@@ -282,8 +282,8 @@
 
 .settings-seg-btn.active {
   border-color: var(--primary);
-  color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: #fff;
+  background: var(--primary);
 }
 
 /* Font size buttons */
@@ -324,12 +324,12 @@
 
 .settings-font-btn.active {
   border-color: var(--primary);
-  color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: #fff;
+  background: var(--primary);
 }
 
 .settings-font-btn.active .settings-font-pct {
-  color: var(--primary);
+  color: #fff;
   opacity: 0.7;
 }
 
