@@ -255,6 +255,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
     deleteTimeEntry,
     tags,
     taskTags,
+    calendarTaskTags,
     addTag,
     updateTag,
     softDeleteTag,
@@ -336,7 +337,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
       setDesc(editTask.description ?? "");
       setCategory(editTask.category);
       setRepeatDaily(editTask.repeat_daily === 1 || editTask.series_id != null);
-      setSelectedTagIds(taskTags[editTask.id] ?? []);
+      setSelectedTagIds(taskTags[editTask.id] ?? calendarTaskTags[editTask.id] ?? []);
       const entry =
         taskTimeEntries.find((e) => e.task_id === editTask.id && e.date === editTask.date) ??
         calendarTimeEntries.find((e) => e.task_id === editTask.id && e.date === editTask.date);
