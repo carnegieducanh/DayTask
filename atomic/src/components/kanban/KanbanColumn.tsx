@@ -70,12 +70,11 @@ export default function KanbanColumn({
   const cfg = COL_STYLE[status];
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
-  const columnRef = useRef<HTMLDivElement>(null);
-  useSmoothScroll(columnRef);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  useSmoothScroll(bodyRef);
 
   return (
     <div
-      ref={columnRef}
       className="kanban-column"
       style={{ outline: isOver ? `2px solid var(--primary)` : undefined }}
     >
@@ -105,7 +104,10 @@ export default function KanbanColumn({
         strategy={verticalListSortingStrategy}
       >
         <div
-          ref={setNodeRef}
+          ref={(node) => {
+            setNodeRef(node);
+            bodyRef.current = node;
+          }}
           className="kanban-col-body"
           data-kanban-col={status}
         >
