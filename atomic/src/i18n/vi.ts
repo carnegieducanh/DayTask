@@ -268,6 +268,7 @@ export const vi = {
     filterNoTime: "",
     noTitle: "(Chưa đặt tên)",
     removeFromCalendar: "Xóa khỏi lịch",
+    dropToUnschedule: "Thả để bỏ khỏi lịch",
     pendingTasks: (n: number) => `${n} task chưa hoàn thành`,
     weekStats: "Tổng tuần",
     monthStats: "Tổng tháng",

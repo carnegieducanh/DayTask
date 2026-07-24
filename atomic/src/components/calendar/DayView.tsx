@@ -95,12 +95,20 @@ function computeLayout(tasks: Task[], entries: TaskTimeEntry[], date: string): L
   // Sort by startMin; use task.id as stable tiebreaker
   const sorted = [...items].sort((a, b) => a.startMin - b.startMin || a.task.id - b.task.id);
 
+  // Overlap detection uses the *rendered* end, not the raw schedule end: blocks
+  // <= FIXED_HEIGHT_DURATION are drawn taller than their real duration (see blockHeight),
+  // so two back-to-back short tasks can visually collide even though they don't overlap
+  // in the schedule. Using the inflated end here makes that case get the same
+  // horizontal-cascade treatment as a real overlap, instead of one card fully hiding another.
+  const visualEnd = (item: { startMin: number; endMin: number }) =>
+    Math.min(1440, item.startMin + Math.max(item.endMin - item.startMin, FIXED_HEIGHT_DURATION));
+
   // Compute overlapLevel: each task gets level = max(level of overlapping predecessors) + 1
   const levels: number[] = new Array(sorted.length).fill(0);
   for (let i = 1; i < sorted.length; i++) {
     let maxPred = -1;
     for (let j = 0; j < i; j++) {
-      if (sorted[j].startMin < sorted[i].endMin && sorted[i].startMin < sorted[j].endMin) {
+      if (sorted[j].startMin < visualEnd(sorted[i]) && sorted[i].startMin < visualEnd(sorted[j])) {
         maxPred = Math.max(maxPred, levels[j]);
       }
     }
@@ -110,7 +118,7 @@ function computeLayout(tasks: Task[], entries: TaskTimeEntry[], date: string): L
   return sorted.map((item, i) => {
     const hasOverlapAbove = sorted
       .slice(0, i)
-      .some((prev) => prev.startMin < item.endMin && item.startMin < prev.endMin);
+      .some((prev) => prev.startMin < visualEnd(item) && item.startMin < visualEnd(prev));
     return { ...item, zIndex: i + 1, hasOverlapAbove, overlapLevel: levels[i] };
   });
 }
@@ -131,6 +139,13 @@ interface DragMove {
   newEndMin: number;
   startClientY: number;
   moved: boolean;
+  overDeck: boolean; // cursor lifted above the grid — dragging back toward the deck to unschedule
+  gridTopAtStart: number; // grid's viewport top captured at drag-start, used as a stable overDeck threshold
+  cardWidth: number;
+  grabOffsetX: number;
+  grabOffsetY: number;
+  cursorX: number;
+  cursorY: number;
 }
 
 interface DragResize {
@@ -201,6 +216,8 @@ export default function DayView({
   dragDeckTaskRef.current = dragDeckTask;
   // Direct DOM ref for the floating card — position updated without React re-render
   const floatingCardRef = useRef<HTMLDivElement | null>(null);
+  // Same pattern, for a scheduled task being dragged back up toward the deck (unschedule)
+  const floatingMoveCardRef = useRef<HTMLDivElement | null>(null);
   // Direct DOM ref for the timeline ghost — same approach, smooth follow + only state when time changes
   const ghostRef = useRef<HTMLDivElement | null>(null);
   // Stores cardTop at the moment startMin last changed — used to set initial ghost position via useLayoutEffect
@@ -300,6 +317,7 @@ export default function DayView({
     if (e.button !== 0) return;
     e.stopPropagation();
     const y = getRelY(e.clientY);
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     setDragMove({
       taskId: item.task.id,
       task: item.task,
@@ -310,6 +328,13 @@ export default function DayView({
       newEndMin: item.endMin,
       startClientY: e.clientY,
       moved: false,
+      overDeck: false,
+      gridTopAtStart: gridRef.current?.getBoundingClientRect().top ?? 0,
+      cardWidth: rect.width,
+      grabOffsetX: e.clientX - rect.left,
+      grabOffsetY: e.clientY - rect.top,
+      cursorX: e.clientX,
+      cursorY: e.clientY,
     });
     e.preventDefault();
   }
@@ -367,20 +392,36 @@ export default function DayView({
       }
       if (dragMove) {
         const dy = Math.abs(e.clientY - dragMove.startClientY);
-        const y = getRelY(e.clientY);
-        const duration = dragMove.origEndMin - dragMove.origStartMin;
-        const rawStart = Math.max(0, Math.min(pxToMin(y - dragMove.offsetPx), 1440 - duration));
-        const newStartMin = Math.round(rawStart / 15) * 15;
-        setDragMove((prev) =>
-          prev
-            ? {
-                ...prev,
-                newStartMin,
-                newEndMin: newStartMin + duration,
-                moved: prev.moved || dy > DRAG_MOVE_THRESHOLD,
-              }
-            : null,
-        );
+        // Threshold is captured once at drag-start (not re-measured live) so the deck row
+        // appearing/growing mid-drag can't shift the grid's top and re-trigger this check.
+        const overDeck = e.clientY < dragMove.gridTopAtStart;
+        if (overDeck) {
+          if (floatingMoveCardRef.current) {
+            floatingMoveCardRef.current.style.left = `${e.clientX - dragMove.grabOffsetX}px`;
+            floatingMoveCardRef.current.style.top = `${e.clientY - dragMove.grabOffsetY}px`;
+          }
+          if (!dragMove.overDeck) {
+            setDragMove((prev) =>
+              prev ? { ...prev, overDeck: true, moved: true, cursorX: e.clientX, cursorY: e.clientY } : null,
+            );
+          }
+        } else {
+          const y = getRelY(e.clientY);
+          const duration = dragMove.origEndMin - dragMove.origStartMin;
+          const rawStart = Math.max(0, Math.min(pxToMin(y - dragMove.offsetPx), 1440 - duration));
+          const newStartMin = Math.round(rawStart / 15) * 15;
+          setDragMove((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  newStartMin,
+                  newEndMin: newStartMin + duration,
+                  moved: prev.moved || dy > DRAG_MOVE_THRESHOLD,
+                  overDeck: false,
+                }
+              : null,
+          );
+        }
       }
       if (dragResize) {
         const y = getRelY(e.clientY);
@@ -454,7 +495,9 @@ export default function DayView({
       setDragCreate(null);
     }
     if (dragMove) {
-      if (dragMove.moved) {
+      if (dragMove.overDeck) {
+        await deleteTimeEntry(dragMove.taskId, dateStr);
+      } else if (dragMove.moved) {
         if (dragMove.newStartMin !== dragMove.origStartMin) {
           await saveTimeEntry(dragMove.taskId, dateStr, minToTime(dragMove.newStartMin), minToTime(dragMove.newEndMin));
         }
@@ -486,7 +529,7 @@ export default function DayView({
       // else: card returns to deck naturally (dragDeckTask cleared)
       setDragDeckTask(null);
     }
-  }, [dateStr, saveTimeEntry, onTaskClick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dateStr, saveTimeEntry, deleteTimeEntry, onTaskClick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Register listeners only when drag starts/stops — not on every state update.
   const isDragging = !!(dragCreate || dragMove || dragResize || dragDeckTask);
@@ -520,10 +563,16 @@ export default function DayView({
   return (
     <div className="day-view">
       {/* Unscheduled task deck — fixed row above the scrollable grid */}
-      {unscheduledTasks.length > 0 && (
-        <div className="day-deck-row" style={{ height: displayDeckHeight + 28 }}>
+      {(unscheduledTasks.length > 0 || dragMove?.overDeck) && (
+        <div
+          className={`day-deck-row${dragMove?.overDeck ? " day-deck-row-drag-target" : ""}`}
+          style={{ height: displayDeckHeight + 28 }}
+        >
           <div className="day-deck-gutter-spacer" />
           <div className="day-deck-events-area">
+            {dragMove?.overDeck && unscheduledTasks.length === 0 && (
+              <div className="day-deck-drop-hint">{t.calendar.dropToUnschedule}</div>
+            )}
             <div
               ref={deckCardsClipRef}
               className="day-deck-cards-clip"
@@ -618,6 +667,8 @@ export default function DayView({
 
           {/* Task blocks */}
           {layoutItems.map((item) => {
+            // Being dragged back up toward the deck — hide here, the floating card takes over.
+            if (dragMove?.taskId === item.task.id && dragMove.overDeck) return null;
             const isMoving = dragMove?.taskId === item.task.id && dragMove.moved;
             const isResizing = dragResize?.taskId === item.task.id;
             const startMin = isMoving ? dragMove!.newStartMin : isResizing ? dragResize!.newStartMin : item.startMin;
@@ -842,6 +893,36 @@ export default function DayView({
           }}
         >
           <div className="day-task-title">{dragDeckTask.task.title}</div>
+        </div>,
+        document.body
+      )}
+
+      {/* Floating cursor ghost — visible while dragging a scheduled task up toward the deck */}
+      {dragMove && dragMove.overDeck && createPortal(
+        <div
+          ref={floatingMoveCardRef}
+          style={{
+            position: "fixed",
+            left: dragMove.cursorX - dragMove.grabOffsetX,
+            top: dragMove.cursorY - dragMove.grabOffsetY,
+            width: dragMove.cardWidth,
+            height: CARD_HEIGHT,
+            borderRadius: 4,
+            padding: "3px 6px",
+            fontSize: "0.88rem",
+            overflow: "hidden",
+            boxSizing: "border-box",
+            userSelect: "none",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.32)",
+            backgroundColor: dragMove.task.color ?? categoryColors[dragMove.task.category],
+            borderLeft: `3px solid ${dragMove.task.color ?? categoryColors[dragMove.task.category]}`,
+            opacity: 0.92,
+            pointerEvents: "none",
+            zIndex: 9999,
+            transform: "rotate(-2deg) scale(1.03)",
+          }}
+        >
+          <div className="day-task-title">{dragMove.task.title}</div>
         </div>,
         document.body
       )}

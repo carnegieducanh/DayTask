@@ -293,6 +293,7 @@ export const en: typeof vi = {
     filterNoTime: "",
     noTitle: "(No title)",
     removeFromCalendar: "Remove from calendar",
+    dropToUnschedule: "Drop to unschedule",
     pendingTasks: (n: number) => `${n} task${n === 1 ? "" : "s"} pending`,
     weekStats: "Week total",
     monthStats: "Month total",
