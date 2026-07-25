@@ -133,10 +133,19 @@
   overflow: visible;
 }
 
-/* Note floats absolutely — does not stretch topbar row height */
+/* Note floats absolutely — does not stretch topbar row height. Height is
+   always auto (no `bottom`) rather than a fixed top+bottom box: fixing
+   both edges turns this into a flex column with a capped main-axis size,
+   and flexbox's default flex-shrink:1 then fights the card's max-height
+   growth on hover — capping the visible expansion almost immediately
+   instead of letting it play out. Auto height removes that ceiling
+   entirely (being position:absolute, it doesn't affect the topbar's own
+   layout either way). */
 .today-topbar-actions .vocab-widget-note {
   position: absolute;
-  inset: 6px 0;
+  top: 6px;
+  left: 0;
+  right: 0;
   margin-top: 0;
   display: flex;
   flex-direction: column;
@@ -155,9 +164,10 @@
   pointer-events: auto;
 }
 
-/* On hover: remove bottom constraint so card expands downward */
+/* On hover: raise stacking order so the expanding card paints above
+   later-DOM siblings (wrapper box stays fixed-size; ancestors already
+   flip to overflow:visible above, so the card overflows it freely). */
 .today-topbar-actions .vocab-widget-note:has(.vocab-widget:hover) {
-  bottom: auto;
   z-index: 50;
 }
 
@@ -167,6 +177,7 @@
   width: 100%;
   max-width: 270px;
   pointer-events: auto;
+  flex-shrink: 0;
 }
 
 .today-topbar-actions .vocab-widget-note .vocab-widget-word-row {
@@ -195,8 +206,12 @@
   text-overflow: ellipsis;
 }
 
-/* On hover: show full meaning */
-.today-topbar-actions .vocab-widget:hover .vocab-widget-meaning {
+/* Expanded state is toggled by VocabWidget.tsx (imperative class, not
+   :hover) so the meaning un-wraps in the same synchronous step as the
+   height measurement that depends on it — see the long comment on
+   expand()/collapse() in VocabWidget.tsx for why this isn't driven by the
+   :hover pseudo-class directly. */
+.today-topbar-actions .vocab-widget-note .vocab-widget-content.vocab-widget-content-expanded .vocab-widget-meaning {
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
@@ -206,16 +221,15 @@
   font-size: 0.85rem;
 }
 
+/* Baseline always shows word/IPA/divider/meaning (1 line) — never
+   collapses to nothing. `transition` is intentionally NOT declared here:
+   VocabWidget.tsx sets it inline right before each animation step (after
+   pinning the current height and forcing a reflow), which is what
+   guarantees a smooth interpolation instead of an abrupt jump. */
 .today-topbar-actions .vocab-widget-note .vocab-widget-content {
   padding-bottom: 0;
   overflow: hidden;
   max-height: 6em;
-  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.today-topbar-actions .vocab-widget:hover .vocab-widget-content {
-  max-height: 14em;
-  transition: max-height 0.4s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .today-topbar-actions .vocab-note-botanical,
@@ -315,7 +329,6 @@
   min-width: 250px;
   max-width: 100%;
   cursor: pointer;
-  user-select: none;
 }
 .vocab-widget-label {
   font-size: 0.75rem;
