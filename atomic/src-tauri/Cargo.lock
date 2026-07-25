@@ -244,7 +244,7 @@ dependencies = [
 
 [[package]]
 name = "atomic"
-version = "0.3.26"
+version = "0.3.27"
 dependencies = [
  "serde",
  "serde_json",
