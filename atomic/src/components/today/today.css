@@ -938,8 +938,12 @@
   padding: 10px 14px;
   cursor: pointer;
   border-radius: 3px 0 3px 3px;
-  background: radial-gradient(ellipse at 50% 38%, #e8d9a8 0%, #e2ce9a 55%, #dac48a 100%);
-  border: 1px solid rgba(150, 118, 65, 0.22);
+  background:
+    radial-gradient(circle at 18% 22%, rgba(107, 79, 42, 0.12) 0%, transparent 42%),
+    radial-gradient(circle at 82% 65%, rgba(107, 79, 42, 0.1) 0%, transparent 38%),
+    radial-gradient(circle at 45% 88%, rgba(107, 79, 42, 0.09) 0%, transparent 32%),
+    radial-gradient(ellipse at 50% 38%, #ded1b0 0%, #cebb90 55%, #b39d72 100%);
+  border: 1px solid rgba(110, 90, 60, 0.28);
   box-shadow:
     2px 5px 14px rgba(80, 55, 30, 0.14),
     0 1px 3px rgba(0, 0, 0, 0.07);
@@ -975,7 +979,7 @@
   height: 0;
   border-style: solid;
   border-width: 0 26px 26px 0;
-  border-color: transparent #d2bc7e transparent transparent;
+  border-color: transparent #b39d72 transparent transparent;
   box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.28);
   z-index: 3;
   pointer-events: none;
@@ -1001,13 +1005,65 @@
   position: relative;
   padding: 12px 14px 16px;
   border-radius: 3px 0 3px 3px;
-  background: radial-gradient(ellipse at 50% 38%, #e8d9a8 0%, #e2ce9a 55%, #dac48a 100%);
-  border: 1px solid rgba(150, 118, 65, 0.22);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(107, 79, 42, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 84% 42%, rgba(107, 79, 42, 0.1) 0%, transparent 36%),
+    radial-gradient(circle at 30% 72%, rgba(107, 79, 42, 0.09) 0%, transparent 34%),
+    radial-gradient(circle at 70% 92%, rgba(90, 65, 35, 0.08) 0%, transparent 30%),
+    radial-gradient(ellipse at 50% 38%, #ded1b0 0%, #cebb90 55%, #b39d72 100%);
+  border: 1px solid rgba(110, 90, 60, 0.28);
   box-shadow:
     2px 5px 18px rgba(80, 55, 30, 0.18),
     0 1px 3px rgba(0, 0, 0, 0.08);
   transition: box-shadow 0.25s ease;
   overflow: visible;
+}
+/* Deckled/wavy paper edge on left+right sides. The left edge waves start
+   right at the top; only the top-right 30×30 corner stays flat (a patch
+   just big enough to clear the 26×26 fold triangle in ::after — the tape
+   in ::before is horizontally centered so it never overlaps either edge
+   and needs no protection). Each notch layer spans the full box width
+   (opaque except its own edge bite) and combines via mask-composite:
+   intersect, so a hole in one layer isn't painted back over by the other
+   layer's opaque fill — the default "add" compositing would just union
+   the two opaque areas back into a solid box instead of subtracting the
+   notches. */
+.wc-dormant,
+.weekly-checklist {
+  --wc-wave-r: 7px;
+  mask-image:
+    linear-gradient(#000, #000),
+    radial-gradient(
+      circle var(--wc-wave-r) at 0 var(--wc-wave-r),
+      transparent calc(var(--wc-wave-r) - 1px),
+      #000 var(--wc-wave-r)
+    ),
+    radial-gradient(
+      circle var(--wc-wave-r) at 100% var(--wc-wave-r),
+      transparent calc(var(--wc-wave-r) - 1px),
+      #000 var(--wc-wave-r)
+    ),
+    linear-gradient(#000, #000);
+  mask-size:
+    30px 30px,
+    100% calc(var(--wc-wave-r) * 2),
+    100% calc(var(--wc-wave-r) * 2),
+    100% 100%;
+  mask-position:
+    right top,
+    top,
+    top,
+    center;
+  mask-repeat:
+    no-repeat,
+    repeat-y,
+    repeat-y,
+    no-repeat;
+  mask-composite:
+    add,
+    intersect,
+    intersect,
+    add;
 }
 .weekly-checklist::before {
   content: "";
@@ -1038,7 +1094,7 @@
   height: 0;
   border-style: solid;
   border-width: 0 26px 26px 0;
-  border-color: transparent #d2bc7e transparent transparent;
+  border-color: transparent #b39d72 transparent transparent;
   box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.28);
   z-index: 3;
   pointer-events: none;
