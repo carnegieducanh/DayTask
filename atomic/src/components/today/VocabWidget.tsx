@@ -85,7 +85,16 @@ export default function VocabWidget({ noteStyle = false }: { noteStyle?: boolean
   const expand = useCallback(() => {
     const el = contentRef.current;
     if (!el) return;
-    const collapsedPx = el.getBoundingClientRect().height;
+    // offsetHeight, not getBoundingClientRect() — the card has `transform:
+    // rotate(-0.5deg)` (note style), and getBoundingClientRect returns the
+    // post-rotation axis-aligned box, which for a wide-short element inflates
+    // the height reading by several px versus its true local size. scrollHeight
+    // (used for fullPx below) is transform-independent, so comparing it against
+    // a rotated getBoundingClientRect was an apples-to-oranges mismatch — small
+    // enough to hide behind a real multi-line expansion, but the dominant
+    // (and only) visible effect when the content barely grows (single-line
+    // meaning), producing an instant micro-jump before any transition starts.
+    const collapsedPx = el.offsetHeight;
     el.classList.add(EXPANDED_CLASS);
     const fullPx = el.scrollHeight;
     if (fullPx <= collapsedPx) {
@@ -97,23 +106,35 @@ export default function VocabWidget({ noteStyle = false }: { noteStyle?: boolean
     el.style.transition = 'none';
     el.style.maxHeight = `${collapsedPx}px`;
     void el.offsetHeight; // force reflow — commits the pinned height as a real frame
+    // Double rAF (matches the collapse animation in TodayView.tsx): a single
+    // rAF fires before the browser has necessarily *painted* the pinned-height
+    // frame — under a heavier paint load (wider window, more content/blur to
+    // composite) the pin and the transition-start can get coalesced into one
+    // style flush, producing an instant snap instead of an animated frame-to-
+    // frame interpolation. Nesting a second rAF defers the transition-enabling
+    // step to the frame *after* the pinned height has actually been rendered.
     requestAnimationFrame(() => {
-      el.style.transition = `max-height ${EXPAND_MS}ms cubic-bezier(0.65, 0, 0.35, 1)`;
-      el.style.maxHeight = `${fullPx}px`;
+      requestAnimationFrame(() => {
+        el.style.transition = `max-height ${EXPAND_MS}ms cubic-bezier(0.65, 0, 0.35, 1)`;
+        el.style.maxHeight = `${fullPx}px`;
+      });
     });
   }, []);
 
   const collapse = useCallback(() => {
     const el = contentRef.current;
     if (!el) return;
-    const currentPx = el.getBoundingClientRect().height;
+    const currentPx = el.offsetHeight; // see offsetHeight note in expand() above
     el.style.transition = 'none';
     el.style.maxHeight = `${currentPx}px`; // pin wherever it actually is (handles mid-expand interruption)
     void el.offsetHeight;
+    // Double rAF — see the matching comment in expand() above.
     requestAnimationFrame(() => {
-      el.style.transition = `max-height ${COLLAPSE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`;
-      el.style.maxHeight = '';
-      el.classList.remove(EXPANDED_CLASS);
+      requestAnimationFrame(() => {
+        el.style.transition = `max-height ${COLLAPSE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`;
+        el.style.maxHeight = '';
+        el.classList.remove(EXPANDED_CLASS);
+      });
     });
   }, []);
 
