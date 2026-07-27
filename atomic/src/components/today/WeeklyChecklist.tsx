@@ -167,6 +167,16 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
             <div className="wc-header-left">
               <span className="wc-title">{t.weeklyChecklist.title}</span>
               <span className="wc-date-range">{weekRange}</span>
+              {!adding && (
+                <button
+                  className="wc-add-row"
+                  onClick={() => setAdding(true)}
+                  title={t.weeklyChecklist.addPlaceholder}
+                >
+                  <IconPlus size={12} />
+                  <span>{t.weeklyChecklist.addLabel}</span>
+                </button>
+              )}
             </div>
             <div className="wc-header-right">
               {items.length > 0 && (
@@ -217,7 +227,7 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
               </div>
             ))}
 
-            {adding ? (
+            {adding && (
               <div className="wc-item">
                 <input
                   ref={addInputRef}
@@ -230,15 +240,6 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
                   spellCheck={false}
                 />
               </div>
-            ) : (
-              <button
-                className="wc-add-row"
-                onClick={() => setAdding(true)}
-                title={t.weeklyChecklist.addPlaceholder}
-              >
-                <IconPlus size={12} />
-                <span>{t.weeklyChecklist.addLabel}</span>
-              </button>
             )}
           </div>
 
