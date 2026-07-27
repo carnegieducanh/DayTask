@@ -993,6 +993,8 @@
 .wc-paper {
   position: relative;
   z-index: 1;
+  container-type: inline-size;
+  container-name: wc-card;
   background:
     radial-gradient(circle at 18% 18%, rgba(107, 79, 42, 0.12) 0%, transparent 40%),
     radial-gradient(circle at 84% 42%, rgba(107, 79, 42, 0.1) 0%, transparent 36%),
@@ -1331,7 +1333,8 @@
   display: flex;
   align-items: baseline;
   gap: 9px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 .wc-title {
   font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
@@ -1347,7 +1350,7 @@
   font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
   font-style: italic;
   font-size: 1rem;
-  color: #8a5a3d;
+  color: #734b34;
   white-space: nowrap;
 }
 .wc-week-badge {
@@ -1366,7 +1369,6 @@
   gap: 8px;
   flex-shrink: 0;
   white-space: nowrap;
-  margin-left: auto;
 }
 .wc-stats {
   font-family: "Segoe Script", "Palatino Linotype", Georgia, serif;
@@ -1387,6 +1389,32 @@
   background-position: left bottom;
   background-size: 100% 8px;
   white-space: nowrap;
+}
+
+/* Progressively drop the least essential header bits before the browser is
+   forced to wrap .wc-header-right onto its own line. Queries the paper's own
+   width, not the viewport, since it's a flexible middle column that can
+   shrink independently of window size. .wc-tagline is kept visible as long
+   as possible — .wc-stats and the add-row label are dropped first so
+   wrapping only happens near the app's minimum window width.
+   .wc-header-left is nowrap/no-shrink (see above) so title + date-range +
+   add-row always wrap down together as one unit instead of splitting apart
+   internally; .wc-header-right has no margin-left:auto (redundant with the
+   parent's justify-content:space-between when both share a line, and it
+   used to strand the wrapped line on the right with a big empty gap) so
+   once it does drop to its own line it lands flush left under .wc-header-left. */
+@container wc-card (max-width: 640px) {
+  .wc-stats {
+    display: none;
+  }
+}
+@container wc-card (max-width: 460px) {
+  .wc-add-row span {
+    display: none;
+  }
+  .wc-add-row {
+    gap: 0;
+  }
 }
 
 .wc-divider {
