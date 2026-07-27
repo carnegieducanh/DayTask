@@ -269,6 +269,7 @@ export const vi = {
     noTitle: "(Chưa đặt tên)",
     removeFromCalendar: "Xóa khỏi lịch",
     dropToUnschedule: "Thả để bỏ khỏi lịch",
+    dropToDuplicateUnscheduled: "Thả để tạo bản sao chưa xếp lịch",
     pendingTasks: (n: number) => `${n} task chưa hoàn thành`,
     weekStats: "Tổng tuần",
     monthStats: "Tổng tháng",

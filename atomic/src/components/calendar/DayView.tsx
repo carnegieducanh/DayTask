@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react
 import { createPortal } from "react-dom";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import { format } from "date-fns";
-import { IconTag, IconTrash, IconCheck, IconCalendarMinus } from "@tabler/icons-react";
+import { IconTag, IconTrash, IconCheck, IconCalendarMinus, IconCopy } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 
 const COLOR_PALETTE: string[] = [
@@ -146,6 +146,7 @@ interface DragMove {
   grabOffsetY: number;
   cursorX: number;
   cursorY: number;
+  duplicate: boolean; // Shift held — dragging creates a copy instead of moving the original
 }
 
 interface DragResize {
@@ -184,6 +185,7 @@ export default function DayView({
     taskTimeEntries,
     saveTimeEntry,
     deleteTimeEntry,
+    duplicateTask,
     softDeleteTask,
     updateTaskColor,
     categoryColors,
@@ -351,6 +353,7 @@ export default function DayView({
       grabOffsetY: e.clientY - rect.top,
       cursorX: e.clientX,
       cursorY: e.clientY,
+      duplicate: e.shiftKey,
     });
     e.preventDefault();
   }
@@ -522,7 +525,16 @@ export default function DayView({
       setDragCreate(null);
     }
     if (dragMove) {
-      if (dragMove.overDeck) {
+      if (dragMove.duplicate && dragMove.moved) {
+        if (dragMove.overDeck) {
+          await duplicateTask(dragMove.taskId, dateStr);
+        } else {
+          await duplicateTask(dragMove.taskId, dateStr, {
+            startTime: minToTime(dragMove.newStartMin),
+            endTime: minToTime(dragMove.newEndMin),
+          });
+        }
+      } else if (dragMove.overDeck) {
         await deleteTimeEntry(dragMove.taskId, dateStr);
       } else if (dragMove.moved) {
         if (dragMove.newStartMin !== dragMove.origStartMin) {
@@ -556,7 +568,23 @@ export default function DayView({
       // else: card returns to deck naturally (dragDeckTask cleared)
       setDragDeckTask(null);
     }
-  }, [dateStr, saveTimeEntry, deleteTimeEntry, onTaskClick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dateStr, saveTimeEntry, deleteTimeEntry, duplicateTask, onTaskClick]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Live Shift toggle while dragging a scheduled task — lets the user press/release
+  // Shift mid-drag to switch between "move" and "duplicate" before releasing the mouse.
+  const handleWindowKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key !== "Shift") return;
+    if (dragMoveRef.current && !dragMoveRef.current.duplicate) {
+      setDragMove((prev) => (prev ? { ...prev, duplicate: true } : null));
+    }
+  }, []);
+
+  const handleWindowKeyUp = useCallback((e: KeyboardEvent) => {
+    if (e.key !== "Shift") return;
+    if (dragMoveRef.current && dragMoveRef.current.duplicate) {
+      setDragMove((prev) => (prev ? { ...prev, duplicate: false } : null));
+    }
+  }, []);
 
   // Register listeners only when drag starts/stops — not on every state update.
   const isDragging = !!(dragCreate || dragMove || dragResize || dragDeckTask);
@@ -564,11 +592,15 @@ export default function DayView({
     if (!isDragging) return;
     window.addEventListener("mousemove", handleWindowMouseMove);
     window.addEventListener("mouseup", handleWindowMouseUp);
+    window.addEventListener("keydown", handleWindowKeyDown);
+    window.addEventListener("keyup", handleWindowKeyUp);
     return () => {
       window.removeEventListener("mousemove", handleWindowMouseMove);
       window.removeEventListener("mouseup", handleWindowMouseUp);
+      window.removeEventListener("keydown", handleWindowKeyDown);
+      window.removeEventListener("keyup", handleWindowKeyUp);
     };
-  }, [isDragging, handleWindowMouseMove, handleWindowMouseUp]);
+  }, [isDragging, handleWindowMouseMove, handleWindowMouseUp, handleWindowKeyDown, handleWindowKeyUp]);
 
   // Runs synchronously after React commits the ghost element, before paint.
   // Restores the cursor-following `top` that direct DOM set — React would have
@@ -588,7 +620,7 @@ export default function DayView({
     if (movingBlockRef.current) {
       movingBlockRef.current.style.top = `${moveTopRef.current}px`;
     }
-  }, [dragMove?.moved, dragMove?.newStartMin, dragMove?.overDeck]);
+  }, [dragMove?.moved, dragMove?.newStartMin, dragMove?.overDeck, dragMove?.duplicate]);
 
   const tzOffset = -new Date().getTimezoneOffset() / 60;
   const tzLabel = `GMT${tzOffset >= 0 ? "+" : ""}${tzOffset}`;
@@ -608,7 +640,9 @@ export default function DayView({
           <div className="day-deck-gutter-spacer" />
           <div className="day-deck-events-area">
             {dragMove?.overDeck && unscheduledTasks.length === 0 && (
-              <div className="day-deck-drop-hint">{t.calendar.dropToUnschedule}</div>
+              <div className="day-deck-drop-hint">
+                {dragMove.duplicate ? t.calendar.dropToDuplicateUnscheduled : t.calendar.dropToUnschedule}
+              </div>
             )}
             <div
               ref={deckCardsClipRef}
@@ -705,8 +739,9 @@ export default function DayView({
           {/* Task blocks */}
           {layoutItems.map((item) => {
             // Being dragged back up toward the deck — hide here, the floating card takes over.
-            if (dragMove?.taskId === item.task.id && dragMove.overDeck) return null;
-            const isMoving = dragMove?.taskId === item.task.id && dragMove.moved;
+            // (Duplicate drags keep the original visible — only the copy is affected.)
+            if (dragMove?.taskId === item.task.id && dragMove.overDeck && !dragMove.duplicate) return null;
+            const isMoving = dragMove?.taskId === item.task.id && dragMove.moved && !dragMove.duplicate;
             const isResizing = dragResize?.taskId === item.task.id;
             const startMin = isMoving ? dragMove!.newStartMin : isResizing ? dragResize!.newStartMin : item.startMin;
             const endMin = isMoving ? dragMove!.newEndMin : isResizing ? dragResize!.newEndMin : item.endMin;
@@ -801,6 +836,41 @@ export default function DayView({
               </div>
             );
           })}
+
+          {/* Duplicate drag ghost — Shift+drag on a scheduled task: original stays put above,
+              this follows the cursor and previews where the new copy will land. */}
+          {dragMove && dragMove.moved && dragMove.duplicate && !dragMove.overDeck && (() => {
+            const color = dragMove.task.color ?? categoryColors[dragMove.task.category];
+            const height = blockHeight(dragMove.newEndMin - dragMove.newStartMin);
+            return (
+              <div
+                ref={(el) => { movingBlockRef.current = el; }}
+                className="day-task-block dragging day-task-block-duplicate"
+                style={{
+                  // `top` intentionally omitted — owned entirely by direct DOM (mousemove + useLayoutEffect).
+                  height,
+                  left: "0.5%",
+                  width: "98%",
+                  backgroundColor: color,
+                  borderLeft: `3px solid ${color}`,
+                  zIndex: 50,
+                  pointerEvents: "none",
+                }}
+              >
+                <div className="day-task-title">
+                  <IconCopy size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />
+                  {dragMove.task.title}
+                </div>
+                {height >= 34 && (
+                  <div className="day-task-meta">
+                    <span className="day-task-time">
+                      {minToTime(dragMove.newStartMin)} – {minToTime(dragMove.newEndMin)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Deck drag ghost — shows on timeline while dragging from deck */}
           {dragDeckTask && dragDeckTask.startMin !== -1 && (
@@ -964,7 +1034,10 @@ export default function DayView({
             transform: "rotate(-2deg) scale(1.03)",
           }}
         >
-          <div className="day-task-title">{dragMove.task.title}</div>
+          <div className="day-task-title">
+            {dragMove.duplicate && <IconCopy size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />}
+            {dragMove.task.title}
+          </div>
         </div>,
         document.body
       )}

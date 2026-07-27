@@ -37,6 +37,7 @@ export interface TaskSlice {
   saveTimeEntry: (taskId: number, date: string, startTime: string, endTime: string) => Promise<void>;
   deleteTimeEntry: (taskId: number, date: string) => Promise<void>;
   addTask: (task: NewTask, timeEntry?: { startTime: string; endTime: string }, tagIds?: number[]) => Promise<void>;
+  duplicateTask: (sourceId: number, date: string, timeEntry?: { startTime: string; endTime: string }) => Promise<void>;
   updateTask: (id: number, updates: TaskUpdate) => Promise<void>;
   toggleTask: (id: number) => Promise<void>;
   deleteTask: (id: number) => Promise<void>;
@@ -248,6 +249,45 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       for (const tagId of tagIds) {
         await db.execute('INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES ($1, $2)', [newTaskId, tagId]);
       }
+    }
+    await get().loadTasks(get().selectedDate);
+  },
+
+  duplicateTask: async (sourceId, date, timeEntry) => {
+    const source = get().tasks.find((t) => t.id === sourceId) ?? get().calendarTasks.find((t) => t.id === sourceId);
+    if (!source) return;
+    const sourceTagIds = get().taskTags[sourceId] ?? [];
+
+    if (!isTauri()) {
+      const newTask = dbAddTask({
+        title: source.title, description: source.description, category: source.category,
+        date, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, color: source.color,
+      });
+      if (timeEntry) dbSaveTimeEntry(newTask.id, date, timeEntry.startTime, timeEntry.endTime);
+      if (sourceTagIds.length) dbSetTaskTags(newTask.id, sourceTagIds);
+      set({
+        tasks: dbGetTasks(get().selectedDate),
+        taskTimeEntries: dbGetTimeEntries(get().selectedDate),
+        taskTags: dbGetTaskTagsForDate(get().selectedDate),
+      });
+      return;
+    }
+
+    const db = await getDb();
+    const result = await db.execute(
+      `INSERT INTO tasks (title, description, category, date, repeat_daily, color) VALUES ($1, $2, $3, $4, 0, $5)`,
+      [source.title, source.description, source.category, date, source.color]
+    );
+    const newTaskId = result.lastInsertId;
+    if (!newTaskId) return;
+    if (timeEntry) {
+      await db.execute(
+        'INSERT OR REPLACE INTO task_time_entries (task_id, date, start_time, end_time) VALUES ($1, $2, $3, $4)',
+        [newTaskId, date, timeEntry.startTime, timeEntry.endTime]
+      );
+    }
+    for (const tagId of sourceTagIds) {
+      await db.execute('INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES ($1, $2)', [newTaskId, tagId]);
     }
     await get().loadTasks(get().selectedDate);
   },

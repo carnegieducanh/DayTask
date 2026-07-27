@@ -1218,6 +1218,14 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
 }
 
+.day-task-block-duplicate {
+  outline: 1.5px dashed rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .day-task-block-duplicate {
+  outline-color: rgba(255, 255, 255, 0.55);
+}
+
 .day-resize-handle {
   position: absolute;
   left: 0;
