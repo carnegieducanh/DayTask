@@ -1279,6 +1279,18 @@
   white-space: nowrap;
 }
 
+/* .tag / .task-tag-chip kế thừa line-height: 1.5 từ body — với text 1 dòng ngắn,
+   điều này khiến pill cao hơn mức cần thiết (~25px thay vì ~19px), làm hàng meta của
+   block ngắn (VD 45 phút, cao 54px) gần như không còn khoảng thở phía dưới. Siết lại
+   line-height: 1 chỉ trong ngữ cảnh Day view — không đụng đến chỗ khác đang dùng chung
+   class .tag/.task-tag-chip (TaskCard, WeekView, MonthView...). */
+.day-task-meta .tag,
+.day-task-meta .task-tag-chip,
+.day-task-compact-row .tag,
+.day-task-compact-row .task-tag-chip {
+  line-height: 1;
+}
+
 .day-task-block-pending {
   pointer-events: none;
 }
