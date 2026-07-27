@@ -256,13 +256,24 @@ export default function DayView({
   const shouldScroll = deckExpanded && !deckClosing && unscheduledTasks.length > DECK_SCROLL_MAX;
   const displayDeckHeight = shouldScroll ? maxScrollDeckHeight : deckHeight;
 
-  // Update current-time indicator every minute
+  // Update current-time indicator every minute, aligned to the real clock's minute
+  // boundary — a plain setInterval(60_000) drifts from mount time and can lag up to
+  // 59s behind the actual minute.
   useEffect(() => {
-    const id = setInterval(() => {
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+    function tick() {
       const now = new Date();
       setCurrentTimeMin(now.getHours() * 60 + now.getMinutes());
-    }, 60_000);
-    return () => clearInterval(id);
+    }
+    const msToNextMinute = 60_000 - (Date.now() % 60_000);
+    const timeoutId = setTimeout(() => {
+      tick();
+      intervalId = setInterval(tick, 60_000);
+    }, msToNextMinute);
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
   }, []);
 
   // Scroll to current time (−1h) or 08:00 when date changes
