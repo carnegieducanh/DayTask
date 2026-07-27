@@ -429,7 +429,10 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     delete calendarTaskTags[task.id];
     set({
       pendingDeleteTask: null,
+      tasks: get().tasks.filter((t) => t.id !== task.id),
       calendarTasks: get().calendarTasks.filter((t) => t.id !== task.id),
+      taskTimeEntries: get().taskTimeEntries.filter((e) => e.task_id !== task.id),
+      calendarTimeEntries: get().calendarTimeEntries.filter((e) => e.task_id !== task.id),
       calendarTaskTags,
     });
     if (!isTauri()) {
@@ -458,6 +461,7 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
         await db.execute('DELETE FROM tasks WHERE series_id = $1 AND date >= $2', [templateId, task.date]);
       }
     } else {
+      await db.execute('DELETE FROM task_time_entries WHERE task_id = $1', [task.id]);
       await db.execute('DELETE FROM task_tags WHERE task_id = $1', [task.id]);
       await db.execute('DELETE FROM tasks WHERE id = $1', [task.id]);
     }

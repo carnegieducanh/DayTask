@@ -244,6 +244,10 @@ export function dbDeleteTask(id: number): void {
     if (idx !== -1) {
       delete mockTaskTags[id];
       mockTasks.splice(idx, 1);
+      for (let i = mockTimeEntries.length - 1; i >= 0; i--) {
+        if (mockTimeEntries[i].task_id === id) mockTimeEntries.splice(i, 1);
+      }
+      persistTimeEntries();
     }
   }
 }
