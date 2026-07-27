@@ -932,25 +932,11 @@
 
 .wc-dormant {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 10px 14px;
   cursor: pointer;
-  border-radius: 3px 0 3px 3px;
-  background:
-    radial-gradient(circle at 18% 22%, rgba(107, 79, 42, 0.12) 0%, transparent 42%),
-    radial-gradient(circle at 82% 65%, rgba(107, 79, 42, 0.1) 0%, transparent 38%),
-    radial-gradient(circle at 45% 88%, rgba(107, 79, 42, 0.09) 0%, transparent 32%),
-    radial-gradient(ellipse at 50% 38%, #ded1b0 0%, #cebb90 55%, #b39d72 100%);
-  border: 1px solid rgba(110, 90, 60, 0.28);
-  box-shadow:
-    2px 5px 14px rgba(80, 55, 30, 0.14),
-    0 1px 3px rgba(0, 0, 0, 0.07);
-  transition: box-shadow 0.25s ease;
   overflow: visible;
 }
-.wc-dormant::before {
+.wc-dormant::before,
+.weekly-checklist::before {
   content: "";
   position: absolute;
   width: 68px;
@@ -959,35 +945,25 @@
   left: 50%;
   transform: translateX(-50%);
   border-radius: 2px;
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(90, 140, 100, 0.52) 0px,
-    rgba(90, 140, 100, 0.52) 4px,
-    rgba(185, 225, 190, 0.38) 4px,
-    rgba(185, 225, 190, 0.38) 8px
-  );
+  background:
+    repeating-linear-gradient(
+      108deg,
+      rgba(255, 255, 255, 0.16) 0px,
+      rgba(255, 255, 255, 0.16) 2px,
+      transparent 2px,
+      transparent 6px
+    ),
+    repeating-linear-gradient(
+      108deg,
+      rgba(80, 60, 30, 0.1) 0px,
+      rgba(80, 60, 30, 0.1) 1px,
+      transparent 1px,
+      transparent 10px
+    ),
+    linear-gradient(100deg, rgba(216, 197, 160, 0.78), rgba(182, 156, 114, 0.72));
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   pointer-events: none;
   z-index: 5;
-}
-.wc-dormant::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 0 26px 26px 0;
-  border-color: transparent #b39d72 transparent transparent;
-  box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.28);
-  z-index: 3;
-  pointer-events: none;
-}
-.wc-dormant:hover {
-  box-shadow:
-    3px 7px 24px rgba(80, 55, 30, 0.18),
-    0 2px 5px rgba(0, 0, 0, 0.08);
 }
 .wc-dormant-icon {
   color: #7a6045;
@@ -1003,103 +979,51 @@
 
 .weekly-checklist {
   position: relative;
-  padding: 12px 14px 16px;
-  border-radius: 3px 0 3px 3px;
+  overflow: visible;
+}
+
+/* Torn-edge paper silhouette shared by both states. Hand-authored jagged
+   polygon (not a repeating pattern) so the tear reads as irregular/organic
+   rather than a uniform sawtooth, with two larger bites at the top-right and
+   bottom-left corners to match the reference note's most visible tears.
+   Lives on this inner element (not .wc-dormant/.weekly-checklist) so the
+   washi tape (::before, sits above the top edge) and the falling leaves
+   (.wc-leaf-zone, also above the top edge) are NOT clipped away — clip-path
+   would otherwise cut off any content that pokes outside the box. */
+.wc-paper {
+  position: relative;
+  z-index: 1;
   background:
     radial-gradient(circle at 18% 18%, rgba(107, 79, 42, 0.12) 0%, transparent 40%),
     radial-gradient(circle at 84% 42%, rgba(107, 79, 42, 0.1) 0%, transparent 36%),
     radial-gradient(circle at 30% 72%, rgba(107, 79, 42, 0.09) 0%, transparent 34%),
     radial-gradient(circle at 70% 92%, rgba(90, 65, 35, 0.08) 0%, transparent 30%),
     radial-gradient(ellipse at 50% 38%, #ded1b0 0%, #cebb90 55%, #b39d72 100%);
-  border: 1px solid rgba(110, 90, 60, 0.28);
   box-shadow:
     2px 5px 18px rgba(80, 55, 30, 0.18),
     0 1px 3px rgba(0, 0, 0, 0.08);
   transition: box-shadow 0.25s ease;
-  overflow: visible;
-}
-/* Deckled/wavy paper edge on left+right sides. The left edge waves start
-   right at the top; only the top-right 30×30 corner stays flat (a patch
-   just big enough to clear the 26×26 fold triangle in ::after — the tape
-   in ::before is horizontally centered so it never overlaps either edge
-   and needs no protection). Each notch layer spans the full box width
-   (opaque except its own edge bite) and combines via mask-composite:
-   intersect, so a hole in one layer isn't painted back over by the other
-   layer's opaque fill — the default "add" compositing would just union
-   the two opaque areas back into a solid box instead of subtracting the
-   notches. */
-.wc-dormant,
-.weekly-checklist {
-  --wc-wave-r: 7px;
-  mask-image:
-    linear-gradient(#000, #000),
-    radial-gradient(
-      circle var(--wc-wave-r) at 0 var(--wc-wave-r),
-      transparent calc(var(--wc-wave-r) - 1px),
-      #000 var(--wc-wave-r)
-    ),
-    radial-gradient(
-      circle var(--wc-wave-r) at 100% var(--wc-wave-r),
-      transparent calc(var(--wc-wave-r) - 1px),
-      #000 var(--wc-wave-r)
-    ),
-    linear-gradient(#000, #000);
-  mask-size:
-    30px 30px,
-    100% calc(var(--wc-wave-r) * 2),
-    100% calc(var(--wc-wave-r) * 2),
-    100% 100%;
-  mask-position:
-    right top,
-    top,
-    top,
-    center;
-  mask-repeat:
-    no-repeat,
-    repeat-y,
-    repeat-y,
-    no-repeat;
-  mask-composite:
-    add,
-    intersect,
-    intersect,
-    add;
-}
-.weekly-checklist::before {
-  content: "";
-  position: absolute;
-  width: 68px;
-  height: 22px;
-  top: -11px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-radius: 2px;
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(90, 140, 100, 0.52) 0px,
-    rgba(90, 140, 100, 0.52) 4px,
-    rgba(185, 225, 190, 0.38) 4px,
-    rgba(185, 225, 190, 0.38) 8px
+  clip-path: polygon(
+    1% 0.5%, 8% 0%, 16% 0.6%, 24% 0.15%, 33% 0.6%, 42% 0%, 51% 0.6%, 60% 0.15%, 69% 0.6%, 78% 0%, 86% 0.5%,
+    92% 0.15%, 96% 1.2%, 100% 0.6%,
+    99.7% 14%, 100% 22%, 99.55% 30%, 100% 38%, 99.7% 46%, 100% 54%, 99.55% 62%, 100% 70%, 99.7% 78%, 100% 86%,
+    99.85% 94%, 99.4% 100%,
+    88% 99.55%, 79% 100%, 70% 99.55%, 61% 100%, 52% 99.55%, 43% 100%, 34% 99.55%, 25% 100%,
+    18% 99.7%, 12% 98.2%, 4% 99.4%, 0% 98.5%,
+    0.3% 82%, 0% 74%, 0.45% 66%, 0% 58%, 0.3% 50%, 0% 42%, 0.45% 34%, 0% 26%, 0.3% 18%, 0% 10%, 0.45% 6%
   );
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  pointer-events: none;
-  z-index: 5;
 }
-.weekly-checklist::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 0 26px 26px 0;
-  border-color: transparent #b39d72 transparent transparent;
-  box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.28);
-  z-index: 3;
-  pointer-events: none;
+.wc-dormant-paper {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
 }
-.weekly-checklist:hover {
+.weekly-checklist > .wc-paper {
+  padding: 12px 14px 16px;
+}
+.wc-dormant:hover .wc-paper,
+.weekly-checklist:hover .wc-paper {
   box-shadow:
     3px 7px 24px rgba(80, 55, 30, 0.22),
     0 2px 5px rgba(0, 0, 0, 0.1);
@@ -1114,6 +1038,7 @@
   width: 110px;
   overflow: hidden;
   pointer-events: none;
+  z-index: 2;
 }
 .wc-leaf-zone > span {
   position: absolute;
@@ -1353,16 +1278,35 @@
 
 .wc-header {
   display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-bottom: 6px;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  row-gap: 2px;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.wc-header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  flex-wrap: wrap;
 }
 .wc-title {
-  font-family: "Segoe Script", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  font-style: italic;
-  font-size: 0.9rem;
-  font-weight: 400;
+  font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   color: #3d2b1a;
+  white-space: nowrap;
+}
+.wc-date-range {
+  font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-style: italic;
+  font-size: 1rem;
+  color: #8a5a3d;
+  white-space: nowrap;
 }
 .wc-week-badge {
   font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
@@ -1373,46 +1317,87 @@
   padding: 1px 6px;
   border-radius: 3px;
 }
-.wc-stats {
-  font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  font-style: italic;
-  font-size: 0.85rem;
-  color: #7a6045;
+.wc-header-right {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-left: auto;
 }
-.wc-add-btn {
+.wc-stats {
+  font-family: "Segoe Script", "Palatino Linotype", Georgia, serif;
+  font-style: italic;
+  font-size: 0.98rem;
+  color: #7a6045;
+  white-space: nowrap;
+}
+.wc-tagline {
+  font-family: "Segoe Script", "Palatino Linotype", Georgia, serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: #6b4a30;
+  line-height: 1.2;
+  padding-bottom: 5px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10' preserveAspectRatio='none'%3E%3Cpath d='M10 7 Q50 -3 90 7' stroke='%236b4a30' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 100% 8px;
+  white-space: nowrap;
+}
+
+.wc-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.wc-divider-line {
+  flex: 1;
+  height: 1.5px;
+  background: rgba(80, 55, 30, 0.45);
+}
+.wc-divider-ornament {
+  font-size: 0.95rem;
+  line-height: 1;
+  color: rgba(80, 55, 30, 0.65);
+}
+
+.wc-add-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(80, 55, 30, 0.6);
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 6px;
+  color: rgba(80, 55, 30, 0.5);
+  padding: 6px 4px;
   border-radius: 4px;
   font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
   font-style: italic;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   transition:
     color 0.15s,
     background 0.15s;
 }
-.wc-add-btn:hover {
+.wc-add-row:hover {
   color: #3d2b1a;
-  background: rgba(120, 90, 55, 0.12);
+  background: rgba(120, 90, 55, 0.08);
 }
 
 .wc-items {
   display: flex;
   flex-direction: column;
-  gap: 3px;
 }
 
 .wc-item {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 2px 4px;
-  border-radius: 4px;
+  gap: 9px;
+  padding: 6px 4px;
+  border-bottom: 1px dashed rgba(80, 55, 30, 0.22);
   transition: background 0.1s;
 }
 .wc-item:hover {
@@ -1420,26 +1405,33 @@
 }
 
 .wc-check {
-  background: none;
-  border: none;
+  background: transparent;
+  border: 1.5px solid rgba(80, 55, 30, 0.4);
+  border-radius: 2px;
   cursor: pointer;
   color: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   padding: 0;
   flex-shrink: 0;
-  transition: color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s;
 }
 .wc-item:hover .wc-check {
+  border-color: rgba(80, 55, 30, 0.6);
   color: rgba(80, 55, 30, 0.3);
 }
 .wc-item:hover .wc-check:hover {
   color: rgba(80, 55, 30, 0.7);
 }
 .wc-done .wc-check {
+  background: rgba(80, 55, 30, 0.12);
+  border-color: rgba(80, 55, 30, 0.4);
   color: rgba(80, 55, 30, 0.5);
 }
 .wc-done:hover .wc-check {
@@ -1455,6 +1447,7 @@
   line-height: 1.45;
   flex: 0 1 auto;
   min-width: 0;
+  cursor: text;
 }
 .wc-text-inner {
   display: inline;
@@ -1494,7 +1487,7 @@
 
 .wc-actions {
   display: flex;
-  gap: 1px;
+  gap: 2px;
   flex-shrink: 0;
   opacity: 0;
   pointer-events: none;
@@ -1511,7 +1504,7 @@
   color: rgba(80, 55, 30, 0.35);
   display: flex;
   align-items: center;
-  padding: 2px 3px;
+  padding: 3px 4px;
   border-radius: 3px;
   transition:
     color 0.12s,

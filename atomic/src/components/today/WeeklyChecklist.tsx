@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, KeyboardEvent } from 'react';
-import { IconCheck, IconPencil, IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconCheck, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useT } from '../../i18n';
 import {
   WeeklyItem,
@@ -147,9 +147,11 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
     <div className="wc-note-wrap">
       {isDormant ? (
         <div className="wc-dormant" onClick={() => setAdding(true)}>
-          <IconPlus size={12} className="wc-dormant-icon" />
-          <span className="wc-dormant-text">{t.weeklyChecklist.hintEmpty}</span>
-          <span className="wc-week-badge">{weekRange}</span>
+          <div className="wc-paper wc-dormant-paper">
+            <IconPlus size={12} className="wc-dormant-icon" />
+            <span className="wc-dormant-text">{t.weeklyChecklist.hintEmpty}</span>
+            <span className="wc-week-badge">{weekRange}</span>
+          </div>
         </div>
       ) : (
         <div className="weekly-checklist">
@@ -160,22 +162,23 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
             <span className="wc-leaf-4">🍂</span>
             <span className="wc-leaf-5">🍂</span>
           </div>
+          <div className="wc-paper">
           <div className="wc-header">
-            <span className="wc-title">{t.weeklyChecklist.title}</span>
-            <span className="wc-week-badge">{weekRange}</span>
-            {items.length > 0 && (
-              <span className="wc-stats">{done.length}/{items.length} {t.weeklyChecklist.done}</span>
-            )}
-            {!adding && (
-              <button
-                className="wc-add-btn"
-                onClick={() => setAdding(true)}
-                title={t.weeklyChecklist.addPlaceholder}
-              >
-                <IconPlus size={13} />
-                <span>{t.weeklyChecklist.addLabel}</span>
-              </button>
-            )}
+            <div className="wc-header-left">
+              <span className="wc-title">{t.weeklyChecklist.title}</span>
+              <span className="wc-date-range">{weekRange}</span>
+            </div>
+            <div className="wc-header-right">
+              {items.length > 0 && (
+                <span className="wc-stats">{done.length}/{items.length} {t.weeklyChecklist.done}</span>
+              )}
+              <span className="wc-tagline">Plan well, get it done.</span>
+            </div>
+          </div>
+          <div className="wc-divider" aria-hidden="true">
+            <span className="wc-divider-line" />
+            <span className="wc-divider-ornament">❧</span>
+            <span className="wc-divider-line" />
           </div>
 
           <div className="wc-items">
@@ -199,23 +202,22 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
                     spellCheck={false}
                   />
                 ) : (
-                  <span className="wc-text"><span className="wc-text-inner">{item.text}</span></span>
+                  <span className="wc-text" onClick={() => handleStartEdit(item)}>
+                    <span className="wc-text-inner">{item.text}</span>
+                  </span>
                 )}
 
                 {editingId !== item.id && (
                   <div className="wc-actions">
-                    <button className="wc-action-btn" onClick={() => handleStartEdit(item)}>
-                      <IconPencil size={11} />
-                    </button>
                     <button className="wc-action-btn wc-action-del" onClick={() => handleDelete(item)}>
-                      <IconTrash size={11} />
+                      <IconTrash size={13} />
                     </button>
                   </div>
                 )}
               </div>
             ))}
 
-            {adding && (
+            {adding ? (
               <div className="wc-item">
                 <input
                   ref={addInputRef}
@@ -228,6 +230,15 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
                   spellCheck={false}
                 />
               </div>
+            ) : (
+              <button
+                className="wc-add-row"
+                onClick={() => setAdding(true)}
+                title={t.weeklyChecklist.addPlaceholder}
+              >
+                <IconPlus size={12} />
+                <span>{t.weeklyChecklist.addLabel}</span>
+              </button>
             )}
           </div>
 
@@ -249,6 +260,7 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
               </button>
             </div>
           )}
+          </div>
         </div>
       )}
     </div>
