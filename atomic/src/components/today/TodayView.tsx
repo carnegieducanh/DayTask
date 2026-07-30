@@ -98,8 +98,9 @@ export default function TodayView() {
     otherTasks.filter((task) => task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)),
   );
   const otherScheduledCount = otherPending.length + otherDone.length;
-  const total = habitTasks.length;
-  const pct = total === 0 ? 0 : Math.round((done.length / total) * 100);
+  const total = pending.length + done.length + otherScheduledCount;
+  const doneCount = done.length + otherDone.length;
+  const pct = total === 0 ? 0 : Math.round((doneCount / total) * 100);
   const scheduled = taskTimeEntries.length;
 
   const dayStats = calcRangeCategoryStats(tasks, taskTimeEntries, selectedDate, selectedDate, categoryColors).filter(
@@ -211,7 +212,7 @@ export default function TodayView() {
                 <div className="stat-card">
                   <div className="stat-label">{t.today.statDone}</div>
                   <div className="stat-value">
-                    {done.length}
+                    {doneCount}
                     <span style={{ fontSize: 20, color: "var(--text-secondary)", fontWeight: 400 }}>/{total}</span>
                   </div>
                   <div className="progress-bar-wrap" style={{ marginTop: 8 }}>
@@ -290,7 +291,7 @@ export default function TodayView() {
             )}
 
             {/* Empty state — only when no habit tasks */}
-            {total === 0 && otherScheduledCount === 0 && (
+            {total === 0 && (
               <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: "20px 0" }}>
                 <IconSun size={32} style={{ marginBottom: 8, display: "block", margin: "0 auto 8px" }} />
                 <div>{t.today.emptyState}</div>
