@@ -91,8 +91,13 @@ export default function TodayView() {
   const done = sortByTime(
     habitTasks.filter((task) => task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)),
   );
-  const otherPending = sortByTime(otherTasks.filter((task) => !task.is_done));
-  const otherDone = sortByTime(otherTasks.filter((task) => task.is_done));
+  const otherPending = sortByTime(
+    otherTasks.filter((task) => !task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)),
+  );
+  const otherDone = sortByTime(
+    otherTasks.filter((task) => task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)),
+  );
+  const otherScheduledCount = otherPending.length + otherDone.length;
   const total = habitTasks.length;
   const pct = total === 0 ? 0 : Math.round((done.length / total) * 100);
   const scheduled = taskTimeEntries.length;
@@ -285,7 +290,7 @@ export default function TodayView() {
             )}
 
             {/* Empty state — only when no habit tasks */}
-            {total === 0 && otherTasks.length === 0 && (
+            {total === 0 && otherScheduledCount === 0 && (
               <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: "20px 0" }}>
                 <IconSun size={32} style={{ marginBottom: 8, display: "block", margin: "0 auto 8px" }} />
                 <div>{t.today.emptyState}</div>
@@ -293,13 +298,13 @@ export default function TodayView() {
             )}
 
             {/* Other tasks section */}
-            {otherTasks.length > 0 && (
+            {otherScheduledCount > 0 && (
               <div className="other-tasks-section">
                 <div className="other-tasks-divider" />
                 <div className="section-label">
                   {t.cat.other}{" "}
                   <span style={{ fontWeight: 400 }}>
-                    · {otherTasks.length} {t.today.taskUnit}
+                    · {otherScheduledCount} {t.today.taskUnit}
                   </span>
                 </div>
                 <div className="task-list">
