@@ -49,7 +49,7 @@ export interface Goal {
   category: Category;
   priority: Priority;
   year: number;
-  quarter: Quarter;
+  quarters: Quarter[];
   status: GoalStatus;
   progress: number;
   position: number;
@@ -62,7 +62,7 @@ export interface NewGoal {
   category: Category;
   priority?: Priority;
   year: number;
-  quarter: Quarter;
+  quarters: Quarter[];
   status?: GoalStatus;
 }
 
@@ -71,7 +71,7 @@ export interface GoalUpdate {
   description?: string;
   category?: Category;
   priority?: Priority;
-  quarter?: Quarter;
+  quarters?: Quarter[];
   status?: GoalStatus;
   progress?: number;
   position?: number;

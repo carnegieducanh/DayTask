@@ -71,7 +71,7 @@ export default function GoalCardOverlay({ goal }: Props) {
                   size={10}
                   style={{ verticalAlign: "middle", marginRight: 2 }}
                 />
-                {t.quarterShort[goal.quarter]}
+                {goal.quarters.map((q) => t.quarterShort[q]).join(", ")}
               </span>
               <span
                 className="priority-dot"

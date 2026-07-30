@@ -139,7 +139,7 @@ export default function GoalCard({ goal, onEdit, status }: Props) {
                 size={10}
                 style={{ verticalAlign: "middle", marginRight: 2 }}
               />
-              {t.quarterShort[goal.quarter]}
+              {goal.quarters.map((q) => t.quarterShort[q]).join(", ")}
             </span>
           </div>
         </div>

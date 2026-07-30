@@ -396,6 +396,30 @@ pub fn run() {
             sql: "ALTER TABLE books RENAME COLUMN want_to_read_date TO started_date;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 28,
+            description: "goal_quarter_to_quarters_multi_select",
+            sql: "PRAGMA foreign_keys = OFF;
+            ALTER TABLE goals RENAME TO goals_old;
+            CREATE TABLE goals (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                title       TEXT NOT NULL,
+                description TEXT,
+                category    TEXT CHECK(category IN ('work','personal','health','learn','creative','mindfulness','finance')),
+                priority    TEXT CHECK(priority IN ('high','mid','low')) DEFAULT 'mid',
+                year        INTEGER NOT NULL,
+                quarters    TEXT NOT NULL DEFAULT 'Q1',
+                status      TEXT CHECK(status IN ('todo','doing','review','done')) DEFAULT 'todo',
+                progress    INTEGER DEFAULT 0 CHECK(progress BETWEEN 0 AND 100),
+                position    INTEGER DEFAULT 0,
+                created_at  TEXT DEFAULT (datetime('now'))
+            );
+            INSERT INTO goals (id, title, description, category, priority, year, quarters, status, progress, position, created_at)
+                SELECT id, title, description, category, priority, year, quarter, status, progress, position, created_at FROM goals_old;
+            DROP TABLE goals_old;
+            PRAGMA foreign_keys = ON;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

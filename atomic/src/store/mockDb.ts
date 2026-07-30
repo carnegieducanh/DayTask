@@ -78,18 +78,18 @@ for (let i = 1; i <= 90; i++) {
 // ---------- seed goals ----------
 
 export const mockGoals: Goal[] = [
-  { id: 1, title: 'Học tiếng Anh IELTS 7.0', description: 'Luyện thi 4 kỹ năng, thi thử mỗi tháng', category: 'learn', priority: 'high', year: 2026, quarter: 'Q3', status: 'todo', progress: 0, position: 0, created_at: today },
-  { id: 2, title: 'Mua xe mới', description: 'Tiết kiệm đủ ngân sách, chọn model phù hợp', category: 'personal', priority: 'mid', year: 2026, quarter: 'Q4', status: 'todo', progress: 0, position: 1, created_at: today },
-  { id: 3, title: 'Tham gia khóa thiền định', description: '10 ngày Vipassana', category: 'health', priority: 'low', year: 2026, quarter: 'Q2', status: 'todo', progress: 0, position: 2, created_at: today },
-  { id: 4, title: 'Hoàn thiện portfolio cá nhân', description: 'Website giới thiệu dự án và kỹ năng', category: 'work', priority: 'mid', year: 2026, quarter: 'Q2', status: 'todo', progress: 0, position: 3, created_at: today },
-  { id: 5, title: 'Tăng cân lên 70kg', description: 'Gym 4 buổi/tuần, chế độ dinh dưỡng', category: 'health', priority: 'high', year: 2026, quarter: 'Q3', status: 'doing', progress: 55, position: 0, created_at: today },
-  { id: 6, title: 'Học Python & Data Science', description: 'Hoàn thành 3 khóa online, làm 2 project', category: 'learn', priority: 'high', year: 2026, quarter: 'Q4', status: 'doing', progress: 35, position: 1, created_at: today },
-  { id: 7, title: 'Tiết kiệm 50 triệu', description: 'Đặt aside 5 triệu/tháng tự động', category: 'personal', priority: 'mid', year: 2026, quarter: 'full', status: 'doing', progress: 40, position: 2, created_at: today },
-  { id: 8, title: 'Đọc 12 cuốn sách', description: 'Mỗi tháng 1 cuốn, ghi chú tóm tắt', category: 'personal', priority: 'low', year: 2026, quarter: 'full', status: 'review', progress: 75, position: 0, created_at: today },
-  { id: 9, title: 'Ra mắt side project', description: 'App quản lý chi tiêu cá nhân', category: 'work', priority: 'high', year: 2026, quarter: 'Q2', status: 'review', progress: 85, position: 1, created_at: today },
-  { id: 10, title: 'Lập kế hoạch tài chính năm', description: 'Ngân sách, đầu tư, quỹ khẩn cấp', category: 'personal', priority: 'high', year: 2026, quarter: 'Q1', status: 'done', progress: 100, position: 0, created_at: today },
-  { id: 11, title: 'Khám sức khỏe định kỳ', description: 'Xét nghiệm tổng quát đầu năm', category: 'health', priority: 'low', year: 2026, quarter: 'Q1', status: 'done', progress: 100, position: 1, created_at: today },
-  { id: 12, title: 'Setup môi trường làm việc', description: 'Màn hình, bàn phím cơ, microphone', category: 'work', priority: 'low', year: 2026, quarter: 'Q1', status: 'done', progress: 100, position: 2, created_at: today },
+  { id: 1, title: 'Học tiếng Anh IELTS 7.0', description: 'Luyện thi 4 kỹ năng, thi thử mỗi tháng', category: 'learn', priority: 'high', year: 2026, quarters: ['Q3'], status: 'todo', progress: 0, position: 0, created_at: today },
+  { id: 2, title: 'Mua xe mới', description: 'Tiết kiệm đủ ngân sách, chọn model phù hợp', category: 'personal', priority: 'mid', year: 2026, quarters: ['Q4'], status: 'todo', progress: 0, position: 1, created_at: today },
+  { id: 3, title: 'Tham gia khóa thiền định', description: '10 ngày Vipassana', category: 'health', priority: 'low', year: 2026, quarters: ['Q2'], status: 'todo', progress: 0, position: 2, created_at: today },
+  { id: 4, title: 'Hoàn thiện portfolio cá nhân', description: 'Website giới thiệu dự án và kỹ năng', category: 'work', priority: 'mid', year: 2026, quarters: ['Q2'], status: 'todo', progress: 0, position: 3, created_at: today },
+  { id: 5, title: 'Tăng cân lên 70kg', description: 'Gym 4 buổi/tuần, chế độ dinh dưỡng', category: 'health', priority: 'high', year: 2026, quarters: ['Q3'], status: 'doing', progress: 55, position: 0, created_at: today },
+  { id: 6, title: 'Học Python & Data Science', description: 'Hoàn thành 3 khóa online, làm 2 project', category: 'learn', priority: 'high', year: 2026, quarters: ['Q3', 'Q4'], status: 'doing', progress: 35, position: 1, created_at: today },
+  { id: 7, title: 'Tiết kiệm 50 triệu', description: 'Đặt aside 5 triệu/tháng tự động', category: 'personal', priority: 'mid', year: 2026, quarters: ['full'], status: 'doing', progress: 40, position: 2, created_at: today },
+  { id: 8, title: 'Đọc 12 cuốn sách', description: 'Mỗi tháng 1 cuốn, ghi chú tóm tắt', category: 'personal', priority: 'low', year: 2026, quarters: ['full'], status: 'review', progress: 75, position: 0, created_at: today },
+  { id: 9, title: 'Ra mắt side project', description: 'App quản lý chi tiêu cá nhân', category: 'work', priority: 'high', year: 2026, quarters: ['Q2'], status: 'review', progress: 85, position: 1, created_at: today },
+  { id: 10, title: 'Lập kế hoạch tài chính năm', description: 'Ngân sách, đầu tư, quỹ khẩn cấp', category: 'personal', priority: 'high', year: 2026, quarters: ['Q1'], status: 'done', progress: 100, position: 0, created_at: today },
+  { id: 11, title: 'Khám sức khỏe định kỳ', description: 'Xét nghiệm tổng quát đầu năm', category: 'health', priority: 'low', year: 2026, quarters: ['Q1'], status: 'done', progress: 100, position: 1, created_at: today },
+  { id: 12, title: 'Setup môi trường làm việc', description: 'Màn hình, bàn phím cơ, microphone', category: 'work', priority: 'low', year: 2026, quarters: ['Q1'], status: 'done', progress: 100, position: 2, created_at: today },
 ];
 
 // ---------- seed checklist items ----------

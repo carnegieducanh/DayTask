@@ -6,7 +6,12 @@ import {
   dbGetAllChecklistItems, dbAddChecklistItem, dbToggleChecklistItem, dbUpdateChecklistItem, dbDeleteChecklistItem, dbDeleteChecklistItemsByGoal,
 } from '../mockDb';
 import { getDb } from '../db';
+import { quartersToDb, quartersFromDb } from '../../utils/quarterUtils';
 import type { AppState } from '../appStore';
+
+// SQLite lưu `quarters` dưới dạng TEXT CSV (vd "Q1,Q3") — cột raw trả về từ
+// `SELECT *` là string, phải parse thành mảng trước khi đưa vào state Goal[].
+type GoalRow = Omit<Goal, 'quarters'> & { quarters: string };
 
 export interface GoalSlice {
   goals: Goal[];
@@ -50,10 +55,11 @@ export const createGoalSlice: StateCreator<AppState, [], [], GoalSlice> = (set, 
       return;
     }
     const db = await getDb();
-    const goals = await db.select<Goal[]>(
+    const rows = await db.select<GoalRow[]>(
       'SELECT * FROM goals WHERE year = $1 ORDER BY status ASC, position ASC',
       [year]
     );
+    const goals = rows.map((row) => ({ ...row, quarters: quartersFromDb(row.quarters) }));
     const allItems = await db.select<GoalChecklistItem[]>(
       'SELECT * FROM goal_checklist_items ORDER BY goal_id, position ASC'
     );
@@ -68,15 +74,15 @@ export const createGoalSlice: StateCreator<AppState, [], [], GoalSlice> = (set, 
   addGoal: async (goal) => {
     const priority = goal.priority ?? 'mid';
     if (!isTauri()) {
-      const g = dbAddGoal({ title: goal.title, description: goal.description ?? null, category: goal.category, priority, year: goal.year, quarter: goal.quarter, status: goal.status ?? 'todo', progress: 0, position: dbGetGoals(goal.year).filter(g => g.status === (goal.status ?? 'todo')).length });
+      const g = dbAddGoal({ title: goal.title, description: goal.description ?? null, category: goal.category, priority, year: goal.year, quarters: goal.quarters, status: goal.status ?? 'todo', progress: 0, position: dbGetGoals(goal.year).filter(g => g.status === (goal.status ?? 'todo')).length });
       set({ goals: dbGetGoals(get().selectedYear) });
       return g.id;
     }
     const db = await getDb();
     const result = await db.execute(
-      `INSERT INTO goals (title, description, category, priority, year, quarter, status)
+      `INSERT INTO goals (title, description, category, priority, year, quarters, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [goal.title, goal.description ?? null, goal.category, priority, goal.year, goal.quarter, goal.status ?? 'todo']
+      [goal.title, goal.description ?? null, goal.category, priority, goal.year, quartersToDb(goal.quarters), goal.status ?? 'todo']
     );
     const newId = result.lastInsertId!;
     await get().loadGoals(get().selectedYear);
@@ -92,7 +98,7 @@ export const createGoalSlice: StateCreator<AppState, [], [], GoalSlice> = (set, 
     const db = await getDb();
     const fields = Object.keys(updates) as (keyof GoalUpdate)[];
     const setClauses = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
-    const values = fields.map((f) => updates[f]);
+    const values = fields.map((f) => (f === 'quarters' ? quartersToDb(updates.quarters!) : updates[f]));
     await db.execute(
       `UPDATE goals SET ${setClauses} WHERE id = $1`,
       [id, ...values]

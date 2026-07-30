@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 import { format } from 'date-fns';
-import type { Task, Goal, GoalChecklistItem, CategoryColors, Category, Tag, TaskTimeEntry } from '../../types';
+import type { Task, Goal, GoalChecklistItem, CategoryColors, Category, Tag, TaskTimeEntry, Quarter } from '../../types';
 import {
   isTauri,
   mockTasks, mockGoals, mockChecklist, mockTags, mockTaskTags, mockTimeEntries,
@@ -8,6 +8,7 @@ import {
 } from '../mockDb';
 import { getDb } from '../db';
 import { DEFAULT_CATEGORY_COLORS } from './taskSlice';
+import { quartersToDb, quartersFromDb } from '../../utils/quarterUtils';
 import type { AppState } from '../appStore';
 
 type JournalEntryRow = { id: number; date: string; type: string; items: string; created_at: string; updated_at: string };
@@ -90,7 +91,7 @@ async function seedMockData(db: import('@tauri-apps/plugin-sql').default, today:
   ];
   for (const g of goals) {
     await db.execute(
-      `INSERT INTO goals (title, description, category, priority, year, quarter, status, progress, position) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      `INSERT INTO goals (title, description, category, priority, year, quarters, status, progress, position) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       g
     );
   }
@@ -163,7 +164,10 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
     } else {
       const db = await getDb();
       tasks = await db.select<Task[]>('SELECT * FROM tasks ORDER BY date ASC, created_at ASC');
-      goals = await db.select<Goal[]>('SELECT * FROM goals ORDER BY year ASC, status ASC, position ASC');
+      const goalRows = await db.select<Array<Omit<Goal, 'quarters'> & { quarters: string }>>(
+        'SELECT * FROM goals ORDER BY year ASC, status ASC, position ASC'
+      );
+      goals = goalRows.map((row) => ({ ...row, quarters: quartersFromDb(row.quarters) }));
       checklistItems = await db.select<GoalChecklistItem[]>('SELECT * FROM goal_checklist_items ORDER BY goal_id, position ASC');
       const colorRows = await db.select<{ category: string; color: string }[]>('SELECT category, color FROM category_colors');
       categoryColors = { ...DEFAULT_CATEGORY_COLORS };
@@ -206,8 +210,10 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
 
   importAllData: async (file: File) => {
     const text = await file.text();
+    // `quarter` (singular) hỗ trợ đọc backup cũ trước khi Quarter deadline hỗ trợ multi-select.
+    type ImportedGoal = Omit<Goal, 'quarters'> & { quarters?: Quarter[]; quarter?: Quarter };
     let data: {
-      tasks?: Task[]; goals?: Goal[]; checklistItems?: GoalChecklistItem[]; categoryColors?: CategoryColors;
+      tasks?: Task[]; goals?: ImportedGoal[]; checklistItems?: GoalChecklistItem[]; categoryColors?: CategoryColors;
       tags?: Tag[]; taskTags?: Array<{ task_id: number; tag_id: number }>; timeEntries?: TaskTimeEntry[];
       journalEntries?: JournalEntryRow[]; weeklyChecklist?: WeeklyChecklistRow[]; vocabWords?: VocabWordRow[];
       quotes?: QuoteRow[]; quoteTags?: QuoteTagRow[];
@@ -228,7 +234,7 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
       mockGoals.length = 0;
       mockChecklist.length = 0;
       mockTasks.push(...data.tasks);
-      mockGoals.push(...data.goals);
+      mockGoals.push(...data.goals.map((g) => ({ ...g, quarters: g.quarters ?? (g.quarter ? [g.quarter] : ['Q1' as Quarter]) })));
       mockChecklist.push(...data.checklistItems);
       if (data.categoryColors) {
         localStorage.setItem('categoryColors', JSON.stringify(data.categoryColors));
@@ -263,10 +269,11 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
         );
       }
       for (const g of data.goals) {
+        const quarters = g.quarters ?? (g.quarter ? [g.quarter] : ['Q1' as Quarter]);
         await db.execute(
-          `INSERT INTO goals (id, title, description, category, priority, year, quarter, status, progress, position, created_at)
+          `INSERT INTO goals (id, title, description, category, priority, year, quarters, status, progress, position, created_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-          [g.id, g.title, g.description ?? null, g.category, g.priority, g.year, g.quarter, g.status, g.progress, g.position, g.created_at]
+          [g.id, g.title, g.description ?? null, g.category, g.priority, g.year, quartersToDb(quarters), g.status, g.progress, g.position, g.created_at]
         );
       }
       for (const ci of data.checklistItems) {

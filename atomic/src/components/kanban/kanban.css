@@ -630,3 +630,32 @@
 .checklist-add-btn:not(:disabled):hover {
   opacity: 0.85;
 }
+
+/* ── Quarter deadline: multi-select chip group (AddGoalModal) ── */
+.quarter-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quarter-chip {
+  padding: 7px 12px;
+  border: 0.5px solid var(--border-2);
+  border-radius: 99px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.86rem;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: border-color 0.1s, background 0.1s, color 0.1s;
+}
+
+.quarter-chip:hover {
+  border-color: var(--primary);
+}
+
+.quarter-chip.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}

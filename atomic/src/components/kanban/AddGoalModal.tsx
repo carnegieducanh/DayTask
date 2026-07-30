@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { attachSmoothScroll } from "../../hooks/useSmoothScroll";
 import { useModalClose } from "../../hooks/useModalClose";
 import ResizableTextarea from "../ResizableTextarea";
@@ -12,6 +13,7 @@ import {
 } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
+import { sortQuarters } from "../../utils/quarterUtils";
 import type {
   Goal,
   Category,
@@ -93,7 +95,19 @@ export default function AddGoalModal({
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [category, setCategory] = useState<Category>("work");
-  const [quarter, setQuarter] = useState<Quarter>("Q1");
+  const [quarters, setQuarters] = useState<Quarter[]>(["Q1"]);
+
+  function toggleQuarter(q: Quarter) {
+    setQuarters((prev) => {
+      if (q === "full") return ["full"];
+      const withoutFull = prev.filter((p) => p !== "full");
+      if (withoutFull.includes(q)) {
+        const next = withoutFull.filter((p) => p !== q);
+        return next.length > 0 ? next : prev; // luôn giữ ít nhất 1 lựa chọn
+      }
+      return sortQuarters([...withoutFull, q]);
+    });
+  }
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);
@@ -127,7 +141,7 @@ export default function AddGoalModal({
       setTitle(editGoal.title);
       setDesc(editGoal.description ?? "");
       setCategory(editGoal.category);
-      setQuarter(editGoal.quarter);
+      setQuarters(editGoal.quarters);
     }
   }, [editGoal]);
 
@@ -178,7 +192,7 @@ export default function AddGoalModal({
         title: title.trim(),
         description: desc.trim() || undefined,
         category,
-        quarter,
+        quarters,
       });
       const originalItems = checklistItems[editGoal.id] ?? [];
       for (const item of originalItems) {
@@ -193,7 +207,7 @@ export default function AddGoalModal({
         title: title.trim(),
         description: desc.trim() || undefined,
         category,
-        quarter,
+        quarters,
         year: selectedYear,
         status: defaultStatus,
       });
@@ -321,11 +335,12 @@ export default function AddGoalModal({
                     className={`cat-dropdown-chevron${dropdownOpen ? " open" : ""}`}
                   />
                 </button>
-                {dropdownOpen && dropdownPos && (
+                {dropdownOpen && dropdownPos && createPortal(
                   <div
                     className="cat-dropdown-panel"
                     ref={panelRef}
                     style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}
+                    onMouseDown={(e) => e.stopPropagation()}
                   >
                     {CATEGORIES.map((cat) => (
                       <div
@@ -401,23 +416,26 @@ export default function AddGoalModal({
                         )}
                       </div>
                     ))}
-                  </div>
+                  </div>,
+                  document.body,
                 )}
               </div>
             </div>
             <div className="form-group">
               <label className="form-label">{t.goalModal.quarterLabel}</label>
-              <select
-                className="form-input"
-                value={quarter}
-                onChange={(e) => setQuarter(e.target.value as Quarter)}
-              >
+              <div className="quarter-chip-group">
                 {QUARTERS.map((q) => (
-                  <option key={q.value} value={q.value}>
-                    {q.label}
-                  </option>
+                  <button
+                    key={q.value}
+                    type="button"
+                    className={`quarter-chip${quarters.includes(q.value) ? " selected" : ""}`}
+                    onClick={() => toggleQuarter(q.value)}
+                    title={q.label}
+                  >
+                    {t.quarterShort[q.value]}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
           </div>
 
