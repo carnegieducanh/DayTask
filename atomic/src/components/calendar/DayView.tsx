@@ -202,6 +202,7 @@ export default function DayView({
   const [dragResize, setDragResize] = useState<DragResize | null>(null);
   const [dragDeckTask, setDragDeckTask] = useState<DragDeckTask | null>(null);
   const [contextMenu, setContextMenu] = useState<{ taskId: number; task: Task; x: number; y: number } | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
   const [deckExpanded, setDeckExpanded] = useState(false);
   const [deckClosing, setDeckClosing] = useState(false);
   const deckCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -315,16 +316,32 @@ export default function DayView({
     };
   }, [contextMenu]);
 
+  // Clamp the context menu to the viewport using its real rendered size — a fixed
+  // width/height estimate here would drift out of sync whenever the menu's content
+  // changes (e.g. the conditional "Remove from calendar" item), which is exactly
+  // what let the color grid get clipped when the app window is short.
+  useLayoutEffect(() => {
+    if (!contextMenu || !contextMenuRef.current) return;
+    const PADDING = 8;
+    const rect = contextMenuRef.current.getBoundingClientRect();
+    let x = contextMenu.x;
+    let y = contextMenu.y;
+    let changed = false;
+    if (x + rect.width > window.innerWidth - PADDING) {
+      x = Math.max(PADDING, window.innerWidth - rect.width - PADDING);
+      changed = true;
+    }
+    if (y + rect.height > window.innerHeight - PADDING) {
+      y = Math.max(PADDING, window.innerHeight - rect.height - PADDING);
+      changed = true;
+    }
+    if (changed) setContextMenu((prev) => (prev ? { ...prev, x, y } : prev));
+  }, [contextMenu]);
+
   function handleTaskContextMenu(e: React.MouseEvent, task: Task) {
     e.preventDefault();
     e.stopPropagation();
-    const MENU_W = 180;
-    const MENU_H = 170;
-    let x = e.clientX;
-    let y = e.clientY;
-    if (x + MENU_W > window.innerWidth) x = window.innerWidth - MENU_W - 8;
-    if (y + MENU_H > window.innerHeight) y = window.innerHeight - MENU_H - 8;
-    setContextMenu({ taskId: task.id, task, x, y });
+    setContextMenu({ taskId: task.id, task, x: e.clientX, y: e.clientY });
   }
 
   function getRelY(clientY: number): number {
@@ -1109,8 +1126,9 @@ export default function DayView({
         document.body
       )}
 
-      {contextMenu && (
+      {contextMenu && createPortal(
         <div
+          ref={contextMenuRef}
           className="task-context-menu"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onMouseDown={(e) => e.stopPropagation()}
@@ -1159,7 +1177,8 @@ export default function DayView({
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {creating && (

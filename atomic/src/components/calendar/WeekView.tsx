@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { attachSmoothScroll } from '../../hooks/useSmoothScroll';
 import { startOfWeek, addDays, format, isSameDay } from 'date-fns';
 
@@ -86,14 +87,28 @@ export default function WeekView({
   function handleTaskContextMenu(e: React.MouseEvent, task: Task) {
     e.preventDefault();
     e.stopPropagation();
-    const MENU_W = 180;
-    const MENU_H = 170;
-    let x = e.clientX;
-    let y = e.clientY;
-    if (x + MENU_W > window.innerWidth) x = window.innerWidth - MENU_W - 8;
-    if (y + MENU_H > window.innerHeight) y = window.innerHeight - MENU_H - 8;
-    setContextMenu({ x, y, task });
+    setContextMenu({ x: e.clientX, y: e.clientY, task });
   }
+
+  // Clamp to the real rendered size (not a hardcoded estimate) after mount — see
+  // context_menu_viewport_clamp memory for why a fixed guess drifts out of sync.
+  useLayoutEffect(() => {
+    if (!contextMenu || !menuRef.current) return;
+    const PADDING = 8;
+    const rect = menuRef.current.getBoundingClientRect();
+    let x = contextMenu.x;
+    let y = contextMenu.y;
+    let changed = false;
+    if (x + rect.width > window.innerWidth - PADDING) {
+      x = Math.max(PADDING, window.innerWidth - rect.width - PADDING);
+      changed = true;
+    }
+    if (y + rect.height > window.innerHeight - PADDING) {
+      y = Math.max(PADDING, window.innerHeight - rect.height - PADDING);
+      changed = true;
+    }
+    if (changed) setContextMenu((prev) => (prev ? { ...prev, x, y } : prev));
+  }, [contextMenu]);
 
   return (
     <div className="cal-week-grid">
@@ -156,7 +171,7 @@ export default function WeekView({
           </div>
         );
       })}
-      {contextMenu && (
+      {contextMenu && createPortal(
         <div
           ref={menuRef}
           className="task-context-menu"
@@ -185,7 +200,8 @@ export default function WeekView({
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
