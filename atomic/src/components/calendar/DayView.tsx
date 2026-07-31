@@ -497,12 +497,21 @@ export default function DayView({
           }
           // Which deck slot this card would land in if dropped now — based on where its
           // top-left (cursor minus grab offset) falls among the other deck cards' `top`s.
+          // Hysteresis around the raw boundary (instead of a plain Math.round) so a couple
+          // px of natural cursor jitter right at a slot edge doesn't flap the highlight back
+          // and forth every frame — each flap restarted its lift transition, which is what
+          // read as jerky/stuttery.
           let hoverIndex = dragDeckTask.hoverIndex;
           const clip = deckCardsClipRef.current;
           if (clip) {
             const clipRect = clip.getBoundingClientRect();
             const cardTop = cursorY - dragDeckTask.grabOffsetY - clipRect.top + clip.scrollTop;
-            hoverIndex = Math.max(0, Math.min(Math.round(cardTop / DECK_OFFSET), unscheduledIdsRef.current.length));
+            const raw = cardTop / DECK_OFFSET;
+            const HOVER_HYSTERESIS = 0.3; // slot-fraction the cursor must cross past the midpoint to flip
+            let next = hoverIndex;
+            while (raw > next + 0.5 + HOVER_HYSTERESIS) next++;
+            while (raw < next - 0.5 - HOVER_HYSTERESIS) next--;
+            hoverIndex = Math.max(0, Math.min(next, unscheduledIdsRef.current.length));
           }
           // Only call setState when transitioning from timeline → deck (startMin changes)
           // or the hover slot actually changed — cursorX/cursorY are refreshed in the same
@@ -686,10 +695,17 @@ export default function DayView({
             >
               {unscheduledTasks.map((task, i) => {
                 const color = task.color ?? categoryColors[task.category];
+                // While a deck card is being dragged (and hovering over the deck, not the
+                // timeline), lift the card the dragged one would land right below — i.e. the
+                // slot just above the insertion point (hoverIndex - 1), since drop inserts
+                // before `others[hoverIndex]`. hoverIndex 0 (insert at the very top) correctly
+                // matches no card, since nothing sits above that slot.
+                const isDropTarget =
+                  dragDeckTask != null && dragDeckTask.startMin === -1 && i === dragDeckTask.hoverIndex - 1;
                 return (
                   <div
                     key={task.id}
-                    className="day-deck-card"
+                    className={`day-deck-card${isDropTarget ? " day-deck-card-drop-target" : ""}`}
                     style={{
                       top: i * DECK_OFFSET,
                       zIndex: i + 1,
@@ -1035,7 +1051,9 @@ export default function DayView({
             borderLeft: `3px solid ${dragDeckTask.task.color ?? categoryColors[dragDeckTask.task.category]}`,
             opacity: 0.92,
             pointerEvents: "none",
-            zIndex: 9999,
+            // Below every deck card (which start at zIndex 1) so the lifted drop-target
+            // card visibly rises above this ghost instead of being covered by it.
+            zIndex: 0,
             transform: "rotate(-2deg) scale(1.03)",
           }}
         >
