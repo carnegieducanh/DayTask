@@ -699,7 +699,7 @@ export default function DayView({
       {(unscheduledTasks.length > 0 || dragMove?.overDeck) && (
         <div
           className={`day-deck-row${dragMove?.overDeck ? " day-deck-row-drag-target" : ""}`}
-          style={{ height: displayDeckHeight + 28, cursor: isCardDragActive ? "grabbing" : undefined }}
+          style={{ height: displayDeckHeight + 28, cursor: isCardDragActive ? "var(--cursor-grabbing)" : undefined }}
         >
           <div className="day-deck-gutter-spacer" />
           <div className="day-deck-events-area">
@@ -731,7 +731,7 @@ export default function DayView({
                       zIndex: i + 1,
                       backgroundColor: color,
                       borderLeft: `3px solid ${color}`,
-                      cursor: isCardDragActive ? "grabbing" : undefined,
+                      cursor: isCardDragActive ? "var(--cursor-grabbing)" : undefined,
                     }}
                     onMouseDown={(e) => handleDeckCardMouseDown(e, task)}
                     onContextMenu={(e) => handleTaskContextMenu(e, task)}
@@ -782,7 +782,7 @@ export default function DayView({
           cursor: dragCreate
             ? "ns-resize"
             : isCardDragActive
-              ? "grabbing"
+              ? "var(--cursor-grabbing)"
               : dragResize
                 ? "ns-resize"
                 : "default",
@@ -801,7 +801,7 @@ export default function DayView({
         <div
           className="day-events-col"
           onMouseDown={handleGridMouseDown}
-          style={isCardDragActive ? { cursor: "grabbing" } : undefined}
+          style={isCardDragActive ? { cursor: "var(--cursor-grabbing)" } : undefined}
         >
           {/* Hour lines */}
           {HOURS.map((h) => (
@@ -851,7 +851,7 @@ export default function DayView({
                   // .day-task-block's own `cursor: pointer` would otherwise win over the
                   // grabbing cursor set on ancestors while a *different* card (deck card or
                   // another task) is being dragged across this block.
-                  ...(!isMoving && !isResizing && isCardDragActive ? { cursor: "grabbing" } : {}),
+                  ...(!isMoving && !isResizing && isCardDragActive ? { cursor: "var(--cursor-grabbing)" } : {}),
                 }}
                 onMouseDown={(e) => handleTaskMouseDown(e, item)}
                 onContextMenu={(e) => handleTaskContextMenu(e, item.task)}
@@ -860,7 +860,7 @@ export default function DayView({
                 <div
                   className="day-resize-handle day-resize-handle-top"
                   onMouseDown={(e) => handleResizeMouseDown(e, item, "top")}
-                  style={!isMoving && !isResizing && isCardDragActive ? { cursor: "grabbing" } : undefined}
+                  style={!isMoving && !isResizing && isCardDragActive ? { cursor: "var(--cursor-grabbing)" } : undefined}
                 />
                 {height < 48 ? (
                   <div className="day-task-compact-row">
@@ -913,7 +913,7 @@ export default function DayView({
                 <div
                   className="day-resize-handle day-resize-handle-bottom"
                   onMouseDown={(e) => handleResizeMouseDown(e, item, "bottom")}
-                  style={!isMoving && !isResizing && isCardDragActive ? { cursor: "grabbing" } : undefined}
+                  style={!isMoving && !isResizing && isCardDragActive ? { cursor: "var(--cursor-grabbing)" } : undefined}
                 />
               </div>
             );
@@ -969,7 +969,7 @@ export default function DayView({
                 borderLeft: `3px solid ${dragDeckTask.task.color ?? categoryColors[dragDeckTask.task.category]}`,
                 opacity: 0.8,
                 zIndex: 100,
-                cursor: "grabbing",
+                cursor: "var(--cursor-grabbing)",
                 pointerEvents: "none",
               }}
             >
