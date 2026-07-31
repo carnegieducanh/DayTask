@@ -672,6 +672,9 @@ export default function DayView({
   const HOURS = Array.from({ length: 24 }, (_, i) => i);
   const ghostTop = dragCreate ? minToPx(Math.min(dragCreate.startMin, dragCreate.endMin)) : 0;
   const ghostHeight = dragCreate ? Math.max(minToPx(Math.abs(dragCreate.endMin - dragCreate.startMin)), 4) : 0;
+  // Same condition the grid uses below for its own grabbing cursor — kept in sync so the
+  // hand stays "closed" whether the pointer is over the deck or the timeline mid-drag.
+  const isCardDragActive = !!(dragMove?.moved || dragDeckTask);
 
   return (
     <div className="day-view">
@@ -679,7 +682,7 @@ export default function DayView({
       {(unscheduledTasks.length > 0 || dragMove?.overDeck) && (
         <div
           className={`day-deck-row${dragMove?.overDeck ? " day-deck-row-drag-target" : ""}`}
-          style={{ height: displayDeckHeight + 28 }}
+          style={{ height: displayDeckHeight + 28, cursor: isCardDragActive ? "grabbing" : undefined }}
         >
           <div className="day-deck-gutter-spacer" />
           <div className="day-deck-events-area">
@@ -711,6 +714,7 @@ export default function DayView({
                       zIndex: i + 1,
                       backgroundColor: color,
                       borderLeft: `3px solid ${color}`,
+                      cursor: isCardDragActive ? "grabbing" : undefined,
                     }}
                     onMouseDown={(e) => handleDeckCardMouseDown(e, task)}
                     onContextMenu={(e) => handleTaskContextMenu(e, task)}
@@ -760,7 +764,7 @@ export default function DayView({
         style={{
           cursor: dragCreate
             ? "ns-resize"
-            : dragMove?.moved || dragDeckTask
+            : isCardDragActive
               ? "grabbing"
               : dragResize
                 ? "ns-resize"
@@ -777,7 +781,11 @@ export default function DayView({
         </div>
 
         {/* Events column */}
-        <div className="day-events-col" onMouseDown={handleGridMouseDown}>
+        <div
+          className="day-events-col"
+          onMouseDown={handleGridMouseDown}
+          style={isCardDragActive ? { cursor: "grabbing" } : undefined}
+        >
           {/* Hour lines */}
           {HOURS.map((h) => (
             <div key={h} className="day-hour-line" style={{ top: minToPx(h * 60) }} />
@@ -823,6 +831,10 @@ export default function DayView({
                   backgroundColor: color,
                   borderLeft: `3px solid ${color}`,
                   zIndex: isMoving || isResizing ? 50 : item.zIndex,
+                  // .day-task-block's own `cursor: pointer` would otherwise win over the
+                  // grabbing cursor set on ancestors while a *different* card (deck card or
+                  // another task) is being dragged across this block.
+                  ...(!isMoving && !isResizing && isCardDragActive ? { cursor: "grabbing" } : {}),
                 }}
                 onMouseDown={(e) => handleTaskMouseDown(e, item)}
                 onContextMenu={(e) => handleTaskContextMenu(e, item.task)}
@@ -831,6 +843,7 @@ export default function DayView({
                 <div
                   className="day-resize-handle day-resize-handle-top"
                   onMouseDown={(e) => handleResizeMouseDown(e, item, "top")}
+                  style={!isMoving && !isResizing && isCardDragActive ? { cursor: "grabbing" } : undefined}
                 />
                 {height < 48 ? (
                   <div className="day-task-compact-row">
@@ -883,6 +896,7 @@ export default function DayView({
                 <div
                   className="day-resize-handle day-resize-handle-bottom"
                   onMouseDown={(e) => handleResizeMouseDown(e, item, "bottom")}
+                  style={!isMoving && !isResizing && isCardDragActive ? { cursor: "grabbing" } : undefined}
                 />
               </div>
             );
