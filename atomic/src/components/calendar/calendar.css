@@ -1092,20 +1092,32 @@
    system hand cursor and does scale. There is no CSS property that can resize the native
    keyword cursor, so the only way to control size is to supply our own cursor image.
    Built from Tabler's actual `hand-stop` (open/grab) and `hand-grab` (closed/grabbing) icon
-   paths — same icon set/style used everywhere else in the app. These are wireframe icons
-   (each finger a single open path, not a closed shape), but every path here gets
-   `fill='white' stroke='black'`: SVG auto-closes an open path's fill region with a straight
-   line from its end back to its start, which for these finger paths happens to trace out a
-   clean finger-capsule outline, so filling them reads as solid white fingers with a thin
-   black border — same treatment as the 4th path (palm/wrist/thumb outline). This matters
-   because the cursor bitmap is alpha-blended straight onto the desktop (no opaque backing
-   layer): a `fill:none` stroke is nearly all anti-aliased edge (partial alpha), which let
-   the task-card color behind it bleed through and made the fingers look semi-transparent.
-   A solid fill has an opaque interior regardless of stroke width, so stroke-width can stay
-   at 1 (matching the palm outline) without reintroducing that bleed-through. */
+   paths — same icon set/style used everywhere else in the app. This matters because the
+   cursor bitmap is alpha-blended straight onto the desktop (no opaque backing layer): a
+   `fill:none` stroke is nearly all anti-aliased edge (partial alpha), which let the
+   task-card color behind it bleed through and made the fingers look semi-transparent.
+   Filling them white fixes that — but Tabler's 3 finger paths are open subpaths that share
+   edges with their neighbor (each one only draws the boundary lines its neighbor didn't
+   already draw, since the original icon is meant to be stroked as one continuous line
+   drawing, never filled solo). Filling one of those open paths directly makes SVG
+   auto-close it with a straight line from end back to start; for the middle/ring fingers
+   that diagonal cuts across the finger at a steep angle, leaving a wedge of background
+   color showing through (confirmed by rendering the raw SVG over a solid color and
+   inspecting the pixels). Fix, kept to the smallest possible diff from the original
+   coordinates: each finger path below has its own left edge extended down to the same
+   point its neighbor's right edge already reaches (that segment was already being drawn
+   there, just by the other path) — every original point/arc is untouched, only the
+   missing edge was added. The paths are deliberately left OPEN (no trailing `Z`): SVG
+   auto-closes an open subpath for fill purposes only, so the finger interior still
+   fills correctly, but stroke never draws that invisible closing edge (open subpaths
+   get `stroke-linecap` round caps at their two ends instead of a joining line) — so
+   there's no visible seam/divider between a finger and the palm. Adding an explicit `Z`
+   here would draw that flat base as a real stroked line, which looked wrong.
+   stroke-width stays at 1 (matching the palm outline) since a solid fill has an opaque
+   interior regardless of stroke width. */
 :root {
-  --cursor-grab: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'><path d='M17 7.5a1.5 1.5 0 0 1 3 0v8.5a6 6 0 0 1 -6 6h-2h.208a6 6 0 0 1 -5.012 -2.7a69.74 69.74 0 0 1 -.196 -.3c-.312 -.479 -1.407 -2.388 -3.286 -5.728a1.5 1.5 0 0 1 .536 -2.022a1.867 1.867 0 0 1 2.28 .28l1.47 1.47' fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'/><g fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'><path d='M8 13v-7.5a1.5 1.5 0 0 1 3 0v6.5'/><path d='M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5'/><path d='M14 5.5a1.5 1.5 0 0 1 3 0v6.5'/></g></svg>") 14 16, grab;
-  --cursor-grabbing: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'><path d='M17 9.5a1.5 1.5 0 0 1 3 0v4.5a6 6 0 0 1 -6 6h-2h.208a6 6 0 0 1 -5.012 -2.7l-.196 -.3c-.312 -.479 -1.407 -2.388 -3.286 -5.728a1.5 1.5 0 0 1 .536 -2.022a1.867 1.867 0 0 1 2.28 .28l1.47 1.47' fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'/><g fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'><path d='M8 11v-3.5a1.5 1.5 0 0 1 3 0v2.5'/><path d='M11 9.5v-3a1.5 1.5 0 0 1 3 0v3.5'/><path d='M14 7.5a1.5 1.5 0 0 1 3 0v2.5'/></g></svg>") 14 16, grabbing;
+  --cursor-grab: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'><path d='M17 7.5a1.5 1.5 0 0 1 3 0v8.5a6 6 0 0 1 -6 6h-2h.208a6 6 0 0 1 -5.012 -2.7a69.74 69.74 0 0 1 -.196 -.3c-.312 -.479 -1.407 -2.388 -3.286 -5.728a1.5 1.5 0 0 1 .536 -2.022a1.867 1.867 0 0 1 2.28 .28l1.47 1.47' fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'/><g fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'><path d='M8 13v-7.5a1.5 1.5 0 0 1 3 0v6.5'/><path d='M11 12V3.5A1.5 1.5 0 1 1 14 3.5V12'/><path d='M14 12V5.5A1.5 1.5 0 0 1 17 5.5V12'/></g></svg>") 14 16, grab;
+  --cursor-grabbing: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'><path d='M17 9.5a1.5 1.5 0 0 1 3 0v4.5a6 6 0 0 1 -6 6h-2h.208a6 6 0 0 1 -5.012 -2.7l-.196 -.3c-.312 -.479 -1.407 -2.388 -3.286 -5.728a1.5 1.5 0 0 1 .536 -2.022a1.867 1.867 0 0 1 2.28 .28l1.47 1.47' fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'/><g fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'><path d='M8 11v-3.5a1.5 1.5 0 0 1 3 0v2.5'/><path d='M11 10V6.5A1.5 1.5 0 0 1 14 6.5V10'/><path d='M14 10V7.5A1.5 1.5 0 0 1 17 7.5V10'/></g></svg>") 14 16, grabbing;
 }
 
 .day-task-block {
