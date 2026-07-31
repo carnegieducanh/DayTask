@@ -805,16 +805,6 @@
   margin: 3px 0;
 }
 
-.other-tasks-section {
-  margin-top: 4px;
-}
-
-.other-tasks-divider {
-  height: 0.5px;
-  background: var(--border-1);
-  margin: 12px 0 10px;
-}
-
 .other-stats-section--bordered {
   border-top: 0.5px solid var(--border-1);
   padding-top: 7px;

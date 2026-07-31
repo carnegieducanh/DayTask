@@ -86,20 +86,13 @@ export default function TodayView() {
   const habitTasks = tasks.filter((task) => task.category !== "other");
   const otherTasks = tasks.filter((task) => task.category === "other");
   const pending = sortByTime(
-    habitTasks.filter((task) => !task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)),
+    tasks.filter((task) => !task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)),
   );
   const done = sortByTime(
-    habitTasks.filter((task) => task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)),
+    tasks.filter((task) => task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)),
   );
-  const otherPending = sortByTime(
-    otherTasks.filter((task) => !task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)),
-  );
-  const otherDone = sortByTime(
-    otherTasks.filter((task) => task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)),
-  );
-  const otherScheduledCount = otherPending.length + otherDone.length;
-  const total = pending.length + done.length + otherScheduledCount;
-  const doneCount = done.length + otherDone.length;
+  const total = pending.length + done.length;
+  const doneCount = done.length;
   const pct = total === 0 ? 0 : Math.round((doneCount / total) * 100);
   const scheduled = taskTimeEntries.length;
 
@@ -290,34 +283,11 @@ export default function TodayView() {
               </div>
             )}
 
-            {/* Empty state — only when no habit tasks */}
+            {/* Empty state — only when no tasks */}
             {total === 0 && (
               <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: "20px 0" }}>
                 <IconSun size={32} style={{ marginBottom: 8, display: "block", margin: "0 auto 8px" }} />
                 <div>{t.today.emptyState}</div>
-              </div>
-            )}
-
-            {/* Other tasks section */}
-            {otherScheduledCount > 0 && (
-              <div className="other-tasks-section">
-                <div className="other-tasks-divider" />
-                <div className="section-label">
-                  {t.cat.other}{" "}
-                  <span style={{ fontWeight: 400 }}>
-                    · {otherScheduledCount} {t.today.taskUnit}
-                  </span>
-                </div>
-                <div className="task-list">
-                  {otherPending.map((task) => (
-                    <div key={task.id} data-task-id={task.id}>
-                      <TaskCard task={task} onEdit={openEdit} onToggle={handleScheduleToggle} />
-                    </div>
-                  ))}
-                  {otherDone.map((task) => (
-                    <TaskCard key={task.id} task={task} onEdit={openEdit} />
-                  ))}
-                </div>
               </div>
             )}
           </div>
