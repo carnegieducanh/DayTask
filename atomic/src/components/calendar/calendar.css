@@ -1093,14 +1093,19 @@
    keyword cursor, so the only way to control size is to supply our own cursor image.
    Built from Tabler's actual `hand-stop` (open/grab) and `hand-grab` (closed/grabbing) icon
    paths — same icon set/style used everywhere else in the app. These are wireframe icons
-   (fill:none), so the finger strokes stay thin black lines (no halo behind — removed per
-   user request, so the palm's own white fill is the only white on the cursor), but the 4th
-   path — the palm/wrist/thumb outline — is a near-closed loop, so it alone gets `fill:white`
-   to read as an actual solid white palm with a black border, matching the native Windows
-   cursor look (white body, black outline). Sized down from earlier 40px/32px attempts. */
+   (each finger a single open path, not a closed shape), but every path here gets
+   `fill='white' stroke='black'`: SVG auto-closes an open path's fill region with a straight
+   line from its end back to its start, which for these finger paths happens to trace out a
+   clean finger-capsule outline, so filling them reads as solid white fingers with a thin
+   black border — same treatment as the 4th path (palm/wrist/thumb outline). This matters
+   because the cursor bitmap is alpha-blended straight onto the desktop (no opaque backing
+   layer): a `fill:none` stroke is nearly all anti-aliased edge (partial alpha), which let
+   the task-card color behind it bleed through and made the fingers look semi-transparent.
+   A solid fill has an opaque interior regardless of stroke width, so stroke-width can stay
+   at 1 (matching the palm outline) without reintroducing that bleed-through. */
 :root {
-  --cursor-grab: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'><path d='M17 7.5a1.5 1.5 0 0 1 3 0v8.5a6 6 0 0 1 -6 6h-2h.208a6 6 0 0 1 -5.012 -2.7a69.74 69.74 0 0 1 -.196 -.3c-.312 -.479 -1.407 -2.388 -3.286 -5.728a1.5 1.5 0 0 1 .536 -2.022a1.867 1.867 0 0 1 2.28 .28l1.47 1.47' fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'/><g fill='none' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'><path d='M8 13v-7.5a1.5 1.5 0 0 1 3 0v6.5'/><path d='M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5'/><path d='M14 5.5a1.5 1.5 0 0 1 3 0v6.5'/></g></svg>") 14 16, grab;
-  --cursor-grabbing: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'><path d='M17 9.5a1.5 1.5 0 0 1 3 0v4.5a6 6 0 0 1 -6 6h-2h.208a6 6 0 0 1 -5.012 -2.7l-.196 -.3c-.312 -.479 -1.407 -2.388 -3.286 -5.728a1.5 1.5 0 0 1 .536 -2.022a1.867 1.867 0 0 1 2.28 .28l1.47 1.47' fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'/><g fill='none' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'><path d='M8 11v-3.5a1.5 1.5 0 0 1 3 0v2.5'/><path d='M11 9.5v-3a1.5 1.5 0 0 1 3 0v3.5'/><path d='M14 7.5a1.5 1.5 0 0 1 3 0v2.5'/></g></svg>") 14 16, grabbing;
+  --cursor-grab: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'><path d='M17 7.5a1.5 1.5 0 0 1 3 0v8.5a6 6 0 0 1 -6 6h-2h.208a6 6 0 0 1 -5.012 -2.7a69.74 69.74 0 0 1 -.196 -.3c-.312 -.479 -1.407 -2.388 -3.286 -5.728a1.5 1.5 0 0 1 .536 -2.022a1.867 1.867 0 0 1 2.28 .28l1.47 1.47' fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'/><g fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'><path d='M8 13v-7.5a1.5 1.5 0 0 1 3 0v6.5'/><path d='M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5'/><path d='M14 5.5a1.5 1.5 0 0 1 3 0v6.5'/></g></svg>") 14 16, grab;
+  --cursor-grabbing: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'><path d='M17 9.5a1.5 1.5 0 0 1 3 0v4.5a6 6 0 0 1 -6 6h-2h.208a6 6 0 0 1 -5.012 -2.7l-.196 -.3c-.312 -.479 -1.407 -2.388 -3.286 -5.728a1.5 1.5 0 0 1 .536 -2.022a1.867 1.867 0 0 1 2.28 .28l1.47 1.47' fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'/><g fill='white' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'><path d='M8 11v-3.5a1.5 1.5 0 0 1 3 0v2.5'/><path d='M11 9.5v-3a1.5 1.5 0 0 1 3 0v3.5'/><path d='M14 7.5a1.5 1.5 0 0 1 3 0v2.5'/></g></svg>") 14 16, grabbing;
 }
 
 .day-task-block {
