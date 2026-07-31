@@ -170,6 +170,8 @@ interface DragDeckTask {
   cardWidth: number;
   grabOffsetX: number;
   grabOffsetY: number;
+  hoverIndex: number; // slot within the deck this card would land in if dropped now
+  originalIndex: number; // slot it started at, to detect whether the order actually changed
 }
 
 export default function DayView({
@@ -188,6 +190,7 @@ export default function DayView({
     duplicateTask,
     softDeleteTask,
     updateTaskColor,
+    reorderDeckTasks,
     categoryColors,
     tags,
     taskTags,
@@ -216,6 +219,9 @@ export default function DayView({
   dragResizeRef.current = dragResize;
   const dragDeckTaskRef = useRef(dragDeckTask);
   dragDeckTaskRef.current = dragDeckTask;
+  // Ordered ids of the currently-rendered deck (excludes the card being dragged, if any) —
+  // synced every render below, read by the window-level handlers to compute/apply reorder.
+  const unscheduledIdsRef = useRef<number[]>([]);
   // Direct DOM ref for the floating card — position updated without React re-render
   const floatingCardRef = useRef<HTMLDivElement | null>(null);
   // Same pattern, for a scheduled task being dragged back up toward the deck (unschedule)
@@ -242,9 +248,16 @@ export default function DayView({
   const dateEntries = taskTimeEntries.filter((e) => e.date === dateStr);
   const scheduledTaskIds = new Set(dateEntries.map((e) => e.task_id));
   const scheduledTasks = tasks.filter((t) => scheduledTaskIds.has(t.id));
-  const unscheduledTasks = tasks.filter(
-    (t) => !scheduledTaskIds.has(t.id) && t.is_done === 0 && t.id !== dragDeckTask?.taskId,
-  );
+  const unscheduledTasks = tasks
+    .filter((t) => !scheduledTaskIds.has(t.id) && t.is_done === 0 && t.id !== dragDeckTask?.taskId)
+    .sort((a, b) => {
+      const ap = a.deck_position ?? Number.MAX_SAFE_INTEGER;
+      const bp = b.deck_position ?? Number.MAX_SAFE_INTEGER;
+      return ap - bp || a.id - b.id;
+    });
+  // Snapshot for the window-level mouse handlers below, which read via refs so they
+  // stay stable ([] deps) — see the dragCreateRef/dragMoveRef pattern above.
+  unscheduledIdsRef.current = unscheduledTasks.map((t) => t.id);
 
   const layoutItems = computeLayout(scheduledTasks, taskTimeEntries, dateStr);
 
@@ -381,6 +394,9 @@ export default function DayView({
     e.stopPropagation();
     e.preventDefault();
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    // unscheduledTasks still includes this card at mousedown time (drag hasn't started
+    // yet), so its index here is the card's actual slot in the deck.
+    const originalIndex = unscheduledTasks.findIndex((t) => t.id === task.id);
     setDragDeckTask({
       taskId: task.id,
       task,
@@ -391,6 +407,8 @@ export default function DayView({
       cardWidth: rect.width,
       grabOffsetX: e.clientX - rect.left,
       grabOffsetY: e.clientY - rect.top,
+      hoverIndex: originalIndex,
+      originalIndex,
     });
   }
 
@@ -477,9 +495,21 @@ export default function DayView({
             floatingCardRef.current.style.left = `${cursorX - dragDeckTask.grabOffsetX}px`;
             floatingCardRef.current.style.top = `${cursorY - dragDeckTask.grabOffsetY}px`;
           }
-          // Only call setState when transitioning from timeline → deck (startMin changes).
-          if (dragDeckTask.startMin !== -1) {
-            setDragDeckTask((prev) => prev ? { ...prev, cursorX, cursorY, startMin: -1, endMin: -1 } : null);
+          // Which deck slot this card would land in if dropped now — based on where its
+          // top-left (cursor minus grab offset) falls among the other deck cards' `top`s.
+          let hoverIndex = dragDeckTask.hoverIndex;
+          const clip = deckCardsClipRef.current;
+          if (clip) {
+            const clipRect = clip.getBoundingClientRect();
+            const cardTop = cursorY - dragDeckTask.grabOffsetY - clipRect.top + clip.scrollTop;
+            hoverIndex = Math.max(0, Math.min(Math.round(cardTop / DECK_OFFSET), unscheduledIdsRef.current.length));
+          }
+          // Only call setState when transitioning from timeline → deck (startMin changes)
+          // or the hover slot actually changed — cursorX/cursorY are refreshed in the same
+          // update so the floating card's React-rendered position stays in sync with the
+          // direct DOM writes above (otherwise the next re-render would snap it back).
+          if (dragDeckTask.startMin !== -1 || hoverIndex !== dragDeckTask.hoverIndex) {
+            setDragDeckTask((prev) => prev ? { ...prev, cursorX, cursorY, startMin: -1, endMin: -1, hoverIndex } : null);
           }
         } else {
           // Cursor over timeline.
@@ -564,11 +594,16 @@ export default function DayView({
           minToTime(dragDeckTask.startMin),
           minToTime(dragDeckTask.endMin),
         );
+      } else if (dragDeckTask.hoverIndex !== dragDeckTask.originalIndex) {
+        // Dropped back into the deck at a different slot — persist the new manual order.
+        const others = unscheduledIdsRef.current;
+        const idx = Math.max(0, Math.min(dragDeckTask.hoverIndex, others.length));
+        const newOrder = [...others.slice(0, idx), dragDeckTask.taskId, ...others.slice(idx)];
+        await reorderDeckTasks(newOrder);
       }
-      // else: card returns to deck naturally (dragDeckTask cleared)
       setDragDeckTask(null);
     }
-  }, [dateStr, saveTimeEntry, deleteTimeEntry, duplicateTask, onTaskClick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dateStr, saveTimeEntry, deleteTimeEntry, duplicateTask, onTaskClick, reorderDeckTasks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Live Shift toggle while dragging a scheduled task — lets the user press/release
   // Shift mid-drag to switch between "move" and "duplicate" before releasing the mouse.

@@ -420,6 +420,12 @@ pub fn run() {
             PRAGMA foreign_keys = ON;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 29,
+            description: "add_deck_position_to_tasks",
+            sql: "ALTER TABLE tasks ADD COLUMN deck_position INTEGER DEFAULT NULL;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

@@ -3,7 +3,7 @@ import { format, subDays } from 'date-fns';
 import type { Task, NewTask, TaskUpdate, TaskTimeEntry, Category, CategoryColors } from '../../types';
 import {
   isTauri,
-  dbGetTasks, dbAddTask, dbUpdateTask, dbDeleteTask,
+  dbGetTasks, dbAddTask, dbUpdateTask, dbDeleteTask, dbReorderDeckTasks,
   dbGetCalendarTasks,
   dbGetTimeEntries, dbGetCalendarTimeEntries, dbSaveTimeEntry, dbDeleteTimeEntry,
   dbGetTaskTagsForDate, dbSetTaskTags, dbGetCalendarTaskTags,
@@ -45,6 +45,7 @@ export interface TaskSlice {
   undoDeleteTask: () => void;
   confirmDeleteTask: (task: Task) => Promise<void>;
   updateTaskColor: (category: Category, color: string) => Promise<void>;
+  reorderDeckTasks: (orderedTaskIds: number[]) => Promise<void>;
 
   loadCategoryColors: () => Promise<void>;
   updateCategoryColor: (category: Category, color: string) => Promise<void>;
@@ -104,7 +105,7 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     }
 
     const tasks = await db.select<Task[]>(
-      `SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color
+      `SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color, deck_position
        FROM tasks WHERE date = $1 ORDER BY is_done ASC, created_at ASC`,
       [date]
     );
@@ -137,7 +138,7 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     }
     const db = await getDb();
     const tasks = await db.select<Task[]>(
-      'SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color FROM tasks WHERE date >= $1 AND date <= $2 ORDER BY date ASC',
+      'SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color, deck_position FROM tasks WHERE date >= $1 AND date <= $2 ORDER BY date ASC',
       [startDate, endDate]
     );
     const calendarTimeEntries = await db.select<TaskTimeEntry[]>(
@@ -226,7 +227,7 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       const newTask = dbAddTask({
         title: task.title, description: task.description ?? null, category: task.category,
         date: task.date, is_done: 0, repeat_daily: task.repeat_daily ?? 0,
-        series_id: null, repeat_end_date: null, color: null,
+        series_id: null, repeat_end_date: null, color: null, deck_position: null,
       });
       if (timeEntry) dbSaveTimeEntry(newTask.id, task.date, timeEntry.startTime, timeEntry.endTime);
       if (tagIds?.length) dbSetTaskTags(newTask.id, tagIds);
@@ -262,6 +263,7 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       const newTask = dbAddTask({
         title: source.title, description: source.description, category: source.category,
         date, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, color: source.color,
+        deck_position: null,
       });
       if (timeEntry) dbSaveTimeEntry(newTask.id, date, timeEntry.startTime, timeEntry.endTime);
       if (sourceTagIds.length) dbSetTaskTags(newTask.id, sourceTagIds);
@@ -485,6 +487,20 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       'INSERT OR REPLACE INTO category_colors (category, color) VALUES ($1, $2)',
       [category, color]
     );
+  },
+
+  reorderDeckTasks: async (orderedTaskIds) => {
+    const positions = new Map(orderedTaskIds.map((id, i) => [id, i]));
+    const mapper = (t: Task) => (positions.has(t.id) ? { ...t, deck_position: positions.get(t.id)! } : t);
+    set({ tasks: get().tasks.map(mapper), calendarTasks: get().calendarTasks.map(mapper) });
+    if (!isTauri()) {
+      dbReorderDeckTasks(orderedTaskIds);
+      return;
+    }
+    const db = await getDb();
+    for (let i = 0; i < orderedTaskIds.length; i++) {
+      await db.execute('UPDATE tasks SET deck_position = $1 WHERE id = $2', [i, orderedTaskIds[i]]);
+    }
   },
 
   loadCategoryColors: async () => {

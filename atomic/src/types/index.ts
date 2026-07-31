@@ -15,6 +15,7 @@ export interface Task {
   repeat_end_date: string | null;
   created_at: string;
   color: string | null;
+  deck_position: number | null;
 }
 
 export interface NewTask {
