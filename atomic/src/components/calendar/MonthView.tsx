@@ -45,14 +45,16 @@ function generateMonthGrid(currentDate: Date): Date[][] {
   return weeks;
 }
 
+const MIN_VISIBLE_TASKS = 3;
+
 function computeMaxVisible(containerH: number, numTasks: number): number {
   if (numTasks === 0) return 0;
+  const minVisible = Math.min(MIN_VISIBLE_TASKS, numTasks);
   const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
   const lineH = Math.max(16, Math.round(rootFontSize * 0.86 * 1.4 + 2));
   const fits = Math.floor(containerH / lineH);
-  if (fits <= 0) return 0;
   if (fits >= numTasks) return numTasks;
-  return Math.max(0, fits - 1); // reserve 1 slot for "+N more"
+  return Math.max(minVisible, fits - 1); // reserve 1 slot for "+N more", but never below minVisible
 }
 
 interface PopoverPos { top: number; left: number; }

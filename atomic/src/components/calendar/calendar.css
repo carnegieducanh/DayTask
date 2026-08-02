@@ -502,8 +502,9 @@
 .cal-month-grid {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto;
+  grid-auto-rows: minmax(165px, 1fr);
   border: 0.5px solid var(--border-1);
   border-radius: var(--radius-md);
   overflow-y: auto;
@@ -514,7 +515,6 @@
   grid-template-columns: repeat(7, 1fr);
   background: var(--bg-secondary);
   border-bottom: 0.5px solid var(--border-1);
-  flex-shrink: 0;
 }
 .cal-month-dow {
   padding: 7px 4px;
@@ -531,8 +531,7 @@
 .cal-month-week-row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  flex: 1;
-  min-height: 120px;
+  overflow: hidden;
 }
 .cal-month-week-row + .cal-month-week-row {
   border-top: 0.5px solid var(--border-1);
@@ -593,6 +592,10 @@
 .cal-month-day-cell.off-range .cal-month-day-num {
   color: var(--text-secondary);
   opacity: 0.5;
+}
+.cal-month-day-cell.off-range .cal-month-day-num.today {
+  color: #fff;
+  opacity: 1;
 }
 .cal-month-day-events {
   flex: 1;
