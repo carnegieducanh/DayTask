@@ -28,7 +28,7 @@ export interface MonthViewProps {
 
 function generateMonthGrid(currentDate: Date): Date[][] {
   const monthStart = startOfMonth(currentDate);
-  const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
   const weeks: Date[][] = [];
   let day = gridStart;
   for (let w = 0; w < 6; w++) {
@@ -380,7 +380,6 @@ export default function MonthView({
   const t = useT();
   const weeks = generateMonthGrid(currentDate);
   const dow = t.calendar.weekDowShort;
-  const mondayFirstDow = [...dow.slice(1), dow[0]];
   const gridRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(gridRef);
 
@@ -407,7 +406,7 @@ export default function MonthView({
   return (
     <div className="cal-month-grid" ref={gridRef}>
       <div className="cal-month-dow-row">
-        {mondayFirstDow.map((d) => (
+        {dow.map((d) => (
           <div key={d} className="cal-month-dow">
             {d}
           </div>

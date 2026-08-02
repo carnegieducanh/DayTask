@@ -46,8 +46,8 @@ function CalToolbar({
 }) {
   const t = useT();
   const language = useAppStore((s) => s.language);
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
+  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 });
 
   const label =
     view === "day"
@@ -190,8 +190,8 @@ export default function CalendarView() {
     }
     if (view === "week") {
       return {
-        startDate: format(startOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd"),
-        endDate: format(endOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd"),
+        startDate: format(startOfWeek(currentDate, { weekStartsOn: 0 }), "yyyy-MM-dd"),
+        endDate: format(endOfWeek(currentDate, { weekStartsOn: 0 }), "yyyy-MM-dd"),
       };
     }
     // day

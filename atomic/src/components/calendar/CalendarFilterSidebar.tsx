@@ -49,8 +49,15 @@ export default function CalendarFilterSidebar({
   useSmoothScroll(sidebarRef);
   const [tagSearch, setTagSearch] = useState('');
 
-  const catStats = calcRangeCategoryStats(tasks, timeEntries, startDate, endDate, categoryColors);
-  const tagStats = calcRangeTagStats(tasks, timeEntries, taskTags, tags, startDate, endDate);
+  // Filter checkbox lists must stay in a fixed order (creation order) — sorting by
+  // usage minutes here would reshuffle the items every time startDate/endDate changes
+  // (e.g. switching between Week and Month view), which is disorienting for toggles.
+  const catOrder = Object.keys(categoryColors) as Category[];
+  const catStats = calcRangeCategoryStats(tasks, timeEntries, startDate, endDate, categoryColors)
+    .sort((a, b) => catOrder.indexOf(a.category) - catOrder.indexOf(b.category));
+  const tagOrder = new Map(tags.map((tag, i) => [tag.id, i]));
+  const tagStats = calcRangeTagStats(tasks, timeEntries, taskTags, tags, startDate, endDate)
+    .sort((a, b) => (tagOrder.get(a.tagId) ?? 0) - (tagOrder.get(b.tagId) ?? 0));
   const hasFilter = activeCategories.size > 0 || activeTags.size > 0;
 
   const showStats = view === 'week' || view === 'month';

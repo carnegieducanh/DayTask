@@ -50,7 +50,7 @@ export default function WeekView({
 }: WeekViewProps) {
   const t = useT();
   const { softDeleteTask, updateTaskColor } = useAppStore();
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
 

@@ -845,7 +845,6 @@
 .cal-filter-list--scrollable {
   flex: 1;
   min-height: 0;
-  max-height: 12rem;
   overflow-y: auto;
 }
 .cal-filter-tag-search {
