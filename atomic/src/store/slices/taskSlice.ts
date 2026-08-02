@@ -205,9 +205,24 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     const updatedCalendarEntries = get().calendarTimeEntries.filter(
       (e) => !(e.task_id === taskId && e.date === date)
     );
+    // A task with no time entry has nothing to show "done" against (Today/Day both
+    // require an entry to display it at all) — clear is_done so it doesn't become
+    // a ghost that only resurfaces, undated, in Week/Month view.
+    const wasDone =
+      get().tasks.find((t) => t.id === taskId)?.is_done === 1 ||
+      get().calendarTasks.find((t) => t.id === taskId)?.is_done === 1;
+    const clearDone = (list: Task[]) =>
+      wasDone ? list.map((t) => (t.id === taskId ? { ...t, is_done: 0 } : t)) : list;
+
     if (!isTauri()) {
       dbDeleteTimeEntry(taskId, date);
-      set({ taskTimeEntries: dbGetTimeEntries(date), calendarTimeEntries: updatedCalendarEntries });
+      if (wasDone) dbUpdateTask(taskId, { is_done: 0 });
+      set({
+        taskTimeEntries: dbGetTimeEntries(date),
+        calendarTimeEntries: updatedCalendarEntries,
+        tasks: clearDone(get().tasks),
+        calendarTasks: clearDone(get().calendarTasks),
+      });
       return;
     }
     const db = await getDb();
@@ -215,11 +230,19 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       'DELETE FROM task_time_entries WHERE task_id = $1 AND date = $2',
       [taskId, date]
     );
+    if (wasDone) {
+      await db.execute('UPDATE tasks SET is_done = 0 WHERE id = $1', [taskId]);
+    }
     const taskTimeEntries = await db.select<TaskTimeEntry[]>(
       'SELECT * FROM task_time_entries WHERE date = $1',
       [date]
     );
-    set({ taskTimeEntries, calendarTimeEntries: updatedCalendarEntries });
+    set({
+      taskTimeEntries,
+      calendarTimeEntries: updatedCalendarEntries,
+      tasks: clearDone(get().tasks),
+      calendarTasks: clearDone(get().calendarTasks),
+    });
   },
 
   addTask: async (task, timeEntry, tagIds) => {

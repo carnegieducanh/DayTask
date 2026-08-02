@@ -159,17 +159,20 @@
   text-align: center;
 }
 
-/* Month view — dot style */
+/* Month view — colored chip style */
 .cal-month-event {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 1px 4px;
+  padding: 1px 5px;
   border-radius: 3px;
   cursor: pointer;
+  transition: filter 0.1s;
 }
 .cal-month-event:hover {
-  background: var(--bg-secondary);
+  filter: brightness(0.92);
+}
+.cal-month-event .cal-month-title {
+  color: rgba(0, 0, 0, 0.88);
 }
 .cal-month-dot {
   width: 8px;
@@ -664,24 +667,28 @@
   color: var(--text-primary);
 }
 .cal-day-popover-list {
-  padding: 4px 0;
+  padding: 4px 6px;
   max-height: 240px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 .cal-day-popover-task {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 6px 10px;
+  padding: 6px 8px;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background 0.1s;
+  transition: filter 0.1s;
 }
 .cal-day-popover-task:hover {
-  background: var(--bg-hover);
+  filter: brightness(0.92);
 }
 .cal-day-popover-task-title {
   font-size: 0.85rem;
-  color: var(--text-primary);
+  color: rgba(0, 0, 0, 0.88);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -689,7 +696,7 @@
 }
 .cal-day-popover-task-duration {
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: rgba(0, 0, 0, 0.55);
   white-space: nowrap;
   flex-shrink: 0;
 }

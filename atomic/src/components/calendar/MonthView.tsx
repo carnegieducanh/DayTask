@@ -82,6 +82,10 @@ function DayPopover({
   const dateLabel = language === 'vi'
     ? format(date, 'dd/MM/yyyy')
     : format(date, 'MMM d, yyyy');
+  // Portaled to document.body, so it sits outside the .cal-month-grid DOM subtree
+  // where the grid's own useSmoothScroll is attached — needs its own instance.
+  const listRef = useRef<HTMLDivElement>(null);
+  useSmoothScroll(listRef);
 
   return createPortal(
     <div
@@ -95,7 +99,7 @@ function DayPopover({
           <IconX size="0.85rem" />
         </button>
       </div>
-      <div className="cal-day-popover-list">
+      <div className="cal-day-popover-list" ref={listRef}>
         {tasks.length === 0 ? (
           <div className="cal-day-popover-empty">
             {language === 'vi' ? 'Không có task' : 'No tasks'}
@@ -115,10 +119,10 @@ function DayPopover({
               <div
                 key={task.id}
                 className="cal-day-popover-task"
+                style={{ backgroundColor: color }}
                 onClick={() => { onClose(); onTaskClick(task); }}
                 onContextMenu={(e) => onTaskContextMenu(e, task)}
               >
-                <span className="cal-month-dot" style={{ background: color }} />
                 <span className="cal-day-popover-task-title">{task.title}</span>
                 {duration && (
                   <span className="cal-day-popover-task-duration">{duration}</span>
@@ -293,10 +297,10 @@ function MonthDayCell({
             <div
               key={task.id}
               className="cal-month-event"
+              style={{ backgroundColor: color }}
               onClick={(e) => { e.stopPropagation(); onTaskClick(task); }}
               onContextMenu={(e) => handleTaskContextMenu(e, task)}
             >
-              <span className="cal-month-dot" style={{ background: color }} />
               <span className="cal-month-title">{task.title}</span>
             </div>
           );
