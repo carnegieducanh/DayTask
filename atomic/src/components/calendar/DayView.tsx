@@ -146,7 +146,7 @@ interface DragMove {
   grabOffsetY: number;
   cursorX: number;
   cursorY: number;
-  duplicate: boolean; // Shift held — dragging creates a copy instead of moving the original
+  duplicate: boolean; // Alt held — dragging creates a copy instead of moving the original
 }
 
 interface DragResize {
@@ -383,7 +383,7 @@ export default function DayView({
       grabOffsetY: e.clientY - rect.top,
       cursorX: e.clientX,
       cursorY: e.clientY,
-      duplicate: e.shiftKey,
+      duplicate: e.altKey,
     });
     e.preventDefault();
   }
@@ -631,17 +631,17 @@ export default function DayView({
     }
   }, [dateStr, saveTimeEntry, deleteTimeEntry, duplicateTask, onTaskClick, reorderDeckTasks]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Live Shift toggle while dragging a scheduled task — lets the user press/release
-  // Shift mid-drag to switch between "move" and "duplicate" before releasing the mouse.
+  // Live Alt toggle while dragging a scheduled task — lets the user press/release
+  // Alt mid-drag to switch between "move" and "duplicate" before releasing the mouse.
   const handleWindowKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key !== "Shift") return;
+    if (e.key !== "Alt") return;
     if (dragMoveRef.current && !dragMoveRef.current.duplicate) {
       setDragMove((prev) => (prev ? { ...prev, duplicate: true } : null));
     }
   }, []);
 
   const handleWindowKeyUp = useCallback((e: KeyboardEvent) => {
-    if (e.key !== "Shift") return;
+    if (e.key !== "Alt") return;
     if (dragMoveRef.current && dragMoveRef.current.duplicate) {
       setDragMove((prev) => (prev ? { ...prev, duplicate: false } : null));
     }
@@ -919,7 +919,7 @@ export default function DayView({
             );
           })}
 
-          {/* Duplicate drag ghost — Shift+drag on a scheduled task: original stays put above,
+          {/* Duplicate drag ghost — Alt+drag on a scheduled task: original stays put above,
               this follows the cursor and previews where the new copy will land. */}
           {dragMove && dragMove.moved && dragMove.duplicate && !dragMove.overDeck && (() => {
             const color = dragMove.task.color ?? categoryColors[dragMove.task.category];
