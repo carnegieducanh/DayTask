@@ -261,6 +261,13 @@ export default function DayView({
   // Last known cursor position — the rAF loop replays it through handleWindowMouseMove after each
   // scroll step so the dragged card's position stays in sync even when the mouse itself isn't moving.
   const lastPointerRef = useRef<{ clientX: number; clientY: number } | null>(null);
+  // Whether the cursor has been seen safely clear of the grid's top/bottom edge zone during the
+  // current pass over the timeline — each edge's auto-scroll only "arms" once this is true, so a
+  // drag that enters the grid already inside the edge zone (e.g. a deck card dragged down across
+  // the day-deck row, which sits flush against the grid's top) doesn't immediately yank the
+  // scrollbar before the user has had a chance to move past the boundary.
+  const topEdgeArmedRef = useRef(false);
+  const bottomEdgeArmedRef = useRef(false);
 
   const [currentTimeMin, setCurrentTimeMin] = useState(() => {
     const now = new Date();
@@ -597,8 +604,19 @@ export default function DayView({
       // viewport — re-evaluated every mousemove, and replayed by the rAF loop below whenever
       // the cursor itself stays still but the timeline keeps scrolling under it.
       const gridEl = gridRef.current;
-      autoScrollSpeedRef.current =
-        onTimelineActive && gridEl ? computeAutoScrollSpeed(gridEl.getBoundingClientRect(), e.clientY) : 0;
+      if (onTimelineActive && gridEl) {
+        const rect = gridEl.getBoundingClientRect();
+        // Arm each edge once the cursor is seen safely clear of it — see topEdgeArmedRef comment.
+        if (e.clientY - rect.top >= AUTO_SCROLL_EDGE) topEdgeArmedRef.current = true;
+        if (rect.bottom - e.clientY >= AUTO_SCROLL_EDGE) bottomEdgeArmedRef.current = true;
+        const speed = computeAutoScrollSpeed(rect, e.clientY);
+        autoScrollSpeedRef.current =
+          (speed < 0 && !topEdgeArmedRef.current) || (speed > 0 && !bottomEdgeArmedRef.current) ? 0 : speed;
+      } else {
+        autoScrollSpeedRef.current = 0;
+        topEdgeArmedRef.current = false;
+        bottomEdgeArmedRef.current = false;
+      }
     },
     [], // eslint-disable-line react-hooks/exhaustive-deps
   );
@@ -693,6 +711,8 @@ export default function DayView({
   const isDragging = !!(dragCreate || dragMove || dragResize || dragDeckTask);
   useEffect(() => {
     if (!isDragging) return;
+    topEdgeArmedRef.current = false;
+    bottomEdgeArmedRef.current = false;
     window.addEventListener("mousemove", handleWindowMouseMove);
     window.addEventListener("mouseup", handleWindowMouseUp);
     window.addEventListener("keydown", handleWindowKeyDown);
