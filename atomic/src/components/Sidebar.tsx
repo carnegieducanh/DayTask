@@ -18,6 +18,17 @@ import { useAppStore } from "../store/appStore";
 import { useT } from "../i18n";
 import type { Tab } from "../types";
 
+const TAB_ORDER: Tab[] = [
+  "today",
+  "calendar",
+  "kanban",
+  "projects",
+  "books",
+  "journal",
+  "quotes",
+  "heatmap",
+];
+
 export default function Sidebar() {
   const t = useT();
   const {
@@ -81,6 +92,35 @@ export default function Sidebar() {
       if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
     };
   }, []);
+
+  // Shift + lăn chuột (ở bất kỳ đâu trong app) → chuyển lần lượt qua các tab sidebar-nav
+  const activeTabRef = useRef(activeTab);
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  useEffect(() => {
+    let lastSwitch = 0;
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.shiftKey) return;
+      const delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
+      if (Math.abs(delta) < 2) return;
+      e.preventDefault();
+      const now = Date.now();
+      if (now - lastSwitch < 250) return; // debounce trackpad/wheel dồn dập
+      lastSwitch = now;
+
+      const currentIndex = TAB_ORDER.indexOf(activeTabRef.current);
+      if (currentIndex === -1) return;
+      const nextIndex =
+        (currentIndex + (delta > 0 ? 1 : -1) + TAB_ORDER.length) % TAB_ORDER.length;
+      const nextTab = TAB_ORDER[nextIndex];
+      if (nextTab === "today") setSelectedDate(format(new Date(), "yyyy-MM-dd"));
+      setActiveTab(nextTab);
+    };
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    return () => window.removeEventListener("wheel", handleWheel);
+  }, [setActiveTab, setSelectedDate]);
 
   const easeInOutCubic = (x: number) =>
     x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
