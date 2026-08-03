@@ -45,6 +45,21 @@ const DECK_OFFSET = 28; // px each unscheduled card is offset from the one below
 const CARD_HEIGHT = 52; // px height of each deck card
 const MAX_DECK = 3; // max visible cards in deck
 const DECK_SCROLL_MAX = 9; // above this count, expanded deck gets a scrollbar
+const AUTO_SCROLL_EDGE = 60; // px from the grid's top/bottom viewport edge that triggers auto-scroll
+const AUTO_SCROLL_MAX_SPEED = 18; // px per animation frame once the cursor is right at the edge
+
+// Pure function of the grid's rect + cursor Y — no closures, safe to call from a ref-driven rAF loop.
+function computeAutoScrollSpeed(rect: DOMRect, clientY: number): number {
+  const distFromTop = clientY - rect.top;
+  const distFromBottom = rect.bottom - clientY;
+  if (distFromTop >= 0 && distFromTop < AUTO_SCROLL_EDGE) {
+    return -AUTO_SCROLL_MAX_SPEED * (1 - distFromTop / AUTO_SCROLL_EDGE);
+  }
+  if (distFromBottom >= 0 && distFromBottom < AUTO_SCROLL_EDGE) {
+    return AUTO_SCROLL_MAX_SPEED * (1 - distFromBottom / AUTO_SCROLL_EDGE);
+  }
+  return 0;
+}
 
 function timeToMin(time: string): number {
   const [h, m] = time.split(":").map(Number);
@@ -236,6 +251,12 @@ export default function DayView({
   const ghostRef = useRef<HTMLDivElement | null>(null);
   // Stores cardTop at the moment startMin last changed — used to set initial ghost position via useLayoutEffect
   const ghostInitialTopRef = useRef<number>(0);
+  // Current auto-scroll speed (px/frame, signed) — written by handleWindowMouseMove whenever the
+  // cursor is near the grid's top/bottom edge during a timeline drag, consumed by the rAF loop below.
+  const autoScrollSpeedRef = useRef(0);
+  // Last known cursor position — the rAF loop replays it through handleWindowMouseMove after each
+  // scroll step so the dragged card's position stays in sync even when the mouse itself isn't moving.
+  const lastPointerRef = useRef<{ clientX: number; clientY: number } | null>(null);
 
   const [currentTimeMin, setCurrentTimeMin] = useState(() => {
     const now = new Date();
@@ -439,7 +460,13 @@ export default function DayView({
       const dragResize = dragResizeRef.current;
       const dragDeckTask = dragDeckTaskRef.current;
 
+      lastPointerRef.current = { clientX: e.clientX, clientY: e.clientY };
+      // Set true by whichever branch below is actively manipulating the timeline (not the
+      // deck) — drives the edge auto-scroll speed computed at the end of this callback.
+      let onTimelineActive = false;
+
       if (dragCreate) {
+        onTimelineActive = true;
         const y = getRelY(e.clientY);
         const endMin = Math.round(Math.max(0, Math.min(pxToMin(y), 1440)) / 15) * 15;
         setDragCreate((prev) => (prev ? { ...prev, endMin: Math.max(endMin, prev.startMin + 15) } : null));
@@ -460,6 +487,7 @@ export default function DayView({
             );
           }
         } else {
+          onTimelineActive = true;
           const y = getRelY(e.clientY);
           const duration = dragMove.origEndMin - dragMove.origStartMin;
           // Raw, unsnapped px — written straight to the DOM every frame so the block
@@ -489,6 +517,7 @@ export default function DayView({
         }
       }
       if (dragResize) {
+        onTimelineActive = true;
         const y = getRelY(e.clientY);
         const rawMin = Math.round(pxToMin(y) / 5) * 5; // snap to 5-min grid
         if (dragResize.direction === "bottom") {
@@ -539,6 +568,7 @@ export default function DayView({
           }
         } else {
           // Cursor over timeline.
+          onTimelineActive = true;
           const y = getRelY(e.clientY);
           // Ghost follows cursor with same grab offset as the floating card (smooth).
           const cardTop = Math.max(0, Math.min(y - dragDeckTask.grabOffsetY, minToPx(1440) - CARD_HEIGHT));
@@ -557,6 +587,14 @@ export default function DayView({
           }
         }
       }
+
+      // Auto-scroll: only while a drag is actively manipulating the timeline (not hovering
+      // the deck), and only based on where the cursor sits relative to the grid's visible
+      // viewport — re-evaluated every mousemove, and replayed by the rAF loop below whenever
+      // the cursor itself stays still but the timeline keeps scrolling under it.
+      const gridEl = gridRef.current;
+      autoScrollSpeedRef.current =
+        onTimelineActive && gridEl ? computeAutoScrollSpeed(gridEl.getBoundingClientRect(), e.clientY) : 0;
     },
     [], // eslint-disable-line react-hooks/exhaustive-deps
   );
@@ -662,6 +700,37 @@ export default function DayView({
       window.removeEventListener("keyup", handleWindowKeyUp);
     };
   }, [isDragging, handleWindowMouseMove, handleWindowMouseUp, handleWindowKeyDown, handleWindowKeyUp]);
+
+  // Auto-scroll the grid while a timeline drag holds the cursor near its top/bottom edge.
+  // Runs on a rAF loop (not just on mousemove) so scrolling continues even if the cursor
+  // stops moving but stays parked in the edge zone. After each scroll step it replays the
+  // last known cursor position through handleWindowMouseMove so the dragged card's position
+  // stays correct relative to the newly-scrolled content.
+  useEffect(() => {
+    if (!isDragging) {
+      autoScrollSpeedRef.current = 0;
+      return;
+    }
+    let rafId: number;
+    const tick = () => {
+      const speed = autoScrollSpeedRef.current;
+      const grid = gridRef.current;
+      if (speed !== 0 && grid) {
+        const maxScrollTop = grid.scrollHeight - grid.clientHeight;
+        const nextScrollTop = Math.max(0, Math.min(grid.scrollTop + speed, maxScrollTop));
+        if (nextScrollTop !== grid.scrollTop) {
+          grid.scrollTop = nextScrollTop;
+          const pointer = lastPointerRef.current;
+          if (pointer) {
+            handleWindowMouseMove({ clientX: pointer.clientX, clientY: pointer.clientY } as MouseEvent);
+          }
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [isDragging, handleWindowMouseMove]);
 
   // Runs synchronously after React commits the ghost element, before paint.
   // Restores the cursor-following `top` that direct DOM set — React would have
