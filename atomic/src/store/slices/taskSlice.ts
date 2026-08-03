@@ -78,8 +78,10 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     if (isMainWindow) {
       // Lazy-create instances for active series templates that don't yet have one for this date.
       // A template is: repeat_daily=1, series_id IS NULL, date < $date, repeat_end_date IS NULL OR >= $date.
-      const templatesToInstantiate = await db.select<{ id: number; title: string; category: string; created_at: string }[]>(
-        `SELECT t.id, t.title, t.category, t.created_at FROM tasks t
+      // deck_position is carried over from the template so a manually-reordered deck
+      // (see reorderDeckTasks) stays in the same order on days not visited yet.
+      const templatesToInstantiate = await db.select<{ id: number; title: string; category: string; created_at: string; deck_position: number | null }[]>(
+        `SELECT t.id, t.title, t.category, t.created_at, t.deck_position FROM tasks t
          WHERE t.repeat_daily = 1 AND t.series_id IS NULL
            AND t.date < $1
            AND (t.repeat_end_date IS NULL OR t.repeat_end_date >= $1)
@@ -90,9 +92,9 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       );
       for (const tpl of templatesToInstantiate) {
         const result = await db.execute(
-          `INSERT OR IGNORE INTO tasks (title, description, category, date, is_done, repeat_daily, series_id, created_at)
-           VALUES ($1, NULL, $2, $3, 0, 0, $4, $5)`,
-          [tpl.title, tpl.category, date, tpl.id, tpl.created_at]
+          `INSERT OR IGNORE INTO tasks (title, description, category, date, is_done, repeat_daily, series_id, created_at, deck_position)
+           VALUES ($1, NULL, $2, $3, 0, 0, $4, $5, $6)`,
+          [tpl.title, tpl.category, date, tpl.id, tpl.created_at, tpl.deck_position]
         );
         const newId = result.lastInsertId;
         if (newId) {
@@ -513,16 +515,30 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
   },
 
   reorderDeckTasks: async (orderedTaskIds) => {
+    const date = get().selectedDate;
+    const taskLookup = get().tasks;
     const positions = new Map(orderedTaskIds.map((id, i) => [id, i]));
     const mapper = (t: Task) => (positions.has(t.id) ? { ...t, deck_position: positions.get(t.id)! } : t);
     set({ tasks: get().tasks.map(mapper), calendarTasks: get().calendarTasks.map(mapper) });
     if (!isTauri()) {
-      dbReorderDeckTasks(orderedTaskIds);
+      dbReorderDeckTasks(orderedTaskIds, date);
       return;
     }
     const db = await getDb();
     for (let i = 0; i < orderedTaskIds.length; i++) {
-      await db.execute('UPDATE tasks SET deck_position = $1 WHERE id = $2', [i, orderedTaskIds[i]]);
+      const taskId = orderedTaskIds[i];
+      await db.execute('UPDATE tasks SET deck_position = $1 WHERE id = $2', [i, taskId]);
+
+      // Recurring task: carry this order onto the template + future instances too,
+      // so the deck stays arranged the same way on days the user hasn't reordered yet.
+      const task = taskLookup.find((t) => t.id === taskId);
+      const templateId = task?.series_id ?? (task?.repeat_daily === 1 ? task.id : null);
+      if (templateId) {
+        await db.execute(
+          'UPDATE tasks SET deck_position = $1 WHERE id = $2 OR (series_id = $2 AND date >= $3)',
+          [i, templateId, date]
+        );
+      }
     }
   },
 

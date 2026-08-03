@@ -145,7 +145,7 @@ export function dbGetTasks(date: string): Task[] {
         repeat_end_date: null,
         created_at: tpl.created_at,
         color: null,
-        deck_position: null,
+        deck_position: tpl.deck_position,
       };
       mockTasks.push(instance);
       const tplTags = mockTaskTags[tpl.id];
@@ -210,10 +210,22 @@ export function dbUpdateTask(id: number, updates: Partial<Task>): void {
   }
 }
 
-export function dbReorderDeckTasks(orderedTaskIds: number[]): void {
+export function dbReorderDeckTasks(orderedTaskIds: number[], date: string): void {
   orderedTaskIds.forEach((id, i) => {
     const task = mockTasks.find((t) => t.id === id);
-    if (task) task.deck_position = i;
+    if (!task) return;
+    task.deck_position = i;
+
+    // Recurring task: carry this order onto the template + future instances too,
+    // so the deck stays arranged the same way on days not reordered yet.
+    const templateId = task.series_id ?? (task.repeat_daily === 1 ? task.id : null);
+    if (templateId) {
+      for (const t of mockTasks) {
+        if (t.id === templateId || (t.series_id === templateId && t.date >= date)) {
+          t.deck_position = i;
+        }
+      }
+    }
   });
 }
 
