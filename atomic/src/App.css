@@ -670,8 +670,8 @@ select {
   opacity: 0;
   transition:
     opacity 0.12s,
-    color 0.1s,
-    background 0.1s;
+    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .cat-dropdown-item:hover .cat-item-dots,
@@ -861,7 +861,7 @@ select {
   font-family: var(--font);
   cursor: pointer;
   text-align: left;
-  transition: background 0.08s;
+  transition: background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .time-option:hover {

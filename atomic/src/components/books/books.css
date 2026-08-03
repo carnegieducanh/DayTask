@@ -93,8 +93,8 @@
   width: 100%;
   text-align: left;
   transition:
-    background 0.12s,
-    color 0.12s;
+    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .books-sb-item:hover {
   background: var(--bg-hover);
@@ -171,8 +171,8 @@
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   cursor: pointer;
   transition:
-    background 0.12s,
-    color 0.12s;
+    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .projects-title-tab:hover {
   /* background: var(--bg-hover); */
@@ -954,8 +954,8 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition:
-    background 0.15s,
-    color 0.15s;
+    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   white-space: nowrap;
 }
 .books-status-btn.active {

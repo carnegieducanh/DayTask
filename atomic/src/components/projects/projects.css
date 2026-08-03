@@ -21,8 +21,8 @@
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition:
-    background 0.12s,
-    color 0.12s;
+    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .projects-category-tab:hover {
   background: var(--bg-hover);

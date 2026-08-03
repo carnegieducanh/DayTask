@@ -174,8 +174,8 @@
   border-bottom: 2px solid transparent;
   cursor: pointer;
   transition:
-    color 0.15s,
-    border-color 0.15s;
+    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   margin-bottom: -0.5px;
   white-space: nowrap;
 }
@@ -271,9 +271,9 @@
   color: var(--text-primary);
   cursor: pointer;
   transition:
-    border-color 0.15s,
-    background 0.15s,
-    color 0.15s;
+    border-color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .settings-seg-btn:hover {
@@ -306,9 +306,9 @@
   text-align: center;
   min-width: 48px;
   transition:
-    border-color 0.15s,
-    background 0.15s,
-    color 0.15s;
+    border-color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .settings-font-btn:hover {
@@ -343,7 +343,7 @@
   cursor: pointer;
   background: var(--toggle-track);
   flex-shrink: 0;
-  transition: background 0.2s;
+  transition: background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .settings-toggle::after {

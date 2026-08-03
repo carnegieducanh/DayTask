@@ -54,6 +54,10 @@ export default function Sidebar() {
 
   const pendingCount = tasks.filter((t) => !t.is_done).length;
 
+  // Ref luôn giữ giá trị activeTab mới nhất, dùng trong các effect không muốn re-subscribe mỗi lần đổi tab
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+
   const navRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -94,11 +98,6 @@ export default function Sidebar() {
   }, []);
 
   // Shift + lăn chuột (ở bất kỳ đâu trong app) → chuyển lần lượt qua các tab sidebar-nav
-  const activeTabRef = useRef(activeTab);
-  useEffect(() => {
-    activeTabRef.current = activeTab;
-  }, [activeTab]);
-
   useEffect(() => {
     let lastSwitch = 0;
     const handleWheel = (e: WheelEvent) => {

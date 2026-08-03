@@ -142,8 +142,8 @@
   font-family: var(--font);
   cursor: pointer;
   transition:
-    background 0.1s,
-    color 0.1s;
+    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .cal-toolbar-btn:hover {
   background: var(--border-1);
@@ -880,7 +880,7 @@
   padding: 5px 6px;
   cursor: pointer;
   text-align: left;
-  transition: background 0.12s;
+  transition: background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   color: var(--text-primary);
 }
 .cal-filter-item:hover {

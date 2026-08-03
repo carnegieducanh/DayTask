@@ -1826,7 +1826,7 @@
   border: none;
   border-top: 0.5px solid var(--border-1);
   width: 100%;
-  transition: background 0.1s;
+  transition: background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .tag-dropdown-item:first-child {
@@ -2051,8 +2051,8 @@
   padding: 0;
   font-family: inherit;
   transition:
-    background 0.1s,
-    color 0.1s;
+    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   line-height: 1;
 }
 
