@@ -198,7 +198,7 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
                 className={`wc-item${item.is_done ? ' wc-done' : ''}${transitioningIds.has(item.id) ? ' wc-completing' : ''}`}
               >
                 <button className="wc-check" onClick={() => handleToggle(item)}>
-                  <IconCheck size={12} strokeWidth={2.5} />
+                  <IconCheck size={16} strokeWidth={2.5} />
                 </button>
 
                 {editingId === item.id ? (
