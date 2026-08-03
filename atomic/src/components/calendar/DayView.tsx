@@ -49,14 +49,18 @@ const AUTO_SCROLL_EDGE = 60; // px from the grid's top/bottom viewport edge that
 const AUTO_SCROLL_MAX_SPEED = 18; // px per animation frame once the cursor is right at the edge
 
 // Pure function of the grid's rect + cursor Y — no closures, safe to call from a ref-driven rAF loop.
+// distFromTop/distFromBottom go negative once the cursor is actually past that edge (e.g. dragged
+// off the app window) — clamped to full speed rather than treated as "no longer near the edge",
+// otherwise a single fast mousemove that jumps straight past the threshold (or off-window, where no
+// further events arrive to recover it) would freeze the ref at 0 and auto-scroll would stop dead.
 function computeAutoScrollSpeed(rect: DOMRect, clientY: number): number {
   const distFromTop = clientY - rect.top;
   const distFromBottom = rect.bottom - clientY;
-  if (distFromTop >= 0 && distFromTop < AUTO_SCROLL_EDGE) {
-    return -AUTO_SCROLL_MAX_SPEED * (1 - distFromTop / AUTO_SCROLL_EDGE);
+  if (distFromTop < AUTO_SCROLL_EDGE) {
+    return -AUTO_SCROLL_MAX_SPEED * Math.min(1, 1 - distFromTop / AUTO_SCROLL_EDGE);
   }
-  if (distFromBottom >= 0 && distFromBottom < AUTO_SCROLL_EDGE) {
-    return AUTO_SCROLL_MAX_SPEED * (1 - distFromBottom / AUTO_SCROLL_EDGE);
+  if (distFromBottom < AUTO_SCROLL_EDGE) {
+    return AUTO_SCROLL_MAX_SPEED * Math.min(1, 1 - distFromBottom / AUTO_SCROLL_EDGE);
   }
   return 0;
 }
