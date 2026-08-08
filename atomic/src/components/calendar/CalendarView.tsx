@@ -27,7 +27,12 @@ import MiniCalendar from "../today/MiniCalendar";
 import VocabWidget from "../today/VocabWidget";
 import DayStatsSection from "./DayStatsSection";
 import OtherStatsSection from "./OtherStatsSection";
-import { calcDayStats, calcOtherDoneDayMins } from "./calendarUtils";
+import {
+  calcRangeCategoryStats,
+  calcOtherDayMins,
+  calcDayDoneMins,
+  calcWeekTotalMins,
+} from "./calendarUtils";
 
 type CalViewType = "day" | "week" | "month";
 
@@ -230,8 +235,15 @@ export default function CalendarView() {
     setActiveTags(new Set());
   };
 
-  const dayStats = calcDayStats(calendarTasks, calendarTimeEntries, selectedDate, categoryColors).filter(s => s.category !== 'other');
-  const otherDayMins = calcOtherDoneDayMins(calendarTasks, calendarTimeEntries, selectedDate);
+  const habitCalendarTasks = calendarTasks.filter((task) => task.category !== 'other');
+  const otherCalendarTasks = calendarTasks.filter((task) => task.category === 'other');
+  const dayStats = calcRangeCategoryStats(calendarTasks, calendarTimeEntries, selectedDate, selectedDate, categoryColors).filter(
+    (s) => s.totalMins > 0 && s.category !== 'other',
+  );
+  const otherDayMins = calcOtherDayMins(calendarTasks, calendarTimeEntries, selectedDate);
+  const otherDoneMins = calcDayDoneMins(otherCalendarTasks, calendarTimeEntries, selectedDate);
+  const dayDoneMins = calcDayDoneMins(habitCalendarTasks, calendarTimeEntries, selectedDate);
+  const dayTotalMins = calcWeekTotalMins(habitCalendarTasks, calendarTimeEntries, selectedDate, selectedDate);
 
   return (
     <div className="cal-wrap">
@@ -248,8 +260,12 @@ export default function CalendarView() {
             <div className="cal-day-sidebar-extras">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
-                  <DayStatsSection stats={dayStats} />
-                  <OtherStatsSection totalMins={otherDayMins} hasBorderTop={dayStats.length > 0} />
+                  {dayStats.length > 0 && (
+                    <DayStatsSection stats={dayStats} doneMins={dayDoneMins} totalMins={dayTotalMins} showCatDone />
+                  )}
+                  {otherDayMins > 0 && (
+                    <OtherStatsSection totalMins={otherDayMins} doneMins={otherDoneMins} hasBorderTop={dayStats.length > 0} />
+                  )}
                 </div>
               </div>
               <div style={{ padding: "0 8px" }}>
