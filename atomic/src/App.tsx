@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 // rules (.view-topbar, .modal, etc.) that feature CSS files are meant to override via
 // later cascade position, same relative order as the original single-file App.css.
 import './App.css';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { isTauri } from './store/mockDb';
 import {
   DndContext,
   DragEndEvent,
@@ -91,6 +93,9 @@ function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    if (isTauri()) {
+      getCurrentWindow().setTheme(theme === 'dark' ? 'dark' : 'light').catch(() => {});
+    }
   }, [theme]);
 
   useEffect(() => {
