@@ -240,6 +240,7 @@ export const vi = {
     dowPattern: (year: number) => `Theo thứ trong tuần · ${year}`,
     dowPatternNote: "Trung bình số task hoàn thành mỗi thứ, tính trên cả năm",
     topTags: "Top tags tuần này",
+    topHours: "Top giờ tuần này",
     completionTrend: "Tỷ lệ hoàn thành theo tháng",
     noTagData: "Chưa có dữ liệu tag",
     tasksDoneShort: "task xong",

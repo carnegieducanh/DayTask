@@ -249,6 +249,7 @@ export const en: typeof vi = {
     dowPattern: (year: number) => `By Day of Week · ${year}`,
     dowPatternNote: "Average tasks completed per weekday, across the full year",
     topTags: "Top Tags This Week",
+    topHours: "Top Hours This Week",
     completionTrend: "Completion Rate by Month",
     noTagData: "No tag data",
     tasksDoneShort: "tasks done",

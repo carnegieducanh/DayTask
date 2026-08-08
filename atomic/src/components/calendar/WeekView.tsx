@@ -126,7 +126,10 @@ export default function WeekView({
           });
         const isToday = isSameDay(day, today);
         const stats = calcDayStats(tasks, timeEntries, dateStr, categoryColors).filter(s => s.category !== 'other');
-        const otherMins = calcOtherDayMins(tasks, timeEntries, dateStr);
+        // calcOtherDayMins doesn't filter is_done on its own (Day view intentionally reuses it
+        // unfiltered for the "done / total scheduled" split) — Week view only ever shows a single
+        // done-only number here, so pre-filter to done tasks to match the rest of this column's stats.
+        const otherMins = calcOtherDayMins(tasks.filter((task) => task.is_done === 1), timeEntries, dateStr);
         const otherColor = categoryColors['other'] ?? '#7C7C7C';
 
         return (

@@ -61,7 +61,12 @@ export default function CalendarFilterSidebar({
   const hasFilter = activeCategories.size > 0 || activeTags.size > 0;
 
   const showStats = view === 'week' || view === 'month';
-  const baseTasks = hasFilter ? filteredTasks : tasks;
+  // Week/Month grid only ever renders + totals completed tasks (see WeekView/MonthView
+  // dayTasks filters), so these headline numbers must match by only counting done tasks —
+  // otherwise scheduled-but-incomplete time entries (invisible on the grid) inflate the sidebar total.
+  const doneTasks = tasks.filter((task) => task.is_done === 1);
+  const doneFilteredTasks = filteredTasks.filter((task) => task.is_done === 1);
+  const baseTasks = hasFilter ? doneFilteredTasks : doneTasks;
   const totalMins = showStats ? calcWeekTotalMins(baseTasks, timeEntries, startDate, endDate) : 0;
   const otherRangeMins = showStats ? calcRangeOtherMins(baseTasks, timeEntries, startDate, endDate) : 0;
   const displayTotal = totalMins - otherRangeMins;
@@ -69,12 +74,12 @@ export default function CalendarFilterSidebar({
   let breakdown: { label: string; color: string; mins: number }[] = [];
   if (showStats && hasFilter) {
     if (activeCategories.size > 0) {
-      const stats = calcRangeCategoryStats(filteredTasks, timeEntries, startDate, endDate, categoryColors);
+      const stats = calcRangeCategoryStats(doneFilteredTasks, timeEntries, startDate, endDate, categoryColors);
       breakdown = stats
         .filter((s) => s.totalMins > 0 && s.category !== 'other')
         .map((s) => ({ label: t.cat[s.category], color: s.color, mins: s.totalMins }));
     } else if (activeTags.size > 0) {
-      const stats = calcRangeTagStats(filteredTasks, timeEntries, taskTags, tags, startDate, endDate);
+      const stats = calcRangeTagStats(doneFilteredTasks, timeEntries, taskTags, tags, startDate, endDate);
       breakdown = stats
         .filter((s) => s.totalMins > 0)
         .map((s) => ({ label: s.name, color: s.color, mins: s.totalMins }));

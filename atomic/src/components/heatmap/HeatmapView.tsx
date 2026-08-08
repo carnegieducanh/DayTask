@@ -23,8 +23,8 @@ function fmtHoursFloat(minutes: number): string {
   return (minutes / 60).toFixed(1);
 }
 
-// Mon-first order for charts: [1,2,3,4,5,6,0] → T2..CN
-const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0];
+// Sun-first order for charts: [0,1,2,3,4,5,6] → CN..T7
+const DOW_ORDER = [0, 1, 2, 3, 4, 5, 6];
 
 export default function HeatmapView() {
   const t = useT();
@@ -42,16 +42,22 @@ export default function HeatmapView() {
 
   useEffect(() => {
     const today = new Date();
-    const weekStart = format(startOfWeek(today, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-    const weekEnd   = format(endOfWeek(today,   { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const yearMonthPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-`;
     loadHeatmap(selectedYear);
     loadHeatmapDurations(selectedYear);
-    loadHeatmapTagStats(weekStart, weekEnd);
     loadHeatmapMonthStats(selectedYear);
     loadHeatmapTopTagHours(yearMonthPrefix);
     getStreak().then(setStreak);
   }, [selectedYear]);
+
+  // "Top Tags This Week" always reflects the current week (independent of the year picker
+  // above) but its sort order follows the Tasks/Hours toggle from "Activity in [year]".
+  useEffect(() => {
+    const today = new Date();
+    const weekStart = format(startOfWeek(today, { weekStartsOn: 0 }), 'yyyy-MM-dd');
+    const weekEnd   = format(endOfWeek(today,   { weekStartsOn: 0 }), 'yyyy-MM-dd');
+    loadHeatmapTagStats(weekStart, weekEnd, heatmapMode === 'hours' ? 'minutes' : 'tasks');
+  }, [heatmapMode]);
 
   const isCurrentYear = selectedYear === new Date().getFullYear();
   const currentMonth = new Date().getMonth(); // 0-indexed
@@ -117,7 +123,7 @@ export default function HeatmapView() {
   // ── Weekly summary strip ──────────────────────────────────────────────────
   const weekDays = useMemo(() => {
     const today = new Date();
-    const start = startOfWeek(today, { weekStartsOn: 1 });
+    const start = startOfWeek(today, { weekStartsOn: 0 });
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
   }, []);
 
@@ -182,8 +188,10 @@ export default function HeatmapView() {
     return t.heatmap.dayFormat(d);
   };
 
-  // ── Top tags max ──────────────────────────────────────────────────────────
-  const maxTagTasks = Math.max(...heatmapTagStats.map((t) => t.tasks), 1);
+  // ── Top tags max — bar width follows whichever metric the list is sorted by ────
+  const maxTagValue = heatmapMode === 'hours'
+    ? Math.max(...heatmapTagStats.map((t) => t.minutes), 1)
+    : Math.max(...heatmapTagStats.map((t) => t.tasks), 1);
 
   // ── Completion trend ──────────────────────────────────────────────────────
   const maxCompletionRate = Math.max(
@@ -402,7 +410,9 @@ export default function HeatmapView() {
 
           {/* Top tags */}
           <div style={{ flex: '1 1 0', minWidth: 0 }}>
-            <div className="section-label" style={{ marginBottom: 12 }}>{t.heatmap.topTags}</div>
+            <div className="section-label" style={{ marginBottom: 12 }}>
+              {heatmapMode === 'hours' ? t.heatmap.topHours : t.heatmap.topTags}
+            </div>
             {heatmapTagStats.length === 0 ? (
               <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)' }}>{t.heatmap.noTagData}</div>
             ) : (
@@ -414,7 +424,7 @@ export default function HeatmapView() {
                       <div
                         className="tag-stat-bar"
                         style={{
-                          width: `${Math.round((tag.tasks / maxTagTasks) * 100)}%`,
+                          width: `${Math.round(((heatmapMode === 'hours' ? tag.minutes : tag.tasks) / maxTagValue) * 100)}%`,
                           background: tag.color,
                         }}
                       />

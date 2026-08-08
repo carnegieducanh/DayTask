@@ -13,7 +13,7 @@ export interface HeatmapSlice {
 
   loadHeatmap: (year: number) => Promise<void>;
   loadHeatmapDurations: (year: number) => Promise<void>;
-  loadHeatmapTagStats: (startDate: string, endDate: string) => Promise<void>;
+  loadHeatmapTagStats: (startDate: string, endDate: string, sortBy: 'tasks' | 'minutes') => Promise<void>;
   loadHeatmapMonthStats: (year: number) => Promise<void>;
   loadHeatmapTopTagHours: (yearMonthPrefix: string) => Promise<void>;
   getStreak: () => Promise<number>;
@@ -56,9 +56,10 @@ export const createHeatmapSlice: StateCreator<AppState, [], [], HeatmapSlice> = 
     set({ heatmapDurations: rows });
   },
 
-  loadHeatmapTagStats: async (startDate, endDate) => {
+  loadHeatmapTagStats: async (startDate, endDate, sortBy) => {
     if (!isTauri()) { set({ heatmapTagStats: [] }); return; }
     const db = await getDb();
+    const orderClause = sortBy === 'minutes' ? 'ORDER BY minutes DESC, tasks DESC' : 'ORDER BY tasks DESC, minutes DESC';
     const rows = await db.select<TagStat[]>(
       `SELECT tg.name, tg.color,
          COUNT(DISTINCT t.id) as tasks,
@@ -71,10 +72,10 @@ export const createHeatmapSlice: StateCreator<AppState, [], [], HeatmapSlice> = 
        FROM tags tg
        JOIN task_tags tt ON tt.tag_id = tg.id
        JOIN tasks t ON t.id = tt.task_id
-       LEFT JOIN task_time_entries tte ON tte.task_id = t.id
+       LEFT JOIN task_time_entries tte ON tte.task_id = t.id AND tte.date >= $1 AND tte.date <= $2
        WHERE t.date >= $1 AND t.date <= $2 AND t.is_done = 1
        GROUP BY tg.id
-       ORDER BY tasks DESC, minutes DESC
+       ${orderClause}
        LIMIT 6`,
       [startDate, endDate]
     );
@@ -113,7 +114,7 @@ export const createHeatmapSlice: StateCreator<AppState, [], [], HeatmapSlice> = 
        JOIN task_tags tt ON tt.tag_id = tg.id
        JOIN tasks t ON t.id = tt.task_id
        LEFT JOIN task_time_entries tte ON tte.task_id = t.id AND tte.date LIKE $1
-       WHERE tte.end_time > tte.start_time
+       WHERE tte.end_time > tte.start_time AND t.is_done = 1
        GROUP BY tg.id
        ORDER BY minutes DESC
        LIMIT 1`,
