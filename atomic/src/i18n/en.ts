@@ -233,7 +233,6 @@ export const en: typeof vi = {
       return `${names[date.getMonth()]} ${date.getDate()}`;
     },
     monthsShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    weekDowShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     legendLess: "Less",
     legendMore: "More",
     cellTooltip: (formattedDate: string, count: number) =>
@@ -246,10 +245,10 @@ export const en: typeof vi = {
     hoursMode: "Hours",
     weeklySummary: "This Week",
     thisMonth: "This Month",
-    dowPattern: (year: number) => `By Day of Week · ${year}`,
-    dowPatternNote: "Average tasks completed per weekday, across the full year",
     topTags: "Top Tags This Week",
     topHours: "Top Hours This Week",
+    topCategories: "Top Categories This Week",
+    topCategoriesHours: "Top Category Hours This Week",
     completionTrend: "Completion Rate by Month",
     noTagData: "No tag data",
     tasksDoneShort: "tasks done",

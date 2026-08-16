@@ -23,17 +23,14 @@ function fmtHoursFloat(minutes: number): string {
   return (minutes / 60).toFixed(1);
 }
 
-// Sun-first order for charts: [0,1,2,3,4,5,6] → CN..T7
-const DOW_ORDER = [0, 1, 2, 3, 4, 5, 6];
-
 export default function HeatmapView() {
   const t = useT();
   const {
-    heatmap, heatmapDurations, heatmapTagStats, heatmapMonthStats, heatmapTopTagHours,
+    heatmap, heatmapDurations, heatmapTagStats, heatmapCategoryStats, heatmapMonthStats, heatmapTopTagHours,
     selectedYear, setSelectedYear,
-    loadHeatmap, loadHeatmapDurations, loadHeatmapTagStats, loadHeatmapMonthStats, loadHeatmapTopTagHours,
+    loadHeatmap, loadHeatmapDurations, loadHeatmapTagStats, loadHeatmapCategoryStats, loadHeatmapMonthStats, loadHeatmapTopTagHours,
     getStreak,
-    language,
+    language, categoryColors,
   } = useAppStore();
   const [streak, setStreak] = useState(0);
   const [heatmapMode, setHeatmapMode] = useState<'count' | 'hours'>('hours');
@@ -50,13 +47,16 @@ export default function HeatmapView() {
     getStreak().then(setStreak);
   }, [selectedYear]);
 
-  // "Top Tags This Week" always reflects the current week (independent of the year picker
-  // above) but its sort order follows the Tasks/Hours toggle from "Activity in [year]".
+  // "Top Tags/Categories This Week" always reflects the current week (independent of the
+  // year picker above) but its sort order follows the Tasks/Hours toggle from "Activity in
+  // [year]". Both lists load together — Categories on the left, Tags on the right.
   useEffect(() => {
     const today = new Date();
     const weekStart = format(startOfWeek(today, { weekStartsOn: 0 }), 'yyyy-MM-dd');
     const weekEnd   = format(endOfWeek(today,   { weekStartsOn: 0 }), 'yyyy-MM-dd');
-    loadHeatmapTagStats(weekStart, weekEnd, heatmapMode === 'hours' ? 'minutes' : 'tasks');
+    const sortBy = heatmapMode === 'hours' ? 'minutes' : 'tasks';
+    loadHeatmapCategoryStats(weekStart, weekEnd, sortBy);
+    loadHeatmapTagStats(weekStart, weekEnd, sortBy);
   }, [heatmapMode]);
 
   const isCurrentYear = selectedYear === new Date().getFullYear();
@@ -127,35 +127,6 @@ export default function HeatmapView() {
     return Array.from({ length: 7 }, (_, i) => addDays(start, i));
   }, []);
 
-  // ── Day-of-week pattern ───────────────────────────────────────────────────
-  const dowData = useMemo(() => {
-    const tasksByDow = Array(7).fill(0);
-    const minsByDow  = Array(7).fill(0);
-
-    heatmap.forEach(({ date, count }) => {
-      tasksByDow[new Date(date + 'T00:00:00').getDay()] += count;
-    });
-    heatmapDurations.forEach(({ date, minutes }) => {
-      minsByDow[new Date(date + 'T00:00:00').getDay()] += minutes;
-    });
-
-    // Count occurrences of each weekday in the selected year
-    const occurrences = Array(7).fill(0);
-    const isLeap = (selectedYear % 4 === 0 && selectedYear % 100 !== 0) || selectedYear % 400 === 0;
-    for (let i = 0; i < (isLeap ? 366 : 365); i++) {
-      occurrences[new Date(selectedYear, 0, 1 + i).getDay()]++;
-    }
-
-    return DOW_ORDER.map((dow) => ({
-      tasks:   occurrences[dow] > 0 ? Math.round((tasksByDow[dow] / occurrences[dow]) * 10) / 10 : 0,
-      minutes: occurrences[dow] > 0 ? Math.round(minsByDow[dow] / occurrences[dow]) : 0,
-    }));
-  }, [heatmap, heatmapDurations, selectedYear]);
-
-  const maxDowTasks = Math.max(...dowData.map((d) => d.tasks), 0.1);
-  const maxDowMins  = Math.max(...dowData.map((d) => d.minutes), 1);
-  const dowLabels   = DOW_ORDER.map((i) => t.heatmap.weekDowShort[i]);
-
   // ── Bottom stat helpers ───────────────────────────────────────────────────
   const longestStreak = useMemo(() => {
     if (heatmap.length === 0) return 0;
@@ -188,10 +159,59 @@ export default function HeatmapView() {
     return t.heatmap.dayFormat(d);
   };
 
-  // ── Top tags max — bar width follows whichever metric the list is sorted by ────
+  // ── Top categories / top tags lists — normalized to the same shape so both panels
+  // share one render path ─────────────────────────────────────────────────────────
+  const topCategoriesList = useMemo(() => heatmapCategoryStats.map((c) => ({
+    key: c.category,
+    name: t.cat[c.category],
+    color: categoryColors[c.category],
+    tasks: c.tasks,
+    minutes: c.minutes,
+  })), [heatmapCategoryStats, categoryColors, t]);
+
+  const topTagsList = useMemo(() => heatmapTagStats.map((tag) => ({
+    key: tag.name,
+    name: tag.name,
+    color: tag.color,
+    tasks: tag.tasks,
+    minutes: tag.minutes,
+  })), [heatmapTagStats]);
+
+  // ── Bar width max — each panel scales against its own values ───────────────────
+  const maxCategoryValue = heatmapMode === 'hours'
+    ? Math.max(...topCategoriesList.map((s) => s.minutes), 1)
+    : Math.max(...topCategoriesList.map((s) => s.tasks), 1);
   const maxTagValue = heatmapMode === 'hours'
-    ? Math.max(...heatmapTagStats.map((t) => t.minutes), 1)
-    : Math.max(...heatmapTagStats.map((t) => t.tasks), 1);
+    ? Math.max(...topTagsList.map((s) => s.minutes), 1)
+    : Math.max(...topTagsList.map((s) => s.tasks), 1);
+
+  const renderStatsList = (list: { key: string; name: string; color: string; tasks: number; minutes: number }[], max: number) => {
+    if (list.length === 0) {
+      return <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)' }}>{t.heatmap.noTagData}</div>;
+    }
+    return (
+      <div className="tag-stats-list">
+        {list.map((stat) => (
+          <div key={stat.key} className="tag-stat-row">
+            <span className="tag-stat-name" style={{ color: stat.color }}>{stat.name}</span>
+            <div className="tag-stat-bar-wrap">
+              <div
+                className="tag-stat-bar"
+                style={{
+                  width: `${Math.round(((heatmapMode === 'hours' ? stat.minutes : stat.tasks) / max) * 100)}%`,
+                  background: stat.color,
+                }}
+              />
+            </div>
+            <span className="tag-stat-count">{stat.tasks}</span>
+            {stat.minutes > 0 && (
+              <span className="tag-stat-hours">{fmtMinutes(stat.minutes)}</span>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   // ── Completion trend ──────────────────────────────────────────────────────
   const maxCompletionRate = Math.max(
@@ -381,62 +401,19 @@ export default function HeatmapView() {
           </div>
         )}
 
-        {/* ── DoW pattern + Top tags ─────────────────────────────────────────── */}
+        {/* ── Top categories + Top tags ────────────────────────────────────── */}
         <div className="heatmap-two-col">
-          {/* Day-of-week pattern */}
           <div style={{ flex: '1 1 0', minWidth: 0 }}>
-            <div style={{ marginBottom: 12 }}>
-              <div className="section-label">{t.heatmap.dowPattern(selectedYear)}</div>
-              <div className="section-note">{t.heatmap.dowPatternNote}</div>
+            <div className="section-label" style={{ marginBottom: 12 }}>
+              {heatmapMode === 'hours' ? t.heatmap.topCategoriesHours : t.heatmap.topCategories}
             </div>
-            <div className="dow-chart">
-              {dowData.map((day, i) => {
-                const val   = heatmapMode === 'hours' ? day.minutes : day.tasks;
-                const max   = heatmapMode === 'hours' ? maxDowMins : maxDowTasks;
-                const barH  = Math.round((val / max) * 72) || (val > 0 ? 3 : 0);
-                const label = heatmapMode === 'hours' ? fmtMinutes(day.minutes) : String(day.tasks);
-                return (
-                  <div key={i} className="dow-col">
-                    <div className="dow-bar-track">
-                      <div className="dow-bar" style={{ height: barH }} />
-                    </div>
-                    <span className="dow-label">{dowLabels[i]}</span>
-                    <span className="dow-value">{label}</span>
-                  </div>
-                );
-              })}
-            </div>
+            {renderStatsList(topCategoriesList, maxCategoryValue)}
           </div>
-
-          {/* Top tags */}
           <div style={{ flex: '1 1 0', minWidth: 0 }}>
             <div className="section-label" style={{ marginBottom: 12 }}>
               {heatmapMode === 'hours' ? t.heatmap.topHours : t.heatmap.topTags}
             </div>
-            {heatmapTagStats.length === 0 ? (
-              <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)' }}>{t.heatmap.noTagData}</div>
-            ) : (
-              <div className="tag-stats-list">
-                {heatmapTagStats.map((tag) => (
-                  <div key={tag.name} className="tag-stat-row">
-                    <span className="tag-stat-name" style={{ color: tag.color }}>{tag.name}</span>
-                    <div className="tag-stat-bar-wrap">
-                      <div
-                        className="tag-stat-bar"
-                        style={{
-                          width: `${Math.round(((heatmapMode === 'hours' ? tag.minutes : tag.tasks) / maxTagValue) * 100)}%`,
-                          background: tag.color,
-                        }}
-                      />
-                    </div>
-                    <span className="tag-stat-count">{tag.tasks}</span>
-                    {tag.minutes > 0 && (
-                      <span className="tag-stat-hours">{fmtMinutes(tag.minutes)}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            {renderStatsList(topTagsList, maxTagValue)}
           </div>
         </div>
 

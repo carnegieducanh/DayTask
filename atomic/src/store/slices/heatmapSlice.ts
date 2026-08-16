@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand';
-import type { DayActivity, DayDuration, TagStat, MonthStat } from '../../types';
+import type { DayActivity, DayDuration, TagStat, CategoryStat, MonthStat } from '../../types';
 import { isTauri, dbGetHeatmap, dbGetStreak } from '../mockDb';
 import { getDb } from '../db';
 import type { AppState } from '../appStore';
@@ -8,12 +8,14 @@ export interface HeatmapSlice {
   heatmap: DayActivity[];
   heatmapDurations: DayDuration[];
   heatmapTagStats: TagStat[];
+  heatmapCategoryStats: CategoryStat[];
   heatmapMonthStats: MonthStat[];
   heatmapTopTagHours: { name: string; color: string; minutes: number } | null;
 
   loadHeatmap: (year: number) => Promise<void>;
   loadHeatmapDurations: (year: number) => Promise<void>;
   loadHeatmapTagStats: (startDate: string, endDate: string, sortBy: 'tasks' | 'minutes') => Promise<void>;
+  loadHeatmapCategoryStats: (startDate: string, endDate: string, sortBy: 'tasks' | 'minutes') => Promise<void>;
   loadHeatmapMonthStats: (year: number) => Promise<void>;
   loadHeatmapTopTagHours: (yearMonthPrefix: string) => Promise<void>;
   getStreak: () => Promise<number>;
@@ -23,6 +25,7 @@ export const createHeatmapSlice: StateCreator<AppState, [], [], HeatmapSlice> = 
   heatmap: [],
   heatmapDurations: [],
   heatmapTagStats: [],
+  heatmapCategoryStats: [],
   heatmapMonthStats: [],
   heatmapTopTagHours: null,
 
@@ -80,6 +83,29 @@ export const createHeatmapSlice: StateCreator<AppState, [], [], HeatmapSlice> = 
       [startDate, endDate]
     );
     set({ heatmapTagStats: rows });
+  },
+
+  loadHeatmapCategoryStats: async (startDate, endDate, sortBy) => {
+    if (!isTauri()) { set({ heatmapCategoryStats: [] }); return; }
+    const db = await getDb();
+    const orderClause = sortBy === 'minutes' ? 'ORDER BY minutes DESC, tasks DESC' : 'ORDER BY tasks DESC, minutes DESC';
+    const rows = await db.select<CategoryStat[]>(
+      `SELECT t.category as category,
+         COUNT(DISTINCT t.id) as tasks,
+         COALESCE(SUM(
+           CASE WHEN tte.end_time > tte.start_time THEN
+             (CAST(SUBSTR(tte.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.end_time, 4, 2) AS INTEGER)) -
+             (CAST(SUBSTR(tte.start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.start_time, 4, 2) AS INTEGER))
+           ELSE 0 END
+         ), 0) as minutes
+       FROM tasks t
+       LEFT JOIN task_time_entries tte ON tte.task_id = t.id AND tte.date >= $1 AND tte.date <= $2
+       WHERE t.date >= $1 AND t.date <= $2 AND t.is_done = 1
+       GROUP BY t.category
+       ${orderClause}`,
+      [startDate, endDate]
+    );
+    set({ heatmapCategoryStats: rows });
   },
 
   loadHeatmapMonthStats: async (year) => {

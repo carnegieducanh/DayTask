@@ -103,6 +103,12 @@ export interface TagStat {
   minutes: number;
 }
 
+export interface CategoryStat {
+  category: Category;
+  tasks: number;
+  minutes: number;
+}
+
 export interface MonthStat {
   month: number;
   created: number;
