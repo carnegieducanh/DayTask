@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './heatmap.css';
-import { startOfWeek, endOfWeek, addDays, isToday, format } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, addDays, isToday, format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import {
@@ -8,32 +8,28 @@ import {
 } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
+import type { CategoryStat, TagStat } from '../../types';
 import HeatmapGrid from './HeatmapGrid';
-
-function fmtMinutes(minutes: number): string {
-  if (minutes <= 0) return '0p';
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h > 0 && m > 0) return `${h}g${m}p`;
-  if (h > 0) return `${h}g`;
-  return `${m}p`;
-}
-
-function fmtHoursFloat(minutes: number): string {
-  return (minutes / 60).toFixed(1);
-}
+import TopStatsSection, { type StatItem } from './TopStatsSection';
+import { fmtMinutes, fmtHoursFloat } from './heatmapFormat';
 
 export default function HeatmapView() {
   const t = useT();
   const {
-    heatmap, heatmapDurations, heatmapTagStats, heatmapCategoryStats, heatmapMonthStats, heatmapTopTagHours,
+    heatmap, heatmapDurations, heatmapMonthStats, heatmapTopTagHours,
+    heatmapWeekCategoryStats, heatmapWeekCategoryStatsPrev, heatmapWeekTagStats, heatmapWeekTagStatsPrev,
+    heatmapMonthCategoryStats, heatmapMonthCategoryStatsPrev, heatmapMonthTagStats, heatmapMonthTagStatsPrev,
     selectedYear, setSelectedYear,
-    loadHeatmap, loadHeatmapDurations, loadHeatmapTagStats, loadHeatmapCategoryStats, loadHeatmapMonthStats, loadHeatmapTopTagHours,
+    loadHeatmap, loadHeatmapDurations, loadHeatmapMonthStats, loadHeatmapTopTagHours,
+    loadHeatmapWeekCategoryStats, loadHeatmapWeekCategoryStatsPrev, loadHeatmapWeekTagStats, loadHeatmapWeekTagStatsPrev,
+    loadHeatmapMonthCategoryStats, loadHeatmapMonthCategoryStatsPrev, loadHeatmapMonthTagStats, loadHeatmapMonthTagStatsPrev,
     getStreak,
     language, categoryColors,
   } = useAppStore();
   const [streak, setStreak] = useState(0);
   const [heatmapMode, setHeatmapMode] = useState<'count' | 'hours'>('hours');
+  const [weekCompare, setWeekCompare] = useState(false);
+  const [monthCompare, setMonthCompare] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(contentRef);
 
@@ -47,16 +43,33 @@ export default function HeatmapView() {
     getStreak().then(setStreak);
   }, [selectedYear]);
 
-  // "Top Tags/Categories This Week" always reflects the current week (independent of the
-  // year picker above) but its sort order follows the Tasks/Hours toggle from "Activity in
-  // [year]". Both lists load together — Categories on the left, Tags on the right.
+  // Week tier — this week vs last week, independent of the year picker above (always "now").
   useEffect(() => {
     const today = new Date();
     const weekStart = format(startOfWeek(today, { weekStartsOn: 0 }), 'yyyy-MM-dd');
-    const weekEnd   = format(endOfWeek(today,   { weekStartsOn: 0 }), 'yyyy-MM-dd');
+    const weekEnd = format(endOfWeek(today, { weekStartsOn: 0 }), 'yyyy-MM-dd');
+    const prevWeekStart = format(subWeeks(startOfWeek(today, { weekStartsOn: 0 }), 1), 'yyyy-MM-dd');
+    const prevWeekEnd = format(subWeeks(endOfWeek(today, { weekStartsOn: 0 }), 1), 'yyyy-MM-dd');
     const sortBy = heatmapMode === 'hours' ? 'minutes' : 'tasks';
-    loadHeatmapCategoryStats(weekStart, weekEnd, sortBy);
-    loadHeatmapTagStats(weekStart, weekEnd, sortBy);
+    loadHeatmapWeekCategoryStats(weekStart, weekEnd, sortBy);
+    loadHeatmapWeekTagStats(weekStart, weekEnd, sortBy);
+    loadHeatmapWeekCategoryStatsPrev(prevWeekStart, prevWeekEnd, sortBy);
+    loadHeatmapWeekTagStatsPrev(prevWeekStart, prevWeekEnd, sortBy);
+  }, [heatmapMode]);
+
+  // Month tier — this month vs last month, independent of the year picker above (always "now").
+  useEffect(() => {
+    const today = new Date();
+    const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(today), 'yyyy-MM-dd');
+    const prevMonth = subMonths(today, 1);
+    const prevMonthStart = format(startOfMonth(prevMonth), 'yyyy-MM-dd');
+    const prevMonthEnd = format(endOfMonth(prevMonth), 'yyyy-MM-dd');
+    const sortBy = heatmapMode === 'hours' ? 'minutes' : 'tasks';
+    loadHeatmapMonthCategoryStats(monthStart, monthEnd, sortBy);
+    loadHeatmapMonthTagStats(monthStart, monthEnd, sortBy);
+    loadHeatmapMonthCategoryStatsPrev(prevMonthStart, prevMonthEnd, sortBy);
+    loadHeatmapMonthTagStatsPrev(prevMonthStart, prevMonthEnd, sortBy);
   }, [heatmapMode]);
 
   const isCurrentYear = selectedYear === new Date().getFullYear();
@@ -159,59 +172,23 @@ export default function HeatmapView() {
     return t.heatmap.dayFormat(d);
   };
 
-  // ── Top categories / top tags lists — normalized to the same shape so both panels
-  // share one render path ─────────────────────────────────────────────────────────
-  const topCategoriesList = useMemo(() => heatmapCategoryStats.map((c) => ({
-    key: c.category,
-    name: t.cat[c.category],
-    color: categoryColors[c.category],
-    tasks: c.tasks,
-    minutes: c.minutes,
-  })), [heatmapCategoryStats, categoryColors, t]);
+  // ── Category/Tag stats normalized to a shared shape for TopStatsSection ────
+  const mapCategory = (c: CategoryStat): StatItem => ({
+    key: c.category, name: t.cat[c.category], color: categoryColors[c.category], tasks: c.tasks, minutes: c.minutes,
+  });
+  const mapTag = (tag: TagStat): StatItem => ({
+    key: tag.name, name: tag.name, color: tag.color, tasks: tag.tasks, minutes: tag.minutes,
+  });
 
-  const topTagsList = useMemo(() => heatmapTagStats.map((tag) => ({
-    key: tag.name,
-    name: tag.name,
-    color: tag.color,
-    tasks: tag.tasks,
-    minutes: tag.minutes,
-  })), [heatmapTagStats]);
+  const weekCategoriesList     = useMemo(() => heatmapWeekCategoryStats.map(mapCategory), [heatmapWeekCategoryStats, categoryColors, t]);
+  const weekCategoriesListPrev = useMemo(() => heatmapWeekCategoryStatsPrev.map(mapCategory), [heatmapWeekCategoryStatsPrev, categoryColors, t]);
+  const weekTagsList           = useMemo(() => heatmapWeekTagStats.map(mapTag), [heatmapWeekTagStats]);
+  const weekTagsListPrev       = useMemo(() => heatmapWeekTagStatsPrev.map(mapTag), [heatmapWeekTagStatsPrev]);
 
-  // ── Bar width max — each panel scales against its own values ───────────────────
-  const maxCategoryValue = heatmapMode === 'hours'
-    ? Math.max(...topCategoriesList.map((s) => s.minutes), 1)
-    : Math.max(...topCategoriesList.map((s) => s.tasks), 1);
-  const maxTagValue = heatmapMode === 'hours'
-    ? Math.max(...topTagsList.map((s) => s.minutes), 1)
-    : Math.max(...topTagsList.map((s) => s.tasks), 1);
-
-  const renderStatsList = (list: { key: string; name: string; color: string; tasks: number; minutes: number }[], max: number) => {
-    if (list.length === 0) {
-      return <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)' }}>{t.heatmap.noTagData}</div>;
-    }
-    return (
-      <div className="tag-stats-list">
-        {list.map((stat) => (
-          <div key={stat.key} className="tag-stat-row">
-            <span className="tag-stat-name" style={{ color: stat.color }}>{stat.name}</span>
-            <div className="tag-stat-bar-wrap">
-              <div
-                className="tag-stat-bar"
-                style={{
-                  width: `${Math.round(((heatmapMode === 'hours' ? stat.minutes : stat.tasks) / max) * 100)}%`,
-                  background: stat.color,
-                }}
-              />
-            </div>
-            <span className="tag-stat-count">{stat.tasks}</span>
-            {stat.minutes > 0 && (
-              <span className="tag-stat-hours">{fmtMinutes(stat.minutes)}</span>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
+  const monthCategoriesList     = useMemo(() => heatmapMonthCategoryStats.map(mapCategory), [heatmapMonthCategoryStats, categoryColors, t]);
+  const monthCategoriesListPrev = useMemo(() => heatmapMonthCategoryStatsPrev.map(mapCategory), [heatmapMonthCategoryStatsPrev, categoryColors, t]);
+  const monthTagsList           = useMemo(() => heatmapMonthTagStats.map(mapTag), [heatmapMonthTagStats]);
+  const monthTagsListPrev       = useMemo(() => heatmapMonthTagStatsPrev.map(mapTag), [heatmapMonthTagStatsPrev]);
 
   // ── Completion trend ──────────────────────────────────────────────────────
   const maxCompletionRate = Math.max(
@@ -237,58 +214,9 @@ export default function HeatmapView() {
 
       <div className="view-content" ref={contentRef}>
 
-        {/* ── 4 top stat cards ─────────────────────────────────────────────── */}
-        <div className="stats-row stats-row--4">
-          <div className="stat-card">
-            <div className="stat-label">{t.heatmap.currentStreak}</div>
-            <div className="stat-value">{streak}</div>
-            <div className="stat-sub">{t.heatmap.streakDays}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">{t.heatmap.activeDays}</div>
-            <div className="stat-value">{activeDays}</div>
-            <div className="stat-sub">{t.heatmap.activeDaysIn(selectedYear)}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">{t.heatmap.tasksDone}</div>
-            <div className="stat-value">{totalDone}</div>
-            <div className="stat-sub">{t.heatmap.totalIn(selectedYear)}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">{t.heatmap.totalHours}</div>
-            <div className="stat-value">{fmtHoursFloat(totalMinutes)}</div>
-            <div className="stat-sub">{t.heatmap.hoursIn(selectedYear)}</div>
-          </div>
-        </div>
+        {/* ═══════════════════════ TUẦN ═══════════════════════ */}
+        <div className="heatmap-tier-header">{t.heatmap.tierWeek}</div>
 
-        {/* ── Heatmap grid + mode toggle ────────────────────────────────────── */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div className="section-label">{t.heatmap.activityIn(selectedYear)}</div>
-            <div className="heatmap-mode-toggle">
-              <button
-                className={`heatmap-mode-btn${heatmapMode === 'count' ? ' heatmap-mode-btn--active' : ''}`}
-                onClick={() => setHeatmapMode('count')}
-              >
-                {t.heatmap.countMode}
-              </button>
-              <button
-                className={`heatmap-mode-btn${heatmapMode === 'hours' ? ' heatmap-mode-btn--active' : ''}`}
-                onClick={() => setHeatmapMode('hours')}
-              >
-                {t.heatmap.hoursMode}
-              </button>
-            </div>
-          </div>
-          <HeatmapGrid
-            year={selectedYear}
-            data={heatmap}
-            mode={heatmapMode}
-            durations={heatmapDurations}
-          />
-        </div>
-
-        {/* ── Weekly summary strip (current year only) ──────────────────────── */}
         {isCurrentYear && (
           <div>
             <div className="section-label" style={{ marginBottom: 8 }}>{t.heatmap.weeklySummary}</div>
@@ -314,30 +242,26 @@ export default function HeatmapView() {
           </div>
         )}
 
-        {/* ── Monthly bar chart ────────────────────────────────────────────── */}
-        <div>
-          <div className="section-label" style={{ marginBottom: 12 }}>{t.heatmap.tasksByMonth}</div>
-          <div className="monthly-chart">
-            {monthlyTotals.map((count, i) => {
-              const barH     = Math.round((count / maxMonthly) * 80) || (count > 0 ? 3 : 0);
-              const isActive = isCurrentYear && i === currentMonth;
-              return (
-                <div key={i} className="monthly-bar-col">
-                  <div className="monthly-bar-track">
-                    <div
-                      className={`monthly-bar${isActive ? ' monthly-bar--active' : ''}`}
-                      style={{ height: barH }}
-                      title={`${t.heatmap.monthsShort[i]}: ${count}`}
-                    />
-                  </div>
-                  <span className="monthly-bar-label">{t.heatmap.monthsShort[i]}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        {isCurrentYear && (
+          <TopStatsSection
+            title={t.heatmap.weeklySummary}
+            mode={heatmapMode}
+            compare={weekCompare}
+            onCompareChange={setWeekCompare}
+            categoriesLabel={heatmapMode === 'hours' ? t.heatmap.topCategoriesHours : t.heatmap.topCategories}
+            tagsLabel={heatmapMode === 'hours' ? t.heatmap.topHours : t.heatmap.topTags}
+            categoriesCurrent={weekCategoriesList}
+            categoriesPrev={weekCategoriesListPrev}
+            tagsCurrent={weekTagsList}
+            tagsPrev={weekTagsListPrev}
+            currentLabel={t.heatmap.weeklySummary}
+            prevLabel={t.heatmap.prevWeek}
+          />
+        )}
 
-        {/* ── This month summary strip ──────────────────────────────────────── */}
+        {/* ═══════════════════════ THÁNG ═══════════════════════ */}
+        <div className="heatmap-tier-header">{t.heatmap.tierMonth}</div>
+
         {isCurrentYear && thisMonthStat && (
           <div className="heatmap-month-summary">
             <div className="month-card-row month-card-row--first">
@@ -401,19 +325,96 @@ export default function HeatmapView() {
           </div>
         )}
 
-        {/* ── Top categories + Top tags ────────────────────────────────────── */}
-        <div className="heatmap-two-col">
-          <div style={{ flex: '1 1 0', minWidth: 0 }}>
-            <div className="section-label" style={{ marginBottom: 12 }}>
-              {heatmapMode === 'hours' ? t.heatmap.topCategoriesHours : t.heatmap.topCategories}
-            </div>
-            {renderStatsList(topCategoriesList, maxCategoryValue)}
+        {isCurrentYear && (
+          <TopStatsSection
+            title={t.heatmap.thisMonth}
+            mode={heatmapMode}
+            compare={monthCompare}
+            onCompareChange={setMonthCompare}
+            categoriesLabel={heatmapMode === 'hours' ? t.heatmap.topCategoriesMonthHours : t.heatmap.topCategoriesMonth}
+            tagsLabel={heatmapMode === 'hours' ? t.heatmap.topHoursMonth : t.heatmap.topTagsMonth}
+            categoriesCurrent={monthCategoriesList}
+            categoriesPrev={monthCategoriesListPrev}
+            tagsCurrent={monthTagsList}
+            tagsPrev={monthTagsListPrev}
+            currentLabel={t.heatmap.thisMonth}
+            prevLabel={t.heatmap.prevMonth}
+          />
+        )}
+
+        {/* ═══════════════════════ NĂM ═══════════════════════ */}
+        <div className="heatmap-tier-header">{t.heatmap.tierYear} {selectedYear}</div>
+
+        <div className="stats-row stats-row--4">
+          <div className="stat-card">
+            <div className="stat-label">{t.heatmap.currentStreak}</div>
+            <div className="stat-value">{streak}</div>
+            <div className="stat-sub">{t.heatmap.streakDays}</div>
           </div>
-          <div style={{ flex: '1 1 0', minWidth: 0 }}>
-            <div className="section-label" style={{ marginBottom: 12 }}>
-              {heatmapMode === 'hours' ? t.heatmap.topHours : t.heatmap.topTags}
+          <div className="stat-card">
+            <div className="stat-label">{t.heatmap.activeDays}</div>
+            <div className="stat-value">{activeDays}</div>
+            <div className="stat-sub">{t.heatmap.activeDaysIn(selectedYear)}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">{t.heatmap.tasksDone}</div>
+            <div className="stat-value">{totalDone}</div>
+            <div className="stat-sub">{t.heatmap.totalIn(selectedYear)}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">{t.heatmap.totalHours}</div>
+            <div className="stat-value">{fmtHoursFloat(totalMinutes)}</div>
+            <div className="stat-sub">{t.heatmap.hoursIn(selectedYear)}</div>
+          </div>
+        </div>
+
+        {/* ── Heatmap grid + mode toggle ────────────────────────────────────── */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div className="section-label">{t.heatmap.activityIn(selectedYear)}</div>
+            <div className="heatmap-mode-toggle">
+              <button
+                className={`heatmap-mode-btn${heatmapMode === 'count' ? ' heatmap-mode-btn--active' : ''}`}
+                onClick={() => setHeatmapMode('count')}
+              >
+                {t.heatmap.countMode}
+              </button>
+              <button
+                className={`heatmap-mode-btn${heatmapMode === 'hours' ? ' heatmap-mode-btn--active' : ''}`}
+                onClick={() => setHeatmapMode('hours')}
+              >
+                {t.heatmap.hoursMode}
+              </button>
             </div>
-            {renderStatsList(topTagsList, maxTagValue)}
+          </div>
+          <HeatmapGrid
+            year={selectedYear}
+            data={heatmap}
+            mode={heatmapMode}
+            durations={heatmapDurations}
+          />
+        </div>
+
+        {/* ── Monthly bar chart ────────────────────────────────────────────── */}
+        <div>
+          <div className="section-label" style={{ marginBottom: 12 }}>{t.heatmap.tasksByMonth}</div>
+          <div className="monthly-chart">
+            {monthlyTotals.map((count, i) => {
+              const barH     = Math.round((count / maxMonthly) * 80) || (count > 0 ? 3 : 0);
+              const isActive = isCurrentYear && i === currentMonth;
+              return (
+                <div key={i} className="monthly-bar-col">
+                  <div className="monthly-bar-track">
+                    <div
+                      className={`monthly-bar${isActive ? ' monthly-bar--active' : ''}`}
+                      style={{ height: barH }}
+                      title={`${t.heatmap.monthsShort[i]}: ${count}`}
+                    />
+                  </div>
+                  <span className="monthly-bar-label">{t.heatmap.monthsShort[i]}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
