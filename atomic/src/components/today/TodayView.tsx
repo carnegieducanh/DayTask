@@ -315,6 +315,8 @@ export default function TodayView() {
                       <div
                         key={task.id}
                         className={`today-schedule-item${task.is_done || pendingCheckIds.has(task.id) ? " done" : ""}`}
+                        onClick={() => handleScheduleToggle(task.id)}
+                        title={task.is_done ? t.taskCard.markUndone : t.taskCard.markDone}
                       >
                         <div className="today-schedule-time">
                           <div>{entry?.start_time}</div>
@@ -328,7 +330,7 @@ export default function TodayView() {
                         </div>
                         <button
                           className={`today-schedule-tick${task.is_done || pendingCheckIds.has(task.id) ? " checked" : ""}`}
-                          onClick={() => handleScheduleToggle(task.id)}
+                          onClick={(e) => { e.stopPropagation(); handleScheduleToggle(task.id); }}
                         >
                           <IconCheck size={12} strokeWidth={3} />
                         </button>
