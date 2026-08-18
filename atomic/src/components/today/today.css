@@ -674,7 +674,8 @@
    Idle: fully collapsed (width 0), card reads clean with no button — true for both
    pending and done cards, the drawer only ever reveals on hover.
    Hover the row: a 52px drawer slides out from the left edge, button pops in.
-   Done: drawer tints green while hovered, so completion still reads clearly. */
+   Done: drawer tints neutral dark while hovered, tick circle uses the app's
+   accent color (var(--primary)) so completion still reads clearly. */
 .task-drawer {
   flex: 0 0 auto;
   width: 0;
@@ -684,6 +685,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(96, 165, 250, 0.1);
+  cursor: pointer;
   transition:
     width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
     background 0.15s;
@@ -725,8 +727,10 @@
 }
 
 /* Pressed feedback — same treatment for pending and done, higher specificity
-   than the hover/checked rules above so it actually wins while clicking. */
-.task-item:hover .task-drawer-btn:active {
+   than the hover/checked rules above so it actually wins while clicking.
+   Keyed off .task-drawer:active (not just the 28px button) so pressing
+   anywhere in the 52px drawer area shows the button being pushed in. */
+.task-item:hover .task-drawer:active .task-drawer-btn {
   transform: scale(0.85) rotate(0deg);
   background: rgba(96, 165, 250, 0.45);
   transition-duration: 0.08s;
@@ -888,7 +892,7 @@
   background: rgba(0, 0, 0, 0.1);
 }
 .task-item--colored.done .task-drawer {
-  background: rgba(53, 114, 70, 0.85);
+  background: rgba(20, 20, 20, 0.55);
 }
 .task-item--colored .task-drawer-btn {
   background: rgba(255, 255, 255, 0.55);
@@ -899,11 +903,11 @@
 .task-item--colored:hover .task-drawer-btn {
   color: rgba(0, 0, 0, 0.6);
 }
-.task-item--colored:hover .task-drawer-btn:active {
+.task-item--colored:hover .task-drawer:active .task-drawer-btn {
   background: rgba(255, 255, 255, 0.95);
 }
 .task-item--colored .task-drawer-btn.checked {
-  background: #4c9a5f;
+  background: var(--primary);
   color: #fff;
 }
 
