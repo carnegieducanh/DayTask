@@ -161,13 +161,15 @@ export default function TaskCard({ task, onEdit, onToggle }: Props) {
       onClick={() => !isEditing && !isEditingTime && onEdit(task)}
       onContextMenu={handleContextMenu}
     >
-      <button
-        className={`task-check${task.is_done ? ' checked' : ''}`}
-        onClick={(e) => { e.stopPropagation(); onToggle ? onToggle(task.id) : toggleTask(task.id); }}
-        title={task.is_done ? t.taskCard.markUndone : t.taskCard.markDone}
-      >
-        <IconCheck size={22} strokeWidth={2.5} />
-      </button>
+      <div className="task-drawer">
+        <button
+          className={`task-drawer-btn${task.is_done ? ' checked' : ''}`}
+          onClick={(e) => { e.stopPropagation(); onToggle ? onToggle(task.id) : toggleTask(task.id); }}
+          title={task.is_done ? t.taskCard.markUndone : t.taskCard.markDone}
+        >
+          <IconCheck size={18} strokeWidth={2.5} />
+        </button>
+      </div>
 
       <div className="task-body">
         {isEditing ? (

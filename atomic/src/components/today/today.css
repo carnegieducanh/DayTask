@@ -627,9 +627,8 @@
 .task-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
   border-radius: var(--radius-md);
+  overflow: hidden;
   transition: background 0.1s;
 }
 
@@ -655,6 +654,7 @@
   align-items: center;
   flex-shrink: 0;
   border: none;
+  margin-right: 12px;
 }
 
 .task-delete-btn:hover {
@@ -670,48 +670,92 @@
   pointer-events: auto;
 }
 
-.task-check {
-  width: 20px;
-  height: 20px;
+/* ── Slide-out drawer checkbox (Concept B) ──
+   Idle: fully collapsed (width 0), card reads clean with no button — true for both
+   pending and done cards, the drawer only ever reveals on hover.
+   Hover the row: a 52px drawer slides out from the left edge, button pops in.
+   Done: drawer tints green while hovered, so completion still reads clearly. */
+.task-drawer {
+  flex: 0 0 auto;
+  width: 0;
+  align-self: stretch;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(96, 165, 250, 0.1);
+  transition:
+    width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.15s;
+}
+
+.task-item:hover .task-drawer {
+  width: 52px;
+}
+
+.task-item.done .task-drawer {
+  background: rgba(96, 165, 250, 0.16);
+}
+
+.task-drawer-btn {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  border: 1.5px solid var(--border-2);
+  border: none;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  cursor: pointer;
+  background: rgba(96, 165, 250, 0.18);
   color: transparent;
-  transition:
-    background 0.15s,
-    border-color 0.15s,
-    color 0.15s,
-    width 0.15s,
-    height 0.15s;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.4) rotate(-30deg);
+  transition: all 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.task-check:not(.checked):hover {
-  width: 24px;
-  height: 24px;
-  border-color: #60a5fa;
-  background: rgba(96, 165, 250, 0.12);
+.task-item:hover .task-drawer-btn {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
   color: #60a5fa;
 }
 
-.task-check.checked {
-  background: transparent;
-  border-color: transparent;
-  color: #60a5fa;
+.task-drawer-btn:hover {
+  background: rgba(96, 165, 250, 0.3);
 }
 
-.task-check.checked:hover {
-  border-color: #60a5fa;
-  background: rgba(96, 165, 250, 0.12);
+/* Pressed feedback — same treatment for pending and done, higher specificity
+   than the hover/checked rules above so it actually wins while clicking. */
+.task-item:hover .task-drawer-btn:active {
+  transform: scale(0.85) rotate(0deg);
+  background: rgba(96, 165, 250, 0.45);
+  transition-duration: 0.08s;
+}
+
+.task-drawer-btn.checked {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+  background: #60a5fa;
+  color: #fff;
+  animation: task-drawer-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes task-drawer-pop {
+  0% {
+    transform: scale(0.7);
+  }
+  55% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .task-body {
   flex: 1;
   min-width: 0;
+  padding: 10px 12px;
 }
 
 .task-name {
@@ -839,21 +883,28 @@
   border-radius: 7px;
   color: rgba(0, 0, 0, 0.82);
 }
-/* Checkbox on colored cards: dark instead of blue */
-.task-item--colored .task-check {
-  border-color: rgba(0, 0, 0, 0.3);
-}
-.task-item--colored .task-check:not(.checked):hover {
-  border-color: rgba(0, 0, 0, 0.55);
+/* Drawer checkbox on colored cards: neutral white circle + dark icon instead of blue accent */
+.task-item--colored .task-drawer {
   background: rgba(0, 0, 0, 0.1);
-  color: rgba(0, 0, 0, 0.55);
 }
-.task-item--colored .task-check.checked {
-  color: rgba(0, 0, 0, 0.65);
+.task-item--colored.done .task-drawer {
+  background: rgba(53, 114, 70, 0.85);
 }
-.task-item--colored .task-check.checked:hover {
-  border-color: rgba(0, 0, 0, 0.4);
-  background: rgba(0, 0, 0, 0.08);
+.task-item--colored .task-drawer-btn {
+  background: rgba(255, 255, 255, 0.55);
+}
+.task-item--colored .task-drawer-btn:hover {
+  background: rgba(255, 255, 255, 0.85);
+}
+.task-item--colored:hover .task-drawer-btn {
+  color: rgba(0, 0, 0, 0.6);
+}
+.task-item--colored:hover .task-drawer-btn:active {
+  background: rgba(255, 255, 255, 0.95);
+}
+.task-item--colored .task-drawer-btn.checked {
+  background: #4c9a5f;
+  color: #fff;
 }
 
 /* ── Today Schedule quick tick ── */

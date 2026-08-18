@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atomic — Hover-to-Complete UI Mockups</title>
+<style>
+  :root{
+    --gold-1:#e2b04e; --gold-2:#c8933a; --gold-text:#4a3410;
+    --red-1:#e08d7e; --red-2:#c96a5c; --red-text:#5a1f16;
+    --green:#4c9a5f; --green-dark:#357246;
+    --bg-dark:#181210;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(circle at 15% 8%, rgba(120,80,40,.35), transparent 40%),
+      radial-gradient(circle at 85% 92%, rgba(90,50,20,.35), transparent 45%),
+      linear-gradient(180deg,#1c1512 0%,#120d0b 100%);
+    color:#f1e8dc;
+    min-height:100vh;
+    padding:32px 16px 80px;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+
+  header.intro{margin-bottom:28px;}
+  header.intro h1{
+    font-size:20px; margin:0 0 6px; letter-spacing:.3px; color:#f7ead2;
+  }
+  header.intro p{
+    margin:0; font-size:13.5px; line-height:1.6; color:#c9b8a6;
+  }
+  header.intro .hint{
+    display:inline-block; margin-top:10px; font-size:12px; padding:6px 12px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+    border-radius:20px; color:#e6d7c3;
+  }
+
+  /* ---------- BEFORE (current state replica) ---------- */
+  .before-block{margin-bottom:34px;}
+  .before-label{font-size:12px; color:#d99; margin-bottom:8px; font-weight:600;}
+  .old-row{
+    position:relative;
+    background:linear-gradient(135deg,var(--gold-1),var(--gold-2));
+    border-radius:14px; padding:12px 16px 12px 34px; margin-bottom:8px;
+    color:var(--gold-text); box-shadow:0 3px 8px rgba(0,0,0,.25);
+  }
+  .old-circle{
+    position:absolute; top:12px; left:12px; width:14px; height:14px;
+    border:2px solid rgba(0,0,0,.35); border-radius:50%; background:transparent;
+  }
+  .old-row .t-title{font-weight:700; font-size:14.5px;}
+  .old-row .t-meta{font-size:11.5px; opacity:.75; margin-top:2px;}
+
+  /* ---------- Concept section shell ---------- */
+  .concept{
+    margin-bottom:38px; background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px 16px 22px;
+  }
+  .concept-head{margin-bottom:14px;}
+  .concept-badge{
+    display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.5px;
+    text-transform:uppercase; color:#181210; background:#e8c877;
+    padding:3px 9px; border-radius:20px; margin-bottom:8px;
+  }
+  .concept-title{font-size:16px; font-weight:700; margin:0 0 4px; color:#f7ead2;}
+  .concept-desc{font-size:12.5px; line-height:1.55; color:#c9b8a6; margin:0;}
+
+  .task-list{display:flex; flex-direction:column; gap:10px; margin-top:14px;}
+
+  .task{
+    position:relative; border-radius:14px; overflow:hidden;
+    box-shadow:0 3px 10px rgba(0,0,0,.28);
+    transition:box-shadow .25s ease, transform .25s ease;
+  }
+  .task.gold{background:linear-gradient(135deg,var(--gold-1),var(--gold-2)); color:var(--gold-text);}
+  .task.red{background:linear-gradient(135deg,var(--red-1),var(--red-2)); color:var(--red-text);}
+  .task:hover{box-shadow:0 8px 20px rgba(0,0,0,.4); transform:translateY(-1px);}
+
+  .task .t-title{font-weight:700; font-size:14.5px; transition:opacity .25s, text-decoration-color .25s;}
+  .task .t-meta{font-size:11.5px; opacity:.78; margin-top:3px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+  .tag{
+    font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px;
+    background:rgba(255,255,255,.35);
+  }
+  .tag.cat{background:rgba(0,0,0,.16);}
+
+  .task.done .t-title{opacity:.5; text-decoration:line-through;}
+  .task.done .t-meta{opacity:.4;}
+  .task.done{filter:saturate(.55);}
+
+  /* ================= CONCEPT A — Morph Checkbox ================= */
+  .a-row{display:flex; align-items:center; gap:12px; padding:13px 16px;}
+  .a-check{
+    flex:0 0 auto; width:20px; height:20px; border-radius:50%;
+    border:2px solid rgba(0,0,0,.35); background:transparent;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .28s cubic-bezier(.34,1.56,.64,1);
+    cursor:pointer;
+  }
+  .a-row:hover .a-check{
+    width:26px; height:26px; border-color:rgba(0,0,0,.5);
+    background:rgba(255,255,255,.55);
+    box-shadow:0 0 0 6px rgba(255,255,255,.18);
+  }
+  .a-check svg{width:12px; height:12px; opacity:0; transform:scale(.5); transition:all .2s ease;}
+  .a-row:hover .a-check svg{opacity:.55; transform:scale(1);}
+  .task.done .a-check{
+    width:26px; height:26px; background:var(--green); border-color:var(--green-dark);
+    animation:pop .35s cubic-bezier(.34,1.56,.64,1);
+  }
+  .task.done .a-check svg{opacity:1; transform:scale(1); stroke:#fff;}
+  @keyframes pop{0%{transform:scale(.7);}55%{transform:scale(1.18);}100%{transform:scale(1);}}
+  .a-content{flex:1; min-width:0;}
+
+  /* ================= CONCEPT B — Slide-out Drawer ================= */
+  .b-row{display:flex; align-items:stretch; position:relative;}
+  .b-drawer{
+    flex:0 0 auto; width:0; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(0,0,0,.12);
+    transition:width .3s cubic-bezier(.4,0,.2,1);
+  }
+  .b-row:hover .b-drawer{width:52px;}
+  .b-drawer-btn{
+    width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,.6);
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+    opacity:0; transform:scale(.4) rotate(-30deg);
+    transition:all .28s cubic-bezier(.34,1.56,.64,1) .05s;
+    cursor:pointer;
+  }
+  .b-row:hover .b-drawer-btn{opacity:1; transform:scale(1) rotate(0deg);}
+  .b-drawer-btn svg{width:14px; height:14px; opacity:.6;}
+  .b-content{flex:1; min-width:0; padding:13px 16px;}
+  .task.done .b-drawer{width:52px; background:var(--green-dark);}
+  .task.done .b-drawer-btn{opacity:1; transform:scale(1); background:var(--green); animation:pop .35s cubic-bezier(.34,1.56,.64,1);}
+  .task.done .b-drawer-btn svg{opacity:1; stroke:#fff;}
+
+  /* ================= CONCEPT C — Floating Action Button ================= */
+  .c-row{position:relative; padding:13px 16px; padding-right:54px;}
+  .c-fab{
+    position:absolute; top:50%; right:14px;
+    width:30px; height:30px; border-radius:50%;
+    background:rgba(255,255,255,.5);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 3px 8px rgba(0,0,0,.3);
+    opacity:0; transform:translateY(-50%) translateX(8px) scale(.6);
+    transition:all .3s cubic-bezier(.34,1.56,.64,1);
+    cursor:pointer;
+  }
+  .c-row:hover .c-fab{opacity:1; transform:translateY(-50%) translateX(0) scale(1);}
+  .c-fab svg{width:14px; height:14px; opacity:.65;}
+  .c-fab::after{
+    content:""; position:absolute; inset:-6px; border-radius:50%;
+    border:2px solid rgba(255,255,255,.5); opacity:0; transform:scale(.6);
+  }
+  .task.done .c-fab{
+    opacity:1; transform:translateY(-50%) translateX(0) scale(1);
+    background:var(--green); animation:pop .35s cubic-bezier(.34,1.56,.64,1);
+  }
+  .task.done .c-fab svg{opacity:1; stroke:#fff;}
+  .task.done .c-fab::after{animation:ripple .5s ease-out;}
+  @keyframes ripple{
+    0%{opacity:.5; transform:scale(.6);}
+    100%{opacity:0; transform:scale(1.9);}
+  }
+
+  footer{
+    text-align:center; font-size:11.5px; color:#8b7a68; margin-top:30px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="intro">
+    <h1>🍂 Atomic — Ý tưởng nút hoàn thành khi hover</h1>
+    <p>3 concept thay thế nút tick nhỏ ở góc trái, khó bấm. Ở mỗi concept, đưa chuột vào một task để xem hiệu ứng hover, rồi bấm vào nút để xem trạng thái "đã hoàn thành" (bấm lại để undo). Màu nền task vẫn giữ theo category như bản gốc (vàng = Learning, đỏ = Interview).</p>
+    <span class="hint">👉 Di chuột / click thử trực tiếp vào các task bên dưới</span>
+  </header>
+
+  <div class="before-block">
+    <div class="before-label">😕 HIỆN TẠI — nút tròn nhỏ 14px, cố định, khó bấm chính xác</div>
+    <div class="old-row">
+      <div class="old-circle"></div>
+      <div class="t-title">jp tech speaking</div>
+      <div class="t-meta">🕐 11:00 → 12:00 · Learning · speaking · japanese</div>
+    </div>
+  </div>
+
+  <!-- ============ CONCEPT A ============ -->
+  <section class="concept">
+    <div class="concept-head">
+      <span class="concept-badge">Concept A</span>
+      <h2 class="concept-title">Morph Checkbox — nút "phồng" lên khi hover</h2>
+      <p class="concept-desc">Giữ nguyên vị trí nút bên trái, nhưng khi hover cả dòng task, nút tròn tự phóng to (14px → 26px) kèm viền glow mờ, dễ nhắm và bấm hơn hẳn. Khi click, nút bật nảy (bounce) và chuyển xanh lá với dấu tick, chữ bị gạch ngang.</p>
+    </div>
+    <div class="task-list">
+      <div class="task gold" onclick="toggleDone(this)">
+        <div class="a-row">
+          <div class="a-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <div class="a-content">
+            <div class="t-title">jp tech speaking</div>
+            <div class="t-meta"><span>🕐 11:00 → 12:00</span><span class="tag cat">Learning</span><span class="tag">speaking</span><span class="tag">japanese</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="task gold" onclick="toggleDone(this)">
+        <div class="a-row">
+          <div class="a-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <div class="a-content">
+            <div class="t-title">piano</div>
+            <div class="t-meta"><span>🕐 12:00 → 12:30</span><span class="tag cat">Learning</span><span class="tag">piano</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="task red" onclick="toggleDone(this)">
+        <div class="a-row">
+          <div class="a-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <div class="a-content">
+            <div class="t-title">luyện tập interview</div>
+            <div class="t-meta"><span>🕐 13:30 → 14:30</span><span class="tag cat">Interview</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONCEPT B ============ -->
+  <section class="concept">
+    <div class="concept-head">
+      <span class="concept-badge">Concept B</span>
+      <h2 class="concept-title">Slide-out Drawer — ngăn kéo trượt ra từ mép trái</h2>
+      <p class="concept-desc">Ở trạng thái bình thường KHÔNG có nút nào cả — giao diện sạch, thoáng hơn. Khi hover, một "ngăn kéo" rộng 52px trượt ra từ mép trái, chứa nút tick lớn dễ bấm, nội dung task tự nhường chỗ. Rất phù hợp trên mobile vì vùng bấm lớn xuất hiện đúng lúc cần.</p>
+    </div>
+    <div class="task-list">
+      <div class="task gold" onclick="toggleDone(this)">
+        <div class="b-row">
+          <div class="b-drawer"><div class="b-drawer-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div></div>
+          <div class="b-content">
+            <div class="t-title">jp tech speaking</div>
+            <div class="t-meta"><span>🕐 11:00 → 12:00</span><span class="tag cat">Learning</span><span class="tag">speaking</span><span class="tag">japanese</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="task gold" onclick="toggleDone(this)">
+        <div class="b-row">
+          <div class="b-drawer"><div class="b-drawer-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div></div>
+          <div class="b-content">
+            <div class="t-title">vocabulary</div>
+            <div class="t-meta"><span>🕐 12:30 → 13:30</span><span class="tag cat">Learning</span><span class="tag">vocab</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="task red" onclick="toggleDone(this)">
+        <div class="b-row">
+          <div class="b-drawer"><div class="b-drawer-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div></div>
+          <div class="b-content">
+            <div class="t-title">luyện tập interview</div>
+            <div class="t-meta"><span>🕐 13:30 → 14:30</span><span class="tag cat">Interview</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONCEPT C ============ -->
+  <section class="concept">
+    <div class="concept-head">
+      <span class="concept-badge">Concept C</span>
+      <h2 class="concept-title">Floating Action Button — nút nổi bên phải</h2>
+      <p class="concept-desc">Bỏ hẳn nút bên trái. Khi hover, một nút tròn nổi bật (có shadow) trượt vào từ mép phải task — nơi trước đây trống, nên không tranh vùng bấm với nội dung. Khi click, nút xanh lá kèm hiệu ứng ripple lan toả, cảm giác "đã xác nhận" rõ ràng.</p>
+    </div>
+    <div class="task-list">
+      <div class="task gold" onclick="toggleDone(this)">
+        <div class="c-row">
+          <div class="t-title">jp tech speaking</div>
+          <div class="t-meta"><span>🕐 11:00 → 12:00</span><span class="tag cat">Learning</span><span class="tag">speaking</span><span class="tag">japanese</span></div>
+          <div class="c-fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+        </div>
+      </div>
+      <div class="task gold" onclick="toggleDone(this)">
+        <div class="c-row">
+          <div class="t-title">piano</div>
+          <div class="t-meta"><span>🕐 12:00 → 12:30</span><span class="tag cat">Learning</span><span class="tag">piano</span></div>
+          <div class="c-fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+        </div>
+      </div>
+      <div class="task red" onclick="toggleDone(this)">
+        <div class="c-row">
+          <div class="t-title">luyện tập interview</div>
+          <div class="t-meta"><span>🕐 13:30 → 14:30</span><span class="tag cat">Interview</span></div>
+          <div class="c-fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Mockup demo · bấm vào task để toggle trạng thái hoàn thành · bấm lại để undo</footer>
+</div>
+
+<script>
+function toggleDone(el){
+  el.classList.toggle('done');
+}
+</script>
+</body>
+</html>
