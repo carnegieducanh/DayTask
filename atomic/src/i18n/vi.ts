@@ -295,6 +295,7 @@ export const vi = {
   toast: {
     deleted: (name: string) => `Đã xóa "${name}"`,
     undo: "Hoàn tác",
+    undone: (label: string) => label ? `Đã hoàn tác: "${label}"` : "Đã hoàn tác",
   },
   journal: {
     dowFull: ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"],

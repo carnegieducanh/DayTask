@@ -54,3 +54,9 @@
 .delete-toast-undo:hover {
   opacity: 1;
 }
+
+/* Hiển thị phía trên delete-toast khi cả 2 cùng lúc xuất hiện (vd: vừa xóa
+   1 task xong đã Ctrl+Z một thao tác khác trước đó), tránh chồng đè hoàn toàn. */
+.undo-toast {
+  bottom: 76px;
+}

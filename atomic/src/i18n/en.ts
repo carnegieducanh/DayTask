@@ -320,6 +320,7 @@ export const en: typeof vi = {
   toast: {
     deleted: (name: string) => `"${name}" deleted`,
     undo: "Undo",
+    undone: (label: string) => label ? `Undid: "${label}"` : "Undid last action",
   },
   journal: {
     dowFull: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],

@@ -175,6 +175,11 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
   },
 
   saveTimeEntry: async (taskId, date, startTime, endTime) => {
+    // Snapshot entry trước khi ghi đè, để Ctrl+Z biết phục hồi lại giờ cũ
+    // (hoặc gỡ hẳn nếu task này trước đó chưa có lịch — tức đang ở deck).
+    const prevEntry = get().calendarTimeEntries.find((e) => e.task_id === taskId) ?? null;
+    const task = get().tasks.find((t) => t.id === taskId) ?? get().calendarTasks.find((t) => t.id === taskId);
+
     const newEntry: TaskTimeEntry = { task_id: taskId, date, start_time: startTime, end_time: endTime };
     const optimisticTaskEntries = [
       ...get().taskTimeEntries.filter((e) => !(e.task_id === taskId && e.date === date)),
@@ -189,21 +194,34 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     set({ taskTimeEntries: optimisticTaskEntries, calendarTimeEntries: updatedCalendarEntries });
     if (!isTauri()) {
       dbSaveTimeEntry(taskId, date, startTime, endTime);
-      return;
+    } else {
+      const db = await getDb();
+      await db.execute(
+        'INSERT OR REPLACE INTO task_time_entries (task_id, date, start_time, end_time) VALUES ($1, $2, $3, $4)',
+        [taskId, date, startTime, endTime]
+      );
+      const taskTimeEntries = await db.select<TaskTimeEntry[]>(
+        'SELECT * FROM task_time_entries WHERE date = $1',
+        [date]
+      );
+      set({ taskTimeEntries, calendarTimeEntries: updatedCalendarEntries });
     }
-    const db = await getDb();
-    await db.execute(
-      'INSERT OR REPLACE INTO task_time_entries (task_id, date, start_time, end_time) VALUES ($1, $2, $3, $4)',
-      [taskId, date, startTime, endTime]
-    );
-    const taskTimeEntries = await db.select<TaskTimeEntry[]>(
-      'SELECT * FROM task_time_entries WHERE date = $1',
-      [date]
-    );
-    set({ taskTimeEntries, calendarTimeEntries: updatedCalendarEntries });
+
+    get().pushHistory({
+      label: task?.title ?? '',
+      undo: async () => {
+        if (prevEntry) {
+          await get().saveTimeEntry(taskId, prevEntry.date, prevEntry.start_time, prevEntry.end_time);
+        } else {
+          await get().deleteTimeEntry(taskId, date);
+        }
+      },
+    });
   },
 
   deleteTimeEntry: async (taskId, date) => {
+    const prevEntry = get().calendarTimeEntries.find((e) => e.task_id === taskId && e.date === date) ?? null;
+    const task = get().tasks.find((t) => t.id === taskId) ?? get().calendarTasks.find((t) => t.id === taskId);
     const updatedCalendarEntries = get().calendarTimeEntries.filter(
       (e) => !(e.task_id === taskId && e.date === date)
     );
@@ -225,25 +243,37 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
         tasks: clearDone(get().tasks),
         calendarTasks: clearDone(get().calendarTasks),
       });
-      return;
+    } else {
+      const db = await getDb();
+      await db.execute(
+        'DELETE FROM task_time_entries WHERE task_id = $1 AND date = $2',
+        [taskId, date]
+      );
+      if (wasDone) {
+        await db.execute('UPDATE tasks SET is_done = 0 WHERE id = $1', [taskId]);
+      }
+      const taskTimeEntries = await db.select<TaskTimeEntry[]>(
+        'SELECT * FROM task_time_entries WHERE date = $1',
+        [date]
+      );
+      set({
+        taskTimeEntries,
+        calendarTimeEntries: updatedCalendarEntries,
+        tasks: clearDone(get().tasks),
+        calendarTasks: clearDone(get().calendarTasks),
+      });
     }
-    const db = await getDb();
-    await db.execute(
-      'DELETE FROM task_time_entries WHERE task_id = $1 AND date = $2',
-      [taskId, date]
-    );
-    if (wasDone) {
-      await db.execute('UPDATE tasks SET is_done = 0 WHERE id = $1', [taskId]);
-    }
-    const taskTimeEntries = await db.select<TaskTimeEntry[]>(
-      'SELECT * FROM task_time_entries WHERE date = $1',
-      [date]
-    );
-    set({
-      taskTimeEntries,
-      calendarTimeEntries: updatedCalendarEntries,
-      tasks: clearDone(get().tasks),
-      calendarTasks: clearDone(get().calendarTasks),
+
+    get().pushHistory({
+      label: task?.title ?? '',
+      undo: async () => {
+        if (prevEntry) {
+          await get().saveTimeEntry(taskId, prevEntry.date, prevEntry.start_time, prevEntry.end_time);
+        }
+        if (wasDone) {
+          await get().updateTask(taskId, { is_done: 1 });
+        }
+      },
     });
   },
 
@@ -297,6 +327,10 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
         taskTimeEntries: dbGetTimeEntries(get().selectedDate),
         taskTags: dbGetTaskTagsForDate(get().selectedDate),
       });
+      get().pushHistory({
+        label: source.title,
+        undo: () => get().confirmDeleteTask(newTask),
+      });
       return;
     }
 
@@ -317,11 +351,33 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       await db.execute('INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES ($1, $2)', [newTaskId, tagId]);
     }
     await get().loadTasks(get().selectedDate);
+    get().pushHistory({
+      label: source.title,
+      undo: () => get().confirmDeleteTask({
+        id: newTaskId, title: source.title, description: source.description, category: source.category,
+        date, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, color: source.color,
+        deck_position: null, created_at: '',
+      }),
+    });
   },
 
   updateTask: async (id, updates) => {
     const task = get().tasks.find((t) => t.id === id) ?? get().calendarTasks.find((t) => t.id === id);
     if (!task) return;
+
+    // Snapshot giá trị cũ của đúng những field sắp bị ghi đè, để Ctrl+Z có thể
+    // gọi lại updateTask(id, prevUpdates) và đi qua cùng logic series-routing này.
+    // Lưu ý: nếu updates.repeat_daily tắt lặp lại, các instance tương lai bị xoá
+    // hẳn khỏi DB — hoàn tác sẽ bật lại repeat_daily nhưng KHÔNG khôi phục được
+    // những instance đã xoá đó (giới hạn đã biết, chấp nhận được).
+    const prevUpdates = {} as TaskUpdate;
+    for (const key of Object.keys(updates) as (keyof TaskUpdate)[]) {
+      (prevUpdates as Record<string, unknown>)[key] = task[key];
+    }
+    get().pushHistory({
+      label: task.title,
+      undo: () => get().updateTask(id, prevUpdates),
+    });
 
     const isSeriesTask = task.repeat_daily === 1 || task.series_id != null;
     const templateId = task.series_id ?? (task.repeat_daily === 1 ? task.id : null);
@@ -398,6 +454,9 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     if (!task) return;
     const newDone = task.is_done ? 0 : 1;
 
+    // toggleTask tự đảo ngược chính nó — gọi lại là đủ để hoàn tác.
+    get().pushHistory({ label: task.title, undo: () => get().toggleTask(id) });
+
     if (!isTauri()) {
       dbUpdateTask(id, { is_done: newDone });
       set({ tasks: dbGetTasks(get().selectedDate) });
@@ -433,6 +492,10 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       calendarTasks: get().calendarTasks.filter((t) => t.id !== id),
       pendingDeleteTask: task,
     });
+    // undoDeleteTask() luôn phục hồi ĐÚNG pendingDeleteTask hiện tại (slot đơn),
+    // và vì stack là LIFO còn slot chỉ giữ bản xoá gần nhất, entry này luôn khớp
+    // đúng task của chính nó khi được pop ra — kể cả khi có nhiều lần xoá liên tiếp.
+    get().pushHistory({ label: task.title, undo: () => get().undoDeleteTask() });
   },
 
   undoDeleteTask: () => {
@@ -495,6 +558,15 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
   },
 
   updateTaskColor: async (category, color) => {
+    // updateTaskColor ghi đè color của MỌI task cùng category (kể cả những task
+    // đang có màu riêng khác category) — snapshot từng task để hoàn tác chính xác
+    // từng cái, không chỉ đơn giản gọi lại với màu category cũ.
+    const prevCategoryColor = get().categoryColors[category];
+    const prevTaskColors = new Map<number, string | null>();
+    for (const t of [...get().tasks, ...get().calendarTasks]) {
+      if (t.category === category) prevTaskColors.set(t.id, t.color);
+    }
+
     const mapper = (t: Task) => t.category === category ? { ...t, color } : t;
     const newCategoryColors = { ...get().categoryColors, [category]: color };
     set({
@@ -504,42 +576,81 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     });
     if (!isTauri()) {
       localStorage.setItem('categoryColors', JSON.stringify(newCategoryColors));
-      return;
+    } else {
+      const db = await getDb();
+      await db.execute('UPDATE tasks SET color = $1 WHERE category = $2', [color, category]);
+      await db.execute(
+        'INSERT OR REPLACE INTO category_colors (category, color) VALUES ($1, $2)',
+        [category, color]
+      );
     }
-    const db = await getDb();
-    await db.execute('UPDATE tasks SET color = $1 WHERE category = $2', [color, category]);
-    await db.execute(
-      'INSERT OR REPLACE INTO category_colors (category, color) VALUES ($1, $2)',
-      [category, color]
-    );
+
+    get().pushHistory({
+      label: category,
+      undo: async () => {
+        const restoreMapper = (t: Task) =>
+          prevTaskColors.has(t.id) ? { ...t, color: prevTaskColors.get(t.id)! } : t;
+        const restoredCategoryColors = { ...get().categoryColors, [category]: prevCategoryColor };
+        set({
+          tasks: get().tasks.map(restoreMapper),
+          calendarTasks: get().calendarTasks.map(restoreMapper),
+          categoryColors: restoredCategoryColors,
+        });
+        if (!isTauri()) {
+          localStorage.setItem('categoryColors', JSON.stringify(restoredCategoryColors));
+          return;
+        }
+        const db = await getDb();
+        for (const [taskId, prevColor] of prevTaskColors) {
+          await db.execute('UPDATE tasks SET color = $1 WHERE id = $2', [prevColor, taskId]);
+        }
+        await db.execute(
+          'INSERT OR REPLACE INTO category_colors (category, color) VALUES ($1, $2)',
+          [category, prevCategoryColor]
+        );
+      },
+    });
   },
 
   reorderDeckTasks: async (orderedTaskIds) => {
     const date = get().selectedDate;
     const taskLookup = get().tasks;
+    // Thứ tự deck_position hiện tại (trước khi ghi đè) chính là "trạng thái cũ"
+    // cần khôi phục khi hoàn tác — gọi lại reorderDeckTasks với thứ tự này.
+    const idSet = new Set(orderedTaskIds);
+    const prevOrderedIds = [...taskLookup]
+      .filter((t) => idSet.has(t.id))
+      .sort((a, b) => (a.deck_position ?? 0) - (b.deck_position ?? 0))
+      .map((t) => t.id);
+
     const positions = new Map(orderedTaskIds.map((id, i) => [id, i]));
     const mapper = (t: Task) => (positions.has(t.id) ? { ...t, deck_position: positions.get(t.id)! } : t);
     set({ tasks: get().tasks.map(mapper), calendarTasks: get().calendarTasks.map(mapper) });
     if (!isTauri()) {
       dbReorderDeckTasks(orderedTaskIds, date);
-      return;
-    }
-    const db = await getDb();
-    for (let i = 0; i < orderedTaskIds.length; i++) {
-      const taskId = orderedTaskIds[i];
-      await db.execute('UPDATE tasks SET deck_position = $1 WHERE id = $2', [i, taskId]);
+    } else {
+      const db = await getDb();
+      for (let i = 0; i < orderedTaskIds.length; i++) {
+        const taskId = orderedTaskIds[i];
+        await db.execute('UPDATE tasks SET deck_position = $1 WHERE id = $2', [i, taskId]);
 
-      // Recurring task: carry this order onto the template + future instances too,
-      // so the deck stays arranged the same way on days the user hasn't reordered yet.
-      const task = taskLookup.find((t) => t.id === taskId);
-      const templateId = task?.series_id ?? (task?.repeat_daily === 1 ? task.id : null);
-      if (templateId) {
-        await db.execute(
-          'UPDATE tasks SET deck_position = $1 WHERE id = $2 OR (series_id = $2 AND date >= $3)',
-          [i, templateId, date]
-        );
+        // Recurring task: carry this order onto the template + future instances too,
+        // so the deck stays arranged the same way on days the user hasn't reordered yet.
+        const task = taskLookup.find((t) => t.id === taskId);
+        const templateId = task?.series_id ?? (task?.repeat_daily === 1 ? task.id : null);
+        if (templateId) {
+          await db.execute(
+            'UPDATE tasks SET deck_position = $1 WHERE id = $2 OR (series_id = $2 AND date >= $3)',
+            [i, templateId, date]
+          );
+        }
       }
     }
+
+    get().pushHistory({
+      label: '',
+      undo: () => get().reorderDeckTasks(prevOrderedIds),
+    });
   },
 
   loadCategoryColors: async () => {

@@ -30,6 +30,7 @@ import BooksView from './components/books/BooksView';
 import ProjectsView from './components/projects/ProjectsView';
 import ReminderPopup from './components/ReminderPopup';
 import DeleteToast from './components/DeleteToast';
+import UndoToast from './components/UndoToast';
 import SettingsModal from './components/SettingsModal';
 import UpdateDialog from './components/UpdateDialog';
 import { useReminder } from './hooks/useReminder';
@@ -77,6 +78,7 @@ function App() {
     loadTasks, loadGoals, loadCategoryColors, loadTags, initAutostart,
     goals, reorderGoal, kanbanDragActiveId, setKanbanDragActiveId,
     backgroundEnabled, backgroundOpacity, backgroundImageUrl, loadBackgroundImage, uiTransparency,
+    undoLastAction,
   } = useAppStore();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -186,6 +188,25 @@ function App() {
   useEffect(() => {
     if (activeTab === 'kanban') loadGoals(selectedYear);
   }, [activeTab]);
+
+  // Ctrl+Z toàn app: hoàn tác thao tác gần nhất (task/goal/tag — xem historySlice.ts).
+  // Bỏ qua khi đang gõ trong input/textarea/contentEditable để không đè lên
+  // undo gõ chữ mặc định của trình duyệt (vd. đang sửa tên task inline).
+  useEffect(() => {
+    function isEditableTarget(target: EventTarget | null): boolean {
+      if (!(target instanceof HTMLElement)) return false;
+      return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey) return;
+      if (e.key !== 'z' && e.key !== 'Z') return;
+      if (isEditableTarget(e.target)) return;
+      e.preventDefault();
+      undoLastAction();
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undoLastAction]);
 
   async function handleInstallUpdate() {
     const update = updateRef.current;
@@ -375,6 +396,7 @@ function App() {
           {activeTab === 'projects' && <ProjectsView />}
           <ReminderPopup />
           <DeleteToast />
+          <UndoToast />
         </div>
       </div>
 

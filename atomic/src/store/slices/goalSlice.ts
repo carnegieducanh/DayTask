@@ -90,6 +90,15 @@ export const createGoalSlice: StateCreator<AppState, [], [], GoalSlice> = (set, 
   },
 
   updateGoal: async (id, updates) => {
+    const goal = get().goals.find((g) => g.id === id);
+    if (goal) {
+      const prevUpdates = {} as GoalUpdate;
+      for (const key of Object.keys(updates) as (keyof GoalUpdate)[]) {
+        (prevUpdates as Record<string, unknown>)[key] = goal[key];
+      }
+      get().pushHistory({ label: goal.title, undo: () => get().updateGoal(id, prevUpdates) });
+    }
+
     if (!isTauri()) {
       dbUpdateGoal(id, updates);
       set({ goals: dbGetGoals(get().selectedYear) });
@@ -134,6 +143,12 @@ export const createGoalSlice: StateCreator<AppState, [], [], GoalSlice> = (set, 
         .forEach((g, i) => updates.push({ id: g.id, status: oldStatus, position: i }));
     }
 
+    // Snapshot status/position CŨ của mọi goal bị ảnh hưởng — để hoàn tác khôi phục
+    // lại đúng vị trí từng cái (không chỉ riêng card vừa kéo mà cả các card bị
+    // đánh số lại xung quanh nó).
+    const prevById = new Map(goals.map((g) => [g.id, { status: g.status, position: g.position }]));
+    const prevUpdates = updates.map((u) => ({ id: u.id, ...prevById.get(u.id)! }));
+
     // Optimistic update — tránh giật/nhảy, không cần reload từ DB
     const byId = new Map(updates.map((u) => [u.id, u]));
     set({
@@ -147,16 +162,42 @@ export const createGoalSlice: StateCreator<AppState, [], [], GoalSlice> = (set, 
     // Lưu xuống DB
     if (!isTauri()) {
       for (const u of updates) dbUpdateGoal(u.id, { status: u.status, position: u.position });
-      return;
+    } else {
+      const db = await getDb();
+      for (const u of updates) {
+        await db.execute('UPDATE goals SET status = $1, position = $2 WHERE id = $3', [
+          u.status,
+          u.position,
+          u.id,
+        ]);
+      }
     }
-    const db = await getDb();
-    for (const u of updates) {
-      await db.execute('UPDATE goals SET status = $1, position = $2 WHERE id = $3', [
-        u.status,
-        u.position,
-        u.id,
-      ]);
-    }
+
+    get().pushHistory({
+      label: active.title,
+      undo: async () => {
+        const restoreById = new Map(prevUpdates.map((u) => [u.id, u]));
+        set({
+          goals: get().goals.map((g) =>
+            restoreById.has(g.id)
+              ? { ...g, status: restoreById.get(g.id)!.status, position: restoreById.get(g.id)!.position }
+              : g
+          ),
+        });
+        if (!isTauri()) {
+          for (const u of prevUpdates) dbUpdateGoal(u.id, { status: u.status, position: u.position });
+          return;
+        }
+        const db = await getDb();
+        for (const u of prevUpdates) {
+          await db.execute('UPDATE goals SET status = $1, position = $2 WHERE id = $3', [
+            u.status,
+            u.position,
+            u.id,
+          ]);
+        }
+      },
+    });
   },
 
   deleteGoal: async (id) => {
@@ -185,6 +226,7 @@ export const createGoalSlice: StateCreator<AppState, [], [], GoalSlice> = (set, 
       checklistItems: restChecklist,
       pendingDeleteGoal: goal,
     });
+    get().pushHistory({ label: goal.title, undo: () => get().undoDeleteGoal() });
   },
 
   undoDeleteGoal: () => {

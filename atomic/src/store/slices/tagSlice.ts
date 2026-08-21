@@ -77,6 +77,12 @@ export const createTagSlice: StateCreator<AppState, [], [], TagSlice> = (set, ge
   },
 
   updateTag: async (id, name) => {
+    const tag = get().tags.find((t) => t.id === id);
+    if (tag) {
+      const prevName = tag.name;
+      get().pushHistory({ label: prevName, undo: () => get().updateTag(id, prevName) });
+    }
+
     if (!isTauri()) {
       dbUpdateTag(id, name);
       set({ tags: dbGetTags() });
@@ -111,6 +117,7 @@ export const createTagSlice: StateCreator<AppState, [], [], TagSlice> = (set, ge
     const prev = get().pendingDeleteTag;
     if (prev) get().confirmDeleteTag(prev);
     set({ tags: get().tags.filter((t) => t.id !== id), pendingDeleteTag: tag });
+    get().pushHistory({ label: tag.name, undo: () => get().undoDeleteTag() });
   },
 
   undoDeleteTag: () => {
