@@ -642,7 +642,18 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
-.task-item.done {
+/* Dimming lives on .task-content (not .task-item) so the drawer/check icon
+   stays at full strength on hover instead of getting multiplied down with
+   the muted card — opacity compositing on a parent can't be undone by a
+   child's own opacity, so the drawer has to sit outside the dimmed subtree. */
+.task-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.task-item.done .task-content {
   opacity: 0.55;
 }
 
@@ -698,7 +709,7 @@
 }
 
 .task-item:hover .task-drawer {
-  width: 52px;
+  width: 60px;
 }
 
 .task-item.done .task-drawer {
@@ -706,15 +717,14 @@
 }
 
 .task-drawer-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  width: 48px;
+  height: 48px;
   border: none;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(96, 165, 250, 0.18);
+  background: transparent;
   color: transparent;
   cursor: pointer;
   opacity: 0;
@@ -725,11 +735,11 @@
 .task-item:hover .task-drawer-btn {
   opacity: 1;
   transform: scale(1) rotate(0deg);
-  color: #60a5fa;
+  color: rgba(96, 165, 250, 0.6);
 }
 
 .task-drawer-btn:hover {
-  background: rgba(96, 165, 250, 0.3);
+  color: #60a5fa;
 }
 
 /* Pressed feedback — same treatment for pending and done, higher specificity
@@ -738,15 +748,13 @@
    anywhere in the 52px drawer area shows the button being pushed in. */
 .task-item:hover .task-drawer:active .task-drawer-btn {
   transform: scale(0.85) rotate(0deg);
-  background: rgba(96, 165, 250, 0.45);
   transition-duration: 0.08s;
 }
 
 .task-drawer-btn.checked {
   opacity: 1;
   transform: scale(1) rotate(0deg);
-  background: #60a5fa;
-  color: #fff;
+  color: #60a5fa;
   animation: task-drawer-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -900,21 +908,14 @@
 .task-item--colored.done .task-drawer {
   background: rgba(20, 20, 20, 0.55);
 }
-.task-item--colored .task-drawer-btn {
-  background: rgba(255, 255, 255, 0.55);
+.task-item--colored:hover .task-drawer-btn {
+  color: rgba(0, 0, 0, 0.68);
 }
 .task-item--colored .task-drawer-btn:hover {
-  background: rgba(255, 255, 255, 0.85);
-}
-.task-item--colored:hover .task-drawer-btn {
-  color: rgba(0, 0, 0, 0.6);
-}
-.task-item--colored:hover .task-drawer:active .task-drawer-btn {
-  background: rgba(255, 255, 255, 0.95);
+  color: rgba(0, 0, 0, 0.92);
 }
 .task-item--colored .task-drawer-btn.checked {
-  background: var(--primary);
-  color: #fff;
+  color: var(--primary);
 }
 
 /* ── Today Schedule quick tick — Morph Checkbox (phồng lên khi hover) ── */

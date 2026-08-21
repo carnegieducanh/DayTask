@@ -171,10 +171,11 @@ export default function TaskCard({ task, onEdit, onToggle }: Props) {
           onClick={(e) => { e.stopPropagation(); onToggle ? onToggle(task.id) : toggleTask(task.id); }}
           title={task.is_done ? t.taskCard.markUndone : t.taskCard.markDone}
         >
-          <IconCheck size={18} strokeWidth={2.5} />
+          <IconCheck size={44} strokeWidth={3} />
         </button>
       </div>
 
+      <div className="task-content">
       <div className="task-body">
         {isEditing ? (
           <input
@@ -259,6 +260,7 @@ export default function TaskCard({ task, onEdit, onToggle }: Props) {
       >
         <IconTrash size={20} />
       </button>
+      </div>
 
       {contextMenu && createPortal(
         <div
