@@ -299,6 +299,12 @@ select {
   color: var(--text-primary);
 }
 
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
 /* ── Progress Bar ── */
 .progress-bar-wrap {
   background: var(--border-1);

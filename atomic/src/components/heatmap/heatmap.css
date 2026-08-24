@@ -7,6 +7,22 @@
   border-bottom: 1px solid var(--border-1);
 }
 
+/* ── Week/Month tier prev/next navigation ── */
+.heatmap-period-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+
+.heatmap-period-label {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 160px;
+  text-align: center;
+}
+
 /* ── Heatmap tab enter animations ── */
 .view-topbar:not(.today-topbar) {
   animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;

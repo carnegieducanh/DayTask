@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './heatmap.css';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, addDays, isToday, format } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, addWeeks, addMonths, addDays, isToday, format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import {
@@ -11,7 +11,7 @@ import { useT } from '../../i18n';
 import type { CategoryStat, TagStat } from '../../types';
 import HeatmapGrid from './HeatmapGrid';
 import TopStatsSection, { type StatItem } from './TopStatsSection';
-import { fmtMinutes, fmtHoursFloat } from './heatmapFormat';
+import { fmtMinutes, fmtHoursFloat, fmtDateRange } from './heatmapFormat';
 
 export default function HeatmapView() {
   const t = useT();
@@ -19,10 +19,12 @@ export default function HeatmapView() {
     heatmap, heatmapDurations, heatmapMonthStats, heatmapTopTagHours,
     heatmapWeekCategoryStats, heatmapWeekCategoryStatsPrev, heatmapWeekTagStats, heatmapWeekTagStatsPrev,
     heatmapMonthCategoryStats, heatmapMonthCategoryStatsPrev, heatmapMonthTagStats, heatmapMonthTagStatsPrev,
+    heatmapWeekDayActivity, heatmapWeekDayDurations, heatmapMonthSummary, heatmapMonthSummaryPrev,
     selectedYear, setSelectedYear,
     loadHeatmap, loadHeatmapDurations, loadHeatmapMonthStats, loadHeatmapTopTagHours,
     loadHeatmapWeekCategoryStats, loadHeatmapWeekCategoryStatsPrev, loadHeatmapWeekTagStats, loadHeatmapWeekTagStatsPrev,
     loadHeatmapMonthCategoryStats, loadHeatmapMonthCategoryStatsPrev, loadHeatmapMonthTagStats, loadHeatmapMonthTagStatsPrev,
+    loadHeatmapWeekDayActivity, loadHeatmapWeekDayDurations, loadHeatmapMonthSummary, loadHeatmapMonthSummaryPrev,
     getStreak,
     language, categoryColors,
   } = useAppStore();
@@ -30,47 +32,63 @@ export default function HeatmapView() {
   const [heatmapMode, setHeatmapMode] = useState<'count' | 'hours'>('hours');
   const [weekCompare, setWeekCompare] = useState(false);
   const [monthCompare, setMonthCompare] = useState(false);
+  const [weekOffset, setWeekOffset] = useState(0); // 0 = current week, -1 = last week, ...
+  const [monthOffset, setMonthOffset] = useState(0); // 0 = current month, -1 = last month, ...
   const contentRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(contentRef);
+  const dateLocale = language === 'vi' ? viLocale : undefined;
 
   useEffect(() => {
-    const today = new Date();
-    const yearMonthPrefix = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-`;
     loadHeatmap(selectedYear);
     loadHeatmapDurations(selectedYear);
     loadHeatmapMonthStats(selectedYear);
-    loadHeatmapTopTagHours(yearMonthPrefix);
     getStreak().then(setStreak);
   }, [selectedYear]);
 
-  // Week tier — this week vs last week, independent of the year picker above (always "now").
+  // Week tier — navigable via weekOffset, independent of the year picker above.
+  const weekStartDate = useMemo(
+    () => addWeeks(startOfWeek(new Date(), { weekStartsOn: 0 }), weekOffset),
+    [weekOffset]
+  );
+  const weekEndDate = useMemo(() => endOfWeek(weekStartDate, { weekStartsOn: 0 }), [weekStartDate]);
+
   useEffect(() => {
-    const today = new Date();
-    const weekStart = format(startOfWeek(today, { weekStartsOn: 0 }), 'yyyy-MM-dd');
-    const weekEnd = format(endOfWeek(today, { weekStartsOn: 0 }), 'yyyy-MM-dd');
-    const prevWeekStart = format(subWeeks(startOfWeek(today, { weekStartsOn: 0 }), 1), 'yyyy-MM-dd');
-    const prevWeekEnd = format(subWeeks(endOfWeek(today, { weekStartsOn: 0 }), 1), 'yyyy-MM-dd');
+    const weekStart = format(weekStartDate, 'yyyy-MM-dd');
+    const weekEnd = format(weekEndDate, 'yyyy-MM-dd');
+    const prevWeekStart = format(addWeeks(weekStartDate, -1), 'yyyy-MM-dd');
+    const prevWeekEnd = format(addWeeks(weekEndDate, -1), 'yyyy-MM-dd');
     const sortBy = heatmapMode === 'hours' ? 'minutes' : 'tasks';
     loadHeatmapWeekCategoryStats(weekStart, weekEnd, sortBy);
     loadHeatmapWeekTagStats(weekStart, weekEnd, sortBy);
     loadHeatmapWeekCategoryStatsPrev(prevWeekStart, prevWeekEnd, sortBy);
     loadHeatmapWeekTagStatsPrev(prevWeekStart, prevWeekEnd, sortBy);
-  }, [heatmapMode]);
+    loadHeatmapWeekDayActivity(weekStart, weekEnd);
+    loadHeatmapWeekDayDurations(weekStart, weekEnd);
+  }, [heatmapMode, weekStartDate, weekEndDate]);
 
-  // Month tier — this month vs last month, independent of the year picker above (always "now").
+  // Month tier — navigable via monthOffset, independent of the year picker above.
+  const monthStartDate = useMemo(
+    () => addMonths(startOfMonth(new Date()), monthOffset),
+    [monthOffset]
+  );
+  const monthEndDate = useMemo(() => endOfMonth(monthStartDate), [monthStartDate]);
+
   useEffect(() => {
-    const today = new Date();
-    const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
-    const monthEnd = format(endOfMonth(today), 'yyyy-MM-dd');
-    const prevMonth = subMonths(today, 1);
-    const prevMonthStart = format(startOfMonth(prevMonth), 'yyyy-MM-dd');
-    const prevMonthEnd = format(endOfMonth(prevMonth), 'yyyy-MM-dd');
+    const monthStart = format(monthStartDate, 'yyyy-MM-dd');
+    const monthEnd = format(monthEndDate, 'yyyy-MM-dd');
+    const prevMonthStartDate = addMonths(monthStartDate, -1);
+    const prevMonthEndDate = endOfMonth(prevMonthStartDate);
+    const prevMonthStart = format(prevMonthStartDate, 'yyyy-MM-dd');
+    const prevMonthEnd = format(prevMonthEndDate, 'yyyy-MM-dd');
     const sortBy = heatmapMode === 'hours' ? 'minutes' : 'tasks';
     loadHeatmapMonthCategoryStats(monthStart, monthEnd, sortBy);
     loadHeatmapMonthTagStats(monthStart, monthEnd, sortBy);
     loadHeatmapMonthCategoryStatsPrev(prevMonthStart, prevMonthEnd, sortBy);
     loadHeatmapMonthTagStatsPrev(prevMonthStart, prevMonthEnd, sortBy);
-  }, [heatmapMode]);
+    loadHeatmapMonthSummary(monthStart, monthEnd);
+    loadHeatmapMonthSummaryPrev(prevMonthStart, prevMonthEnd);
+    loadHeatmapTopTagHours(`${format(monthStartDate, 'yyyy-MM')}-`);
+  }, [heatmapMode, monthStartDate, monthEndDate]);
 
   const isCurrentYear = selectedYear === new Date().getFullYear();
   const currentMonth = new Date().getMonth(); // 0-indexed
@@ -80,17 +98,19 @@ export default function HeatmapView() {
   const activeDays   = heatmap.length;
   const totalMinutes = heatmapDurations.reduce((s, d) => s + d.minutes, 0);
 
-  const taskMap = useMemo(() => {
+  // Per-day counts for the navigated week (heatmapWeekDayActivity/-Durations are fetched
+  // by explicit date range, independent of selectedYear — see weekOffset effect above).
+  const weekTaskMap = useMemo(() => {
     const m: Record<string, number> = {};
-    heatmap.forEach((d) => { m[d.date] = d.count; });
+    heatmapWeekDayActivity.forEach((d) => { m[d.date] = d.count; });
     return m;
-  }, [heatmap]);
+  }, [heatmapWeekDayActivity]);
 
-  const durationMap = useMemo(() => {
+  const weekDurationMap = useMemo(() => {
     const m: Record<string, number> = {};
-    heatmapDurations.forEach((d) => { m[d.date] = d.minutes; });
+    heatmapWeekDayDurations.forEach((d) => { m[d.date] = d.minutes; });
     return m;
-  }, [heatmapDurations]);
+  }, [heatmapWeekDayDurations]);
 
   // ── Monthly totals (tasks) ────────────────────────────────────────────────
   const monthlyTotals = useMemo(() => {
@@ -110,35 +130,50 @@ export default function HeatmapView() {
     return arr;
   }, [heatmapMonthStats]);
 
-  // ── This month / prev month comparison ───────────────────────────────────
-  const thisMonthStat = isCurrentYear ? monthStatsArray[currentMonth] : null;
-  const prevMonthStat = isCurrentYear && currentMonth > 0 ? monthStatsArray[currentMonth - 1] : null;
+  // ── This month / prev month comparison (independent of selectedYear — see monthOffset effect above) ──
+  const thisMonthStat = heatmapMonthSummary;
+  const prevMonthStat = heatmapMonthSummaryPrev;
+  const thisMonthMinutes = heatmapMonthSummary.minutes;
+  const prevMonthMinutes = heatmapMonthSummaryPrev.minutes;
 
-  const thisMonthMinutes = useMemo(() => {
-    if (!isCurrentYear) return 0;
-    const prefix = `${selectedYear}-${String(currentMonth + 1).padStart(2, '0')}-`;
-    return heatmapDurations.filter((d) => d.date.startsWith(prefix)).reduce((s, d) => s + d.minutes, 0);
-  }, [heatmapDurations, selectedYear, currentMonth, isCurrentYear]);
+  const tasksDelta    = thisMonthStat.done - prevMonthStat.done;
+  const minutesDelta  = thisMonthMinutes - prevMonthMinutes;
 
-  const prevMonthMinutes = useMemo(() => {
-    if (!isCurrentYear || currentMonth === 0) return 0;
-    const prefix = `${selectedYear}-${String(currentMonth).padStart(2, '0')}-`;
-    return heatmapDurations.filter((d) => d.date.startsWith(prefix)).reduce((s, d) => s + d.minutes, 0);
-  }, [heatmapDurations, selectedYear, currentMonth, isCurrentYear]);
-
-  const tasksDelta    = thisMonthStat && prevMonthStat ? thisMonthStat.done - prevMonthStat.done : null;
-  const minutesDelta  = isCurrentYear ? thisMonthMinutes - prevMonthMinutes : null;
-
-  const thisMonthRate = thisMonthStat && thisMonthStat.created > 0
+  const thisMonthRate = thisMonthStat.created > 0
     ? Math.round((thisMonthStat.done / thisMonthStat.created) * 100)
     : null;
 
   // ── Weekly summary strip ──────────────────────────────────────────────────
-  const weekDays = useMemo(() => {
-    const today = new Date();
-    const start = startOfWeek(today, { weekStartsOn: 0 });
-    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
-  }, []);
+  const weekDays = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i)),
+    [weekStartDate]
+  );
+
+  // ── Nav labels (between the prev/next buttons) ────────────────────────────
+  const weekRangeLabel = useMemo(
+    () => fmtDateRange(weekStartDate, weekEndDate, dateLocale),
+    [weekStartDate, weekEndDate, dateLocale]
+  );
+  const monthRangeLabel = useMemo(
+    () => t.calendar.monthLabel(monthStartDate.getMonth() + 1, monthStartDate.getFullYear()),
+    [monthStartDate, t]
+  );
+  const prevWeekRangeLabel = useMemo(() => {
+    const prevStart = addWeeks(weekStartDate, -1);
+    const prevEnd = addWeeks(weekEndDate, -1);
+    return fmtDateRange(prevStart, prevEnd, dateLocale);
+  }, [weekStartDate, weekEndDate, dateLocale]);
+  const prevMonthRangeLabel = useMemo(() => {
+    const prevMonthStartDate = addMonths(monthStartDate, -1);
+    return t.calendar.monthLabel(prevMonthStartDate.getMonth() + 1, prevMonthStartDate.getFullYear());
+  }, [monthStartDate, t]);
+
+  // TopStatsSection titles fall back to plain "This Week"/"This Month" only when
+  // sitting on the current period — once navigated, show the actual range instead.
+  const weekPeriodTitle  = weekOffset === 0 ? t.heatmap.weeklySummary : weekRangeLabel;
+  const weekPeriodPrev   = weekOffset === 0 ? t.heatmap.prevWeek : prevWeekRangeLabel;
+  const monthPeriodTitle = monthOffset === 0 ? t.heatmap.thisMonth : monthRangeLabel;
+  const monthPeriodPrev  = monthOffset === 0 ? t.heatmap.prevMonth : prevMonthRangeLabel;
 
   // ── Bottom stat helpers ───────────────────────────────────────────────────
   const longestStreak = useMemo(() => {
@@ -218,13 +253,20 @@ export default function HeatmapView() {
         <div className="heatmap-tier-header">{t.heatmap.tierWeek}</div>
 
         {isCurrentYear && (
+          <div className="heatmap-period-nav">
+            <button className="icon-btn" onClick={() => setWeekOffset((o) => o - 1)}>←</button>
+            <span className="heatmap-period-label">{weekRangeLabel}</span>
+            <button className="icon-btn" onClick={() => setWeekOffset((o) => o + 1)} disabled={weekOffset >= 0}>→</button>
+          </div>
+        )}
+
+        {isCurrentYear && (
           <div>
-            <div className="section-label" style={{ marginBottom: 8 }}>{t.heatmap.weeklySummary}</div>
             <div className="weekly-strip">
               {weekDays.map((day) => {
                 const dateStr   = format(day, 'yyyy-MM-dd');
-                const tasks     = taskMap[dateStr] ?? 0;
-                const mins      = durationMap[dateStr] ?? 0;
+                const tasks     = weekTaskMap[dateStr] ?? 0;
+                const mins      = weekDurationMap[dateStr] ?? 0;
                 const isTodayFl = isToday(day);
                 const dayLabel  = language === 'vi'
                   ? format(day, 'EEE', { locale: viLocale })
@@ -244,7 +286,7 @@ export default function HeatmapView() {
 
         {isCurrentYear && (
           <TopStatsSection
-            title={t.heatmap.weeklySummary}
+            title={weekPeriodTitle}
             mode={heatmapMode}
             compare={weekCompare}
             onCompareChange={setWeekCompare}
@@ -254,26 +296,34 @@ export default function HeatmapView() {
             categoriesPrev={weekCategoriesListPrev}
             tagsCurrent={weekTagsList}
             tagsPrev={weekTagsListPrev}
-            currentLabel={t.heatmap.weeklySummary}
-            prevLabel={t.heatmap.prevWeek}
+            currentLabel={weekPeriodTitle}
+            prevLabel={weekPeriodPrev}
           />
         )}
 
         {/* ═══════════════════════ THÁNG ═══════════════════════ */}
         <div className="heatmap-tier-header">{t.heatmap.tierMonth}</div>
 
-        {isCurrentYear && thisMonthStat && (
+        {isCurrentYear && (
+          <div className="heatmap-period-nav">
+            <button className="icon-btn" onClick={() => setMonthOffset((o) => o - 1)}>←</button>
+            <span className="heatmap-period-label">{monthRangeLabel}</span>
+            <button className="icon-btn" onClick={() => setMonthOffset((o) => o + 1)} disabled={monthOffset >= 0}>→</button>
+          </div>
+        )}
+
+        {isCurrentYear && (
           <div className="heatmap-month-summary">
             <div className="month-card-row month-card-row--first">
               <span className="month-card-label">{t.heatmap.thisMonth}</span>
-              <span className="month-card-val">{t.heatmap.monthsShort[currentMonth]}</span>
+              <span className="month-card-val">{`${t.heatmap.monthsShort[monthStartDate.getMonth()]} ${monthStartDate.getFullYear()}`}</span>
             </div>
 
             <div className="month-card-row">
               <span className="month-card-label">{t.heatmap.tasksDone}</span>
               <div className="month-card-right">
                 <span className="month-card-val">{thisMonthStat.done}</span>
-                {tasksDelta !== null && prevMonthStat && prevMonthStat.done > 0 && (
+                {prevMonthStat.done > 0 && (
                   <span className={`month-card-delta${tasksDelta > 0 ? ' delta-up' : tasksDelta < 0 ? ' delta-down' : ''}`}>
                     {tasksDelta > 0 ? `+${tasksDelta}` : tasksDelta}
                   </span>
@@ -287,7 +337,7 @@ export default function HeatmapView() {
                 <span className="month-card-val">
                   {thisMonthMinutes > 0 ? `${fmtHoursFloat(thisMonthMinutes)}${t.heatmap.hoursUnit}` : '—'}
                 </span>
-                {minutesDelta !== null && prevMonthMinutes > 0 && minutesDelta !== 0 && (
+                {prevMonthMinutes > 0 && minutesDelta !== 0 && (
                   <span className={`month-card-delta${minutesDelta > 0 ? ' delta-up' : ' delta-down'}`}>
                     {minutesDelta > 0 ? `+${fmtHoursFloat(minutesDelta)}` : `${fmtHoursFloat(minutesDelta)}`}{t.heatmap.hoursUnit}
                   </span>
@@ -327,7 +377,7 @@ export default function HeatmapView() {
 
         {isCurrentYear && (
           <TopStatsSection
-            title={t.heatmap.thisMonth}
+            title={monthPeriodTitle}
             mode={heatmapMode}
             compare={monthCompare}
             onCompareChange={setMonthCompare}
@@ -337,8 +387,8 @@ export default function HeatmapView() {
             categoriesPrev={monthCategoriesListPrev}
             tagsCurrent={monthTagsList}
             tagsPrev={monthTagsListPrev}
-            currentLabel={t.heatmap.thisMonth}
-            prevLabel={t.heatmap.prevMonth}
+            currentLabel={monthPeriodTitle}
+            prevLabel={monthPeriodPrev}
           />
         )}
 

@@ -115,6 +115,12 @@ export interface MonthStat {
   done: number;
 }
 
+export interface MonthSummary {
+  created: number;
+  done: number;
+  minutes: number;
+}
+
 export interface Tag {
   id: number;
   name: string;

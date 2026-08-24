@@ -1,9 +1,35 @@
 import type { StateCreator } from 'zustand';
 import type Database from '@tauri-apps/plugin-sql';
-import type { DayActivity, DayDuration, TagStat, CategoryStat, MonthStat } from '../../types';
+import type { DayActivity, DayDuration, TagStat, CategoryStat, MonthStat, MonthSummary } from '../../types';
 import { isTauri, dbGetHeatmap, dbGetStreak } from '../mockDb';
 import { getDb } from '../db';
 import type { AppState } from '../appStore';
+
+const EMPTY_MONTH_SUMMARY: MonthSummary = { created: 0, done: 0, minutes: 0 };
+
+async function queryMonthSummary(db: Database, startDate: string, endDate: string): Promise<MonthSummary> {
+  const taskRows = await db.select<{ created: number; done: number }[]>(
+    `SELECT COUNT(*) as created, COALESCE(SUM(is_done), 0) as done FROM tasks WHERE date >= $1 AND date <= $2`,
+    [startDate, endDate]
+  );
+  const minuteRows = await db.select<{ minutes: number }[]>(
+    `SELECT COALESCE(SUM(
+       CASE WHEN tte.end_time > tte.start_time THEN
+         (CAST(SUBSTR(tte.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.end_time, 4, 2) AS INTEGER)) -
+         (CAST(SUBSTR(tte.start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.start_time, 4, 2) AS INTEGER))
+       ELSE 0 END
+     ), 0) as minutes
+     FROM task_time_entries tte
+     JOIN tasks t ON t.id = tte.task_id
+     WHERE tte.date >= $1 AND tte.date <= $2 AND t.is_done = 1`,
+    [startDate, endDate]
+  );
+  return {
+    created: taskRows[0]?.created ?? 0,
+    done: taskRows[0]?.done ?? 0,
+    minutes: minuteRows[0]?.minutes ?? 0,
+  };
+}
 
 type SortBy = 'tasks' | 'minutes';
 
@@ -68,6 +94,14 @@ export interface HeatmapSlice {
   heatmapMonthTagStats: TagStat[];
   heatmapMonthTagStatsPrev: TagStat[];
 
+  // Week tier — per-day activity for the navigated week (independent of the year picker)
+  heatmapWeekDayActivity: DayActivity[];
+  heatmapWeekDayDurations: DayDuration[];
+
+  // Month tier — totals for the navigated month + previous month (independent of the year picker)
+  heatmapMonthSummary: MonthSummary;
+  heatmapMonthSummaryPrev: MonthSummary;
+
   loadHeatmap: (year: number) => Promise<void>;
   loadHeatmapDurations: (year: number) => Promise<void>;
   loadHeatmapMonthStats: (year: number) => Promise<void>;
@@ -83,6 +117,11 @@ export interface HeatmapSlice {
   loadHeatmapMonthCategoryStatsPrev: (startDate: string, endDate: string, sortBy: SortBy) => Promise<void>;
   loadHeatmapMonthTagStats: (startDate: string, endDate: string, sortBy: SortBy) => Promise<void>;
   loadHeatmapMonthTagStatsPrev: (startDate: string, endDate: string, sortBy: SortBy) => Promise<void>;
+
+  loadHeatmapWeekDayActivity: (startDate: string, endDate: string) => Promise<void>;
+  loadHeatmapWeekDayDurations: (startDate: string, endDate: string) => Promise<void>;
+  loadHeatmapMonthSummary: (startDate: string, endDate: string) => Promise<void>;
+  loadHeatmapMonthSummaryPrev: (startDate: string, endDate: string) => Promise<void>;
 }
 
 export const createHeatmapSlice: StateCreator<AppState, [], [], HeatmapSlice> = (set) => ({
@@ -100,6 +139,11 @@ export const createHeatmapSlice: StateCreator<AppState, [], [], HeatmapSlice> = 
   heatmapMonthCategoryStatsPrev: [],
   heatmapMonthTagStats: [],
   heatmapMonthTagStatsPrev: [],
+
+  heatmapWeekDayActivity: [],
+  heatmapWeekDayDurations: [],
+  heatmapMonthSummary: EMPTY_MONTH_SUMMARY,
+  heatmapMonthSummaryPrev: EMPTY_MONTH_SUMMARY,
 
   loadHeatmap: async (year) => {
     if (!isTauri()) { set({ heatmap: dbGetHeatmap(year) }); return; }
@@ -232,5 +276,44 @@ export const createHeatmapSlice: StateCreator<AppState, [], [], HeatmapSlice> = 
     if (!isTauri()) { set({ heatmapMonthTagStatsPrev: [] }); return; }
     const db = await getDb();
     set({ heatmapMonthTagStatsPrev: await queryTagStats(db, startDate, endDate, sortBy) });
+  },
+
+  loadHeatmapWeekDayActivity: async (startDate, endDate) => {
+    if (!isTauri()) { set({ heatmapWeekDayActivity: [] }); return; }
+    const db = await getDb();
+    const rows = await db.select<DayActivity[]>(
+      `SELECT date, COUNT(*) as count FROM tasks WHERE is_done = 1 AND date >= $1 AND date <= $2 GROUP BY date`,
+      [startDate, endDate]
+    );
+    set({ heatmapWeekDayActivity: rows });
+  },
+  loadHeatmapWeekDayDurations: async (startDate, endDate) => {
+    if (!isTauri()) { set({ heatmapWeekDayDurations: [] }); return; }
+    const db = await getDb();
+    const rows = await db.select<DayDuration[]>(
+      `SELECT tte.date,
+         COALESCE(SUM(
+           CASE WHEN tte.end_time > tte.start_time THEN
+             (CAST(SUBSTR(tte.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.end_time, 4, 2) AS INTEGER)) -
+             (CAST(SUBSTR(tte.start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.start_time, 4, 2) AS INTEGER))
+           ELSE 0 END
+         ), 0) as minutes
+       FROM task_time_entries tte
+       JOIN tasks t ON t.id = tte.task_id
+       WHERE tte.date >= $1 AND tte.date <= $2 AND t.is_done = 1
+       GROUP BY tte.date`,
+      [startDate, endDate]
+    );
+    set({ heatmapWeekDayDurations: rows });
+  },
+  loadHeatmapMonthSummary: async (startDate, endDate) => {
+    if (!isTauri()) { set({ heatmapMonthSummary: EMPTY_MONTH_SUMMARY }); return; }
+    const db = await getDb();
+    set({ heatmapMonthSummary: await queryMonthSummary(db, startDate, endDate) });
+  },
+  loadHeatmapMonthSummaryPrev: async (startDate, endDate) => {
+    if (!isTauri()) { set({ heatmapMonthSummaryPrev: EMPTY_MONTH_SUMMARY }); return; }
+    const db = await getDb();
+    set({ heatmapMonthSummaryPrev: await queryMonthSummary(db, startDate, endDate) });
   },
 });
