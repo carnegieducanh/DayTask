@@ -30,7 +30,7 @@ export default function TaskCard({ task, onEdit, onToggle }: Props) {
   const { toggleTask, softDeleteTask, updateTask, updateTaskColor, categoryColors, taskTimeEntries, saveTimeEntry, deleteTimeEntry, tags, taskTags } = useAppStore();
   const taskTagIds = taskTags[task.id] ?? [];
   const taskTagObjects = tags.filter((tg) => taskTagIds.includes(tg.id));
-  const cardBg = hexToRgba(task.color ?? categoryColors[task.category], 1);
+  const cardBg = hexToRgba(task.color ?? categoryColors[task.category], task.is_done ? 0.4 : 1);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);

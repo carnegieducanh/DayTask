@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, KeyboardEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { IconCheck, IconPlus, IconTrash } from '@tabler/icons-react';
 import { useT } from '../../i18n';
 import {
@@ -253,13 +254,14 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
             <span>🍂</span>
           </div>
 
-          {pendingDelete && (
-            <div className="delete-toast wc-undo-toast" role="status">
+          {pendingDelete && createPortal(
+            <div className="delete-toast" role="status">
               <span className="delete-toast-msg">{t.toast.deleted(pendingDelete.text)}</span>
               <button className="delete-toast-undo" onClick={handleUndoDelete}>
                 {t.toast.undo}
               </button>
-            </div>
+            </div>,
+            document.querySelector('.main-wrap') ?? document.body
           )}
           </div>
         </div>

@@ -654,7 +654,7 @@
 }
 
 .task-item.done .task-content {
-  opacity: 0.55;
+  opacity: 0.85;
 }
 
 /* Icons in task items scale with font-size */
@@ -813,8 +813,16 @@
 }
 
 .task-item.done .task-name {
-  text-decoration: line-through;
   color: var(--text-secondary);
+}
+
+/* line-through lives on the title span itself (not the .task-name flex
+   container) because a parent's text-decoration paints across ALL descendant
+   inline content and can't be canceled by a child's own `text-decoration:
+   none` — that only stops the child from adding its own line, the ancestor's
+   line still shows through. Scoping it here keeps the desc-preview/sep clean. */
+.task-item.done .task-name-text {
+  text-decoration: line-through;
 }
 
 .task-meta {
@@ -893,7 +901,7 @@
   color: rgba(0, 0, 0, 0.6);
 }
 .task-item--colored.done .task-name {
-  color: rgba(0, 0, 0, 0.45);
+  color: rgba(0, 0, 0, 0.78);
 }
 /* On hover: background pill + stronger color for icon visibility */
 .task-item--colored:hover .task-delete-btn {
@@ -1704,23 +1712,6 @@
 }
 .wc-input::placeholder {
   color: rgba(80, 55, 30, 0.32);
-}
-.wc-undo-toast {
-  position: static;
-  transform: none;
-  width: fit-content;
-  margin: 8px auto 0;
-  animation: wc-toast-in 0.18s ease;
-}
-@keyframes wc-toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* ── Tag picker (AddTaskModal) ── */
