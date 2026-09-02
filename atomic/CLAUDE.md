@@ -200,6 +200,17 @@ Thêm key mới: sửa `vi.ts` trước (là source of truth cho TypeScript type
 
 ## App Icon
 
+**Đổi toàn bộ sang thiết kế mới (2026-09-02):** Logo cũ (vector atom-rings) đã bị **thay thế hoàn toàn** ở TẤT CẢ các vị trí — navbar (`Sidebar.tsx`), favicon (`index.html`), taskbar/app icon (`src-tauri/icons/*`) — không còn tách 2 asset khác thiết kế như trước nữa. Design mới: khối gem/crystal 3D bóng, gradient tím→hồng/đỏ→cam, do user cung cấp dạng ảnh raster (`atom_logo.png`, không phải vector).
+
+- **Nguồn:** raster PNG (không phải SVG) — `public/atom-icon.svg` đã bị **xóa**. `public/atom-icon.png` (512×512, nền trong suốt) giờ dùng cho cả favicon (`index.html`) lẫn navbar logo (`Sidebar.tsx` — `<img src="/atom-icon.png">`).
+- **Master gốc:** `src-tauri/icons/_source/atom-logo-source.png` (bản gốc user đưa, không sửa) + `atom-logo-master.png` (đã crop bbox nội dung + pad vuông transparent, fill ratio 90% theo cạnh dài). Các file `atom-icon-*.png` cũ trong `_source/` (thiết kế ring cũ) vẫn giữ lại làm lịch sử, không dùng nữa.
+- **`icon.ico`:** 10 size DPI-tier (16/20/24/32/40/48/64/96/128/256), build bằng PNG-in-ICO thủ công (không dùng `png-to-ico`) — xem [[feedback_patterns]] phần "Icon generation".
+- **Vì đây là khối đặc màu (không phải outline mảnh), fill ratio 90% + solid shape đã đủ rõ/đậm ngay ở size nhỏ (16-32px)** — không gặp lại vấn đề "mờ ở taskbar" từng tốn nhiều vòng sửa với thiết kế ring cũ (xem lịch sử bên dưới, giờ chỉ còn giá trị tham khảo nếu quay lại thiết kế outline).
+- Quy trình regenerate/rebuild giữ nguyên (script `export-icons.mjs` tạm ở root `atomic/`, xóa sau khi chạy xong → xem khối lệnh bên dưới) — chỉ khác input giờ là ảnh raster thay vì SVG string dựng bằng code.
+
+<details>
+<summary>Lịch sử thiết kế cũ (vector atom-rings, đã thay thế — giữ lại để tham khảo bài học kỹ thuật)</summary>
+
 **Source:** SVG trong `public/atom-icon.svg` (cũng là favicon + logo sidebar, xem `index.html` + `Sidebar.tsx`).
 **Design:** Nền trong suốt (không có background rect). 2 vòng oval bất đối xứng (đầu dài R=230, đầu ngắn R=150) xoay ±42°, stroke gradient.
 **Gradient `atomGradient`:** `#6A3E8C` (tím) → `#B24C63` (hồng) → `#DA7756` (cam), góc 15%,0% → 85%,100%.
@@ -213,17 +224,24 @@ Thêm key mới: sửa `vi.ts` trước (là source of truth cho TypeScript type
     - **A. Outline đậm hơn:** `translate(231 267) rotate(±42) scale(1.25)`, `stroke-width="70"` (giữ `fill="none"` + stroke). Margin còn lại: ~42.5px ngang, ~26.5px dọc (an toàn, không tràn viewBox 534). Rõ hơn hẳn bản hiện tại nhưng vẫn là dạng outline nên không đặc bằng phương án B.
     - **B. Khối đặc (khuyến nghị — giống cách VSCode/Slack làm, transparent bg + solid mark thay vì thin outline):** `translate(223.8 267.3) rotate(±42) scale(1.5)`, **bỏ stroke, đổi `fill="url(#atomGradient)"` trực tiếp trên path** (path gốc vốn là 1 contour khép kín dạng vesica/stadium — fill thẳng sẽ ra 2 hình oval đặc chồng nhau tạo khối "X"/pinwheel đặc màu). Margin: ~50px ngang, ~30px dọc. Đậm/rõ nhất trong các phương án đã thử, gần với độ "nặng" của icon cũ (bản circle+electron trước redesign).
   - **Việc cần làm tiếp:** (1) hỏi user chọn phương án A hay B (hoặc đề xuất thêm), (2) sửa `public/atom-icon.svg` theo tham số đã chốt, (3) tạo lại script `export-icons.mjs` (mẫu ở dưới) để regenerate toàn bộ `src-tauri/icons/*` + `public/atom-icon.png`, (4) `cargo clean -p atomic` rồi `npm run tauri dev` để rebuild sạch, verify bằng cách extract icon từ `.exe` (không cần mở app), (5) **quan trọng: phải release + cài bản installer thật rồi mới kết luận** — icon trên taskbar của app đã cài (pinned) khác với dev exe, cần test đúng bản cài đặt thật trước khi coi là đã xong.
+
+**(Toàn bộ nhánh "phương án A/B" trên đã trở nên vô nghĩa sau 2026-09-02 — thiết kế thay hẳn sang raster gem, không còn SVG stroke/fill để chỉnh tham số kiểu này nữa. Giữ lại thuần làm case study "outline mảnh vs khối đặc".)**
+
+</details>
+
 **ICO format:** PNG-in-ICO (KHÔNG dùng png-to-ico — nó tạo BMP-in-ICO, mất alpha → nền đen trên taskbar).
 
 **Cách regenerate icon khi cần thay đổi:**
 ```powershell
-# 1. Tạo script export-icons.mjs ở root atomic/ (xem mẫu trong feedback_patterns memory)
+# 1. Tạo script export-icons.mjs ở root atomic/ (đọc raster nguồn, crop bbox nội dung,
+#    pad vuông transparent fill ratio ~90%, xuất PNG các size + build .ico PNG-in-ICO thủ công
+#    — mẫu đầy đủ trong session 2026-09-02 / feedback_patterns memory)
 # 2. Chạy:
 node export-icons.mjs
 # 3. Xóa script sau khi xong
 Remove-Item export-icons.mjs
 ```
-Dependencies đã có: `sharp`. `.ico` phải có đủ: **16, 32, 48, 64, 128, 256px** (48 bắt buộc cho Windows desktop/taskbar).
+Dependencies đã có: `sharp`. `.ico` phải có đủ **10 size DPI-tier: 16/20/24/32/40/48/64/96/128/256** (không chỉ 6 size tối thiểu — xem [[feedback_patterns]], thiếu size khiến Windows tự nội suy ở size lẻ → mờ).
 
 **QUAN TRỌNG — icon không tự nhúng lại khi chỉ sửa file ảnh:** Nếu `npm run tauri dev` đang chạy sẵn (watcher live), ghi đè file trong `src-tauri/icons/` sẽ tự trigger rebuild (build.rs rerun-if-changed bắt được). Nhưng nếu **restart** `npm run tauri dev` từ đầu (kill rồi chạy lại) mà không có gì trong `src-tauri/src/` thay đổi, Cargo có thể coi là "nothing to do" (~0.4s, không compile) và **giữ nguyên icon cũ đã link trong binary trước đó** — vì `tauri.conf.json` (thứ build.rs thực sự theo dõi) không đổi, chỉ nội dung icon file đổi. Cách fix chắc chắn: `cd src-tauri && cargo clean -p atomic` rồi chạy lại `npm run tauri dev` (rebuild đầy đủ ~20-25s). Cách verify nhanh không cần mở app: extract icon trực tiếp từ exe bằng PowerShell `[System.Drawing.Icon]::ExtractAssociatedIcon("src-tauri\target\debug\atomic.exe")`.
 

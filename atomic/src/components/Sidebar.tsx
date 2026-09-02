@@ -159,7 +159,7 @@ export default function Sidebar() {
         }}
       >
         <div className="app-logo">
-          <img src="/atom-icon.svg" width="40" height="40" alt="Atomic" />
+          <img src="/atom-icon.png" width="40" height="40" alt="Atomic" />
           Atomic
         </div>
       </div>
