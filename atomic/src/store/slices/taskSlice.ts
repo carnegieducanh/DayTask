@@ -326,6 +326,10 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
         tasks: dbGetTasks(get().selectedDate),
         taskTimeEntries: dbGetTimeEntries(get().selectedDate),
         taskTags: dbGetTaskTagsForDate(get().selectedDate),
+        calendarTasks: [...get().calendarTasks, newTask],
+        calendarTimeEntries: timeEntry
+          ? [...get().calendarTimeEntries, { task_id: newTask.id, date, start_time: timeEntry.startTime, end_time: timeEntry.endTime }]
+          : get().calendarTimeEntries,
       });
       get().pushHistory({
         label: source.title,
@@ -351,13 +355,20 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       await db.execute('INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES ($1, $2)', [newTaskId, tagId]);
     }
     await get().loadTasks(get().selectedDate);
+    const newCalendarTask: Task = {
+      id: newTaskId, title: source.title, description: source.description, category: source.category,
+      date, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, color: source.color,
+      deck_position: null, created_at: '',
+    };
+    set({
+      calendarTasks: [...get().calendarTasks, newCalendarTask],
+      calendarTimeEntries: timeEntry
+        ? [...get().calendarTimeEntries, { task_id: newTaskId, date, start_time: timeEntry.startTime, end_time: timeEntry.endTime }]
+        : get().calendarTimeEntries,
+    });
     get().pushHistory({
       label: source.title,
-      undo: () => get().confirmDeleteTask({
-        id: newTaskId, title: source.title, description: source.description, category: source.category,
-        date, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, color: source.color,
-        deck_position: null, created_at: '',
-      }),
+      undo: () => get().confirmDeleteTask(newCalendarTask),
     });
   },
 
