@@ -1,13 +1,13 @@
 import { format, isSameMonth, isSameYear } from 'date-fns';
 import type { Locale } from 'date-fns';
 
-export function fmtMinutes(minutes: number): string {
-  if (minutes <= 0) return '0p';
+export function fmtMinutes(minutes: number, hourUnit: string, minuteUnit: string): string {
+  if (minutes <= 0) return `0${minuteUnit}`;
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  if (h > 0 && m > 0) return `${h}g${m}p`;
-  if (h > 0) return `${h}g`;
-  return `${m}p`;
+  if (h > 0 && m > 0) return `${h}${hourUnit}${m}${minuteUnit}`;
+  if (h > 0) return `${h}${hourUnit}`;
+  return `${m}${minuteUnit}`;
 }
 
 export function fmtHoursFloat(minutes: number): string {

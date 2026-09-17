@@ -100,12 +100,14 @@ export interface TagStat {
   name: string;
   color: string;
   tasks: number;
+  days: number;
   minutes: number;
 }
 
 export interface CategoryStat {
   category: Category;
   tasks: number;
+  days: number;
   minutes: number;
 }
 

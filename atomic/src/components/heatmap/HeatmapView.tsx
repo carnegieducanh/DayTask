@@ -209,10 +209,10 @@ export default function HeatmapView() {
 
   // ── Category/Tag stats normalized to a shared shape for TopStatsSection ────
   const mapCategory = (c: CategoryStat): StatItem => ({
-    key: c.category, name: t.cat[c.category], color: categoryColors[c.category], tasks: c.tasks, minutes: c.minutes,
+    key: c.category, name: t.cat[c.category], color: categoryColors[c.category], tasks: c.tasks, days: c.days, minutes: c.minutes,
   });
   const mapTag = (tag: TagStat): StatItem => ({
-    key: tag.name, name: tag.name, color: tag.color, tasks: tag.tasks, minutes: tag.minutes,
+    key: tag.name, name: tag.name, color: tag.color, tasks: tag.tasks, days: tag.days, minutes: tag.minutes,
   });
 
   const weekCategoriesList     = useMemo(() => heatmapWeekCategoryStats.map(mapCategory), [heatmapWeekCategoryStats, categoryColors, t]);
@@ -276,7 +276,7 @@ export default function HeatmapView() {
                     <div className="weekly-strip-dow">{dayLabel}</div>
                     <div className="weekly-strip-date">{format(day, 'd')}</div>
                     <div className="weekly-strip-tasks">{tasks > 0 ? `${tasks} task` : '—'}</div>
-                    <div className="weekly-strip-hours">{mins > 0 ? fmtMinutes(mins) : '—'}</div>
+                    <div className="weekly-strip-hours">{mins > 0 ? fmtMinutes(mins, t.heatmap.hourUnitShort, t.heatmap.minuteUnitShort) : '—'}</div>
                   </div>
                 );
               })}

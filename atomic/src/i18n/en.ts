@@ -239,6 +239,9 @@ export const en: typeof vi = {
       `${formattedDate}: ${count} task${count === 1 ? "" : "s"} done`,
     cellTooltipHours: (formattedDate: string, h: number, m: number) =>
       `${formattedDate}: ${h > 0 ? h + "h" : ""}${m > 0 ? m + "m" : h === 0 ? "0m" : ""}`,
+    hourUnitShort: "h",
+    minuteUnitShort: "m",
+    dayUnitShort: "d",
     totalHours: "Total Hours",
     hoursIn: (year: number) => `in ${year}`,
     countMode: "Tasks",

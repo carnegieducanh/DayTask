@@ -230,6 +230,9 @@ export const vi = {
     cellTooltip: (formattedDate: string, count: number) => `${formattedDate}: ${count} task hoàn thành`,
     cellTooltipHours: (formattedDate: string, h: number, m: number) =>
       `${formattedDate}: ${h > 0 ? h + "g" : ""}${m > 0 ? m + "p" : h === 0 ? "0p" : ""}`,
+    hourUnitShort: "g",
+    minuteUnitShort: "p",
+    dayUnitShort: "ng",
     totalHours: "Tổng giờ làm",
     hoursIn: (year: number) => `năm ${year}`,
     countMode: "Task",

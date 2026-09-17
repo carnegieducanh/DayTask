@@ -38,6 +38,7 @@ async function queryCategoryStats(db: Database, startDate: string, endDate: stri
   return db.select<CategoryStat[]>(
     `SELECT t.category as category,
        COUNT(DISTINCT t.id) as tasks,
+       COUNT(DISTINCT CASE WHEN tte.end_time > tte.start_time THEN tte.date END) as days,
        COALESCE(SUM(
          CASE WHEN tte.end_time > tte.start_time THEN
            (CAST(SUBSTR(tte.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.end_time, 4, 2) AS INTEGER)) -
@@ -58,6 +59,7 @@ async function queryTagStats(db: Database, startDate: string, endDate: string, s
   return db.select<TagStat[]>(
     `SELECT tg.name, tg.color,
        COUNT(DISTINCT t.id) as tasks,
+       COUNT(DISTINCT CASE WHEN tte.end_time > tte.start_time THEN tte.date END) as days,
        COALESCE(SUM(
          CASE WHEN tte.end_time > tte.start_time THEN
            (CAST(SUBSTR(tte.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.end_time, 4, 2) AS INTEGER)) -
@@ -70,8 +72,7 @@ async function queryTagStats(db: Database, startDate: string, endDate: string, s
      LEFT JOIN task_time_entries tte ON tte.task_id = t.id AND tte.date >= $1 AND tte.date <= $2
      WHERE t.date >= $1 AND t.date <= $2 AND t.is_done = 1
      GROUP BY tg.id
-     ${orderClause}
-     LIMIT 6`,
+     ${orderClause}`,
     [startDate, endDate]
   );
 }

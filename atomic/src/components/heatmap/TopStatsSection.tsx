@@ -7,6 +7,7 @@ export interface StatItem {
   name: string;
   color: string;
   tasks: number;
+  days: number;
   minutes: number;
 }
 
@@ -22,10 +23,15 @@ function statValue(item: StatItem, mode: 'count' | 'hours'): number {
   return mode === 'hours' ? item.minutes : item.tasks;
 }
 
+// Tags aren't capped by the SQL query anymore (a user can have many more than 6),
+// so cap them here instead — after both periods' real values are known, not before.
+// Categories stay uncapped: the category set is small and fixed by the app.
+const TAG_DISPLAY_LIMIT = 6;
+
 // Merges 2 periods into a union list (an item missing from one period shows as 0 there),
 // sorted by combined value so the most prominent item in either period surfaces first.
 function mergeForCompare(listA: StatItem[], listB: StatItem[], mode: 'count' | 'hours'): MergedStat[] {
-  const zero = (item: StatItem): StatItem => ({ ...item, tasks: 0, minutes: 0 });
+  const zero = (item: StatItem): StatItem => ({ ...item, tasks: 0, days: 0, minutes: 0 });
   const map = new Map<string, MergedStat>();
   listA.forEach((item) => map.set(item.key, { key: item.key, name: item.name, color: item.color, a: item, b: zero(item) }));
   listB.forEach((item) => {
@@ -60,18 +66,20 @@ export default function TopStatsSection({
   currentLabel, prevLabel,
 }: TopStatsSectionProps) {
   const t = useT();
+  const fmtMins = (minutes: number) => fmtMinutes(minutes, t.heatmap.hourUnitShort, t.heatmap.minuteUnitShort);
 
   const categoriesMerged = useMemo(
     () => mergeForCompare(categoriesCurrent, categoriesPrev, mode),
     [categoriesCurrent, categoriesPrev, mode]
   );
   const tagsMerged = useMemo(
-    () => mergeForCompare(tagsCurrent, tagsPrev, mode),
+    () => mergeForCompare(tagsCurrent, tagsPrev, mode).slice(0, TAG_DISPLAY_LIMIT),
     [tagsCurrent, tagsPrev, mode]
   );
+  const tagsSingle = useMemo(() => tagsCurrent.slice(0, TAG_DISPLAY_LIMIT), [tagsCurrent]);
 
   const maxCategoryValue = Math.max(...categoriesCurrent.map((s) => statValue(s, mode)), 1);
-  const maxTagValue = Math.max(...tagsCurrent.map((s) => statValue(s, mode)), 1);
+  const maxTagValue = Math.max(...tagsSingle.map((s) => statValue(s, mode)), 1);
   const maxCategoryCompareValue = Math.max(...categoriesMerged.flatMap((m) => [statValue(m.a, mode), statValue(m.b, mode)]), 1);
   const maxTagCompareValue = Math.max(...tagsMerged.flatMap((m) => [statValue(m.a, mode), statValue(m.b, mode)]), 1);
 
@@ -90,8 +98,14 @@ export default function TopStatsSection({
                 style={{ width: `${Math.round((statValue(stat, mode) / max) * 100)}%`, background: stat.color }}
               />
             </div>
-            <span className="tag-stat-count">{stat.tasks}</span>
-            {stat.minutes > 0 && <span className="tag-stat-hours">{fmtMinutes(stat.minutes)}</span>}
+            <span className="tag-stat-hours">
+              {stat.minutes > 0 ? (
+                <>
+                  <span className="tag-stat-hours-value">{fmtMins(stat.minutes)}</span>
+                  <span className="tag-stat-days-value">/{stat.days}{t.heatmap.dayUnitShort}</span>
+                </>
+              ) : '—'}
+            </span>
           </div>
         ))}
       </div>
@@ -110,7 +124,7 @@ export default function TopStatsSection({
           const aVal = statValue(item.a, mode);
           const bVal = statValue(item.b, mode);
           const delta = aVal - bVal;
-          const deltaLabel = mode === 'hours' ? fmtMinutes(Math.abs(delta)) : String(Math.abs(delta));
+          const deltaLabel = mode === 'hours' ? fmtMins(Math.abs(delta)) : String(Math.abs(delta));
           const deltaClass = delta > 0 ? ' delta-up' : delta < 0 ? ' delta-down' : '';
           return (
             <div key={item.key} style={{ display: 'contents' }}>
@@ -119,14 +133,14 @@ export default function TopStatsSection({
               <div className="tag-stat-bar-wrap tag-stat-bar-wrap--sm">
                 <div className="tag-stat-bar" style={{ width: `${Math.round((aVal / max) * 100)}%`, background: item.color }} />
               </div>
-              <span className="tsc-value">{mode === 'hours' ? fmtMinutes(aVal) : aVal}</span>
+              <span className="tsc-value">{mode === 'hours' ? fmtMins(aVal) : aVal}</span>
               <span className={`tsc-delta tsc-span2${deltaClass}`}>
                 {delta !== 0 ? `${delta > 0 ? '+' : '−'}${deltaLabel}` : ''}
               </span>
               <div className="tag-stat-bar-wrap tag-stat-bar-wrap--sm">
                 <div className="tag-stat-bar tag-stat-bar--prev" style={{ width: `${Math.round((bVal / max) * 100)}%`, background: item.color }} />
               </div>
-              <span className="tsc-value">{mode === 'hours' ? fmtMinutes(bVal) : bVal}</span>
+              <span className="tsc-value">{mode === 'hours' ? fmtMins(bVal) : bVal}</span>
             </div>
           );
         })}
@@ -172,7 +186,7 @@ export default function TopStatsSection({
         </div>
         <div style={{ flex: '1 1 0', minWidth: 0 }}>
           <div className="section-label" style={{ marginBottom: 12 }}>{tagsLabel}</div>
-          {compare ? renderCompareList(tagsMerged, maxTagCompareValue) : renderSingleList(tagsCurrent, maxTagValue)}
+          {compare ? renderCompareList(tagsMerged, maxTagCompareValue) : renderSingleList(tagsSingle, maxTagValue)}
         </div>
       </div>
     </div>
