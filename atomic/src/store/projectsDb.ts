@@ -287,7 +287,10 @@ export async function dbGetFolders(opts: {
   const categoryParamIdx = idx++;
   params.push(opts.category);
 
-  const having = opts.onlyActive ? `HAVING COUNT(CASE WHEN ${filterExpr} THEN 1 END) > 0` : '';
+  // A folder with zero projects overall (brand new, never used) must always show up even under
+  // a status/year filter — otherwise a just-created empty folder vanishes from the grid right
+  // after saving. Only hide folders that HAVE projects but none matching the current filter.
+  const having = opts.onlyActive ? `HAVING COUNT(CASE WHEN ${filterExpr} THEN 1 END) > 0 OR COUNT(p.id) = 0` : '';
 
   const baseFrom = `
     FROM project_folders f
