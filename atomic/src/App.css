@@ -1,8 +1,6 @@
 /* ── CSS Variables ── */
 :root {
   --font: "Segoe UI", system-ui, -apple-system, sans-serif;
-  /* --today-cols: 297px 1fr minmax(0, 250px); */
-  --today-cols: 270px 1fr 270px;
   /* Overridden inline by App.tsx from the "UI transparency" slider (Settings → Background).
      Defaults here reproduce the original fixed glass-panel look. */
   --bg-glass-panel-alpha: 0.9;
@@ -1177,8 +1175,6 @@ html.has-bg-image .sidebar {
   -webkit-backdrop-filter: blur(var(--bg-glass-blur)) saturate(var(--bg-glass-saturate));
 }
 
-html.has-bg-image .today-sidebar,
-html.has-bg-image .today-right,
 html.has-bg-image .kanban-column,
 html.has-bg-image .kanban-stats-bar,
 html.has-bg-image .journal-sidebar,

@@ -139,132 +139,92 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
     }
   }
 
-  const isDormant = items.length === 0 && !adding && !pendingDelete;
   const pending = items.filter(i => !i.is_done);
   const done = items.filter(i => i.is_done);
   const sorted = [...pending, ...done];
 
   return (
-    <div className="wc-note-wrap">
-      {isDormant ? (
-        <div className="wc-dormant" onClick={() => setAdding(true)}>
-          <div className="wc-paper wc-dormant-paper">
-            <IconPlus size={12} className="wc-dormant-icon" />
-            <span className="wc-dormant-text">{t.weeklyChecklist.hintEmpty}</span>
-            <span className="wc-week-badge">{weekRange}</span>
-          </div>
-        </div>
-      ) : (
-        <div className="weekly-checklist">
-          <div className="wc-leaf-zone" aria-hidden="true">
-            <span className="wc-leaf-1">🍂</span>
-            <span className="wc-leaf-2">🍂</span>
-            <span className="wc-leaf-3">🍂</span>
-            <span className="wc-leaf-4">🍂</span>
-            <span className="wc-leaf-5">🍂</span>
-          </div>
-          <div className="wc-paper">
-          <div className="wc-header">
-            <div className="wc-header-left">
-              <span className="wc-title">{t.weeklyChecklist.title}</span>
-              <span className="wc-date-range">{weekRange}</span>
-              {!adding && (
-                <button
-                  className="wc-add-row"
-                  onClick={() => setAdding(true)}
-                  title={t.weeklyChecklist.addPlaceholder}
-                >
-                  <IconPlus size={12} />
-                  <span>{t.weeklyChecklist.addLabel}</span>
-                </button>
-              )}
-            </div>
-            <div className="wc-header-right">
-              {items.length > 0 && (
-                <span className="wc-stats">{done.length}/{items.length} {t.weeklyChecklist.done}</span>
-              )}
-              <span className="wc-tagline">Plan well, get it done.</span>
-            </div>
-          </div>
-          <div className="wc-divider" aria-hidden="true">
-            <span className="wc-divider-line" />
-            <span className="wc-divider-ornament">❧</span>
-            <span className="wc-divider-line" />
-          </div>
+    <div className="today-todo">
+      <div className="today-todo-header">
+        <span className="today-todo-title">{t.weeklyChecklist.title}</span>
+        <span className="today-todo-range">{weekRange}</span>
+        {items.length > 0 && (
+          <span className="today-todo-stats">{done.length}/{items.length}</span>
+        )}
+        <button
+          className="today-todo-add-btn"
+          onClick={() => setAdding(true)}
+          title={t.weeklyChecklist.addLabel}
+        >
+          <IconPlus size={14} />
+        </button>
+      </div>
 
-          <div className="wc-items">
-            {sorted.map(item => (
-              <div
-                key={item.id}
-                className={`wc-item${item.is_done ? ' wc-done' : ''}${transitioningIds.has(item.id) ? ' wc-completing' : ''}`}
-              >
-                <button className="wc-check" onClick={() => handleToggle(item)}>
-                  <IconCheck size={16} strokeWidth={2.5} />
-                </button>
+      <div className="today-todo-items">
+        {sorted.map(item => (
+          <div
+            key={item.id}
+            className={`today-todo-item${item.is_done ? ' done' : ''}${transitioningIds.has(item.id) ? ' completing' : ''}`}
+          >
+            <button className="today-todo-check" onClick={() => handleToggle(item)}>
+              <IconCheck size={12} strokeWidth={3} />
+            </button>
 
-                {editingId === item.id ? (
-                  <input
-                    ref={editInputRef}
-                    className="wc-input"
-                    value={editText}
-                    onChange={e => setEditText(e.target.value)}
-                    onKeyDown={handleEditKeyDown}
-                    onBlur={handleSaveEdit}
-                    spellCheck={false}
-                  />
-                ) : (
-                  <span className="wc-text" onClick={() => handleStartEdit(item)}>
-                    <span className="wc-text-inner">{item.text}</span>
-                  </span>
-                )}
+            {editingId === item.id ? (
+              <input
+                ref={editInputRef}
+                className="today-todo-input"
+                value={editText}
+                onChange={e => setEditText(e.target.value)}
+                onKeyDown={handleEditKeyDown}
+                onBlur={handleSaveEdit}
+                spellCheck={false}
+              />
+            ) : (
+              <span className="today-todo-text" onClick={() => handleStartEdit(item)}>
+                {item.text}
+              </span>
+            )}
 
-                {editingId !== item.id && (
-                  <div className="wc-actions">
-                    <button className="wc-action-btn wc-action-del" onClick={() => handleDelete(item)}>
-                      <IconTrash size={13} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {adding && (
-              <div className="wc-item">
-                <input
-                  ref={addInputRef}
-                  className="wc-input"
-                  value={newText}
-                  onChange={e => setNewText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onBlur={() => handleAdd()}
-                  placeholder={t.weeklyChecklist.addPlaceholder}
-                  spellCheck={false}
-                />
-              </div>
+            {editingId !== item.id && (
+              <button className="today-todo-del" onClick={() => handleDelete(item)}>
+                <IconTrash size={13} />
+              </button>
             )}
           </div>
+        ))}
 
-          <div className="wc-leaf-pile" aria-hidden="true">
-            <span>🍂</span>
-            <span>🍂</span>
-            <span>🍂</span>
-            <span>🍂</span>
-            <span>🍂</span>
-            <span>🍂</span>
-            <span>🍂</span>
+        {adding && (
+          <div className="today-todo-item">
+            <span className="today-todo-check" aria-hidden="true" />
+            <input
+              ref={addInputRef}
+              className="today-todo-input"
+              value={newText}
+              onChange={e => setNewText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={() => handleAdd()}
+              placeholder={t.weeklyChecklist.addPlaceholder}
+              spellCheck={false}
+            />
           </div>
+        )}
 
-          {pendingDelete && createPortal(
-            <div className="delete-toast" role="status">
-              <span className="delete-toast-msg">{t.toast.deleted(pendingDelete.text)}</span>
-              <button className="delete-toast-undo" onClick={handleUndoDelete}>
-                {t.toast.undo}
-              </button>
-            </div>,
-            document.querySelector('.main-wrap') ?? document.body
-          )}
+        {items.length === 0 && !adding && (
+          <div className="today-panel-empty today-todo-empty" onClick={() => setAdding(true)}>
+            {t.weeklyChecklist.hintEmpty}
           </div>
-        </div>
+        )}
+      </div>
+
+      {pendingDelete && createPortal(
+        <div className="delete-toast" role="status">
+          <span className="delete-toast-msg">{t.toast.deleted(pendingDelete.text)}</span>
+          <button className="delete-toast-undo" onClick={handleUndoDelete}>
+            {t.toast.undo}
+          </button>
+        </div>,
+        document.querySelector('.main-wrap') ?? document.body
       )}
     </div>
   );

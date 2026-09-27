@@ -89,9 +89,8 @@
 }
 
 /* ── Today topbar 3-column layout ──
-   Independent from --today-cols (used by .today-layout below): the side
-   columns grow with the available width instead of staying pinned at a
-   fixed 270px, so today-hero-quote-body gets more room and wraps less.
+   The side columns grow with the available width instead of staying pinned
+   at a fixed 270px, so today-hero-quote-body gets more room and wraps less.
    Both sides share the same minmax(270px, 1fr) track, so any extra space
    splits evenly between them and daily-greeting (the auto-sized middle
    column) stays perfectly centered in the app. */
@@ -414,213 +413,484 @@
     opacity: 1;
   }
 }
-@keyframes today-right-in {
-  from {
-    opacity: 0;
-    transform: translateX(10px);
-  }
-  to {
-    opacity: 1;
-  }
-}
 
-/* ── Today 2-column layout ── */
+/* ── Today layout (single scroll column) ──
+   Redesign 2026-09-27: the old 3-column grid (left sidebar / main / right
+   schedule) is gone. Everything below the topbar is one centered, vertically
+   scrolling stack: clock hero → week strip → task list → "Today | To-do"
+   glass panel → former sidebar widgets. */
 .view-content.today-content {
   padding: 0;
   gap: 0;
-  overflow: hidden;
-}
-
-.today-layout {
-  display: grid;
-  grid-template-columns: var(--today-cols);
-  height: 100%;
-  overflow: hidden;
-}
-
-.today-main {
   overflow-y: auto;
-  padding: 16px 20px;
+}
+
+.today-stack {
+  width: 100%;
+  max-width: 1200px;
+  flex-shrink: 0;
+  margin: 0 auto;
+  padding: 8px 28px 36px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
+  gap: 24px;
 }
 
-.today-sidebar {
-  overflow-y: overlay;
-  padding: 16px 14px;
-  display: flex;
-  justify-content: space-between;
-  flex-direction: column;
-  gap: 20px;
-  border-right: 0.5px solid var(--border-1);
-  background: var(--bg-secondary);
-  animation: today-sidebar-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
+.today-stack > * {
+  animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.today-stack > :nth-child(1) {
+  animation-delay: 0.04s;
+}
+.today-stack > :nth-child(2) {
+  animation-delay: 0.08s;
+}
+.today-stack > :nth-child(3) {
+  animation-delay: 0.12s;
+}
+.today-stack > :nth-child(4) {
+  animation-delay: 0.16s;
+}
+.today-stack > :nth-child(5) {
+  animation-delay: 0.2s;
 }
 
-.today-sidebar::-webkit-scrollbar {
-  width: 4px;
+/* Frosted panel — always glass, with or without a wallpaper. Only a handful
+   of these exist on the page, so real backdrop-filter is affordable here.
+   Anything position:fixed inside (popovers, toasts) must portal out — see
+   the containing-block note in CLAUDE.md. */
+.today-glass {
+  /* background: color-mix(in srgb, var(--bg-secondary) 60%, transparent); */
+  border: 0.5px solid var(--border-1);
+  border-radius: 18px;
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
 }
 
-.today-sidebar::-webkit-scrollbar-track {
-  background: transparent;
+.today-panel-empty {
+  color: var(--text-secondary);
+  font-size: 0.86rem;
 }
 
-.today-sidebar::-webkit-scrollbar-thumb {
-  background: var(--border-2);
-  border-radius: 2px;
-}
-
-.today-right {
-  overflow-y: auto;
-  padding: 16px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  border-left: 0.5px solid var(--border-1);
-  background: var(--bg-secondary);
-  animation: today-right-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
-}
-
-.today-right .cal-week-stats,
-.cal-day-sidebar-extras .cal-week-stats {
-  height: auto;
-  border-top: none;
-  background: transparent;
-  padding: 0;
-}
-
-.today-sidebar-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.today-sidebar .stats-row {
-  gap: 6px;
-}
-
-.today-sidebar .stat-card {
-  padding: 10px;
+/* ── Clock hero ── */
+.today-clock-hero {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 0;
-  overflow: hidden;
+  padding-top: 10px;
+  user-select: none;
 }
 
-.today-sidebar .stat-label {
-  font-size: 0.72rem;
-  letter-spacing: 0;
-  white-space: normal;
-  line-height: 1.25;
-  /* word-break: break-word; */
-}
-
-.today-sidebar .stat-value {
-  font-size: 1.57rem;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.today-sidebar .stat-sub {
-  font-size: 0.7rem;
-  line-height: 1.3;
-  padding-left: 10px;
-}
-
-.today-sidebar .progress-bar-wrap {
-  margin-top: auto;
-}
-
-/* ── Today reminder widget (inline) ── */
-.today-reminder-widget {
-  background: var(--bg-primary);
-  border: 0.5px solid var(--border-2);
-  border-left: 3px solid var(--primary);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  padding: 11px 12px;
-}
-
-.today-reminder-title {
-  font-size: 0.93rem;
-  font-weight: 600;
+.today-clock-date {
+  font-size: 1.5rem;
+  font-weight: 500;
   color: var(--text-primary);
-  line-height: 1.3;
-  flex: 1;
-  min-width: 0;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
 }
 
-.today-reminder-time {
-  font-size: 0.79rem;
-  color: var(--text-secondary);
-  margin-bottom: 10px;
+.today-clock-time {
+  font-size: clamp(5.5rem, 12vw, 9.5rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
 }
 
-.today-reminder-actions {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
+.today-clock-colon {
+  display: inline-block;
+  margin: 0 0.02em;
+  transform: translateY(-0.06em);
 }
 
-/* ── Today schedule ── */
-.today-schedule {
+/* ── Week strip ── */
+.today-week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.tws-day {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 0 5px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
 }
 
-.today-schedule-item {
+.tws-day:not(.selected):hover {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+.tws-day.selected {
+  cursor: default;
+}
+
+/* Head spans the full column width (negative margin cancels the day's side
+   padding) so the selected-day tint reads as the column's top cap. */
+.tws-head {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 -5px;
+  padding: 8px 5px 6px;
+  border-radius: 12px;
+  line-height: 1.15;
+  transition: background 0.15s;
+}
+
+.tws-day.selected .tws-head {
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+.tws-dow {
+  font-size: 0.79rem;
+  color: var(--text-secondary);
+}
+
+.tws-num {
+  font-size: 1.14rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tws-day.today .tws-dow,
+.tws-day.today .tws-num {
+  color: var(--primary);
+}
+
+.tws-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Colored blocks use dark text, same convention as .cal-week-task-card.
+   Done blocks fade via background alpha (inline color-mix), not opacity,
+   so the check drawer stays fully visible on hover. */
+.tws-block {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+/* Sizes match the Calendar week view card (.cal-week-task-card) */
+.tws-block-body {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+}
+
+.tws-block.done .tws-block-body {
+  opacity: 0.6;
+}
+
+/* Hover check drawer — mini version of TaskCard's .task-drawer (Concept B):
+   collapsed at idle, slides out from the left edge on hover. */
+.tws-block-drawer {
+  flex: 0 0 auto;
+  width: 0;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition:
+    width 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.25s;
+}
+
+.tws-block:hover .tws-block-drawer {
+  width: 28px;
+}
+
+.tws-block.done .tws-block-drawer {
+  background: rgba(20, 20, 20, 0.55);
+}
+
+.tws-block-drawer svg {
+  flex-shrink: 0;
+  color: transparent;
+  opacity: 0;
+  transform: scale(0.4) rotate(-30deg);
+  transition: all 0.45s cubic-bezier(0.22, 1.24, 0.4, 1);
+}
+
+.tws-block:hover .tws-block-drawer svg {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.tws-block:hover .tws-block-drawer:hover svg {
+  color: rgba(0, 0, 0, 0.92);
+}
+
+.tws-block:hover .tws-block-drawer:active svg {
+  transform: scale(0.85);
+  transition-duration: 0.08s;
+}
+
+.tws-block.done .tws-block-drawer svg {
+  animation: task-drawer-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tws-block.done:hover .tws-block-drawer svg,
+.tws-block.done:hover .tws-block-drawer:hover svg {
+  color: var(--primary);
+}
+
+.tws-block.done .tws-block-title {
+  text-decoration: line-through;
+}
+
+.tws-block-time {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.tws-block-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.tws-more {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* ── Task list section ── */
+.today-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.today-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  color: var(--text-secondary);
+}
+
+/* ── "Today | To-do" glass panel ── */
+.today-agenda-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 22px;
+  padding: 18px 22px;
+}
+
+.today-agenda-divider {
+  width: 0.5px;
+  background: var(--border-2);
+}
+
+@media (max-width: 860px) {
+  .today-agenda-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .today-agenda-divider {
+    width: auto;
+    height: 0.5px;
+  }
+}
+
+.today-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.today-agenda-pill {
+  align-self: flex-start;
+  padding: 3px 12px;
+  border-radius: 99px;
+  background: #e5484d;
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.today-agenda-list {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  padding: 8px 0;
-  border-bottom: 0.5px solid var(--border-1);
+}
+
+.today-agenda-item {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding: 2px 0;
   cursor: pointer;
   transition: transform 0.38s cubic-bezier(0.22, 1.24, 0.4, 1);
 }
 
-.today-schedule-item:hover {
+.today-agenda-item:hover {
   transform: translateX(4px);
 }
 
-.today-schedule-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.today-schedule-time {
-  font-size: 0.93rem;
-  font-weight: 600;
-  color: var(--primary);
-  min-width: 38px;
+.today-agenda-bar {
+  width: 4px;
+  border-radius: 99px;
   flex-shrink: 0;
-  padding-top: 1px;
 }
 
-.today-schedule-body {
-  min-width: 0;
+.today-agenda-body {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.today-schedule-title {
-  font-size: 0.86rem;
-  font-weight: 500;
+.today-agenda-title {
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 1px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.today-schedule-cat {
-  font-size: 0.79rem;
+.today-agenda-time {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.today-agenda-item.done .today-agenda-title {
+  text-decoration: line-through;
   color: var(--text-secondary);
 }
 
-.today-schedule-item.done .today-schedule-title {
-  text-decoration: line-through;
+.today-agenda-item.done .today-agenda-bar {
+  opacity: 0.4;
+}
+
+/* ── Hero row: former sidebar widgets flanking the clock ──
+   Left = stats + mini heatmap, right = time by category. Side cards are
+   glass without a border. Below ~1000px the clock takes its own row. */
+.today-hero-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+}
+
+.today-hero-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+@media (max-width: 1000px) {
+  .today-hero-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "clock clock"
+      "left right";
+    align-items: start;
+  }
+  .today-hero-row .today-clock-hero {
+    grid-area: clock;
+  }
+  .today-hero-left {
+    grid-area: left;
+  }
+  .today-hero-right {
+    grid-area: right;
+  }
+}
+
+.today-side-card {
+  min-width: 0;
+  padding: 14px 16px;
+  border: none;
+}
+
+.today-side-card .stats-row {
+  gap: 8px;
+}
+
+.today-side-card .stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  padding: 10px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bg-primary) 55%, transparent);
+}
+
+.today-side-card .stat-label {
+  font-size: 0.72rem;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.today-side-card .stat-value {
+  font-size: 1.57rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.stat-value-total {
+  font-size: 1.1rem;
+  font-weight: 400;
   color: var(--text-secondary);
+}
+
+.today-side-card .stat-sub {
+  font-size: 0.7rem;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.today-side-card .progress-bar-wrap {
+  width: 100%;
+  margin-top: auto;
+}
+
+.today-side-card .cal-week-stats,
+.cal-day-sidebar-extras .cal-week-stats {
+  height: auto;
+  border-top: none;
+  background: transparent;
+  padding: 0;
 }
 
 /* ── Task list ── */
@@ -926,7 +1196,7 @@
   color: var(--primary);
 }
 
-/* ── Today Schedule quick tick — Morph Checkbox (phồng lên khi hover) ── */
+/* ── Today agenda quick tick — Morph Checkbox (phồng lên khi hover) ── */
 .today-schedule-tick {
   width: 20px;
   height: 20px;
@@ -954,10 +1224,12 @@
 .today-schedule-tick svg {
   opacity: 0;
   transform: scale(0.5);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
-.today-schedule-item:hover .today-schedule-tick {
+.today-agenda-item:hover .today-schedule-tick {
   width: 26px;
   height: 26px;
   border-color: var(--primary);
@@ -966,7 +1238,7 @@
   opacity: 0.9;
 }
 
-.today-schedule-item:hover .today-schedule-tick svg {
+.today-agenda-item:hover .today-schedule-tick svg {
   opacity: 0.6;
   transform: scale(1);
 }
@@ -984,7 +1256,7 @@
   transform: scale(1);
 }
 
-.today-schedule-item:hover .today-schedule-tick.checked {
+.today-agenda-item:hover .today-schedule-tick.checked {
   width: 26px;
   height: 26px;
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--primary) 18%, transparent);
@@ -1030,174 +1302,169 @@
   color: var(--primary);
 }
 
-/* ── Weekly Checklist ── */
-.wc-note-wrap {
-  position: relative;
-  margin-top: 14px;
-  margin-bottom: 6px;
-  transform-origin: top center;
+/* ── To-do checklist (week-scoped items, inside the Today glass panel) ── */
+.today-todo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
 }
 
-.wc-dormant {
-  position: relative;
-  cursor: pointer;
-  overflow: visible;
-}
-.wc-dormant::before,
-.weekly-checklist::before {
-  content: "";
-  position: absolute;
-  width: 68px;
-  height: 22px;
-  top: -11px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-radius: 2px;
-  background:
-    repeating-linear-gradient(
-      108deg,
-      rgba(255, 255, 255, 0.16) 0px,
-      rgba(255, 255, 255, 0.16) 2px,
-      transparent 2px,
-      transparent 6px
-    ),
-    repeating-linear-gradient(
-      108deg,
-      rgba(80, 60, 30, 0.1) 0px,
-      rgba(80, 60, 30, 0.1) 1px,
-      transparent 1px,
-      transparent 10px
-    ),
-    linear-gradient(100deg, rgba(216, 197, 160, 0.78), rgba(182, 156, 114, 0.72));
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  pointer-events: none;
-  z-index: 5;
-}
-.wc-dormant-icon {
-  color: #7a6045;
-  flex-shrink: 0;
-}
-.wc-dormant-text {
-  font-family: "Segoe Script", "Palatino Linotype", Georgia, serif;
-  font-style: italic;
-  font-size: 0.93rem;
-  color: #7a6045;
-  flex: 1;
+.today-todo-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 1.6rem;
 }
 
-.weekly-checklist {
-  position: relative;
-  overflow: visible;
+.today-todo-title {
+  font-size: 1.07rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
-/* Torn-edge paper silhouette shared by both states. Hand-authored jagged
-   polygon (not a repeating pattern) so the tear reads as irregular/organic
-   rather than a uniform sawtooth, with two larger bites at the top-right and
-   bottom-left corners to match the reference note's most visible tears.
-   Lives on this inner element (not .wc-dormant/.weekly-checklist) so the
-   washi tape (::before, sits above the top edge) and the falling leaves
-   (.wc-leaf-zone, also above the top edge) are NOT clipped away — clip-path
-   would otherwise cut off any content that pokes outside the box. */
-.wc-paper {
-  position: relative;
-  z-index: 1;
-  container-type: inline-size;
-  container-name: wc-card;
-  background:
-    radial-gradient(circle at 18% 18%, rgba(107, 79, 42, 0.12) 0%, transparent 40%),
-    radial-gradient(circle at 84% 42%, rgba(107, 79, 42, 0.1) 0%, transparent 36%),
-    radial-gradient(circle at 30% 72%, rgba(107, 79, 42, 0.09) 0%, transparent 34%),
-    radial-gradient(circle at 70% 92%, rgba(90, 65, 35, 0.08) 0%, transparent 30%),
-    radial-gradient(ellipse at 50% 38%, #ded1b0 0%, #cebb90 55%, #b39d72 100%);
-  box-shadow:
-    2px 5px 18px rgba(80, 55, 30, 0.18),
-    0 1px 3px rgba(0, 0, 0, 0.08);
-  transition: box-shadow 0.25s ease;
-  clip-path: polygon(
-    1% 0.2%,
-    8% 0%,
-    16% 0.24%,
-    24% 0.06%,
-    33% 0.24%,
-    42% 0%,
-    51% 0.24%,
-    60% 0.06%,
-    69% 0.24%,
-    78% 0%,
-    86% 0.2%,
-    92% 0.06%,
-    96% 0.48%,
-    100% 0.24%,
-    99.88% 14%,
-    100% 22%,
-    99.82% 30%,
-    100% 38%,
-    99.88% 46%,
-    100% 54%,
-    99.82% 62%,
-    100% 70%,
-    99.88% 78%,
-    100% 86%,
-    99.94% 94%,
-    99.76% 100%,
-    88% 99.82%,
-    79% 100%,
-    70% 99.82%,
-    61% 100%,
-    52% 99.82%,
-    43% 100%,
-    34% 99.82%,
-    25% 100%,
-    18% 99.88%,
-    12% 99.28%,
-    4% 99.76%,
-    0% 99.4%,
-    0.12% 82%,
-    0% 74%,
-    0.18% 66%,
-    0% 58%,
-    0.12% 50%,
-    0% 42%,
-    0.18% 34%,
-    0% 26%,
-    0.12% 18%,
-    0% 10%,
-    0.18% 6%
-  );
+.today-todo-range,
+.today-todo-stats {
+  font-size: 0.79rem;
+  color: var(--text-secondary);
 }
-.wc-dormant-paper {
+
+.today-todo-add-btn {
+  margin-left: auto;
+  align-self: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 10px 14px;
-}
-.weekly-checklist > .wc-paper {
-  padding: 12px 14px 16px;
-}
-.wc-dormant:hover .wc-paper,
-.weekly-checklist:hover .wc-paper {
-  box-shadow:
-    3px 7px 24px rgba(80, 55, 30, 0.22),
-    0 2px 5px rgba(0, 0, 0, 0.1);
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
-/* ── Falling leaves (WeeklyChecklist) ── */
-.wc-leaf-zone {
-  position: absolute;
-  top: -16px;
-  bottom: 0;
-  right: 4px;
-  width: 110px;
+.today-todo-add-btn:hover {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--primary);
+}
+
+.today-todo-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.today-todo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 26px;
+}
+
+.today-todo-check {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  flex-shrink: 0;
+  border: 1.5px solid var(--text-secondary);
+  border-radius: 5px;
+  background: transparent;
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.today-todo-check:hover {
+  border-color: var(--primary);
+  color: color-mix(in srgb, var(--primary) 60%, transparent);
+}
+
+.today-todo-item.done .today-todo-check,
+.today-todo-item.completing .today-todo-check {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.today-todo-item.completing .today-todo-check {
+  animation: today-tick-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.today-todo-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.93rem;
+  color: var(--text-primary);
+  white-space: nowrap;
   overflow: hidden;
-  pointer-events: none;
-  z-index: 2;
-}
-.wc-leaf-zone > span {
-  position: absolute;
-  top: 0;
-  line-height: 1;
+  text-overflow: ellipsis;
+  cursor: text;
+  transition: color 0.3s;
 }
 
+.today-todo-item.done .today-todo-text,
+.today-todo-item.completing .today-todo-text {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+.today-todo-del {
+  padding: 3px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
+}
+
+.today-todo-item:hover .today-todo-del {
+  opacity: 1;
+}
+
+.today-todo-del:hover {
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  color: var(--text-primary);
+}
+
+.today-todo-input {
+  flex: 1;
+  min-width: 0;
+  padding: 1px 0;
+  border: none;
+  border-bottom: 1px solid var(--primary);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.93rem;
+  outline: none;
+}
+
+.today-todo-empty {
+  cursor: pointer;
+}
+
+.today-todo-empty:hover {
+  color: var(--primary);
+}
+
+/* Falling-leaf keyframes — originally for the old Week Plan note, still used
+   by the vocab note in App.css (.vn-leaf-N). */
 @keyframes wc-leaf-1 {
   0% {
     transform: translateY(-36px) translateX(0px) rotate(20deg);
@@ -1226,6 +1493,7 @@
     opacity: 0;
   }
 }
+
 @keyframes wc-leaf-2 {
   0% {
     transform: translateY(-36px) translateX(0px) rotate(-18deg);
@@ -1254,6 +1522,7 @@
     opacity: 0;
   }
 }
+
 @keyframes wc-leaf-3 {
   0% {
     transform: translateY(-36px) translateX(0px) rotate(30deg);
@@ -1282,6 +1551,7 @@
     opacity: 0;
   }
 }
+
 @keyframes wc-leaf-4 {
   0% {
     transform: translateY(-36px) translateX(0px) rotate(-25deg);
@@ -1310,6 +1580,7 @@
     opacity: 0;
   }
 }
+
 @keyframes wc-leaf-5 {
   0% {
     transform: translateY(-36px) translateX(0px) rotate(12deg);
@@ -1337,381 +1608,6 @@
     transform: translateY(220px) translateX(2px) rotate(15deg);
     opacity: 0;
   }
-}
-
-.wc-leaf-1 {
-  font-size: 1.8rem;
-  left: 56px;
-  animation: wc-leaf-1 9.5s ease-in-out -1.5s infinite;
-}
-.wc-leaf-2 {
-  font-size: 1.5rem;
-  left: 24px;
-  animation: wc-leaf-2 8s ease-in-out -4s infinite;
-}
-.wc-leaf-3 {
-  font-size: 1.6rem;
-  left: 46px;
-  animation: wc-leaf-3 10.5s ease-in-out -3s infinite;
-}
-.wc-leaf-4 {
-  font-size: 1.2rem;
-  left: 72px;
-  animation: wc-leaf-4 8.5s ease-in-out -6.5s infinite;
-}
-.wc-leaf-5 {
-  font-size: 1.1rem;
-  left: 14px;
-  animation: wc-leaf-5 9s ease-in-out -2.2s infinite;
-}
-
-/* ── Leaf pile at bottom ── */
-.wc-leaf-pile {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 130px;
-  height: 44px;
-  pointer-events: none;
-}
-.wc-leaf-pile > span {
-  position: absolute;
-  line-height: 1;
-}
-.wc-leaf-pile > span:nth-child(1) {
-  font-size: 1.9rem;
-  bottom: 2px;
-  right: 4px;
-  transform: rotate(8deg);
-  opacity: 0.58;
-}
-.wc-leaf-pile > span:nth-child(2) {
-  font-size: 1.6rem;
-  bottom: 4px;
-  right: 26px;
-  transform: rotate(-30deg);
-  opacity: 0.52;
-}
-.wc-leaf-pile > span:nth-child(3) {
-  font-size: 1.7rem;
-  bottom: 0;
-  right: 48px;
-  transform: rotate(42deg);
-  opacity: 0.48;
-}
-.wc-leaf-pile > span:nth-child(4) {
-  font-size: 1.4rem;
-  bottom: 5px;
-  right: 70px;
-  transform: rotate(-18deg);
-  opacity: 0.44;
-}
-.wc-leaf-pile > span:nth-child(5) {
-  font-size: 1.5rem;
-  bottom: 14px;
-  right: 12px;
-  transform: rotate(-45deg);
-  opacity: 0.4;
-}
-.wc-leaf-pile > span:nth-child(6) {
-  font-size: 1.3rem;
-  bottom: 12px;
-  right: 38px;
-  transform: rotate(25deg);
-  opacity: 0.36;
-}
-.wc-leaf-pile > span:nth-child(7) {
-  font-size: 1.2rem;
-  bottom: 18px;
-  right: 60px;
-  transform: rotate(-8deg);
-  opacity: 0.3;
-}
-
-.wc-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  row-gap: 2px;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-.wc-header-left {
-  display: flex;
-  align-items: baseline;
-  gap: 9px;
-  flex-wrap: nowrap;
-  flex-shrink: 0;
-}
-.wc-title {
-  font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  font-style: normal;
-  font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: #3d2b1a;
-  white-space: nowrap;
-}
-.wc-date-range {
-  font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  font-style: italic;
-  font-size: 1rem;
-  color: #734b34;
-  white-space: nowrap;
-}
-.wc-week-badge {
-  font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  font-style: italic;
-  font-size: 0.75rem;
-  color: #7a6045;
-  background: rgba(120, 90, 55, 0.1);
-  padding: 1px 6px;
-  border-radius: 3px;
-}
-.wc-header-right {
-  display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  gap: 8px;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-.wc-stats {
-  font-family: "Segoe Script", "Palatino Linotype", Georgia, serif;
-  font-style: italic;
-  font-size: 0.98rem;
-  color: #7a6045;
-  white-space: nowrap;
-}
-.wc-tagline {
-  font-family: "Segoe Script", "Palatino Linotype", Georgia, serif;
-  font-style: italic;
-  font-size: 0.95rem;
-  color: #3d2b1a;
-  line-height: 1.2;
-  padding-bottom: 5px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10' preserveAspectRatio='none'%3E%3Cpath d='M10 7 Q50 -3 90 7' stroke='%236b4a30' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: left bottom;
-  background-size: 100% 8px;
-  white-space: nowrap;
-}
-
-/* Progressively drop the least essential header bits before the browser is
-   forced to wrap .wc-header-right onto its own line. Queries the paper's own
-   width, not the viewport, since it's a flexible middle column that can
-   shrink independently of window size. .wc-tagline is kept visible as long
-   as possible — .wc-stats and the add-row label are dropped first so
-   wrapping only happens near the app's minimum window width.
-   .wc-header-left is nowrap/no-shrink (see above) so title + date-range +
-   add-row always wrap down together as one unit instead of splitting apart
-   internally; .wc-header-right has no margin-left:auto (redundant with the
-   parent's justify-content:space-between when both share a line, and it
-   used to strand the wrapped line on the right with a big empty gap) so
-   once it does drop to its own line it lands flush left under .wc-header-left. */
-@container wc-card (max-width: 640px) {
-  .wc-stats {
-    display: none;
-  }
-}
-@container wc-card (max-width: 460px) {
-  .wc-add-row span {
-    display: none;
-  }
-  .wc-add-row {
-    gap: 0;
-  }
-}
-
-.wc-divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 12px;
-}
-.wc-divider-line {
-  flex: 1;
-  height: 1.5px;
-  background: rgba(80, 55, 30, 0.45);
-}
-.wc-divider-ornament {
-  font-size: 0.95rem;
-  line-height: 1;
-  color: rgba(80, 55, 30, 0.65);
-}
-
-.wc-add-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: rgba(80, 55, 30, 0.5);
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-family: "Palatino Linotype", "Book Antiqua", Georgia, serif;
-  font-style: italic;
-  font-size: 0.9rem;
-  white-space: nowrap;
-  transition:
-    color 0.15s,
-    background 0.15s;
-}
-.wc-add-row:hover {
-  color: #3d2b1a;
-  background: rgba(120, 90, 55, 0.08);
-}
-
-.wc-items {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 14px;
-}
-
-.wc-item {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 6px 4px;
-  border-bottom: 1px dashed rgba(80, 55, 30, 0.22);
-  transition: background 0.1s;
-}
-.wc-item:hover {
-  background: rgba(120, 90, 55, 0.07);
-}
-
-.wc-check {
-  background: transparent;
-  border: 1.5px solid rgba(80, 55, 30, 0.4);
-  border-radius: 2px;
-  cursor: pointer;
-  color: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  flex-shrink: 0;
-  transition:
-    color 0.15s,
-    border-color 0.15s,
-    background 0.15s;
-}
-.wc-item:hover .wc-check {
-  border-color: rgba(80, 55, 30, 0.6);
-  color: rgba(80, 55, 30, 0.3);
-}
-.wc-item:hover .wc-check:hover {
-  color: rgba(80, 55, 30, 0.7);
-}
-.wc-done .wc-check {
-  background: rgba(80, 55, 30, 0.12);
-  border-color: rgba(80, 55, 30, 0.4);
-  color: rgba(80, 55, 30, 0.5);
-}
-.wc-done:hover .wc-check {
-  color: #3d2b1a;
-}
-
-.wc-text {
-  font-family: "Segoe Script", "Palatino Linotype", Georgia, serif;
-  font-style: italic;
-  font-size: 1.15rem;
-  font-weight: 500;
-  color: #2e1a0e;
-  line-height: 1.45;
-  flex: 0 1 auto;
-  min-width: 0;
-  cursor: text;
-}
-.wc-text-inner {
-  display: inline;
-}
-.wc-done .wc-text {
-  color: rgba(80, 55, 30, 0.38);
-  text-decoration: line-through;
-  text-decoration-color: rgba(80, 55, 30, 0.3);
-}
-.wc-completing .wc-text {
-  transition: color 0.32s ease;
-  color: rgba(80, 55, 30, 0.38);
-}
-.wc-completing .wc-text-inner {
-  position: relative;
-}
-.wc-completing .wc-text-inner::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  height: 1px;
-  background: rgba(80, 55, 30, 0.3);
-  animation: wc-strikethrough 0.32s ease forwards;
-}
-@keyframes wc-strikethrough {
-  from {
-    width: 0;
-  }
-  to {
-    width: 100%;
-  }
-}
-.wc-completing .wc-check {
-  color: rgba(80, 55, 30, 0.5);
-}
-
-.wc-actions {
-  display: flex;
-  gap: 2px;
-  flex-shrink: 0;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.12s;
-}
-.wc-item:hover .wc-actions {
-  opacity: 1;
-  pointer-events: auto;
-}
-.wc-action-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: rgba(80, 55, 30, 0.35);
-  display: flex;
-  align-items: center;
-  padding: 3px 4px;
-  border-radius: 3px;
-  transition:
-    color 0.12s,
-    background 0.12s;
-}
-.wc-action-btn:hover {
-  color: #3d2b1a;
-  background: rgba(120, 90, 55, 0.1);
-}
-
-.wc-input-icon {
-  color: rgba(80, 55, 30, 0.4);
-  flex-shrink: 0;
-}
-.wc-input {
-  font-family: "Segoe Script", "Palatino Linotype", Georgia, serif;
-  font-style: italic;
-  font-size: 1rem;
-  color: #2e1a0e;
-  background: none;
-  border: none;
-  border-bottom: 1px solid rgba(120, 90, 55, 0.3);
-  outline: none;
-  flex: 1;
-  padding: 0 2px 1px;
-}
-.wc-input::placeholder {
-  color: rgba(80, 55, 30, 0.32);
 }
 
 /* ── Tag picker (AddTaskModal) ── */

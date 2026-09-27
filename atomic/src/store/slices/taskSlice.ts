@@ -461,22 +461,29 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
   },
 
   toggleTask: async (id) => {
-    const task = get().tasks.find((t) => t.id === id);
+    // calendarTasks fallback: Today's week strip can tick tasks on other days.
+    const task = get().tasks.find((t) => t.id === id) ?? get().calendarTasks.find((t) => t.id === id);
     if (!task) return;
     const newDone = task.is_done ? 0 : 1;
 
     // toggleTask tự đảo ngược chính nó — gọi lại là đủ để hoàn tác.
     get().pushHistory({ label: task.title, undo: () => get().toggleTask(id) });
 
+    // Keep the calendar cache in sync too (Today week strip + Calendar read it).
+    const syncCalendar = () =>
+      set({ calendarTasks: get().calendarTasks.map((t) => (t.id === id ? { ...t, is_done: newDone } : t)) });
+
     if (!isTauri()) {
       dbUpdateTask(id, { is_done: newDone });
       set({ tasks: dbGetTasks(get().selectedDate) });
+      syncCalendar();
       return;
     }
 
     const db = await getDb();
     await db.execute('UPDATE tasks SET is_done = $1 WHERE id = $2', [newDone, id]);
     await get().loadTasks(get().selectedDate);
+    syncCalendar();
   },
 
   deleteTask: async (id) => {

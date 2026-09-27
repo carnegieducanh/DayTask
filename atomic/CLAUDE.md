@@ -135,7 +135,11 @@ atomic/
         ├── settings/                   # GeneralTab / GreetingTab / DataTab / VocabTab / BackgroundTab.tsx — mỗi tab tự đọc useAppStore()/state riêng, không prop-drill từ SettingsModal
         ├── UpdateDialog.tsx + .css     # Auto-update dialog với progress bar
         ├── today/
-        │   ├── TodayView.tsx + today.css  # Layout + topbar + mini heatmap
+        │   ├── TodayView.tsx + today.css  # Topbar + 1 cột cuộn dọc (redesign 2026-09-27, bỏ layout 3 cột): hàng đồng hồ `.today-hero-row` (trái: stat + heatmap, giữa: đồng hồ, phải: thời gian theo danh mục — card kính mờ không viền; <1000px đồng hồ lên hàng riêng) → dải tuần → nút thêm task + TaskCard Done (phần Pending đã bỏ — tick hoàn thành qua drawer trên block dải tuần) → kính mờ "Hôm nay | Việc cần làm"
+        │   ├── TodayClockHero.tsx  # Đồng hồ lớn + thứ/ngày — LUÔN là giờ thật hôm nay, không theo selectedDate
+        │   ├── TodayWeekStrip.tsx  # T2→CN của tuần selectedDate, click → setSelectedDate; hover block → drawer tích (mini `.task-drawer`) gọi `toggleTask` — tích được cả ngày khác vì `toggleTask` fallback sang `calendarTasks`. Ngày đang chọn đọc tasks/taskTimeEntries, ngày khác đọc calendarTasks (load cả năm như CalendarView)
+        │   ├── TodayAgenda.tsx     # Khối "Hôm nay" (lịch trình gọn: thanh màu + giờ + tick)
+        │   ├── WeeklyChecklist.tsx # Giờ là cột "Việc cần làm" dạng checkbox gọn (vẫn dữ liệu weekly_checklist theo tuần)
         │   ├── TaskCard.tsx      # Card task — gọi softDeleteTask (không deleteTask)
         │   ├── AddTaskModal.tsx  # Form thêm/sửa task
         │   ├── DailyGreeting.tsx # Lời chào theo giờ
@@ -350,7 +354,7 @@ Settings → tab "Hình nền": chọn ảnh từ máy → dùng làm background
 ### CSS — glass mode
 Toggle qua class `html.has-bg-image` (set trong `App.tsx` dựa trên `backgroundEnabled && !!backgroundImageUrl`). Toàn bộ rule nằm trong 1 block cuối `App.css` ("Background Image / Glass Mode"), **thuần additive** — không sửa rule cũ nào, nên khi tắt nền mọi thứ y hệt trước đây.
 - **Blur thật** (`backdrop-filter: blur(20px) saturate(180%)`) chỉ đặt ở 2 nơi: `.main-wrap` + `.sidebar` (topbar) — đây là "canvas" chung của mọi tab.
-- **Tint-only** (chỉ đổi màu, KHÔNG thêm `backdrop-filter`) cho các panel con nằm trên canvas đã blur sẵn (danh sách đầy đủ, audit lại + mở rộng 2026-07-16 — xem "Audit toàn view" bên dưới): `.today-sidebar`, `.today-right`, `.kanban-column`, `.kanban-stats-bar`, `.journal-sidebar`, `.quotes-sidebar`, `.books-sidebar` (Projects tái dùng class này), `.stat-card`, `.stat-card-sm`, `.heatmap-month-summary`, `.weekly-strip-cell`, `.jsc-streak`, `.cal-wrap`, `.journal-view`, `.cal-main`, `.cal-week-grid`, `.cal-day-sidebar`, `.cal-filter-sidebar`, `.cal-month-grid`, `.cal-month-dow-row`, `.cal-month-day-cell` (+ `.off-range`), `.cal-week-col` (+ `.cal-week-header`, `.cal-week-stats` bên trong), `.day-grid`, `.day-gutter`, `.day-deck-row`, `.books-goal-card`, `.books-search-input`, `.books-sort-select` (`.books-search-input`/`.books-sort-select` cũng dùng chung ở Projects tab). Lý do: `backdrop-filter` tốn GPU, áp lên hàng chục card/cell cùng lúc sẽ giật — tint-only vẫn nhìn "kính" vì nó chồng lên lớp đã blur phía dưới, mà gần như miễn phí về hiệu năng.
+- **Tint-only** (chỉ đổi màu, KHÔNG thêm `backdrop-filter`) cho các panel con nằm trên canvas đã blur sẵn (danh sách đầy đủ, audit lại + mở rộng 2026-07-16 — xem "Audit toàn view" bên dưới; `.today-sidebar`/`.today-right` đã bỏ 2026-09-27 cùng layout 3 cột — panel Today giờ dùng `.today-glass` luôn kính mờ với `backdrop-filter` riêng): `.kanban-column`, `.kanban-stats-bar`, `.journal-sidebar`, `.quotes-sidebar`, `.books-sidebar` (Projects tái dùng class này), `.stat-card`, `.stat-card-sm`, `.heatmap-month-summary`, `.weekly-strip-cell`, `.jsc-streak`, `.cal-wrap`, `.journal-view`, `.cal-main`, `.cal-week-grid`, `.cal-day-sidebar`, `.cal-filter-sidebar`, `.cal-month-grid`, `.cal-month-dow-row`, `.cal-month-day-cell` (+ `.off-range`), `.cal-week-col` (+ `.cal-week-header`, `.cal-week-stats` bên trong), `.day-grid`, `.day-gutter`, `.day-deck-row`, `.books-goal-card`, `.books-search-input`, `.books-sort-select` (`.books-search-input`/`.books-sort-select` cũng dùng chung ở Projects tab). Lý do: `backdrop-filter` tốn GPU, áp lên hàng chục card/cell cùng lúc sẽ giật — tint-only vẫn nhìn "kính" vì nó chồng lên lớp đã blur phía dưới, mà gần như miễn phí về hiệu năng.
 - **Ngoại lệ đã cố ý tint cả input/select** (`.books-search-input`, `.books-sort-select`, theo yêu cầu cụ thể của user ngày 2026-07-16) — đi ngược quy tắc chung bên dưới ("phần tử nhỏ giữ đặc màu"), nhưng đây là lựa chọn thẩm mỹ user chủ động chọn cho riêng 2 class này, không tự ý mở rộng sang input/select khác trong app nếu không được yêu cầu.
 - **KHÔNG tint `.goal-card`** (đã sửa lại note sai ngày 2026-07-16 — bản ghi cũ liệt kê nhầm `.goal-card` vào danh sách tint-only, nhưng `GoalCard.tsx` luôn set `style={{ backgroundColor: cardBg }}` = màu category qua inline style, nên card này **luôn đặc màu theo category, không bao giờ neutral** — tint sẽ phá mất color-coding). Cùng lý do, các card có màu/ảnh riêng theo item (task card màu theo category/custom color, book cover, quote card, project folder cover) đều **không** tint — chỉ tint panel/card trung tính dùng `--bg-primary`/`--bg-secondary` trơn.
 - **Token riêng cho panel, KHÔNG dùng `--bg-glass`/`--bg-glass-2` gốc:** `--bg-glass-panel`/`--bg-glass-panel-2` (opacity 0.9, định nghĩa cạnh `--bg-glass` gốc trong `:root`/`[data-theme="dark"]`). Lý do phải tách riêng (bug thật đã gặp, fix ngày 2026-07-16): `.modal` dùng `--bg-glass` (0.72) OK vì nó luôn nằm trên `.modal-overlay` — một lớp scrim đen `rgba(0,0,0,0.3)` đã làm tối nền phía sau trước rồi. Các panel nền ảnh (kanban column...) thì KHÔNG có lớp scrim đó, nằm trực tiếp trên ảnh gốc — nên 0.72 không đủ, chữ bị mờ/khó đọc ở vùng ảnh sáng/nhiều màu. Nếu sau này thêm panel glass mới, dùng `--bg-glass-panel(-2)`, đừng dùng lại `--bg-glass` gốc.
@@ -418,7 +422,6 @@ let _ = tauri::WebviewWindowBuilder::new(app, "tray-popup", ...)
 @keyframes today-topbar-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes today-sidebar-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes today-main-in   { from { opacity: 0; transform: translateY(10px); }  to { opacity: 1; transform: translateY(0); } }
-@keyframes today-right-in  { from { opacity: 0; transform: translateX(10px); }  to { opacity: 1; transform: translateX(0); } }
 ```
 
 **Mapping tab → class → animation đang dùng:**
@@ -426,9 +429,7 @@ let _ = tauri::WebviewWindowBuilder::new(app, "tray-popup", ...)
 | Tab | CSS class | Keyframe | Delay |
 |---|---|---|---|
 | Today | `.today-topbar` | `today-topbar-in` | 0ms |
-| Today | `.today-sidebar` | `today-sidebar-in` | 40ms |
-| Today | `.today-main` | `today-main-in` | 80ms |
-| Today | `.today-right` | `today-right-in` | 40ms |
+| Today | `.today-stack > *` (hero row → week strip → tasks → agenda panel) | `today-main-in` | 40→200ms, stagger 40ms |
 | Heatmap | `.view-topbar:not(.today-topbar)` | `today-topbar-in` | 0ms |
 | Heatmap | `.view-content:not(.today-content)` | `today-main-in` | 60ms |
 | Year Plan | `.kanban-stats-bar` | `today-topbar-in` | 0ms |

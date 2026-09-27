@@ -160,11 +160,11 @@ export const vi = {
     greetingFixedHint: "Câu chào ngày đầu",
   },
   weeklyChecklist: {
-    title: "Kế hoạch tuần",
+    title: "Việc cần làm",
     weekLabel: (w: number) => `Tuần ${w}`,
     addPlaceholder: "Thêm mục tiêu tuần này...",
     addLabel: "Thêm mục tiêu",
-    hintEmpty: "Thêm kế hoạch cho tuần này...",
+    hintEmpty: "Chưa có việc nào trong tuần này",
     done: "hoàn thành",
   },
   today: {
@@ -175,7 +175,6 @@ export const vi = {
     statScheduled: "Có lịch",
     scheduledToday: "task hôm nay",
     addTask: "Thêm task mới...",
-    pending: "Chưa hoàn thành",
     completed: "Đã hoàn thành",
     taskUnit: "task",
     emptyState: "Ngày mới, bắt đầu thêm task đầu tiên!",
@@ -183,6 +182,9 @@ export const vi = {
     noScheduled: "Chưa có lịch hôm nay",
     activityTitle: "Hoạt động 3 tháng qua",
     backToToday: "Hôm nay",
+    heroDate: (dow: string, day: number, month: number) => `${dow} ${day}/${month}`,
+    categoryStatsTitle: "Thời gian theo danh mục",
+    weekMore: (n: number) => `+${n} task`,
   },
   taskCard: {
     markDone: "Đánh dấu xong",

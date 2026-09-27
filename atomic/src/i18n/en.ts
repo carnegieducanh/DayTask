@@ -162,11 +162,11 @@ export const en: typeof vi = {
     greetingFixedHint: "First-day greeting",
   },
   weeklyChecklist: {
-    title: "Week Plan",
+    title: "To-do",
     weekLabel: (w: number) => `Week ${w}`,
     addPlaceholder: "Add a goal for this week...",
     addLabel: "Add a goal",
-    hintEmpty: "Add a plan for this week...",
+    hintEmpty: "Nothing on the list this week",
     done: "done",
   },
   today: {
@@ -177,7 +177,6 @@ export const en: typeof vi = {
     statScheduled: "Scheduled",
     scheduledToday: "tasks today",
     addTask: "Add new task...",
-    pending: "Pending",
     completed: "Completed",
     taskUnit: "task",
     emptyState: "New day — start adding your first task!",
@@ -185,6 +184,9 @@ export const en: typeof vi = {
     noScheduled: "No schedule for today",
     activityTitle: "Activity (last 3 months)",
     backToToday: "Today",
+    heroDate: (dow: string, day: number, month: number) => `${dow}, ${month}/${day}`,
+    categoryStatsTitle: "Time by category",
+    weekMore: (n: number) => `+${n} more`,
   },
   taskCard: {
     markDone: "Mark as done",
