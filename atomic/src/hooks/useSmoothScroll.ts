@@ -11,6 +11,12 @@ export function attachSmoothScroll(el: HTMLElement): () => void {
     if (!s) {
       s = { current: node.scrollTop, target: node.scrollTop, rafId: 0, lastTime: 0 };
       states.set(node, s);
+    } else if (!s.rafId) {
+      // Idle: pick up scrolling done outside this hook (scrollbar drag, focus,
+      // keyboard). Inner scrollers get no onScroll sync, so without this the
+      // next wheel would start from a stale position and jump back.
+      s.current = node.scrollTop;
+      s.target = node.scrollTop;
     }
     return s;
   }

@@ -1,5 +1,5 @@
 import { isTauri } from './mockDb';
-import { getISOWeek, getISOWeekYear, startOfISOWeek, endOfISOWeek, format, isSameMonth } from 'date-fns';
+import { addWeeks, endOfWeek, format, isSameMonth, startOfISOWeekYear, startOfWeek, subDays } from 'date-fns';
 
 let _db: import('@tauri-apps/plugin-sql').default | null = null;
 
@@ -25,19 +25,15 @@ function rowToItem(r: DbRow): WeeklyItem {
   return { id: r.id, week_key: r.week_key, text: r.text, is_done: !!r.is_done, position: r.position };
 }
 
+// Weeks start on Sunday (same as the Today week strip and the Calendar tab)
+// and are keyed by that Sunday's date, e.g. "2026-09-27".
 export function getWeekKey(date: Date): string {
-  const week = getISOWeek(date);
-  const year = getISOWeekYear(date);
-  return `${year}-W${String(week).padStart(2, '0')}`;
-}
-
-export function getWeekNumber(date: Date): number {
-  return getISOWeek(date);
+  return format(startOfWeek(date, { weekStartsOn: 0 }), 'yyyy-MM-dd');
 }
 
 export function formatWeekRange(date: Date): string {
-  const start = startOfISOWeek(date);
-  const end = endOfISOWeek(date);
+  const start = startOfWeek(date, { weekStartsOn: 0 });
+  const end = endOfWeek(date, { weekStartsOn: 0 });
   if (isSameMonth(start, end)) {
     return `${format(start, 'd')}–${format(end, 'd MMM')}`;
   }
@@ -54,9 +50,39 @@ export async function dbGetWeeklyItems(weekKey: string): Promise<WeeklyItem[]> {
   return rows.map(rowToItem);
 }
 
-export async function dbLoadWeekItems(weekKey: string, todayWeekKey: string): Promise<WeeklyItem[]> {
+// Keys used to be ISO weeks ("2026-W39", Mon–Sun). Move each to the Sunday
+// week holding its Mon–Sat — the Sunday right before the ISO Monday. Runs on
+// every load (cheap) so an old backup imported later gets converted too.
+async function migrateLegacyWeekKeys(db: Awaited<ReturnType<typeof getDb>>) {
+  const legacy = await db.select<{ week_key: string }[]>(
+    "SELECT DISTINCT week_key FROM weekly_checklist WHERE week_key LIKE '%-W%'"
+  );
+  for (const { week_key } of legacy) {
+    const m = /^(\d{4})-W(\d{2})$/.exec(week_key);
+    if (!m) continue;
+    // Jan 4 always falls in ISO week 1 of its year.
+    const monday = addWeeks(startOfISOWeekYear(new Date(Number(m[1]), 0, 4)), Number(m[2]) - 1);
+    await db.execute('UPDATE weekly_checklist SET week_key = $1 WHERE week_key = $2', [
+      format(subDays(monday, 1), 'yyyy-MM-dd'),
+      week_key,
+    ]);
+  }
+}
+
+// Loads run one at a time: two overlapping loads of an empty current week
+// (StrictMode runs effects twice in dev) would both copy last week's items.
+let loadQueue: Promise<unknown> = Promise.resolve();
+
+export function dbLoadWeekItems(weekKey: string, todayWeekKey: string): Promise<WeeklyItem[]> {
+  const run = loadQueue.then(() => loadWeekItems(weekKey, todayWeekKey));
+  loadQueue = run.catch(() => {});
+  return run;
+}
+
+async function loadWeekItems(weekKey: string, todayWeekKey: string): Promise<WeeklyItem[]> {
   if (!isTauri()) return [];
   const db = await getDb();
+  await migrateLegacyWeekKeys(db);
 
   const existing = await db.select<DbRow[]>(
     'SELECT * FROM weekly_checklist WHERE week_key = $1 ORDER BY position, id',

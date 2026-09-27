@@ -177,7 +177,6 @@ export const en: typeof vi = {
     statScheduled: "Scheduled",
     scheduledToday: "tasks today",
     addTask: "Add new task...",
-    completed: "Completed",
     taskUnit: "task",
     emptyState: "New day — start adding your first task!",
     todaySchedule: "Today's Schedule",
@@ -191,10 +190,7 @@ export const en: typeof vi = {
   taskCard: {
     markDone: "Mark as done",
     markUndone: "Mark as not done",
-    clickHint: "Click to open, double-click to edit",
     delete: "Delete",
-    setTime: "Set start / end time",
-    timePlaceholder: "–:–",
     timeEndBeforeStart: "End time must be after start time",
   },
   kanban: {

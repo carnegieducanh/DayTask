@@ -175,7 +175,6 @@ export const vi = {
     statScheduled: "Có lịch",
     scheduledToday: "task hôm nay",
     addTask: "Thêm task mới...",
-    completed: "Đã hoàn thành",
     taskUnit: "task",
     emptyState: "Ngày mới, bắt đầu thêm task đầu tiên!",
     todaySchedule: "Lịch hôm nay",
@@ -189,10 +188,7 @@ export const vi = {
   taskCard: {
     markDone: "Đánh dấu xong",
     markUndone: "Đánh dấu chưa xong",
-    clickHint: "Click để mở, double-click để sửa nhanh",
     delete: "Xóa",
-    setTime: "Đặt giờ bắt đầu / kết thúc",
-    timePlaceholder: "–:–",
     timeEndBeforeStart: "Giờ kết thúc phải sau giờ bắt đầu",
   },
   kanban: {

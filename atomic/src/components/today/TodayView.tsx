@@ -7,7 +7,6 @@ import { IconPlus, IconSun } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 import { isTauri } from "../../store/mockDb";
-import TaskCard from "./TaskCard";
 import AddTaskModal from "./AddTaskModal";
 import MiniHeatmap from "./MiniHeatmap";
 import DailyGreeting from "./DailyGreeting";
@@ -25,7 +24,6 @@ import {
   calcDayDoneMins,
   calcWeekTotalMins,
 } from "../calendar/calendarUtils";
-import type { Task } from "../../types";
 
 export default function TodayView() {
   const t = useT();
@@ -43,7 +41,6 @@ export default function TodayView() {
   } = useAppStore();
 
   const [showModal, setShowModal] = useState(false);
-  const [editTask, setEditTask] = useState<Task | null>(null);
   const [streak, setStreak] = useState(0);
   const [pendingCheckIds, setPendingCheckIds] = useState<Set<number>>(new Set());
   const demoPopupShown = useRef(false);
@@ -69,25 +66,11 @@ export default function TodayView() {
     return () => clearTimeout(timer);
   }, [tasks, taskTimeEntries]);
 
-  function sortByTime(list: typeof tasks) {
-    return [...list].sort((a, b) => {
-      const ea = taskTimeEntries.find((e) => e.task_id === a.id);
-      const eb = taskTimeEntries.find((e) => e.task_id === b.id);
-      if (ea && eb) return ea.start_time.localeCompare(eb.start_time);
-      if (ea) return -1;
-      if (eb) return 1;
-      return 0;
-    });
-  }
-
   const habitTasks = tasks.filter((task) => task.category !== "other");
   const otherTasks = tasks.filter((task) => task.category === "other");
   const pending = tasks.filter((task) => !task.is_done && taskTimeEntries.some((e) => e.task_id === task.id));
-  const done = sortByTime(
-    tasks.filter((task) => task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)),
-  );
-  const total = pending.length + done.length;
-  const doneCount = done.length;
+  const doneCount = tasks.filter((task) => task.is_done && taskTimeEntries.some((e) => e.task_id === task.id)).length;
+  const total = pending.length + doneCount;
   const pct = total === 0 ? 0 : Math.round((doneCount / total) * 100);
   const scheduled = taskTimeEntries.length;
 
@@ -122,11 +105,6 @@ export default function TodayView() {
   );
 
   function openAdd() {
-    setEditTask(null);
-    setShowModal(true);
-  }
-  function openEdit(task: Task) {
-    setEditTask(task);
     setShowModal(true);
   }
 
@@ -170,37 +148,11 @@ export default function TodayView() {
 
       <div className="view-content today-content" ref={scrollRef}>
         <div className="today-stack">
-          {/* Clock flanked by the former sidebar widgets */}
+          {/* Clock flanked by the to-do checklist and time by category */}
           <div className="today-hero-row">
             <div className="today-hero-side today-hero-left">
               <div className="today-glass today-side-card">
-                <div className="stats-row">
-                  <div className="stat-card">
-                    <div className="stat-label">{t.today.statDone}</div>
-                    <div className="stat-value">
-                      {doneCount}
-                      <span className="stat-value-total">/{total}</span>
-                    </div>
-                    <div className="progress-bar-wrap">
-                      <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-label">{t.today.statStreak}</div>
-                    <div className="stat-value">🔥{streak}</div>
-                    <div className="stat-sub">{t.today.streakDays}</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-label">{t.today.statScheduled}</div>
-                    <div className="stat-value">{scheduled}</div>
-                    <div className="stat-sub">{t.today.scheduledToday}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="today-glass today-side-card">
-                <div className="section-label">{t.today.activityTitle}</div>
-                <MiniHeatmap data={heatmap} />
+                <WeeklyChecklist selectedDate={selectedDate} />
               </div>
             </div>
 
@@ -234,22 +186,6 @@ export default function TodayView() {
               {t.today.addTask}
             </div>
 
-            {done.length > 0 && (
-              <div>
-                <div className="section-label">
-                  {t.today.completed}{" "}
-                  <span style={{ fontWeight: 400 }}>
-                    · {done.length} {t.today.taskUnit}
-                  </span>
-                </div>
-                <div className="task-list">
-                  {done.map((task) => (
-                    <TaskCard key={task.id} task={task} onEdit={openEdit} />
-                  ))}
-                </div>
-              </div>
-            )}
-
             {total === 0 && (
               <div className="today-empty">
                 <IconSun size={32} />
@@ -258,7 +194,7 @@ export default function TodayView() {
             )}
           </div>
 
-          {/* Hôm nay | Việc cần làm */}
+          {/* Hôm nay | stats + activity heatmap */}
           <div className="today-glass today-agenda-panel">
             <TodayAgenda
               label={agendaLabel}
@@ -268,19 +204,40 @@ export default function TodayView() {
               onToggle={handleScheduleToggle}
             />
             <div className="today-agenda-divider" aria-hidden="true" />
-            <WeeklyChecklist selectedDate={selectedDate} />
+            <div className="today-agenda-stats">
+              <div className="stats-row">
+                <div className="stat-card">
+                  <div className="stat-label">{t.today.statDone}</div>
+                  <div className="stat-value">
+                    {doneCount}
+                    <span className="stat-value-total">/{total}</span>
+                  </div>
+                  <div className="progress-bar-wrap">
+                    <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">{t.today.statStreak}</div>
+                  <div className="stat-value">🔥{streak}</div>
+                  <div className="stat-sub">{t.today.streakDays}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">{t.today.statScheduled}</div>
+                  <div className="stat-value">{scheduled}</div>
+                  <div className="stat-sub">{t.today.scheduledToday}</div>
+                </div>
+              </div>
+              <div>
+                <div className="section-label">{t.today.activityTitle}</div>
+                <MiniHeatmap data={heatmap} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {showModal && (
-        <AddTaskModal
-          editTask={editTask}
-          onClose={() => {
-            setShowModal(false);
-            setEditTask(null);
-          }}
-        />
+        <AddTaskModal onClose={() => setShowModal(false)} />
       )}
     </>
   );

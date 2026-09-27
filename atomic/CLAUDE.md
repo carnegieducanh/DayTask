@@ -65,12 +65,12 @@ git push origin main && git push origin vX.Y.Z
 | 16 | Tab Lịch — Week view tùy chỉnh (WeekView.tsx)| ✅ Xong — không có time grid, card đồng đều              |
 | 17 | i18n: Tiếng Việt + English                   | ✅ Xong — `src/i18n/vi.ts` + `en.ts` + `index.ts`       |
 | 18 | Undo delete toast (4 giây hoàn tác)          | ✅ Xong — `DeleteToast.tsx` + `softDeleteTask`          |
-| 19 | TaskCard: click cả card → mở edit modal      | ✅ Xong — v0.1.2, stopPropagation trên checkbox/delete  |
+| 19 | TaskCard: click cả card → mở edit modal      | ✅ Xong — v0.1.2 (TaskCard đã xóa 2026-09-27, xem Today redesign) |
 | 20 | App icon redesign (SVG source, màu #DA7756)  | ✅ Xong — v0.1.3, xem mục Icon bên dưới                 |
 | 21 | Auto-start khi mở máy (tauri-plugin-autostart)| ✅ Xong — v0.1.4, toggle trong SettingsModal            |
 | 22 | Icon transparent bg + bigger (PNG-in-ICO)    | ✅ Xong — v0.1.6, fix BMP-in-ICO mất alpha → nền đen   |
 | 23 | Tab Journal: Biết ơn + Bài học               | ✅ Xong UI — 2026-06-05, xem mục Journal bên dưới       |
-| 24 | Right-click TaskCard: xóa + đổi màu task     | ✅ Xong — 2026-06-06, xem mục Task Color bên dưới       |
+| 24 | Right-click TaskCard: xóa + đổi màu task     | ✅ Xong — 2026-06-06; từ 2026-09-27 chỉ còn ở Day/Week/Month view (TaskCard đã xóa) |
 
 ## Tính năng đã có
 
@@ -87,7 +87,7 @@ git push origin main && git push origin vX.Y.Z
 - **Undo delete toast**: xóa task → toast 4 giây có nút "Hoàn tác", tự confirm sau 4s
 - **Auto-update**: check khi khởi động, UpdateDialog hiện progress bar download
 - **UI Scale**: `document.documentElement.style.fontSize = ${14 * uiScale}px` — tất cả rem/em tự scale
-- **Right-click context menu trên TaskCard**: xóa task (có undo toast) + chọn màu riêng cho task (24 màu, override màu category)
+- **Right-click context menu trên task** (Day/Week/Month view của tab Lịch — TaskCard ở Today đã xóa 2026-09-27): xóa task (có undo toast) + chọn màu riêng cho task (24 màu, override màu category)
 
 ## Bảng màu danh mục — COLOR_PALETTE
 
@@ -135,12 +135,11 @@ atomic/
         ├── settings/                   # GeneralTab / GreetingTab / DataTab / VocabTab / BackgroundTab.tsx — mỗi tab tự đọc useAppStore()/state riêng, không prop-drill từ SettingsModal
         ├── UpdateDialog.tsx + .css     # Auto-update dialog với progress bar
         ├── today/
-        │   ├── TodayView.tsx + today.css  # Topbar + 1 cột cuộn dọc (redesign 2026-09-27, bỏ layout 3 cột): hàng đồng hồ `.today-hero-row` (trái: stat + heatmap, giữa: đồng hồ, phải: thời gian theo danh mục — card kính mờ không viền; <1000px đồng hồ lên hàng riêng) → dải tuần → nút thêm task + TaskCard Done (phần Pending đã bỏ — tick hoàn thành qua drawer trên block dải tuần) → kính mờ "Hôm nay | Việc cần làm"
+        │   ├── TodayView.tsx + today.css  # Topbar + 1 cột cuộn dọc (redesign 2026-09-27, bỏ layout 3 cột): hàng đồng hồ `.today-hero-row` (trái: "Việc cần làm" — `.today-todo` max-height 17rem, list cuộn; giữa: đồng hồ, phải: thời gian theo danh mục — card kính mờ không viền; <1000px đồng hồ lên hàng riêng) → dải tuần → nút thêm task (Today không còn danh sách TaskCard — Pending + Completed đã bỏ 2026-09-27; tick hoàn thành qua drawer trên block dải tuần hoặc khối "Hôm nay") → kính mờ "Hôm nay | 3 stat card + heatmap" (`.today-agenda-panel` cao cố định 20rem, pill "Hôm nay" đứng yên, chỉ `.today-agenda-list` cuộn; cột phải `.today-agenda-stats`; ≤860px list max-height 17rem). Vị trí Việc cần làm ↔ stat+heatmap hoán đổi theo yêu cầu user 2026-09-27
         │   ├── TodayClockHero.tsx  # Đồng hồ lớn + thứ/ngày — LUÔN là giờ thật hôm nay, không theo selectedDate
-        │   ├── TodayWeekStrip.tsx  # T2→CN của tuần selectedDate, click → setSelectedDate; hover block → drawer tích (mini `.task-drawer`) gọi `toggleTask` — tích được cả ngày khác vì `toggleTask` fallback sang `calendarTasks`. Ngày đang chọn đọc tasks/taskTimeEntries, ngày khác đọc calendarTasks (load cả năm như CalendarView)
+        │   ├── TodayWeekStrip.tsx  # CN→T7 của tuần selectedDate (`startOfWeek` weekStartsOn: 0, giống Week view tab Lịch — đổi từ ISO T2→CN 2026-09-27), click → setSelectedDate; hover block → drawer tích (mini `.task-drawer`) gọi `toggleTask` — tích được cả ngày khác vì `toggleTask` fallback sang `calendarTasks`. Dữ liệu = calendarTasks/calendarTimeEntries (load cả năm như CalendarView) merge với tasks/taskTimeEntries đè lên (mới hơn) — không switch nguồn theo ngày để cột mới chọn không bị trống lúc đang load. Mỗi ngày: task chưa xong trước, đã xong chìm xuống, trượt vị trí bằng FLIP (Web Animations API). Tích task pending → hiệu ứng cũ của list Pending (co height→0 + mờ + tụt 10px, 640ms) rồi mới `toggleTask`, block mọc lại ở đáy; `.tws-blocks` bị khóa min-height trong lúc đó để trang không nảy. Bỏ tích thì tức thời
         │   ├── TodayAgenda.tsx     # Khối "Hôm nay" (lịch trình gọn: thanh màu + giờ + tick)
-        │   ├── WeeklyChecklist.tsx # Giờ là cột "Việc cần làm" dạng checkbox gọn (vẫn dữ liệu weekly_checklist theo tuần)
-        │   ├── TaskCard.tsx      # Card task — gọi softDeleteTask (không deleteTask)
+        │   ├── WeeklyChecklist.tsx # Card "Việc cần làm" bên trái đồng hồ, dạng checkbox gọn (dữ liệu weekly_checklist theo tuần **CN→T7**, `week_key` = ngày Chủ nhật đầu tuần "YYYY-MM-DD" — đổi từ ISO "YYYY-Www" 2026-09-27; `weeklyChecklistDb.ts` tự convert key ISO cũ (kể cả từ backup cũ import vào) sang Chủ nhật ngay trước thứ Hai ISO mỗi lần load; `dbLoadWeekItems` chạy tuần tự để StrictMode không copy trùng việc chưa xong sang tuần mới)
         │   ├── AddTaskModal.tsx  # Form thêm/sửa task
         │   ├── DailyGreeting.tsx # Lời chào theo giờ
         │   └── MiniHeatmap.tsx   # Heatmap nhỏ trong TodayView
@@ -252,6 +251,8 @@ Dependencies đã có: `sharp`. `.ico` phải có đủ **10 size DPI-tier: 16/2
 ## Task Color (Right-click Context Menu)
 
 ### Mô tả
+> **2026-09-27:** `TaskCard.tsx` đã bị xóa cùng khối Pending/Completed ở Today (không còn chỗ nào render nó) — context menu đổi màu/xóa giờ chỉ còn ở DayView/WeekView/MonthView (dùng chung CSS `.task-context-*`). Các dòng nhắc `TaskCard.tsx` bên dưới là lịch sử.
+
 Right-click vào TaskCard → popup nhỏ xuất hiện tại vị trí chuột (tự điều chỉnh nếu gần mép màn hình) gồm:
 - Nút **Delete** (IconTrash) → gọi `softDeleteTask` → hiện undo toast 4 giây như bình thường
 - Divider
@@ -464,4 +465,4 @@ let _ = tauri::WebviewWindowBuilder::new(app, "tray-popup", ...)
 - **DB file:** `%APPDATA%\com.atomic.app\atomic.db`
 - **Git branch:** `main`
 - **Export:** dùng Blob + URL.createObjectURL — không cần plugin Tauri fs/dialog
-- **TaskCard delete:** gọi `softDeleteTask` (KHÔNG `deleteTask` trực tiếp)
+- **Xóa task từ UI:** gọi `softDeleteTask` (KHÔNG `deleteTask` trực tiếp)
