@@ -448,7 +448,13 @@ pub fn run() {
     }
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        // Tray windows have fixed sizes set in tray.rs — exclude them so a stale
+        // saved size (e.g. physical px from a high-DPI monitor) isn't restored over it.
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .with_denylist(&["tray-popup", "tray-context"])
+                .build(),
+        )
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(w) = app.get_webview_window("main") {
                 let _ = w.show();
