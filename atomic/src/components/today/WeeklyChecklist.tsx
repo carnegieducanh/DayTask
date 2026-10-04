@@ -152,11 +152,11 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
           <span className="today-todo-stats">{done.length}/{items.length}</span>
         )}
         <button
-          className="today-todo-add-btn"
+          className="today-todo-add-btn labeled"
           onClick={() => setAdding(true)}
-          title={t.weeklyChecklist.addLabel}
         >
           <IconPlus size={14} />
+          <span>{t.weeklyChecklist.addLabel}</span>
         </button>
       </div>
 

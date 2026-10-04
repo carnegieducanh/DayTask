@@ -134,7 +134,9 @@ export const createUiSlice: StateCreator<AppState, [], [], UiSlice> = (set, get)
   initAutostart: async () => {
     if (!isTauri()) return;
     const firstRun = !localStorage.getItem('autostartInitialized');
-    if (firstRun) {
+    // Bản dev (`tauri dev`) không được ghi registry Run — nếu không, mục khởi động
+    // sẽ trỏ sang target\debug\atomic.exe (có console) và bật PowerShell khi mở máy.
+    if (firstRun && !import.meta.env.DEV) {
       await invoke('plugin:autostart|enable');
       localStorage.setItem('autostartInitialized', '1');
       set({ autostart: true });
@@ -146,7 +148,7 @@ export const createUiSlice: StateCreator<AppState, [], [], UiSlice> = (set, get)
 
   setAutostart: async (v) => {
     set({ autostart: v });
-    if (!isTauri()) return;
+    if (!isTauri() || import.meta.env.DEV) return;
     if (v) {
       await invoke('plugin:autostart|enable');
     } else {

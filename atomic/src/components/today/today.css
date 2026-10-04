@@ -533,10 +533,10 @@
   padding: 0 5px 10px;
   border-radius: 12px;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
-.tws-day:not(.selected):hover {
+/* Hover tints only the head, matching the selected-day cap. */
+.tws-day:not(.selected):hover .tws-head {
   background: color-mix(in srgb, var(--text-primary) 5%, transparent);
 }
 
@@ -693,31 +693,46 @@
   text-align: center;
 }
 
-/* ── Task list section ── */
-.today-tasks {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
+/* Agenda empty state — clicking it opens the add-task modal. */
 .today-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  flex: 1;
   padding: 12px 0;
   color: var(--text-secondary);
+  font-size: 0.86rem;
+  text-align: center;
+  cursor: pointer;
+  transition: color 0.15s;
 }
 
-/* ── "Today | stats" glass panel ──
-   Fixed height: the agenda pill stays put and only its list scrolls; the
-   stats column scrolls as a whole if it ever outgrows the panel. */
+.today-empty:hover {
+  color: var(--primary);
+}
+
+/* ── "Today | time by category | stats" glass panel ──
+   The panel is as tall as the category/stats columns (min 18rem); the agenda
+   doesn't add height (height 0 + min-height 100%), its header stays put and
+   only its list scrolls. Below 1100px the category column stacks above the
+   stats; below 860px everything stacks. */
 .today-agenda-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  min-height: 18rem;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "agenda d1 cats d2 stats";
   gap: 22px;
   padding: 18px 22px;
+}
+
+.today-agenda-divider-1 {
+  grid-area: d1;
+}
+.today-agenda-divider-2 {
+  grid-area: d2;
 }
 
 .today-agenda-list,
@@ -737,13 +752,35 @@
   background: var(--border-2);
 }
 
-/* Stacked: the two columns can't share one fixed height, so the agenda list
+@media (max-width: 1100px) {
+  .today-agenda-panel {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "agenda d1 cats"
+      "agenda d1 stats";
+  }
+  .today-agenda-divider-2 {
+    display: none;
+  }
+}
+
+/* Stacked: the columns can't share one fixed height, so the agenda list
    gets its own cap instead. */
 @media (max-width: 860px) {
   .today-agenda-panel {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
+    grid-template-areas:
+      "agenda"
+      "d1"
+      "cats"
+      "stats";
+    min-height: 0;
+  }
+  .today-agenda {
     height: auto;
+    min-height: 0;
   }
   .today-agenda-divider {
     width: auto;
@@ -754,7 +791,16 @@
   }
 }
 
+.today-agenda-cats {
+  grid-area: cats;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
 .today-agenda-stats {
+  grid-area: stats;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -764,15 +810,22 @@
 }
 
 .today-agenda {
+  grid-area: agenda;
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-width: 0;
-  min-height: 0;
+  height: 0;
+  min-height: 100%;
+}
+
+.today-agenda-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .today-agenda-pill {
-  align-self: flex-start;
   padding: 3px 12px;
   border-radius: 99px;
   background: #e5484d;
@@ -842,7 +895,7 @@
 }
 
 /* ── Hero row: side cards flanking the clock ──
-   Left = to-do checklist, right = time by category. Side cards are glass
+   Left = mini calendar, right = to-do checklist. Side cards are glass
    without a border. Below ~1000px the clock takes its own row. */
 .today-hero-row {
   display: grid;
@@ -885,8 +938,15 @@
 
 /* Capped about as tall as the old stats + heatmap pair; the list scrolls
    (.today-todo-items) under a fixed header. */
-.today-hero-left .today-todo {
+.today-hero-right .today-todo {
   max-height: 17rem;
+}
+
+/* The day grid only needs ~26px per cell — keep it compact and centered
+   instead of stretching across the whole side card. */
+.today-hero-left .mini-calendar {
+  max-width: 280px;
+  margin: 0 auto;
 }
 
 .today-agenda-stats .stats-row {
@@ -933,7 +993,7 @@
   margin-top: auto;
 }
 
-.today-side-card .cal-week-stats,
+.today-agenda-cats .cal-week-stats,
 .cal-day-sidebar-extras .cal-week-stats {
   height: auto;
   border-top: none;
@@ -1034,32 +1094,6 @@
 }
 
 /* ── Add task row ── */
-.add-task-row {
-  display: flex;
-  align-self: flex-start;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 12px;
-  /* border: 0.5px dashed var(--border-2);
-  border-radius: var(--radius-md); */
-  color: var(--text-secondary);
-  font-size: 1rem;
-  cursor: pointer;
-  transition:
-    border-color 0.1s,
-    color 0.1s;
-}
-
-.add-task-row svg {
-  width: 1em;
-  height: 1em;
-}
-
-.add-task-row:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
 /* ── To-do checklist (week-scoped items, inside the Today glass panel) ── */
 .today-todo {
   display: flex;
@@ -1110,6 +1144,25 @@
 .today-todo-add-btn:hover {
   background: color-mix(in srgb, var(--primary) 14%, transparent);
   color: var(--primary);
+}
+
+/* Icon + text pill variant (Việc cần làm header) */
+.today-todo-add-btn.labeled {
+  width: auto;
+  height: 26px;
+  padding: 0 10px 0 8px;
+  gap: 4px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+  font-size: 0.79rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.today-todo-add-btn.labeled:hover {
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
 .today-todo-items {

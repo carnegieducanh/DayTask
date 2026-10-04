@@ -1,4 +1,4 @@
-import { IconCheck, IconClock } from "@tabler/icons-react";
+import { IconCheck, IconClock, IconPlus, IconSun } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 import type { Task, TaskTimeEntry } from "../../types";
@@ -9,19 +9,26 @@ export default function TodayAgenda({
   entries,
   pendingCheckIds,
   onToggle,
+  onAdd,
 }: {
   label: string;
   tasks: Task[];
   entries: TaskTimeEntry[];
   pendingCheckIds: Set<number>;
   onToggle: (taskId: number) => void;
+  onAdd: () => void;
 }) {
   const t = useT();
   const categoryColors = useAppStore((s) => s.categoryColors);
 
   return (
     <div className="today-agenda">
-      <span className="today-agenda-pill">{label}</span>
+      <div className="today-agenda-header">
+        <span className="today-agenda-pill">{label}</span>
+        <button className="today-todo-add-btn" onClick={onAdd} title={t.today.addTask}>
+          <IconPlus size={16} />
+        </button>
+      </div>
       {tasks.length > 0 ? (
         <div className="today-agenda-list">
           {tasks.map((task) => {
@@ -59,7 +66,10 @@ export default function TodayAgenda({
           })}
         </div>
       ) : (
-        <div className="today-panel-empty">{t.today.noScheduled}</div>
+        <div className="today-empty" onClick={onAdd}>
+          <IconSun size={28} />
+          <div>{t.today.emptyState}</div>
+        </div>
       )}
     </div>
   );

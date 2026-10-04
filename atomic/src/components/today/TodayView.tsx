@@ -3,12 +3,12 @@ import "./today.css";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import { format } from "date-fns";
 import { vi as viLocale } from "date-fns/locale";
-import { IconPlus, IconSun } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 import { isTauri } from "../../store/mockDb";
 import AddTaskModal from "./AddTaskModal";
 import MiniHeatmap from "./MiniHeatmap";
+import MiniCalendar from "./MiniCalendar";
 import DailyGreeting from "./DailyGreeting";
 import { WeeklyChecklist } from "./WeeklyChecklist";
 import TodayClockHero from "./TodayClockHero";
@@ -148,11 +148,11 @@ export default function TodayView() {
 
       <div className="view-content today-content" ref={scrollRef}>
         <div className="today-stack">
-          {/* Clock flanked by the to-do checklist and time by category */}
+          {/* Clock flanked by the mini calendar and the to-do checklist */}
           <div className="today-hero-row">
             <div className="today-hero-side today-hero-left">
               <div className="today-glass today-side-card">
-                <WeeklyChecklist selectedDate={selectedDate} />
+                <MiniCalendar />
               </div>
             </div>
 
@@ -160,41 +160,14 @@ export default function TodayView() {
 
             <div className="today-hero-side today-hero-right">
               <div className="today-glass today-side-card">
-                <div className="section-label">{t.today.categoryStatsTitle}</div>
-                {dayStats.length > 0 || otherDayMins > 0 ? (
-                  <>
-                    {dayStats.length > 0 && (
-                      <DayStatsSection stats={dayStats} doneMins={dayDoneMins} totalMins={dayTotalMins} showCatDone />
-                    )}
-                    {otherDayMins > 0 && (
-                      <OtherStatsSection totalMins={otherDayMins} doneMins={otherDoneMins} hasBorderTop={dayStats.length > 0} />
-                    )}
-                  </>
-                ) : (
-                  <div className="today-panel-empty">{t.today.noScheduled}</div>
-                )}
+                <WeeklyChecklist selectedDate={selectedDate} />
               </div>
             </div>
           </div>
 
           <TodayWeekStrip />
 
-          {/* Task list */}
-          <div className="today-tasks">
-            <div className="add-task-row" onClick={openAdd}>
-              <IconPlus size={16} />
-              {t.today.addTask}
-            </div>
-
-            {total === 0 && (
-              <div className="today-empty">
-                <IconSun size={32} />
-                <div>{t.today.emptyState}</div>
-              </div>
-            )}
-          </div>
-
-          {/* Hôm nay | stats + activity heatmap */}
+          {/* Hôm nay | time by category | stats + activity heatmap */}
           <div className="today-glass today-agenda-panel">
             <TodayAgenda
               label={agendaLabel}
@@ -202,8 +175,25 @@ export default function TodayView() {
               entries={taskTimeEntries}
               pendingCheckIds={pendingCheckIds}
               onToggle={handleScheduleToggle}
+              onAdd={openAdd}
             />
-            <div className="today-agenda-divider" aria-hidden="true" />
+            <div className="today-agenda-divider today-agenda-divider-1" aria-hidden="true" />
+            <div className="today-agenda-cats">
+              <div className="section-label">{t.today.categoryStatsTitle}</div>
+              {dayStats.length > 0 || otherDayMins > 0 ? (
+                <>
+                  {dayStats.length > 0 && (
+                    <DayStatsSection stats={dayStats} doneMins={dayDoneMins} totalMins={dayTotalMins} showCatDone />
+                  )}
+                  {otherDayMins > 0 && (
+                    <OtherStatsSection totalMins={otherDayMins} doneMins={otherDoneMins} hasBorderTop={dayStats.length > 0} />
+                  )}
+                </>
+              ) : (
+                <div className="today-panel-empty">{t.today.noScheduled}</div>
+              )}
+            </div>
+            <div className="today-agenda-divider today-agenda-divider-2" aria-hidden="true" />
             <div className="today-agenda-stats">
               <div className="stats-row">
                 <div className="stat-card">

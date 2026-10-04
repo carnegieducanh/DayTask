@@ -249,6 +249,59 @@ export default function HeatmapView() {
 
       <div className="view-content" ref={contentRef}>
 
+        {/* ═══════════════════════ NĂM ═══════════════════════ */}
+        <div className="heatmap-tier-header">{t.heatmap.tierYear} {selectedYear}</div>
+
+        <div className="stats-row stats-row--4">
+          <div className="stat-card">
+            <div className="stat-label">{t.heatmap.currentStreak}</div>
+            <div className="stat-value">{streak}</div>
+            <div className="stat-sub">{t.heatmap.streakDays}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">{t.heatmap.activeDays}</div>
+            <div className="stat-value">{activeDays}</div>
+            <div className="stat-sub">{t.heatmap.activeDaysIn(selectedYear)}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">{t.heatmap.tasksDone}</div>
+            <div className="stat-value">{totalDone}</div>
+            <div className="stat-sub">{t.heatmap.totalIn(selectedYear)}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">{t.heatmap.totalHours}</div>
+            <div className="stat-value">{fmtHoursFloat(totalMinutes)}</div>
+            <div className="stat-sub">{t.heatmap.hoursIn(selectedYear)}</div>
+          </div>
+        </div>
+
+        {/* ── Heatmap grid + mode toggle ────────────────────────────────────── */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div className="section-label">{t.heatmap.activityIn(selectedYear)}</div>
+            <div className="heatmap-mode-toggle">
+              <button
+                className={`heatmap-mode-btn${heatmapMode === 'count' ? ' heatmap-mode-btn--active' : ''}`}
+                onClick={() => setHeatmapMode('count')}
+              >
+                {t.heatmap.countMode}
+              </button>
+              <button
+                className={`heatmap-mode-btn${heatmapMode === 'hours' ? ' heatmap-mode-btn--active' : ''}`}
+                onClick={() => setHeatmapMode('hours')}
+              >
+                {t.heatmap.hoursMode}
+              </button>
+            </div>
+          </div>
+          <HeatmapGrid
+            year={selectedYear}
+            data={heatmap}
+            mode={heatmapMode}
+            durations={heatmapDurations}
+          />
+        </div>
+
         {/* ═══════════════════════ TUẦN ═══════════════════════ */}
         <div className="heatmap-tier-header">{t.heatmap.tierWeek}</div>
 
@@ -391,59 +444,6 @@ export default function HeatmapView() {
             prevLabel={monthPeriodPrev}
           />
         )}
-
-        {/* ═══════════════════════ NĂM ═══════════════════════ */}
-        <div className="heatmap-tier-header">{t.heatmap.tierYear} {selectedYear}</div>
-
-        <div className="stats-row stats-row--4">
-          <div className="stat-card">
-            <div className="stat-label">{t.heatmap.currentStreak}</div>
-            <div className="stat-value">{streak}</div>
-            <div className="stat-sub">{t.heatmap.streakDays}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">{t.heatmap.activeDays}</div>
-            <div className="stat-value">{activeDays}</div>
-            <div className="stat-sub">{t.heatmap.activeDaysIn(selectedYear)}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">{t.heatmap.tasksDone}</div>
-            <div className="stat-value">{totalDone}</div>
-            <div className="stat-sub">{t.heatmap.totalIn(selectedYear)}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">{t.heatmap.totalHours}</div>
-            <div className="stat-value">{fmtHoursFloat(totalMinutes)}</div>
-            <div className="stat-sub">{t.heatmap.hoursIn(selectedYear)}</div>
-          </div>
-        </div>
-
-        {/* ── Heatmap grid + mode toggle ────────────────────────────────────── */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div className="section-label">{t.heatmap.activityIn(selectedYear)}</div>
-            <div className="heatmap-mode-toggle">
-              <button
-                className={`heatmap-mode-btn${heatmapMode === 'count' ? ' heatmap-mode-btn--active' : ''}`}
-                onClick={() => setHeatmapMode('count')}
-              >
-                {t.heatmap.countMode}
-              </button>
-              <button
-                className={`heatmap-mode-btn${heatmapMode === 'hours' ? ' heatmap-mode-btn--active' : ''}`}
-                onClick={() => setHeatmapMode('hours')}
-              >
-                {t.heatmap.hoursMode}
-              </button>
-            </div>
-          </div>
-          <HeatmapGrid
-            year={selectedYear}
-            data={heatmap}
-            mode={heatmapMode}
-            durations={heatmapDurations}
-          />
-        </div>
 
         {/* ── Monthly bar chart ────────────────────────────────────────────── */}
         <div>
