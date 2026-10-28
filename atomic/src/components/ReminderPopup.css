@@ -4,9 +4,11 @@
    alpha must NOT track the "UI transparency" slider like --bg-glass-panel
    does — a reminder has to stay legible no matter how transparent the user
    has made the rest of the glass UI. */
+/* Góc dưới phải (như thông báo Windows) để không che các nút ở header của tab;
+   DeleteToast/UndoToast nằm giữa đáy nên không chồng lên nhau */
 .reminder-popup {
   position: absolute;
-  top: 72px;
+  bottom: 24px;
   right: 16px;
   width: 244px;
   background: var(--reminder-glass-bg);
