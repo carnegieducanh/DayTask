@@ -165,9 +165,8 @@ export default function TodayView() {
             </div>
           </div>
 
-          <TodayWeekStrip />
-
-          {/* Hôm nay | time by category | stats + activity heatmap */}
+          {/* Hôm nay | time by category | stats + activity heatmap — ngay dưới đồng hồ để
+              lịch hôm nay nằm trong màn hình đầu; dải tuần xuống cuối */}
           <div className="today-glass today-agenda-panel">
             <TodayAgenda
               label={agendaLabel}
@@ -223,6 +222,8 @@ export default function TodayView() {
               </div>
             </div>
           </div>
+
+          <TodayWeekStrip />
         </div>
       </div>
 
