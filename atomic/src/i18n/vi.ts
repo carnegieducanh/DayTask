@@ -11,8 +11,8 @@ export const vi = {
     settings: "Cài đặt",
     prevYear: "Năm trước",
     nextYear: "Năm sau",
-    darkMode: "☽  Dark mode",
-    lightMode: "☼  Light mode",
+    darkMode: "Chế độ tối",
+    lightMode: "Chế độ sáng",
   },
   cat: {
     work: "Sự nghiệp",

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { IconCheck, IconPlus, IconTrash } from '@tabler/icons-react';
+import { vi as viLocale } from 'date-fns/locale';
+import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
 import {
   WeeklyItem,
@@ -17,6 +19,7 @@ const UNDO_DURATION = 4000;
 
 export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
   const t = useT();
+  const language = useAppStore((s) => s.language);
   const [items, setItems] = useState<WeeklyItem[]>([]);
   const [transitioningIds, setTransitioningIds] = useState<Set<number>>(new Set());
   const [adding, setAdding] = useState(false);
@@ -32,7 +35,7 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
   const selectedDay = new Date(selectedDate + 'T00:00:00');
   const weekKey = getWeekKey(selectedDay);
   const todayWeekKey = getWeekKey(today);
-  const weekRange = formatWeekRange(selectedDay);
+  const weekRange = formatWeekRange(selectedDay, language === 'vi' ? viLocale : undefined);
 
   useEffect(() => {
     dbLoadWeekItems(weekKey, todayWeekKey).then(setItems);

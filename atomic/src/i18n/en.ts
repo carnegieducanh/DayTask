@@ -13,8 +13,8 @@ export const en: typeof vi = {
     settings: "Settings",
     prevYear: "Previous Year",
     nextYear: "Next Year",
-    darkMode: "☽  Dark mode",
-    lightMode: "☼  Light mode",
+    darkMode: "Dark mode",
+    lightMode: "Light mode",
   },
   cat: {
     work: "Career",

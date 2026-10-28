@@ -1122,6 +1122,11 @@
   color: var(--text-secondary);
 }
 
+/* "25–31 thg 10" không được tách giữa "thg" và số tháng */
+.today-todo-range {
+  white-space: nowrap;
+}
+
 .today-todo-add-btn {
   margin-left: auto;
   align-self: center;

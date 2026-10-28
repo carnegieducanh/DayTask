@@ -2,11 +2,14 @@ import { useState, useMemo, useEffect } from 'react';
 import { format, getDaysInMonth, getDay, addMonths, subMonths } from 'date-fns';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
+import { useT } from '../../i18n';
 
-const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DOW_EN = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function MiniCalendar() {
-  const { selectedDate, setSelectedDate } = useAppStore();
+  const t = useT();
+  const { selectedDate, setSelectedDate, language } = useAppStore();
+  const DOW = language === 'vi' ? t.journal.dowShort : DOW_EN;
 
   const [viewDate, setViewDate] = useState(() => {
     const d = new Date(selectedDate + 'T00:00:00');
@@ -62,7 +65,7 @@ export default function MiniCalendar() {
           <IconChevronLeft size={13} />
         </button>
         <span className="mini-cal-month">
-          {format(viewDate, 'MMMM yyyy')}
+          {language === 'vi' ? format(viewDate, "'Tháng' M, yyyy") : format(viewDate, 'MMMM yyyy')}
         </span>
         <button className="mini-cal-nav" onClick={() => setViewDate(addMonths(viewDate, 1))}>
           <IconChevronRight size={13} />

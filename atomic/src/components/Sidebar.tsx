@@ -12,6 +12,8 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconSettings,
+  IconMoon,
+  IconSunHigh,
 } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { useAppStore } from "../store/appStore";
@@ -211,9 +213,12 @@ export default function Sidebar() {
         >
           <IconSettings size={16} />
         </button>
-        <button className="nav-item" onClick={toggleTheme}>
-          <span className="nav-icon">◐</span>
-          {theme === 'light' ? t.nav.darkMode : t.nav.lightMode}
+        <button
+          className="icon-btn"
+          title={theme === 'light' ? t.nav.darkMode : t.nav.lightMode}
+          onClick={toggleTheme}
+        >
+          {theme === 'light' ? <IconMoon size={16} /> : <IconSunHigh size={16} />}
         </button>
       </div>
     </nav>

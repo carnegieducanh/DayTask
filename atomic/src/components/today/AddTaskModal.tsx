@@ -233,6 +233,14 @@ function getDefaultStartTime(): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
+// Kết thúc mặc định = bắt đầu + 30 phút, chặn ở 23:45 vì task không được qua nửa đêm
+function getDefaultEndTime(start: string): string {
+  if (!start) return "";
+  const [h, m] = start.split(":").map(Number);
+  const total = Math.min(h * 60 + m + 30, 23 * 60 + 45);
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
 interface Props {
   editTask?: Task | null;
   onClose: () => void;
@@ -279,7 +287,9 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
   const [description, setDesc] = useState("");
   const [category, setCategory] = useState<Category>("work");
   const [startTime, setStartTime] = useState(() => (editTask ? "" : (initialStartTime ?? getDefaultStartTime())));
-  const [endTime, setEndTime] = useState(() => (editTask ? "" : (initialEndTime ?? getDefaultStartTime())));
+  const [endTime, setEndTime] = useState(() => (editTask ? "" : (initialEndTime ?? getDefaultEndTime(startTime))));
+  // Giờ kết thúc còn là giá trị tự điền → chạy theo giờ bắt đầu cho tới khi user tự chọn
+  const endAutoRef = useRef(!editTask && !initialEndTime);
   const [repeatDaily, setRepeatDaily] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [catPanelStyle, setCatPanelStyle] = useState<React.CSSProperties>({});
@@ -821,7 +831,8 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
               open={startOpen}
               setOpen={setStartOpen}
               onChange={(v) => {
-                if (!editTask && endTime === startTime) setEndTime(v);
+                if (endAutoRef.current) setEndTime(getDefaultEndTime(v));
+                else if (!editTask && endTime === startTime) setEndTime(v);
                 setStartTime(v);
                 setTimeError("");
               }}
@@ -834,6 +845,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
               open={endOpen}
               setOpen={setEndOpen}
               onChange={(v) => {
+                endAutoRef.current = false;
                 setEndTime(v);
                 setTimeError("");
               }}

@@ -1,5 +1,6 @@
 import { isTauri } from './mockDb';
 import { addWeeks, endOfWeek, format, isSameMonth, startOfISOWeekYear, startOfWeek, subDays } from 'date-fns';
+import type { Locale } from 'date-fns';
 
 let _db: import('@tauri-apps/plugin-sql').default | null = null;
 
@@ -31,13 +32,13 @@ export function getWeekKey(date: Date): string {
   return format(startOfWeek(date, { weekStartsOn: 0 }), 'yyyy-MM-dd');
 }
 
-export function formatWeekRange(date: Date): string {
+export function formatWeekRange(date: Date, locale?: Locale): string {
   const start = startOfWeek(date, { weekStartsOn: 0 });
   const end = endOfWeek(date, { weekStartsOn: 0 });
   if (isSameMonth(start, end)) {
-    return `${format(start, 'd')}–${format(end, 'd MMM')}`;
+    return `${format(start, 'd')}–${format(end, 'd MMM', { locale })}`;
   }
-  return `${format(start, 'd MMM')}–${format(end, 'd MMM')}`;
+  return `${format(start, 'd MMM', { locale })}–${format(end, 'd MMM', { locale })}`;
 }
 
 export async function dbGetWeeklyItems(weekKey: string): Promise<WeeklyItem[]> {
