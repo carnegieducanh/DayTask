@@ -182,7 +182,7 @@ export default function TodayView() {
               {dayStats.length > 0 || otherDayMins > 0 ? (
                 <>
                   {dayStats.length > 0 && (
-                    <DayStatsSection stats={dayStats} doneMins={dayDoneMins} totalMins={dayTotalMins} showCatDone />
+                    <DayStatsSection stats={dayStats} doneMins={dayDoneMins} totalMins={dayTotalMins} showCatDone hoverPopup={false} />
                   )}
                   {otherDayMins > 0 && (
                     <OtherStatsSection totalMins={otherDayMins} doneMins={otherDoneMins} hasBorderTop={dayStats.length > 0} />

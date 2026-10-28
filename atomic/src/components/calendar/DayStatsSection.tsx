@@ -76,6 +76,7 @@ export default function DayStatsSection({
   doneMins,
   totalMins,
   showCatDone = false,
+  hoverPopup = true,
 }: {
   stats: DayStat[];
   otherMins?: number;
@@ -83,6 +84,8 @@ export default function DayStatsSection({
   doneMins?: number;
   totalMins?: number;
   showCatDone?: boolean;
+  // false: không hiện StatsPopover khi hover (tab Hôm nay — danh sách đã đủ rộng để đọc trực tiếp)
+  hoverPopup?: boolean;
 }) {
   const t = useT();
   const [hovered, setHovered] = useState(false);
@@ -91,7 +94,7 @@ export default function DayStatsSection({
   useSmoothScroll(scrollRef);
 
   const handleMouseEnter = (e: React.MouseEvent) => {
-    if (!stats.length && otherMins <= 0) return;
+    if (!hoverPopup || (!stats.length && otherMins <= 0)) return;
     const popW = 260;
     const popH = 220;
     let left = e.clientX + 14;
