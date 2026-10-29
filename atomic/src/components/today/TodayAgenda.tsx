@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { IconCheck, IconPlus, IconSun } from "@tabler/icons-react";
+import { IconCheck, IconPlus } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 import type { Task, TaskTimeEntry } from "../../types";
@@ -7,11 +7,13 @@ import { useTickCollapse } from "./useTickCollapse";
 
 export default function TodayAgenda({
   label,
+  isToday,
   tasks,
   entries,
   onAdd,
 }: {
   label: string;
+  isToday: boolean;
   tasks: Task[];
   entries: TaskTimeEntry[];
   onAdd: () => void;
@@ -25,10 +27,10 @@ export default function TodayAgenda({
 
   return (
     <div className="today-agenda">
-      <div className="today-agenda-header">
-        <span className="today-agenda-pill">{label}</span>
-        <button className="today-todo-add-btn" onClick={onAdd} title={t.today.addTask}>
-          <IconPlus size={16} />
+      <div className="today-col-head">
+        <span className={`today-col-title${isToday ? " is-today" : ""}`}>{label}</span>
+        <button className="today-add-btn" onClick={onAdd} title={t.today.addTask}>
+          <IconPlus size={15} strokeWidth={2.25} />
         </button>
       </div>
       {tasks.length > 0 ? (
@@ -63,8 +65,7 @@ export default function TodayAgenda({
         </div>
       ) : (
         <div className="today-empty" onClick={onAdd}>
-          <IconSun size={28} />
-          <div>{t.today.emptyState}</div>
+          {t.today.emptyState}
         </div>
       )}
     </div>

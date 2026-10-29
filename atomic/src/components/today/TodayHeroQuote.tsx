@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { IconQuote } from '@tabler/icons-react';
 import { dbGetHeroQuote, getHeroModeLS } from '../../store/quotesDb';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
@@ -58,9 +57,7 @@ export function TodayHeroQuote() {
       onClick={() => setActiveTab('quotes')}
       title={tooltip}
     >
-      <span className="today-hero-quote-icon">
-        <IconQuote size={13} strokeWidth={2} />
-      </span>
+      <span className="today-hero-quote-mark" aria-hidden="true">“</span>
       {quote ? (
         <span className="today-hero-quote-body">
           <span className="today-hero-quote-text">{quote.text}</span>

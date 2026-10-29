@@ -109,24 +109,22 @@ export default function TodayView() {
 
   return (
     <>
-      {/* Topbar */}
-      <div className="view-topbar today-topbar">
-        <div className="today-topbar-side">
-          <div className="view-subtitle" style={{ textTransform: "capitalize" }}>
-            {dateLabel}
-          </div>
-          <TodayHeroQuote />
-        </div>
+      <div className="today-wrap" ref={scrollRef}>
+        <div className="today-page">
+          {/* Masthead: date + quote | greeting | word of the day — scrolls with the page */}
+          <header className="today-head">
+            <div className="today-head-ear">
+              <span className="today-eyebrow">{dateLabel}</span>
+              <TodayHeroQuote />
+            </div>
 
-        <DailyGreeting pendingCount={pending.length} isToday={selectedDate === todayStr} />
+            <DailyGreeting pendingCount={pending.length} isToday={selectedDate === todayStr} />
 
-        <div className="today-topbar-side today-topbar-actions">
-          <VocabWidget noteStyle />
-        </div>
-      </div>
+            <div className="today-head-ear today-head-vocab">
+              <VocabWidget noteStyle />
+            </div>
+          </header>
 
-      <div className="view-content today-content" ref={scrollRef}>
-        <div className="today-stack">
           {/* Clock flanked by the mini calendar and the to-do checklist */}
           <div className="today-hero-row">
             <div className="today-hero-side today-hero-left">
@@ -154,13 +152,16 @@ export default function TodayView() {
           <div className="today-glass today-agenda-panel">
             <TodayAgenda
               label={agendaLabel}
+              isToday={selectedDate === todayStr}
               tasks={scheduledTasks}
               entries={taskTimeEntries}
               onAdd={openAdd}
             />
             <div className="today-agenda-divider today-agenda-divider-1" aria-hidden="true" />
             <div className="today-agenda-cats">
-              <div className="section-label">{t.today.categoryStatsTitle}</div>
+              <div className="today-col-head">
+                <span className="today-col-title">{t.today.categoryStatsTitle}</span>
+              </div>
               {dayStats.length > 0 || otherDayMins > 0 ? (
                 <>
                   {dayStats.length > 0 && (
@@ -176,30 +177,33 @@ export default function TodayView() {
             </div>
             <div className="today-agenda-divider today-agenda-divider-2" aria-hidden="true" />
             <div className="today-agenda-stats">
-              <div className="stats-row">
-                <div className="stat-card">
-                  <div className="stat-label">{t.today.statDone}</div>
-                  <div className="stat-value">
+              <div className="today-col-head">
+                <span className="today-col-title">{t.today.overviewTitle}</span>
+              </div>
+              <div className="today-figures">
+                <div className="today-figure">
+                  <span className="today-figure-label">{t.today.statDone}</span>
+                  <span className="today-figure-value">
                     {doneCount}
-                    <span className="stat-value-total">/{total}</span>
-                  </div>
-                  <div className="progress-bar-wrap">
-                    <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
-                  </div>
+                    <span className="today-figure-unit">/{total}</span>
+                  </span>
+                  <span className="today-progress">
+                    <span style={{ width: `${pct}%` }} />
+                  </span>
                 </div>
-                <div className="stat-card">
-                  <div className="stat-label">{t.today.statStreak}</div>
-                  <div className="stat-value">🔥{streak}</div>
-                  <div className="stat-sub">{t.today.streakDays}</div>
+                <div className="today-figure">
+                  <span className="today-figure-label">{t.today.statStreak}</span>
+                  <span className="today-figure-value">{streak}</span>
+                  <span className="today-figure-sub">{t.today.streakDays}</span>
                 </div>
-                <div className="stat-card">
-                  <div className="stat-label">{t.today.statScheduled}</div>
-                  <div className="stat-value">{scheduled}</div>
-                  <div className="stat-sub">{t.today.scheduledToday}</div>
+                <div className="today-figure">
+                  <span className="today-figure-label">{t.today.statScheduled}</span>
+                  <span className="today-figure-value">{scheduled}</span>
+                  <span className="today-figure-sub">{t.today.scheduledToday}</span>
                 </div>
               </div>
-              <div>
-                <div className="section-label">{t.today.activityTitle}</div>
+              <div className="today-activity">
+                <span className="today-eyebrow">{t.today.activityTitle}</span>
                 <MiniHeatmap data={heatmap} />
               </div>
             </div>

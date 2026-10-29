@@ -46,7 +46,120 @@
   transform: translateX(18px);
 }
 
-/* ── Daily Greeting ── */
+/* ══ Tab Hôm nay — phong cách editorial (cùng ngôn ngữ với Kế hoạch năm / Quotes) ══
+   Nền giấy, chữ mực, Lora cho chữ đọc và con số, đường kẻ mảnh thay khung.
+   Bố cục giữ nguyên như đã chốt: măng-sét (ngày + quote | lời chào | từ vựng) →
+   lịch tháng | đồng hồ | việc cần làm → tờ "Tổng quan | danh mục | Hôm nay" →
+   dải tuần. Block task giữ màu task/danh mục. Token --td-* đặt trên .today-wrap. */
+
+.today-wrap {
+  --td-stage: #f3f1ec;
+  --td-paper: #fffefb;
+  --td-rule: #ddd7cb;
+  --td-rule-soft: #e8e3d9;
+  --td-track: #e6e1d6;
+  --td-ink: #2a2723;
+  --td-ink-2: #45413a;
+  --td-muted: #6e695f;
+  --td-seal: #a8322a;
+  --td-serif: "Lora", "Yu Mincho", Georgia, serif;
+  --td-shadow: 0 1px 0 rgba(40, 32, 20, 0.04), 0 14px 28px -22px rgba(40, 32, 20, 0.5);
+}
+
+[data-theme="dark"] .today-wrap {
+  --td-stage: #151515;
+  --td-paper: #1d1d1c;
+  --td-rule: #34322e;
+  --td-rule-soft: #262523;
+  --td-track: #2c2c2b;
+  --td-ink: #ebe7df;
+  --td-ink-2: #cfcac0;
+  --td-muted: #8f8a80;
+  --td-seal: #d76a5c;
+  --td-shadow: 0 12px 28px -22px rgba(0, 0, 0, 0.9);
+}
+
+/* ── Khung trang (một cột cuộn, header cuộn cùng nội dung) ── */
+.today-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--td-stage);
+  color: var(--td-ink);
+}
+
+.today-page {
+  width: 100%;
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 1rem 1.75rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.today-page > :not(.today-head) {
+  animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.today-page > :nth-child(2) {
+  animation-delay: 0.04s;
+}
+.today-page > :nth-child(3) {
+  animation-delay: 0.08s;
+}
+.today-page > :nth-child(4) {
+  animation-delay: 0.12s;
+}
+
+.today-eyebrow {
+  font-size: 0.69rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--td-muted);
+}
+
+/* ── Măng-sét ──
+   Hai cột bên cùng track minmax(…, 1fr) nên phần dư chia đều và lời chào (cột
+   auto ở giữa) luôn nằm chính giữa app. z-index: thẻ từ vựng mở rộng khi hover
+   phải đè lên hàng đồng hồ — mỗi khối bên dưới có animation vào trang nên là
+   một stacking context riêng, vẽ sau header trong DOM. */
+.today-head {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(16.875rem, 1fr) auto minmax(16.875rem, 1fr);
+  column-gap: 1.5rem;
+  align-items: center;
+  /* Hàng đồng hồ ngay sát dưới: giữ tờ "Hôm nay" lọt trong màn hình đầu */
+  margin-bottom: -0.75rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--td-rule);
+  animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.today-head-ear {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+/* Note từ vựng nằm tuyệt đối trong cột phải: không làm cao header. Lúc nghỉ
+   bị cắt ở đáy cột (chỉ lộ phần đầu note); hover thì bỏ cắt để note mở rộng
+   đè xuống nội dung bên dưới. */
+.today-head-vocab {
+  position: relative;
+  align-self: stretch;
+  overflow: hidden;
+}
+
+.today-head-vocab:has(.vocab-widget:hover) {
+  overflow: visible;
+}
+
+/* ── Lời chào (giữa măng-sét) ──
+   Cỡ chữ do DailyGreeting.tsx tự co (bắt đầu 40px) cho vừa một dòng. */
 .daily-greeting {
   text-align: center;
   min-width: 0;
@@ -72,178 +185,25 @@
 }
 
 .daily-greeting-main {
-  font-family: "Lora", Georgia, serif;
-  font-weight: 300;
-  font-size: 40px;
-  line-height: 1.5;
-  color: var(--greeting-color);
+  font-family: var(--td-serif);
+  font-weight: 400;
+  font-size: 2.5rem;
+  line-height: 1.4;
+  color: var(--td-ink);
   letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
 }
 
 .daily-greeting-sub {
-  font-size: 15px;
-  color: var(--text-secondary);
-  margin-top: 2px;
+  margin-top: 0.125rem;
+  font-family: var(--td-serif);
+  font-style: italic;
+  font-size: 0.94rem;
+  color: var(--td-muted);
 }
 
-/* ── Today topbar 3-column layout ──
-   The side columns grow with the available width instead of staying pinned
-   at a fixed 270px, so today-hero-quote-body gets more room and wraps less.
-   Both sides share the same minmax(270px, 1fr) track, so any extra space
-   splits evenly between them and daily-greeting (the auto-sized middle
-   column) stays perfectly centered in the app. */
-.today-topbar {
-  display: grid;
-  grid-template-columns: minmax(270px, 1fr) auto minmax(270px, 1fr);
-  column-gap: 25px;
-  align-items: center;
-  animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-}
-
-.today-topbar-side {
-  min-width: 0;
-}
-
-.today-topbar-actions {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 6px;
-  overflow: hidden;
-  margin-left: 20px;
-  position: relative;
-  align-self: stretch;
-}
-
-.today-topbar-actions:has(.vocab-widget:hover) {
-  overflow: visible;
-}
-
-/* Lift topbar above .today-content (which is painted later in DOM order) */
-.today-topbar:has(.vocab-widget:hover) {
-  position: relative;
-  z-index: 100;
-}
-
-/* Remove the scroll-container clip so note can expand below topbar */
-.main-wrap:has(.vocab-widget:hover) {
-  overflow: visible;
-}
-
-/* Note floats absolutely — does not stretch topbar row height. Height is
-   always auto (no `bottom`) rather than a fixed top+bottom box: fixing
-   both edges turns this into a flex column with a capped main-axis size,
-   and flexbox's default flex-shrink:1 then fights the card's max-height
-   growth on hover — capping the visible expansion almost immediately
-   instead of letting it play out. Auto height removes that ceiling
-   entirely (being position:absolute, it doesn't affect the topbar's own
-   layout either way). */
-.today-topbar-actions .vocab-widget-note {
-  position: absolute;
-  top: 6px;
-  left: 0;
-  right: 0;
-  margin-top: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  z-index: 10;
-  /* Wrapper spans the full column width but the card only occupies its
-     own max-width on the right — keep the empty space to its left from
-     eating hover/click (re-enabled on the actual card + label below). */
-  pointer-events: none;
-}
-
-.today-topbar-actions .vocab-widget-note .vocab-widget-label {
-  margin-bottom: 5px;
-  font-size: 0.68rem;
-  flex-shrink: 0;
-  pointer-events: auto;
-}
-
-/* On hover: raise stacking order so the expanding card paints above
-   later-DOM siblings (wrapper box stays fixed-size; ancestors already
-   flip to overflow:visible above, so the card overflows it freely). */
-.today-topbar-actions .vocab-widget-note:has(.vocab-widget:hover) {
-  z-index: 50;
-}
-
-.today-topbar-actions .vocab-widget-note .vocab-widget {
-  padding: 10px 12px 10px 14px;
-  transform: rotate(-0.5deg);
-  width: 100%;
-  max-width: 270px;
-  pointer-events: auto;
-  flex-shrink: 0;
-}
-
-.today-topbar-actions .vocab-widget-note .vocab-widget-word-row {
-  flex-direction: row;
-  align-items: baseline;
-  gap: 7px;
-}
-
-.today-topbar-actions .vocab-widget-note .vocab-widget-word {
-  font-size: 1.45rem;
-}
-
-.today-topbar-actions .vocab-widget-note .vocab-widget-ipa {
-  font-size: 1.1rem;
-}
-
-.today-topbar-actions .vocab-widget-note .vocab-widget-divider {
-  margin: 4px 0 4px;
-}
-
-.today-topbar-actions .vocab-widget-note .vocab-widget-meaning {
-  font-size: 1.15rem;
-  line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Expanded state is toggled by VocabWidget.tsx (imperative class, not
-   :hover) so the meaning un-wraps in the same synchronous step as the
-   height measurement that depends on it — see the long comment on
-   expand()/collapse() in VocabWidget.tsx for why this isn't driven by the
-   :hover pseudo-class directly. */
-.today-topbar-actions .vocab-widget-note .vocab-widget-content.vocab-widget-content-expanded .vocab-widget-meaning {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: unset;
-}
-
-.today-topbar-actions .vocab-widget-note .vocab-widget-meaning-en {
-  font-size: 0.85rem;
-}
-
-/* Baseline always shows word/IPA/divider/meaning (1 line) — never
-   collapses to nothing. `transition` is intentionally NOT declared here:
-   VocabWidget.tsx sets it inline right before each animation step (after
-   pinning the current height and forcing a reflow), which is what
-   guarantees a smooth interpolation instead of an abrupt jump. */
-.today-topbar-actions .vocab-widget-note .vocab-widget-content {
-  padding-bottom: 0;
-  overflow: hidden;
-  max-height: 6em;
-}
-
-.today-topbar-actions .vocab-note-botanical,
-.today-topbar-actions .vn-leaf-zone,
-.today-topbar-actions .vn-leaf-pile {
-  display: none;
-}
-
-.today-topbar-actions .vocab-note-pin {
-  font-size: 1.05rem;
-  top: -5px;
-  left: 0;
-}
-
-/* ── Today Hero Quote widget ── */
+/* ── Quote hôm nay (cột trái măng-sét) ── */
 @keyframes today-hero-quote-in {
   from {
     opacity: 0;
@@ -258,61 +218,66 @@
 .today-hero-quote {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: 0.5rem;
   width: 100%;
-  overflow: hidden;
-  background: transparent;
+  padding: 0;
   border: none;
-  cursor: pointer;
-  padding: 3px 7px;
-  margin: 2px -7px 0;
-  border-radius: 7px;
-  color: var(--greeting-color);
-  transition: background 0.15s;
+  background: transparent;
+  color: var(--td-ink-2);
   text-align: left;
+  cursor: pointer;
+  transition: color 0.15s;
   animation: today-hero-quote-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
 .today-hero-quote:hover {
-  background: var(--bg-hover);
+  color: var(--td-ink);
 }
 
-.today-hero-quote-icon {
+/* Dấu “ treo ở lề trái, màu son */
+.today-hero-quote-mark {
   flex-shrink: 0;
-  color: var(--greeting-color);
-  opacity: 0.45;
-  display: flex;
-  margin-top: 3px;
+  height: 1.25rem;
+  font-family: "Lora", Georgia, serif;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--td-seal);
+  user-select: none;
 }
 
 .today-hero-quote-body {
   flex: 1;
   min-width: 0;
-  line-height: 1.45;
-}
-
-.today-hero-quote-text {
-  font-family: "Lora", Georgia, serif;
-  font-size: 1.05rem;
-  font-weight: 300;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  font-family: var(--td-serif);
+  font-style: italic;
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
 .today-hero-quote-author {
-  font-family: "Lora", Georgia, serif;
-  font-size: 0.9rem;
-  font-weight: 300;
-  opacity: 0.55;
+  font-family: var(--font);
+  font-style: normal;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--td-muted);
 }
 
 .today-hero-quote-empty {
-  font-family: "Lora", Georgia, serif;
-  font-size: 0.9rem;
-  font-weight: 300;
+  font-family: var(--td-serif);
   font-style: italic;
-  opacity: 0.35;
+  font-size: 0.94rem;
+  color: var(--td-muted);
 }
 
-/* ── Vocab Widget (topbar) ── */
+/* ── Vocab Widget (dùng chung — bản note ở App.css) ── */
 @keyframes vocab-slide-in {
   from {
     opacity: 0;
@@ -385,6 +350,112 @@
   text-overflow: ellipsis;
 }
 
+
+/* ── Note từ vựng trong măng-sét (tab Hôm nay) ──
+   Giữ giấy note vàng có ghim (App.css .vocab-widget-note, dùng chung với Day
+   view tab Lịch), chỉ thu gọn cho vừa header; nhãn theo eyebrow editorial cho
+   thẳng hàng với dòng ngày bên trái.
+   Chiều cao luôn auto (không đặt `bottom`): cố định cả top+bottom biến nó thành
+   cột flex bị giới hạn, flex-shrink:1 mặc định sẽ chống lại max-height lúc mở
+   rộng và cắt animation gần như ngay lập tức. */
+.today-head-vocab .vocab-widget-note {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  z-index: 10;
+  /* Wrapper trải hết bề rộng cột nhưng note chỉ chiếm max-width bên phải —
+     phần trống bên trái không được ăn hover/click (bật lại ở note + nhãn). */
+  pointer-events: none;
+}
+
+.today-head-vocab .vocab-widget-note .vocab-widget-label {
+  flex-shrink: 0;
+  margin-bottom: 5px;
+  font-size: 0.69rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--td-muted);
+  pointer-events: auto;
+}
+
+/* Hover: nâng thứ tự vẽ để note mở rộng nằm trên các phần tử sau trong DOM */
+.today-head-vocab .vocab-widget-note:has(.vocab-widget:hover) {
+  z-index: 50;
+}
+
+.today-head-vocab .vocab-widget-note .vocab-widget {
+  padding: 10px 12px 10px 14px;
+  transform: rotate(-0.5deg);
+  width: 100%;
+  max-width: 270px;
+  pointer-events: auto;
+  flex-shrink: 0;
+}
+
+.today-head-vocab .vocab-widget-note .vocab-widget-word-row {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.today-head-vocab .vocab-widget-note .vocab-widget-word {
+  font-size: 1.45rem;
+}
+
+.today-head-vocab .vocab-widget-note .vocab-widget-ipa {
+  font-size: 1.1rem;
+}
+
+.today-head-vocab .vocab-widget-note .vocab-widget-divider {
+  margin: 4px 0 4px;
+}
+
+.today-head-vocab .vocab-widget-note .vocab-widget-meaning {
+  font-size: 1.15rem;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Class expanded do VocabWidget.tsx bật/tắt (không dùng :hover) để nghĩa bỏ
+   xuống dòng cùng nhịp với lần đo chiều cao — xem chú thích expand()/collapse()
+   trong VocabWidget.tsx. */
+.today-head-vocab .vocab-widget-note .vocab-widget-content.vocab-widget-content-expanded .vocab-widget-meaning {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.today-head-vocab .vocab-widget-note .vocab-widget-meaning-en {
+  font-size: 0.85rem;
+}
+
+/* Lúc nghỉ luôn hiện từ/IPA/gạch/nghĩa (1 dòng). Không khai báo `transition`
+   ở đây: VocabWidget.tsx đặt inline ngay trước mỗi bước animation. */
+.today-head-vocab .vocab-widget-note .vocab-widget-content {
+  padding-bottom: 0;
+  overflow: hidden;
+  max-height: 6em;
+}
+
+.today-head-vocab .vocab-note-botanical,
+.today-head-vocab .vn-leaf-zone,
+.today-head-vocab .vn-leaf-pile {
+  display: none;
+}
+
+.today-head-vocab .vocab-note-pin {
+  font-size: 1.05rem;
+  top: -5px;
+  left: 0;
+}
+
 /* ── Today tab enter animations ── */
 @keyframes today-topbar-in {
   from {
@@ -414,102 +485,113 @@
   }
 }
 
-/* ── Today layout (single scroll column) ──
-   Redesign 2026-09-27: the old 3-column grid (left sidebar / main / right
-   schedule) is gone. Everything below the topbar is one centered, vertically
-   scrolling stack: clock hero → week strip → task list → "Today | To-do"
-   glass panel → former sidebar widgets. */
-.view-content.today-content {
-  padding: 0;
-  gap: 0;
-  overflow-y: auto;
-}
 
-.today-stack {
-  width: 100%;
-  max-width: 1200px;
-  flex-shrink: 0;
-  margin: 0 auto;
-  padding: 8px 28px 36px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.today-stack > * {
-  animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-}
-.today-stack > :nth-child(1) {
-  animation-delay: 0.04s;
-}
-.today-stack > :nth-child(2) {
-  animation-delay: 0.08s;
-}
-.today-stack > :nth-child(3) {
-  animation-delay: 0.12s;
-}
-.today-stack > :nth-child(4) {
-  animation-delay: 0.16s;
-}
-.today-stack > :nth-child(5) {
-  animation-delay: 0.2s;
-}
-
-/* Frosted panel — always glass, with or without a wallpaper. Only a handful
-   of these exist on the page, so real backdrop-filter is affordable here.
-   Anything position:fixed inside (popovers, toasts) must portal out — see
-   the containing-block note in CLAUDE.md. */
+/* ── Tờ giấy (kính mờ) ──
+   Vẫn giữ backdrop-filter như trước (kính mờ khi bật hình nền); không có hình
+   nền thì là tờ giấy: nền paper, viền mảnh, bo 4px, bóng rất nhẹ.
+   Thứ gì position:fixed bên trong (popover, toast) phải portal ra ngoài — xem
+   ghi chú containing-block trong CLAUDE.md. */
 .today-glass {
-  /* background: color-mix(in srgb, var(--bg-secondary) 60%, transparent); */
-  border: 0.5px solid var(--border-1);
-  border-radius: 18px;
+  background: var(--td-paper);
+  border: 1px solid var(--td-rule);
+  border-radius: 4px;
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--td-shadow);
 }
 
 .today-panel-empty {
-  color: var(--text-secondary);
-  font-size: 0.86rem;
+  font-family: var(--td-serif);
+  font-style: italic;
+  font-size: 0.94rem;
+  color: var(--td-muted);
 }
 
-/* ── Clock hero ──
-   Dark theme: warm cream like a phone lockscreen clock (sampled from the
-   reference: digits #EAE6C8, date #F1F0DE). Light theme follows the daily
-   greeting's color instead — cream on a light panel is unreadable. */
+/* ── Đầu cột (trong các tờ giấy) ── */
+.today-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--td-rule);
+}
+
+/* line-height = chiều cao nút thêm, để đường kẻ dưới 3 đầu cột thẳng hàng */
+.today-col-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--td-ink-2);
+}
+
+.today-col-title.is-today {
+  color: var(--td-seal);
+}
+
+/* Thêm task — hành động chính của tab nên dùng màu nhấn của app */
+.today-add-btn {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--primary);
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.today-add-btn:hover {
+  opacity: 0.86;
+}
+
+/* ── Đồng hồ ──
+   Luôn là giờ thật. Theme tối giữ màu kem như ảnh mẫu lockscreen (đã chốt);
+   theme sáng theo màu mực. */
 .today-clock-hero {
-  --clock-color: var(--greeting-color);
-  --clock-date-color: var(--greeting-color);
-  --clock-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  --clock-color: var(--td-ink);
+  --clock-date-color: var(--td-ink-2);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 10px;
+  gap: 0.25rem;
+  padding-top: 0.625rem;
   user-select: none;
-}
-
-.today-clock-date {
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: var(--clock-date-color);
-  text-transform: capitalize;
-  letter-spacing: 0.3px;
-}
-
-.today-clock-time {
-  font-size: clamp(5.5rem, 12vw, 9.5rem);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  color: var(--clock-color);
-  text-shadow: var(--clock-shadow);
 }
 
 [data-theme="dark"] .today-clock-hero {
   --clock-color: #eae6c8;
   --clock-date-color: #f1f0de;
-  --clock-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.today-clock-date {
+  font-family: var(--td-serif);
+  font-style: italic;
+  font-size: 1.375rem;
+  color: var(--clock-date-color);
+}
+
+.today-clock-time {
+  font-family: var(--td-serif);
+  font-size: clamp(5.5rem, 12vw, 9.5rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--clock-color);
 }
 
 .today-clock-colon {
@@ -518,63 +600,74 @@
   transform: translateY(-0.06em);
 }
 
-/* ── Week strip ── */
+/* ── Dải tuần — kiểu sổ kế hoạch tuần in: 7 cột ngăn bằng đường kẻ dọc,
+   đầu cột là thứ (chữ hoa nhỏ) + ngày (Lora), kẻ ngang dưới đầu cột. ── */
 .today-week-strip {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 6px;
 }
 
 .tws-day {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.375rem;
   min-width: 0;
-  padding: 0 5px 10px;
-  border-radius: 12px;
+  padding: 0 0.375rem 0.625rem;
+  border-left: 1px solid var(--td-rule-soft);
   cursor: pointer;
 }
 
-/* Hover tints only the head, matching the selected-day cap. */
-.tws-day:not(.selected):hover .tws-head {
-  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+.tws-day:first-child {
+  border-left: 0;
 }
 
 .tws-day.selected {
   cursor: default;
 }
 
-/* Head spans the full column width (negative margin cancels the day's side
-   padding) so the selected-day tint reads as the column's top cap. */
+/* Đầu cột trải hết bề rộng cột (margin âm bù padding) để nền ngày đang chọn
+   thành "nắp" của cột; gạch chân mực đè lên đường kẻ chung. */
 .tws-head {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0 -5px;
-  padding: 8px 5px 6px;
-  border-radius: 12px;
+  gap: 0.125rem;
+  margin: 0 -0.375rem;
+  padding: 0.5rem 0.375rem 0.5rem;
+  border-bottom: 1px solid var(--td-rule);
   line-height: 1.15;
-  transition: background 0.15s;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+}
+
+.tws-day:not(.selected):hover .tws-head {
+  background: var(--td-rule-soft);
 }
 
 .tws-day.selected .tws-head {
-  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  background: var(--td-paper);
+  box-shadow: inset 0 -1.5px 0 var(--td-ink);
 }
 
 .tws-dow {
-  font-size: 0.79rem;
-  color: var(--text-secondary);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--td-muted);
 }
 
 .tws-num {
-  font-size: 1.14rem;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-family: var(--td-serif);
+  font-size: 1.375rem;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--td-ink);
 }
 
 .tws-day.today .tws-dow,
 .tws-day.today .tws-num {
-  color: var(--primary);
+  color: var(--td-seal);
 }
 
 .tws-blocks {
@@ -583,20 +676,19 @@
   gap: 4px;
 }
 
-/* Colored blocks use dark text, same convention as .cal-week-task-card.
-   Done blocks fade via background alpha (inline color-mix), not opacity,
-   so the check drawer stays fully visible on hover. Also used by the
-   "Today" agenda (.today-agenda-block). */
+/* Block màu dùng chữ tối, cùng quy ước với .cal-week-task-card. Block xong
+   nhạt đi bằng alpha của nền (color-mix inline), không bằng opacity, để
+   ngăn tích vẫn rõ khi hover. Khối "Hôm nay" (.today-agenda-block) dùng lại. */
 .tws-block {
   display: flex;
   align-items: stretch;
   min-width: 0;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 4px;
   color: rgba(0, 0, 0, 0.85);
 }
 
-/* Sizes match the Calendar week view card (.cal-week-task-card) */
+/* Cỡ chữ khớp thẻ task ở Week view tab Lịch (.cal-week-task-card) */
 .tws-block-body {
   flex: 1;
   min-width: 0;
@@ -607,8 +699,8 @@
   opacity: 0.6;
 }
 
-/* Hover check drawer — mini version of TaskCard's .task-drawer (Concept B):
-   collapsed at idle, slides out from the left edge on hover. */
+/* Ngăn tích khi hover — bản nhỏ của .task-drawer (Concept B) cũ: thu lại khi
+   nghỉ, trượt ra từ mép trái khi hover. */
 .tws-block-drawer {
   flex: 0 0 auto;
   width: 0;
@@ -678,7 +770,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* One line, "..." when too long — the block's title attribute shows it all. */
+/* Một dòng, "..." khi dài — title của block hiện đủ. */
 .tws-block-title {
   font-size: 0.86rem;
   font-weight: 600;
@@ -689,44 +781,46 @@
 }
 
 .tws-more {
+  font-family: var(--td-serif);
+  font-style: italic;
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: var(--td-muted);
   text-align: center;
 }
 
-/* Agenda empty state — clicking it opens the add-task modal. */
+/* Trạng thái trống của khối Hôm nay — bấm để thêm task. */
 .today-empty {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   flex: 1;
-  padding: 12px 0;
-  color: var(--text-secondary);
-  font-size: 0.86rem;
+  padding: 0.75rem 0;
+  font-family: var(--td-serif);
+  font-style: italic;
+  font-size: 0.94rem;
+  color: var(--td-muted);
   text-align: center;
   cursor: pointer;
   transition: color 0.15s;
 }
 
 .today-empty:hover {
-  color: var(--primary);
+  color: var(--td-ink);
 }
 
-/* ── "stats | time by category | Today" glass panel ──
-   The panel is as tall as the category/stats columns (min 18rem); the agenda
-   doesn't add height (height 0 + min-height 100%), its header stays put and
-   only its list scrolls. Below 1100px the category column stacks above the
-   stats; below 860px everything stacks, agenda first. */
+/* ── Tờ "Tổng quan | danh mục | Hôm nay" ──
+   Cao theo cột danh mục/tổng quan (tối thiểu 18rem); khối Hôm nay không đẩy
+   chiều cao (height 0 + min-height 100%), đầu cột đứng yên, chỉ danh sách
+   cuộn. Dưới 1100px cột danh mục xếp trên tổng quan; dưới 860px xếp dọc hết,
+   khối Hôm nay lên đầu. */
 .today-agenda-panel {
   display: grid;
   min-height: 18rem;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   grid-template-areas: "stats d1 cats d2 agenda";
-  gap: 22px;
-  padding: 18px 22px;
+  gap: 1.5rem;
+  padding: 0.75rem 1.375rem 0.875rem;
 }
 
 .today-agenda-divider-1 {
@@ -743,13 +837,13 @@
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-gutter: stable;
-  /* Gap before the scrollbar. */
+  /* Khoảng hở trước thanh cuộn. */
   padding-right: 10px;
 }
 
 .today-agenda-divider {
-  width: 0.5px;
-  background: var(--border-2);
+  width: 1px;
+  background: var(--td-rule-soft);
 }
 
 @media (max-width: 1100px) {
@@ -765,8 +859,8 @@
   }
 }
 
-/* Stacked: the columns can't share one fixed height, so the agenda list
-   gets its own cap instead. */
+/* Xếp dọc: các cột không chung một chiều cao được nữa, danh sách Hôm nay
+   có giới hạn riêng. */
 @media (max-width: 860px) {
   .today-agenda-panel {
     grid-template-columns: minmax(0, 1fr);
@@ -784,7 +878,7 @@
   }
   .today-agenda-divider {
     width: auto;
-    height: 0.5px;
+    height: 1px;
   }
   .today-agenda-list {
     max-height: 17rem;
@@ -803,7 +897,6 @@
   grid-area: stats;
   display: flex;
   flex-direction: column;
-  gap: 18px;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
@@ -813,25 +906,9 @@
   grid-area: agenda;
   display: flex;
   flex-direction: column;
-  gap: 12px;
   min-width: 0;
   height: 0;
   min-height: 100%;
-}
-
-.today-agenda-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.today-agenda-pill {
-  padding: 3px 12px;
-  border-radius: 99px;
-  background: #e5484d;
-  color: #fff;
-  font-size: 0.86rem;
-  font-weight: 600;
 }
 
 .today-agenda-list {
@@ -840,8 +917,8 @@
   gap: 6px;
 }
 
-/* .tws-block's overflow:hidden lets it squash to fit the fixed-height list —
-   keep full height so the list scrolls instead. The whole block ticks. */
+/* overflow:hidden của .tws-block cho phép nó bị bóp cho vừa danh sách cao cố
+   định — giữ nguyên chiều cao để danh sách cuộn. Bấm cả block là tích. */
 .today-agenda-block {
   flex-shrink: 0;
   cursor: pointer;
@@ -851,20 +928,208 @@
   width: 40px;
 }
 
-/* ── Hero row: side cards flanking the clock ──
-   Left = mini calendar, right = to-do checklist. Side cards are glass
-   without a border. Below ~1000px the clock takes its own row. */
+/* ── Hàng số liệu (thay 3 thẻ thống kê): không thẻ, kẻ dọc giữa các ô ── */
+.today-figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.today-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0 0.75rem;
+  border-left: 1px solid var(--td-rule);
+}
+
+.today-figure:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.today-figure-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--td-muted);
+}
+
+.today-figure-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.125rem;
+  white-space: nowrap;
+  font-family: var(--td-serif);
+  font-size: 1.5rem;
+  line-height: 1.1;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--td-ink);
+}
+
+.today-figure-unit {
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--td-muted);
+}
+
+.today-figure-sub {
+  font-family: var(--td-serif);
+  font-style: italic;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  color: var(--td-muted);
+}
+
+.today-progress {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 6rem;
+  height: 3px;
+  margin-top: 0.25rem;
+  background: var(--td-track);
+}
+
+.today-progress > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--td-seal);
+  transition: width 0.4s ease;
+}
+
+.today-activity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.875rem;
+}
+
+/* ── Thời gian theo danh mục (DayStatsSection/OtherStatsSection của tab Lịch,
+   chỉnh lại trong phạm vi tab này) ── */
+.today-agenda-cats .cal-week-stats,
+.cal-day-sidebar-extras .cal-week-stats {
+  height: auto;
+  border-top: none;
+  background: transparent;
+  padding: 0;
+}
+
+.today-agenda-cats .cal-week-stat-total-row {
+  align-items: baseline;
+  margin-bottom: 0.375rem;
+}
+
+.today-agenda-cats .cal-week-stat-total-label {
+  gap: 0.375rem;
+  font-family: var(--td-serif);
+  font-style: italic;
+  font-size: 0.88rem;
+  color: var(--td-muted);
+}
+
+.today-agenda-cats .cal-week-stat-total-val {
+  font-family: var(--td-serif);
+  font-size: 1.125rem;
+  font-weight: 400;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--td-ink);
+}
+
+.today-agenda-cats .cal-week-stat-bar {
+  height: 4px;
+  margin-bottom: 0.375rem;
+  border-radius: 1px;
+  background: var(--td-track);
+}
+
+.today-agenda-cats .cal-week-stat-bar-seg {
+  border-radius: 0;
+}
+
+.today-agenda-cats .cal-week-stat-cats {
+  gap: 0;
+}
+
+.today-agenda-cats .cal-week-stat-cat {
+  padding: 0.125rem 0;
+  border-bottom: 1px solid var(--td-rule-soft);
+}
+
+.today-agenda-cats .cal-week-stat-cat-left {
+  gap: 0.5rem;
+}
+
+.today-agenda-cats .cal-week-stat-dot {
+  width: 7px;
+  height: 7px;
+}
+
+.today-agenda-cats .cal-week-stat-cat-name {
+  font-size: 0.84rem;
+  color: var(--td-ink-2);
+}
+
+.today-agenda-cats .cal-week-stat-cat-val,
+.today-agenda-cats .other-stats-val {
+  font-family: var(--td-serif);
+  font-size: 0.94rem;
+  font-weight: 400;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--td-ink);
+}
+
+.today-agenda-cats .cal-week-stat-cat-done {
+  font-weight: 400;
+  color: var(--td-ink);
+}
+
+.today-agenda-cats .cal-week-stat-cat-sep {
+  opacity: 0.6;
+  color: var(--td-muted);
+}
+
+.today-agenda-cats .cal-week-stat-cat-sched {
+  font-style: italic;
+  color: var(--td-muted);
+}
+
+.today-agenda-cats .other-stats-section--bordered {
+  margin-top: 0.25rem;
+  padding-top: 0.25rem;
+  border-top: none;
+}
+
+.today-agenda-cats .other-stats-row {
+  gap: 0.5rem;
+  padding: 0.125rem 0;
+  border-bottom: 1px solid var(--td-rule-soft);
+  font-size: 0.84rem;
+  color: var(--td-muted);
+}
+
+.today-agenda-cats .other-stats-label {
+  font-weight: 400;
+  color: var(--td-ink-2);
+}
+
+/* ── Hàng đồng hồ: lịch tháng | đồng hồ | việc cần làm ──
+   Dưới ~1000px đồng hồ lên một hàng riêng. */
 .today-hero-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: 24px;
+  gap: 1.5rem;
   align-items: center;
 }
 
 .today-hero-side {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 0.875rem;
   min-width: 0;
 }
 
@@ -889,90 +1154,33 @@
 
 .today-side-card {
   min-width: 0;
-  padding: 14px 16px;
-  border: none;
+  padding: 1rem 1.125rem 0.875rem;
 }
 
-/* Capped about as tall as the old stats + heatmap pair; the list scrolls
-   (.today-todo-items) under a fixed header. */
+/* Cao cỡ cặp số liệu + heatmap cũ; danh sách (.today-todo-items) cuộn dưới
+   đầu cột đứng yên. */
 .today-hero-right .today-todo {
   max-height: 17rem;
 }
 
-/* One-line hint above the to-do card: what the list is for. */
+/* Một dòng nhắc phía trên thẻ việc cần làm: danh sách dùng để làm gì. */
 .today-todo-purpose {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
-  margin-bottom: -6px;
-  padding: 0 4px;
-  font-size: 0.79rem;
-  line-height: 1.35;
-  color: var(--text-secondary);
+  gap: 0.5rem;
+  margin-bottom: -0.375rem;
+  padding: 0 0.25rem;
+  font-family: var(--td-serif);
+  font-style: italic;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--td-muted);
 }
 
 .today-todo-purpose svg {
   flex-shrink: 0;
-  margin-top: 0.05em;
-}
-
-/* The day grid only needs ~26px per cell — keep it compact and centered
-   instead of stretching across the whole side card. */
-.today-hero-left .mini-calendar {
-  max-width: 280px;
-  margin: 0 auto;
-}
-
-.today-agenda-stats .stats-row {
-  gap: 8px;
-}
-
-.today-agenda-stats .stat-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 0;
-  padding: 10px;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--bg-primary) 55%, transparent);
-}
-
-.today-agenda-stats .stat-label {
-  font-size: 0.72rem;
-  letter-spacing: 0;
-  line-height: 1.25;
-  text-align: center;
-}
-
-.today-agenda-stats .stat-value {
-  font-size: 1.57rem;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.stat-value-total {
-  font-size: 1.1rem;
-  font-weight: 400;
-  color: var(--text-secondary);
-}
-
-.today-agenda-stats .stat-sub {
-  font-size: 0.7rem;
-  line-height: 1.3;
-  text-align: center;
-}
-
-.today-agenda-stats .progress-bar-wrap {
-  width: 100%;
-  margin-top: auto;
-}
-
-.today-agenda-cats .cal-week-stats,
-.cal-day-sidebar-extras .cal-week-stats {
-  height: auto;
-  border-top: none;
-  background: transparent;
-  padding: 0;
+  margin-top: 0.15em;
+  color: var(--td-seal);
 }
 
 /* Check pop — used by the check drawer (.tws-block-drawer) and the to-do
@@ -989,12 +1197,13 @@
   }
 }
 
-/* ── Add task row ── */
-/* ── To-do checklist (week-scoped items, inside the Today glass panel) ── */
+
+/* ── Việc cần làm (mục theo tuần, tờ giấy bên phải đồng hồ) ──
+   Đầu cột: nhãn + khoảng ngày + số đã xong + nút thêm tròn; các dòng ngăn
+   hairline, chữ Lora. */
 .today-todo {
   display: flex;
   flex-direction: column;
-  gap: 12px;
   min-width: 0;
   min-height: 0;
 }
@@ -1002,90 +1211,65 @@
 .today-todo-header {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  min-height: 1.6rem;
+  gap: 0.625rem;
+  flex-shrink: 0;
+  min-width: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--td-rule);
 }
 
 .today-todo-title {
-  font-size: 1.07rem;
+  flex-shrink: 0;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: var(--text-primary);
-}
-
-.today-todo-range,
-.today-todo-stats {
-  font-size: 0.79rem;
-  color: var(--text-secondary);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--td-ink-2);
 }
 
 /* "25–31 thg 10" không được tách giữa "thg" và số tháng */
 .today-todo-range {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  font-family: var(--td-serif);
+  font-style: italic;
+  font-size: 0.84rem;
+  color: var(--td-muted);
 }
 
-.today-todo-add-btn {
+.today-todo-stats {
   margin-left: auto;
-  align-self: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-
-.today-todo-add-btn:hover {
-  background: color-mix(in srgb, var(--primary) 14%, transparent);
-  color: var(--primary);
-}
-
-/* Icon + text pill variant (Việc cần làm header) */
-.today-todo-add-btn.labeled {
-  width: auto;
-  height: 26px;
-  padding: 0 10px 0 8px;
-  gap: 4px;
   flex-shrink: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
-  color: var(--primary);
-  font-size: 0.79rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.today-todo-add-btn.labeled:hover {
-  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  font-family: var(--td-serif);
+  font-size: 0.94rem;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--td-ink-2);
 }
 
 .today-todo-items {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
 .today-todo-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 26px;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  min-height: 1.875rem;
+  padding: 0.125rem 0;
+  border-bottom: 1px solid var(--td-rule-soft);
 }
 
 .today-todo-check {
-  width: 18px;
-  height: 18px;
+  width: 1rem;
+  height: 1rem;
   padding: 0;
   flex-shrink: 0;
-  border: 1.5px solid var(--text-secondary);
-  border-radius: 5px;
+  border: 1px solid var(--td-muted);
+  border-radius: 2px;
   background: transparent;
   color: transparent;
   display: flex;
@@ -1099,15 +1283,15 @@
 }
 
 .today-todo-check:hover {
-  border-color: var(--primary);
-  color: color-mix(in srgb, var(--primary) 60%, transparent);
+  border-color: var(--td-ink);
+  color: color-mix(in srgb, var(--td-ink) 45%, transparent);
 }
 
 .today-todo-item.done .today-todo-check,
 .today-todo-item.completing .today-todo-check {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
+  background: var(--td-ink-2);
+  border-color: var(--td-ink-2);
+  color: var(--td-paper);
 }
 
 .today-todo-item.completing .today-todo-check {
@@ -1117,8 +1301,9 @@
 .today-todo-text {
   flex: 1;
   min-width: 0;
-  font-size: 0.93rem;
-  color: var(--text-primary);
+  font-family: var(--td-serif);
+  font-size: 0.98rem;
+  color: var(--td-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1129,21 +1314,22 @@
 .today-todo-item.done .today-todo-text,
 .today-todo-item.completing .today-todo-text {
   text-decoration: line-through;
-  color: var(--text-secondary);
+  color: var(--td-muted);
 }
 
 .today-todo-del {
-  padding: 3px;
+  padding: 4px;
   border: none;
-  border-radius: 6px;
+  border-radius: 50%;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--td-muted);
   display: flex;
   cursor: pointer;
   opacity: 0;
   transition:
     opacity 0.15s,
-    background 0.15s;
+    background 0.15s,
+    color 0.15s;
 }
 
 .today-todo-item:hover .today-todo-del {
@@ -1151,8 +1337,8 @@
 }
 
 .today-todo-del:hover {
-  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
-  color: var(--text-primary);
+  background: color-mix(in srgb, var(--td-seal) 12%, transparent);
+  color: var(--td-seal);
 }
 
 .today-todo-input {
@@ -1160,20 +1346,56 @@
   min-width: 0;
   padding: 1px 0;
   border: none;
-  border-bottom: 1px solid var(--primary);
+  border-bottom: 1px solid var(--td-ink-2);
   background: transparent;
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 0.93rem;
+  color: var(--td-ink);
+  font-family: var(--td-serif);
+  font-size: 0.98rem;
   outline: none;
 }
 
+.today-todo-input::placeholder {
+  font-style: italic;
+  color: var(--td-muted);
+}
+
 .today-todo-empty {
+  padding: 0.75rem 0;
   cursor: pointer;
 }
 
 .today-todo-empty:hover {
-  color: var(--primary);
+  color: var(--td-ink);
+}
+
+.today-todo-add {
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--td-rule);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--td-ink-2);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.today-todo-stats ~ .today-todo-add {
+  margin-left: 0;
+}
+
+.today-todo-add:hover {
+  background: var(--td-rule-soft);
+  border-color: var(--td-muted);
+  color: var(--td-ink);
 }
 
 /* Falling-leaf keyframes — originally for the old Week Plan note, still used
@@ -1632,11 +1854,13 @@
   color: var(--primary);
 }
 
-/* ── Mini Heatmap (Today sidebar) ── */
+/* ── Mini Heatmap (cột Tổng quan, tab Hôm nay) ──
+   Ô vẫn theo màu nhấn, thang nhạt → đậm ở cả hai theme (đã chốt); ô trống
+   là --td-track (truyền vào getHeatmapColors trong MiniHeatmap.tsx). */
 .mini-heatmap-months {
   display: flex;
   flex-wrap: nowrap;
-  gap: 8px;
+  gap: 0.75rem;
   overflow-x: auto;
 }
 
@@ -1648,9 +1872,10 @@
 }
 
 .mini-heatmap-month-label {
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-family: var(--td-serif);
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--td-muted);
 }
 
 .mini-heatmap-month-grid {
@@ -1676,7 +1901,24 @@
   opacity: 0.8;
 }
 
-/* ── Mini Calendar (Today sidebar) ── */
+.mini-heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0.375rem;
+  font-family: var(--td-serif);
+  font-style: italic;
+  font-size: 0.72rem;
+  color: var(--td-muted);
+}
+
+.mini-heatmap-legend-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* ── Mini Calendar (dùng chung: tab Hôm nay + Day view tab Lịch) ── */
 .mini-calendar {
   width: 100%;
 }
@@ -1792,4 +2034,101 @@
 
 .mini-cal-day.sunday.selected {
   color: #fff;
+}
+
+/* ── Mini Calendar trong tab Hôm nay — kiểu lịch in ──
+   MiniCalendar dùng chung với tab Lịch nên chỉ chỉnh trong .today-hero-left,
+   đặt sau các rule gốc ở trên. Chủ nhật màu son như lịch giấy; hôm nay = vòng
+   son, ngày đang chọn = nền mực. */
+.today-hero-left .mini-calendar {
+  max-width: 17.5rem;
+  margin: 0 auto;
+}
+
+.today-hero-left .mini-cal-header {
+  margin-bottom: 0.625rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--td-rule);
+}
+
+.today-hero-left .mini-cal-month {
+  font-family: var(--td-serif);
+  font-size: 1.06rem;
+  font-weight: 400;
+  color: var(--td-ink);
+}
+
+.today-hero-left .mini-cal-nav {
+  width: 1.625rem;
+  height: 1.625rem;
+  border: 1px solid var(--td-rule);
+  border-radius: 50%;
+  color: var(--td-ink-2);
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.today-hero-left .mini-cal-nav:hover {
+  background: var(--td-rule-soft);
+  border-color: var(--td-muted);
+  color: var(--td-ink);
+}
+
+.today-hero-left .mini-cal-dow {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--td-muted);
+}
+
+.today-hero-left .mini-cal-day {
+  border: 1px solid transparent;
+  font-family: var(--td-serif);
+  font-size: 0.84rem;
+  font-weight: 400;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--td-ink-2);
+}
+
+.today-hero-left .mini-cal-day:hover:not(.selected) {
+  background: var(--td-rule-soft);
+}
+
+.today-hero-left .mini-cal-day.sunday {
+  color: var(--td-seal);
+}
+
+.today-hero-left .mini-cal-day.other-month {
+  color: var(--td-muted);
+  opacity: 0.5;
+}
+
+.today-hero-left .mini-cal-day.sunday.other-month {
+  color: var(--td-seal);
+}
+
+.today-hero-left .mini-cal-day.today {
+  border-color: var(--td-seal);
+  color: var(--td-seal);
+  font-weight: 400;
+}
+
+.today-hero-left .mini-cal-day.selected {
+  background: var(--td-ink);
+  border-color: var(--td-ink);
+  color: var(--td-paper);
+  font-weight: 400;
+}
+
+/* ── Glass mode (có hình nền) ──
+   Nền tab trong suốt; tờ giấy trở lại kính mờ không nền như trước. */
+html.has-bg-image .today-wrap,
+html.has-bg-image .today-glass {
+  background: transparent;
+}
+
+html.has-bg-image .tws-day.selected .tws-head {
+  background: var(--bg-glass-panel);
 }

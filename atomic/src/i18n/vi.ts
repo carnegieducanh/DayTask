@@ -188,6 +188,7 @@ export const vi = {
     backToToday: "Hôm nay",
     heroDate: (dow: string, day: number, month: number) => `${dow} ${day}/${month}`,
     categoryStatsTitle: "Thời gian theo danh mục",
+    overviewTitle: "Tổng quan",
     weekMore: (n: number) => `+${n} task`,
   },
   taskCard: {

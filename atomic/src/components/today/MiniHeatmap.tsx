@@ -11,7 +11,7 @@ function level(n: number) { return n === 0 ? 0 : n <= 2 ? 1 : n <= 4 ? 2 : n <= 
 export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
   const t = useT();
   const { theme, language, accentColor, customAccentColor } = useAppStore();
-  const COLORS = getHeatmapColors(accentColor, theme, 'var(--border-2)', customAccentColor);
+  const COLORS = getHeatmapColors(accentColor, theme, 'var(--td-track)', customAccentColor);
 
   const map = useMemo(
     () => Object.fromEntries(data.map((d) => [d.date, d.count])),
@@ -75,9 +75,9 @@ export default function MiniHeatmap({ data }: { data: DayActivity[] }) {
       </div>
 
       {/* Legend */}
-      <div className="heatmap-legend" style={{ marginTop: 6, fontSize: 10 }}>
+      <div className="mini-heatmap-legend">
         <span>{t.heatmap.legendLess}</span>
-        {COLORS.map((c, i) => <div key={i} className="hm-legend-cell" style={{ background: c }} />)}
+        {COLORS.map((c, i) => <div key={i} className="mini-heatmap-legend-cell" style={{ background: c }} />)}
         <span>{t.heatmap.legendMore}</span>
       </div>
     </div>

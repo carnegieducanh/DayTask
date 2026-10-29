@@ -190,6 +190,7 @@ export const en: typeof vi = {
     backToToday: "Today",
     heroDate: (dow: string, day: number, month: number) => `${dow}, ${month}/${day}`,
     categoryStatsTitle: "Time by category",
+    overviewTitle: "Overview",
     weekMore: (n: number) => `+${n} more`,
   },
   taskCard: {
