@@ -268,7 +268,7 @@ export default function AddGoalModal({
   const items = editGoal ? (checklistItems[editGoal.id] ?? []) : [];
   const doneCount = items.filter(i => localDoneMap[i.id] ?? !!i.is_done).length;
 
-  return (
+  return createPortal(
     <div
       className="modal-overlay"
       {...overlayHandlers}
@@ -584,6 +584,7 @@ export default function AddGoalModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -2,10 +2,11 @@
    Tab Sách — phong cách editorial ("Biên niên": kệ sách theo năm, xem skill
    editorial-ui-style). Cột lọc trái, header Lora + mục tiêu đọc dạng con số,
    đầu năm kẻ đôi, bìa sách 3D giữ nguyên (khối .books-card-cover ở dưới).
-   Token --bk-* đặt trên .bk-wrap; modal chi tiết render bên trong wrapper.
+   Token --bk-* đặt trên .bk-wrap và .bk-detail (modal chi tiết portal ra body).
    Modal thêm/sửa (.books-modal-*) giữ kiểu chung của app — dùng chung với Dự án.
    ═══════════════════════════════════════════════════════════════════════════ */
-.bk-wrap {
+.bk-wrap,
+.bk-detail {
   --bk-stage: #f3f1ec;
   --bk-paper: #fffefb;
   --bk-rule: #ddd7cb;
@@ -22,7 +23,8 @@
   --bk-shadow-pop: 0 10px 28px -8px rgba(40, 32, 20, 0.28);
 }
 
-[data-theme="dark"] .bk-wrap {
+[data-theme="dark"] .bk-wrap,
+[data-theme="dark"] .bk-detail {
   --bk-stage: #151515;
   --bk-paper: #1d1d1c;
   --bk-rule: #34322e;
@@ -38,10 +40,12 @@
 }
 
 /* Trạng thái: đã đọc = xanh, đang đọc = đồng, muốn đọc = chấm rỗng */
-.bk-wrap .status-finished {
+.bk-wrap .status-finished,
+.bk-detail .status-finished {
   --bk-status-color: var(--bk-up);
 }
-.bk-wrap .status-reading {
+.bk-wrap .status-reading,
+.bk-detail .status-reading {
   --bk-status-color: var(--bk-brass);
 }
 
@@ -780,9 +784,9 @@
   background: var(--bk-paper);
   border: 1px solid var(--bk-rule);
   border-radius: 6px;
-  box-shadow: 0 24px 60px -20px rgba(20, 16, 10, 0.5);
+  box-shadow: var(--modal-shadow);
   color: var(--bk-ink);
-  animation: today-main-in 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  animation: modal-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .bk-detail-close {
@@ -1259,10 +1263,10 @@ html.has-bg-image .bk-rail-item.active {
 
 /* ═══ Modal thêm/sửa sách — kiểu modal chung của app (dùng chung với tab Dự án) ═══ */
 /* ── Add/Edit Book Modal ── */
+/* Màn tối + làm mờ (::before) dùng chung với .modal-overlay — xem App.css */
 .books-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1271,18 +1275,18 @@ html.has-bg-image .bk-rail-item.active {
 }
 
 .books-modal {
-  background: var(--bg-glass);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 0.5px solid var(--border-1);
+  background: var(--modal-surface);
+  backdrop-filter: var(--modal-backdrop);
+  -webkit-backdrop-filter: var(--modal-backdrop);
+  border: 1px solid var(--modal-edge);
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 640px;
   max-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
-  animation: today-main-in 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  box-shadow: var(--modal-shadow);
+  animation: modal-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .books-modal-header {

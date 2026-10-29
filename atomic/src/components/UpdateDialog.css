@@ -6,19 +6,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
-  animation: overlay-fade-in 0.16s ease;
+  /* Màn tối + làm mờ (::before) dùng chung với .modal-overlay — xem App.css */
 }
 .update-dialog {
-  background: var(--bg-glass);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--border-1);
+  background: var(--modal-surface);
+  backdrop-filter: var(--modal-backdrop);
+  -webkit-backdrop-filter: var(--modal-backdrop);
+  border: 1px solid var(--modal-edge);
   border-radius: var(--radius-lg);
   padding: 24px;
   width: 340px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-  animation: modal-in 0.16s ease;
+  box-shadow: var(--modal-shadow);
+  animation: modal-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .update-dialog-header {
   display: flex;

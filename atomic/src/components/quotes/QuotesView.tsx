@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import './quotes.css';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import ResizableTextarea from '../ResizableTextarea';
@@ -160,7 +161,7 @@ function AddQuoteModal({ onSave, onClose, initialQuote, onTagDeleted }: AddQuote
 
   const filteredTags = allTags.filter((t) => !tagSearch || t.toLowerCase().includes(tagSearch.toLowerCase()));
 
-  return (
+  return createPortal(
     <div className="quotes-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown}>
       <div className="quotes-modal">
         <div className="quotes-modal-header">
@@ -345,7 +346,8 @@ function AddQuoteModal({ onSave, onClose, initialQuote, onTagDeleted }: AddQuote
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

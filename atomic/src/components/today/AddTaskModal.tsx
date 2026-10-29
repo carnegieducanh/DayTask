@@ -490,7 +490,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
     }
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" {...overlayHandlers}>
       <div className="modal">
         <div className="modal-title">{editTask ? t.taskModal.editTitle : t.taskModal.addTitle}</div>
@@ -885,6 +885,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

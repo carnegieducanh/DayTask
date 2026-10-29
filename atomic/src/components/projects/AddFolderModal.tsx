@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { IconX, IconCameraPlus, IconArrowsMove } from '@tabler/icons-react';
 import type { ProjectFolder, ProjectCategory } from '../../types';
 import { useT } from '../../i18n';
@@ -127,7 +128,7 @@ export default function AddFolderModal({ category, onSave, onClose, initialFolde
     }
   }
 
-  return (
+  return createPortal(
     <div className="books-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown} onPaste={handlePaste}>
       <div className="books-modal projects-folder-modal">
         <div className="books-modal-header">
@@ -213,6 +214,7 @@ export default function AddFolderModal({ category, onSave, onClose, initialFolde
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -663,10 +663,10 @@ html.has-bg-image .quotes-mode-menu {
 }
 
 /* ── Add Quote Modal ── */
+/* Màn tối + làm mờ (::before) dùng chung với .modal-overlay — xem App.css */
 .quotes-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -675,17 +675,17 @@ html.has-bg-image .quotes-mode-menu {
 }
 
 .quotes-modal {
-  background: var(--bg-glass);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 0.5px solid var(--border-1);
+  background: var(--modal-surface);
+  backdrop-filter: var(--modal-backdrop);
+  -webkit-backdrop-filter: var(--modal-backdrop);
+  border: 1px solid var(--modal-edge);
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 480px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
-  animation: today-main-in 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  box-shadow: var(--modal-shadow);
+  animation: modal-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .quotes-modal-header {

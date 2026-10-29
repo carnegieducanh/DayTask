@@ -2,10 +2,11 @@
    Tab Dự án — phong cách editorial (danh mục có bìa, xem skill editorial-ui-style).
    Dải chuyên mục kẻ mảnh ở trên, cột lọc trái, trang chính: header Lora + hàng tab
    gạch chân + lưới bìa không khung. Bìa folder/dự án giữ nguyên ảnh.
-   Token --pj-* đặt trên .pj-wrap; modal chi tiết render bên trong wrapper (không
-   portal) nên vẫn nhận token.
+   Token --pj-* đặt trên .pj-wrap và .pj-detail (modal chi tiết portal ra body,
+   nằm ngoài wrapper).
    ═══════════════════════════════════════════════════════════════════════════ */
-.pj-wrap {
+.pj-wrap,
+.pj-detail {
   --pj-stage: #f3f1ec;
   --pj-paper: #fffefb;
   --pj-rule: #ddd7cb;
@@ -27,7 +28,8 @@
   --pj-done: var(--pj-up);
 }
 
-[data-theme="dark"] .pj-wrap {
+[data-theme="dark"] .pj-wrap,
+[data-theme="dark"] .pj-detail {
   --pj-stage: #151515;
   --pj-paper: #1d1d1c;
   --pj-rule: #34322e;
@@ -44,10 +46,12 @@
   --pj-frame: rgba(255, 255, 255, 0.08);
 }
 
-.pj-wrap .status-in_progress {
+.pj-wrap .status-in_progress,
+.pj-detail .status-in_progress {
   --pj-status-color: var(--pj-doing);
 }
-.pj-wrap .status-completed {
+.pj-wrap .status-completed,
+.pj-detail .status-completed {
   --pj-status-color: var(--pj-done);
 }
 
@@ -936,9 +940,9 @@
   background: var(--pj-paper);
   border: 1px solid var(--pj-rule);
   border-radius: 6px;
-  box-shadow: 0 24px 60px -20px rgba(20, 16, 10, 0.5);
+  box-shadow: var(--modal-shadow);
   color: var(--pj-ink);
-  animation: today-main-in 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  animation: modal-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .pj-detail-close {

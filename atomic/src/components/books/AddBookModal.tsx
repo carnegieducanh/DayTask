@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { useSmoothScroll, attachSmoothScroll } from '../../hooks/useSmoothScroll';
 import ResizableTextarea from '../ResizableTextarea';
@@ -213,7 +214,7 @@ export default function AddBookModal({ onSave, onClose, initialBook, onTagDelete
 
   const filteredTags = allTags.filter((tg) => !tagSearch || tg.toLowerCase().includes(tagSearch.toLowerCase()));
 
-  return (
+  return createPortal(
     <div className="books-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown}>
       <div className="books-modal">
         <div className="books-modal-header">
@@ -487,6 +488,7 @@ export default function AddBookModal({ onSave, onClose, initialBook, onTagDelete
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

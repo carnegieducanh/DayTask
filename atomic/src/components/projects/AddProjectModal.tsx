@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { useSmoothScroll, attachSmoothScroll } from '../../hooks/useSmoothScroll';
 import ResizableTextarea from '../ResizableTextarea';
@@ -267,7 +268,7 @@ export default function AddProjectModal({ category, onSave, onClose, initialProj
 
   const filteredFolders = allFolders.filter((f) => !folderSearch || f.toLowerCase().includes(folderSearch.toLowerCase()));
 
-  return (
+  return createPortal(
     <div className="books-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown} onPaste={handlePaste}>
       <div className="books-modal">
         <div className="books-modal-header">
@@ -572,6 +573,7 @@ export default function AddProjectModal({ category, onSave, onClose, initialProj
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

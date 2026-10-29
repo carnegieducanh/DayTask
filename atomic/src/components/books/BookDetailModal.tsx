@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   IconX,
   IconBooks,
@@ -84,7 +85,7 @@ export default function BookDetailModal({ book, onClose, onEdit, onDelete, onSta
     }
   }
 
-  return (
+  return createPortal(
     <div
       className="books-modal-overlay"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -202,6 +203,7 @@ export default function BookDetailModal({ book, onClose, onEdit, onDelete, onSta
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -317,16 +317,60 @@ select {
   color: rgba(0, 0, 0, 0.72);
 }
 
-/* ── Modal overlay ── */
+/* ── Modal overlay ──
+   Lớp phủ chung cho mọi modal (.modal-overlay, .books-modal-overlay,
+   .quotes-modal-overlay, .update-overlay — mỗi class giữ z-index riêng).
+   Modal phải render qua createPortal(document.body): .main-wrap có
+   backdrop-filter ở glass mode → thành containing block của position:fixed,
+   overlay bên trong chỉ phủ vùng nội dung, chừa thanh nav sáng nguyên.
+   Màn tối + làm mờ nằm ở ::before chứ không ở chính overlay: phần tử có
+   backdrop-filter (hoặc opacity < 1 khi đang fade) thành "backdrop root",
+   backdrop-filter của .modal bên trong chỉ còn thấy màu phủ chứ không thấy
+   trang phía sau. ::before tự fade nên overlay không bao giờ có opacity < 1. */
+:root {
+  --modal-scrim: rgba(28, 22, 14, 0.42);
+  --modal-scrim-blur: 6px;
+  /* saturate thấp: 180% cũ đẩy màu bìa/thẻ phía sau thành vệt loang trên modal */
+  --modal-backdrop: blur(28px) saturate(110%);
+  --modal-surface: rgba(255, 255, 255, 0.94);
+  --modal-edge: rgba(40, 32, 20, 0.1);
+  --modal-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 2px 6px rgba(20, 16, 10, 0.06),
+    0 32px 72px -20px rgba(20, 16, 10, 0.42);
+}
+
+[data-theme="dark"] {
+  --modal-scrim: rgba(5, 5, 4, 0.62);
+  --modal-surface: rgba(28, 28, 27, 0.9);
+  --modal-edge: rgba(255, 255, 255, 0.09);
+  --modal-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    0 32px 80px -16px rgba(0, 0, 0, 0.8);
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
-  animation: overlay-fade-in 0.16s ease;
+}
+
+.modal-overlay::before,
+.books-modal-overlay::before,
+.quotes-modal-overlay::before,
+.update-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--modal-scrim);
+  backdrop-filter: blur(var(--modal-scrim-blur)) saturate(120%);
+  -webkit-backdrop-filter: blur(var(--modal-scrim-blur)) saturate(120%);
+  animation: overlay-fade-in 0.28s ease both;
 }
 
 @keyframes overlay-fade-in {
@@ -341,7 +385,7 @@ select {
 @keyframes modal-in {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.97);
+    transform: translateY(14px) scale(0.98);
   }
   to {
     opacity: 1;
@@ -350,16 +394,17 @@ select {
 }
 
 .modal {
-  background: var(--bg-glass);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 0.5px solid var(--border-1);
+  background: var(--modal-surface);
+  backdrop-filter: var(--modal-backdrop);
+  -webkit-backdrop-filter: var(--modal-backdrop);
+  border: 1px solid var(--modal-edge);
   border-radius: var(--radius-lg);
+  box-shadow: var(--modal-shadow);
   width: 440px;
   max-height: 90vh;
   overflow-y: auto;
   padding: 20px 24px;
-  animation: modal-in 0.16s ease;
+  animation: modal-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .modal-title {
@@ -1096,9 +1141,9 @@ select {
    Fixed wallpaper layer sits behind .app-shell. When active (html.has-bg-image),
    the outer canvas (.sidebar, .main-wrap) gets real blur. Panels use
    --bg-glass-panel(-2), a higher-opacity sibling of --bg-glass: unlike .modal
-   (which sits on top of .modal-overlay's dark scrim), these panels sit directly
-   over the raw photo with nothing pre-darkening it, so the lower 72% alpha used
-   by .modal isn't enough to keep text legible over bright/busy wallpaper areas.
+   (which sits on top of .modal-overlay's dark, blurred scrim), these panels sit
+   directly over the raw photo with nothing pre-darkening it, so a low alpha like
+   --bg-glass's 72% isn't enough to keep text legible over bright/busy wallpaper.
    Everything nested inside just gets a cheap translucent tint (no extra
    backdrop-filter) so we don't stack GPU blur across dozens of cards/cells.
    --bg-glass-panel-alpha / --bg-glass-blur / --bg-glass-saturate (defined in

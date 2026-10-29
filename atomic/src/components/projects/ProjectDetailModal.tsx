@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { IconX, IconChevronDown, IconCheck, IconTrash, IconPencil } from '@tabler/icons-react';
 import type { Project, ProjectStatus } from '../../types';
 import { useT } from '../../i18n';
@@ -65,7 +66,7 @@ export default function ProjectDetailModal({ project, onClose, onEdit, onDelete,
     ? t.projects.inProgressSince(formatISODate(project.start_date))
     : null;
 
-  return (
+  return createPortal(
     <div className="books-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown}>
       <div className="pj-detail">
         <button ref={closeRef} className="pj-detail-close" onClick={onClose}>
@@ -160,6 +161,7 @@ export default function ProjectDetailModal({ project, onClose, onEdit, onDelete,
           <button className="pj-btn-primary" onClick={onClose}>{t.projects.done}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
