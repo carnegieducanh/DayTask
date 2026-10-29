@@ -12,7 +12,6 @@
   --yp-seal: #a8322a;
   --yp-ink: #2a2723;
   --yp-ink-2: #45413a;
-  --yp-on-ink: #fffefb;
   --yp-muted: #6e695f;
   --yp-serif: "Lora", "Yu Mincho", Georgia, serif;
   --yp-card-shadow: 0 1px 0 rgba(40, 32, 20, 0.05), 0 10px 22px -18px rgba(40, 32, 20, 0.55);
@@ -27,7 +26,6 @@
   --yp-seal: #d76a5c;
   --yp-ink: #ebe7df;
   --yp-ink-2: #cfcac0;
-  --yp-on-ink: #1d1d1c;
   --yp-muted: #8f8a80;
   --yp-card-shadow: 0 12px 24px -18px rgba(0, 0, 0, 0.9);
 }
@@ -142,10 +140,10 @@
   gap: 8px;
   height: 38px;
   padding: 0 18px 0 14px;
-  border: 1px solid var(--yp-ink);
+  border: 1px solid var(--primary);
   border-radius: 4px;
-  background: var(--yp-ink);
-  color: var(--yp-on-ink);
+  background: var(--primary);
+  color: #fff;
   font-family: var(--font);
   font-size: 0.84rem;
   font-weight: 600;
@@ -398,14 +396,12 @@
   min-height: 20px;
 }
 
+/* Nhãn danh mục: giao diện lấy từ .tag dùng chung (App.css) để giống nhãn ở Calendar;
+   ở đây chỉ lo bố cục. line-height: 1 giống Day view để pill không cao quá. */
 .goal-cat {
-  flex: 1;
   min-width: 0;
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.6);
+  margin-right: auto;
+  line-height: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

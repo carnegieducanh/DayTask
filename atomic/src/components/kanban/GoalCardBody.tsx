@@ -29,7 +29,7 @@ export default function GoalCardBody({ goal, actions }: Props) {
   return (
     <>
       <div className="goal-card-top">
-        <span className="goal-cat">{t.cat[goal.category]}</span>
+        <span className="tag goal-cat">{t.cat[goal.category]}</span>
         {actions}
         {goal.status === "done" && (
           <span className="goal-seal" title={t.kanban.completed} aria-label={t.kanban.completed}>
