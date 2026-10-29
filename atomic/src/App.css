@@ -1128,11 +1128,7 @@ html.has-bg-image .sidebar {
 }
 
 html.has-bg-image .journal-sidebar,
-html.has-bg-image .books-sidebar,
-html.has-bg-image .stat-card,
-html.has-bg-image .books-goal-card,
-html.has-bg-image .books-search-input,
-html.has-bg-image .books-sort-select {
+html.has-bg-image .stat-card {
   background: var(--bg-glass-panel-2) !important;
 }
 

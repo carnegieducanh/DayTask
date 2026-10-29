@@ -3,17 +3,11 @@ import './books.css';
 import { format } from 'date-fns';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import {
-  IconBooks,
-  IconBook2,
-  IconBookmark,
-  IconStack2,
   IconPlus,
   IconPencil,
   IconX,
   IconCheck,
-  IconCircleCheck,
   IconSearch,
-  IconTarget,
   IconTrophy,
 } from '@tabler/icons-react';
 import type { Book, BookStatus, NewBook } from '../../types';
@@ -345,49 +339,63 @@ export default function BooksView() {
     ? t.books.emptyWantToRead
     : t.books.emptyAll;
 
+  // Eyebrow = bối cảnh đang xem: thể loại (hoặc nhóm thư viện) · năm
+  const eyebrowText = [
+    tagFilter ?? {
+      all: t.books.library,
+      finished: t.books.filterFinished,
+      reading: t.books.filterReading,
+      want_to_read: t.books.filterWantToRead,
+    }[libraryFilter],
+    yearFilter !== null ? String(yearFilter) : null,
+  ].filter(Boolean).join(' · ');
+
+  const libraryItems: { id: LibraryFilter; label: string; count: number }[] = [
+    { id: 'all', label: t.books.filterAll, count: stats.total },
+    { id: 'finished', label: t.books.filterFinished, count: stats.finished },
+    { id: 'reading', label: t.books.filterReading, count: stats.reading },
+    { id: 'want_to_read', label: t.books.filterWantToRead, count: stats.wantToRead },
+  ];
+
+  function renderShelf(list: Book[]) {
+    return (
+      <div className="bk-shelf">
+        {list.map((book) => (
+          <BookCard
+            key={book.id}
+            book={book}
+            onView={() => setViewingBook(book)}
+            onEdit={() => setEditingBook(book)}
+            onDelete={() => handleDelete(book)}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="books-wrap">
-      {/* ── Sidebar ── */}
-      <div ref={sidebarRef} className="books-sidebar">
-        <div className="books-sb-section">
-          <div className="books-sb-label">{t.books.library}</div>
-          <button
-            className={`books-sb-item${libraryFilter === 'all' ? ' active' : ''}`}
-            onClick={() => handleLibraryFilter('all')}
-          >
-            <IconStack2 size={14} />
-            {t.books.filterAll}
-            <span className="books-sb-count">{stats.total}</span>
-          </button>
-          <button
-            className={`books-sb-item${libraryFilter === 'finished' ? ' active' : ''}`}
-            onClick={() => handleLibraryFilter('finished')}
-          >
-            <IconCircleCheck size={14} />
-            {t.books.filterFinished}
-            <span className="books-sb-count">{stats.finished}</span>
-          </button>
-          <button
-            className={`books-sb-item${libraryFilter === 'reading' ? ' active' : ''}`}
-            onClick={() => handleLibraryFilter('reading')}
-          >
-            <IconBook2 size={14} />
-            {t.books.filterReading}
-            <span className="books-sb-count">{stats.reading}</span>
-          </button>
-          <button
-            className={`books-sb-item${libraryFilter === 'want_to_read' ? ' active' : ''}`}
-            onClick={() => handleLibraryFilter('want_to_read')}
-          >
-            <IconBookmark size={14} />
-            {t.books.filterWantToRead}
-            <span className="books-sb-count">{stats.wantToRead}</span>
-          </button>
-        </div>
+    <div className="bk-wrap">
+      {/* ── Cột lọc ── */}
+      <aside ref={sidebarRef} className="bk-rail">
+        <section className="bk-rail-section">
+          <div className="bk-rail-label">{t.books.library}</div>
+          {libraryItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`bk-rail-item${libraryFilter === item.id ? ' active' : ''}`}
+              onClick={() => handleLibraryFilter(item.id)}
+            >
+              <span className={`bk-status-dot status-${item.id}`} />
+              <span className="bk-rail-name">{item.label}</span>
+              <span className="bk-rail-count">{item.count}</span>
+            </button>
+          ))}
+        </section>
 
         {years.length > 0 && (
-          <div className="books-sb-section">
-            <div className="books-sb-label">{t.books.byYear}</div>
+          <section className="bk-rail-section">
+            <div className="bk-rail-label">{t.books.byYear}</div>
             {years.map(({ year, total, finished, reading, wantToRead }) => {
               const badgeCount = libraryFilter === 'finished' ? finished
                 : libraryFilter === 'reading' ? reading
@@ -396,165 +404,154 @@ export default function BooksView() {
               return (
                 <button
                   key={year}
-                  className={`books-sb-item${yearFilter === year ? ' active' : ''}`}
+                  type="button"
+                  className={`bk-rail-item${yearFilter === year ? ' active' : ''}`}
                   onClick={() => handleYearFilter(year)}
                 >
-                  <span className="books-year-badge">{year}</span>
-                  <span className="books-sb-count">{badgeCount}</span>
+                  <span className="bk-rail-name bk-rail-year">{year}</span>
+                  <span className="bk-rail-count">{badgeCount}</span>
                 </button>
               );
             })}
-          </div>
+          </section>
         )}
 
         {tagCounts.length > 0 && (
-          <div className="books-sb-section">
-            <div className="books-sb-label">{t.books.genre}</div>
+          <section className="bk-rail-section">
+            <div className="bk-rail-label">{t.books.genre}</div>
             {tagCounts.map(({ tag, count }) => (
               <button
                 key={tag}
-                className={`books-sb-item${tagFilter === tag ? ' active' : ''}`}
+                type="button"
+                className={`bk-rail-item${tagFilter === tag ? ' active' : ''}`}
                 onClick={() => handleTagFilter(tag)}
               >
-                {tag}
-                <span className="books-sb-count">{count}</span>
+                <span className="bk-rail-name">{tag}</span>
+                <span className="bk-rail-count">{count}</span>
               </button>
             ))}
-          </div>
+          </section>
         )}
-      </div>
+      </aside>
 
-      {/* ── Main ── */}
-      <div ref={mainRef} className="books-main">
-        <div className="books-header">
-          <div>
-            <div className="books-header-title">{t.books.title}</div>
-            <div className="books-header-sub">{headerSubText}</div>
-          </div>
-
-          <div className="books-goal-card">
-            <div className="books-goal-head">
-              <IconTarget size={14} />
-              <span>{t.books.goalTitle(currentYear)}</span>
-              {readingGoal !== null && !editingGoal && (
-                <>
-                  <span className="books-goal-count-inline">{t.books.goalProgress(currentYearCount, readingGoal)}</span>
-                  <button className="books-goal-edit" onClick={handleStartGoalEdit} title={t.books.edit}>
-                    <IconPencil size={12} />
-                  </button>
-                </>
-              )}
-              {editingGoal && (
-                <div className="books-goal-editor books-goal-editor-inline">
-                  <input
-                    type="number"
-                    min={1}
-                    className="books-goal-input"
-                    placeholder={t.books.goalPlaceholder}
-                    value={goalInput}
-                    onChange={(e) => setGoalInput(e.target.value)}
-                    autoFocus
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveGoal(); if (e.key === 'Escape') setEditingGoal(false); }}
-                  />
-                  <button className="books-goal-editor-btn" onClick={handleSaveGoal}><IconCheck size={13} /></button>
-                  <button className="books-goal-editor-btn" onClick={() => setEditingGoal(false)}><IconX size={13} /></button>
-                </div>
-              )}
+      {/* ── Trang chính ── */}
+      <div ref={mainRef} className="bk-main">
+        <div className="bk-page">
+          <header className="bk-head">
+            <div className="bk-head-main">
+              <span className="bk-eyebrow">{eyebrowText}</span>
+              <h1 className="bk-title">{t.books.title}</h1>
+              <p className="bk-subtitle">{headerSubText}</p>
             </div>
 
-            {!editingGoal && (
-              readingGoal ? (
-                <div className="books-goal-bar-track">
-                  <div className="books-goal-bar-fill" style={{ width: `${goalPct}%` }} />
+            <div className="bk-head-side">
+              <div className="bk-goal">
+                <div className="bk-goal-top">
+                  <span className="bk-goal-label">{t.books.goalTitle(currentYear)}</span>
+                  {readingGoal !== null && !editingGoal && (
+                    <button className="bk-goal-edit" onClick={handleStartGoalEdit} title={t.books.edit}>
+                      <IconPencil size={12} />
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <button className="books-goal-cta" onClick={handleStartGoalEdit}>{t.books.setGoalCta}</button>
-              )
-            )}
-          </div>
 
-          <button className="books-btn-add" onClick={() => setShowAddModal(true)}>
-            <IconPlus size={13} />
-            {t.books.addBook}
-          </button>
-        </div>
+                {editingGoal ? (
+                  <div className="bk-goal-editor">
+                    <input
+                      type="number"
+                      min={1}
+                      className="bk-goal-input"
+                      placeholder={t.books.goalPlaceholder}
+                      value={goalInput}
+                      onChange={(e) => setGoalInput(e.target.value)}
+                      autoFocus
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveGoal(); if (e.key === 'Escape') setEditingGoal(false); }}
+                    />
+                    <button className="bk-goal-editor-btn" onClick={handleSaveGoal}><IconCheck size={13} /></button>
+                    <button className="bk-goal-editor-btn" onClick={() => setEditingGoal(false)}><IconX size={13} /></button>
+                  </div>
+                ) : readingGoal ? (
+                  <>
+                    <div className="bk-goal-value">
+                      <span className="bk-goal-num">{currentYearCount}</span>
+                      <span className="bk-goal-of">/ {t.books.booksCount(readingGoal)}</span>
+                      <span className="bk-goal-pct">{goalPct}%</span>
+                    </div>
+                    <span className="bk-progress"><span style={{ width: `${goalPct}%` }} /></span>
+                  </>
+                ) : (
+                  <button className="bk-goal-cta" onClick={handleStartGoalEdit}>{t.books.setGoalCta}</button>
+                )}
+              </div>
 
-        <div className="books-toolbar">
-          <div className="books-search-wrap">
-            <IconSearch size={13} className="books-search-icon" />
-            <input
-              className="books-search-input"
-              placeholder={t.books.searchPlaceholder}
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              spellCheck={false}
-            />
-            {searchQuery && (
-              <button
-                className="books-search-clear"
-                onClick={() => { setSearchQuery(''); loadBooks(libraryFilter, yearFilter, tagFilter, ''); }}
-              >
-                <IconX size={12} />
+              <button type="button" className="bk-btn-primary" onClick={() => setShowAddModal(true)}>
+                <IconPlus size={15} />
+                {t.books.addBook}
               </button>
-            )}
-          </div>
-          <select className="books-sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
-            <option value="date">{t.books.sortDate}</option>
-            <option value="title">{t.books.sortTitle}</option>
-            <option value="author">{t.books.sortAuthor}</option>
-          </select>
-        </div>
+            </div>
+          </header>
 
-        <div key={`${libraryFilter}-${yearFilter ?? ''}-${tagFilter ?? ''}`} className="books-content-view">
-          {books.length === 0 ? (
-            <div className="books-empty-state">
-              <IconBooks size={36} className="books-empty-icon" />
-              <p className="books-empty-text">{emptyText}</p>
-              {!searchQuery && (
-                <button className="books-btn-add" onClick={() => setShowAddModal(true)}>
-                  <IconPlus size={13} />
-                  {t.books.addBook}
+          <div className="bk-toolbar">
+            <div className="bk-search">
+              <IconSearch size={14} />
+              <input
+                placeholder={t.books.searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                spellCheck={false}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="bk-search-clear"
+                  onClick={() => { setSearchQuery(''); loadBooks(libraryFilter, yearFilter, tagFilter, ''); }}
+                >
+                  <IconX size={12} />
                 </button>
               )}
             </div>
-          ) : groupByYear ? (
-            grouped.map(([year, list]) => (
-              <div key={year} className="books-year-section">
-                <div className="books-year-heading">
-                  <span>{year}</span>
-                  <span className="books-year-count">{t.books.booksCount(list.length)}</span>
-                </div>
-                <div className="books-shelf-grid">
-                  {list.map((book) => (
-                    <BookCard
-                      key={book.id}
-                      book={book}
-                      onView={() => setViewingBook(book)}
-                      onEdit={() => setEditingBook(book)}
-                      onDelete={() => handleDelete(book)}
-                    />
-                  ))}
-                </div>
+            <label className="bk-sort">
+              <span className="bk-sort-label">{t.projects.sortBy}</span>
+              <select className="bk-sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
+                <option value="date">{t.books.sortDate}</option>
+                <option value="title">{t.books.sortTitle}</option>
+                <option value="author">{t.books.sortAuthor}</option>
+              </select>
+            </label>
+          </div>
+
+          {/* Khối nội dung phải giữ animation (transform → stacking context): khối giấy
+              sau bìa (::after z-index -1) cần một stacking context gần nhất không có nền. */}
+          <div key={`${libraryFilter}-${yearFilter ?? ''}-${tagFilter ?? ''}`} className="bk-content">
+            {books.length === 0 ? (
+              <div className="bk-empty">
+                <p>{emptyText}</p>
+                {!searchQuery && (
+                  <button type="button" className="bk-btn-primary" onClick={() => setShowAddModal(true)}>
+                    <IconPlus size={15} />
+                    {t.books.addBook}
+                  </button>
+                )}
               </div>
-            ))
-          ) : (
-            <div className="books-shelf-grid">
-              {flatList.map((book) => (
-                <BookCard
-                  key={book.id}
-                  book={book}
-                  onView={() => setViewingBook(book)}
-                  onEdit={() => setEditingBook(book)}
-                  onDelete={() => handleDelete(book)}
-                />
-              ))}
-            </div>
-          )}
-          {hasMoreBooks && (
-            <div ref={loadMoreSentinelRef} className="books-load-more">
-              {loadingMore && <span className="books-load-more-text">{t.books.loadingMore}</span>}
-            </div>
-          )}
+            ) : groupByYear ? (
+              grouped.map(([year, list]) => (
+                <section key={year} className="bk-year">
+                  <div className="bk-year-head">
+                    <h2 className="bk-year-num">{year}</h2>
+                    <span className="bk-year-count">{t.books.booksCount(list.length)}</span>
+                  </div>
+                  {renderShelf(list)}
+                </section>
+              ))
+            ) : (
+              renderShelf(flatList)
+            )}
+            {hasMoreBooks && (
+              <div ref={loadMoreSentinelRef} className="bk-load-more">
+                {loadingMore && <span>{t.books.loadingMore}</span>}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -596,10 +593,10 @@ export default function BooksView() {
       )}
 
       {goalCelebration && (
-        <div className="books-celebration-toast" role="status">
+        <div className="bk-celebration" role="status">
           <IconTrophy size={18} />
           <span>{t.books.goalCelebration(readingGoal ?? currentYearCount)}</span>
-          <button className="books-celebration-close" onClick={() => setGoalCelebration(false)}>
+          <button className="bk-celebration-close" onClick={() => setGoalCelebration(false)}>
             <IconX size={14} />
           </button>
         </div>

@@ -2,25 +2,15 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import {
   IconX,
   IconBooks,
-  IconRosetteDiscountCheckFilled,
   IconChevronDown,
   IconCheck,
   IconTrash,
   IconPencil,
-  IconBook2,
-  IconCircleCheck,
-  IconBookmark,
 } from '@tabler/icons-react';
 import type { Book, BookStatus } from '../../types';
 import { useT } from '../../i18n';
 import { formatISODate } from '../../utils/imageUtils';
 import { useCoverGlow } from './bookUtils';
-
-const STATUS_ICON: Record<BookStatus, React.ReactNode> = {
-  reading: <IconBook2 size={13} />,
-  finished: <IconCircleCheck size={13} />,
-  want_to_read: <IconBookmark size={13} />,
-};
 
 interface BookDetailModalProps {
   book: Book;
@@ -100,12 +90,12 @@ export default function BookDetailModal({ book, onClose, onEdit, onDelete, onSta
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
       onKeyDown={handleKeyDown}
     >
-      <div className="books-detail-modal">
-        <button ref={closeRef} className="books-detail-close" onClick={onClose}>
-          <IconX size={16} />
+      <div className="bk-detail">
+        <button ref={closeRef} className="bk-detail-close" onClick={onClose}>
+          <IconX size={15} />
         </button>
 
-        <div className="books-detail-body">
+        <div className="bk-detail-body">
           <div className="books-detail-cover" style={glowStyle}>
             <div className="books-detail-cover-inner">
               {book.cover_image ? (
@@ -118,67 +108,62 @@ export default function BookDetailModal({ book, onClose, onEdit, onDelete, onSta
             </div>
           </div>
 
-          <div className="books-detail-info">
-            <div className="books-detail-title">{book.title}</div>
-            {book.author && (
-              <div className="books-detail-author">
-                <span className="books-detail-author-name">{book.author}</span>
-                <IconRosetteDiscountCheckFilled size={16} className="books-detail-author-badge" />
-              </div>
-            )}
+          <div className="bk-detail-info">
+            <div className="bk-detail-head">
+              <h2 className="bk-detail-title">{book.title}</h2>
+              {book.author && <span className="bk-byline">{book.author}</span>}
+            </div>
 
-            {book.started_date && (
-              <div className="books-detail-meta">
-                {t.books.startedOn(formatISODate(book.started_date))}
-              </div>
-            )}
-
-            <div className="books-detail-badges">
-              <div className="books-detail-status-dropdown" ref={statusMenuRef}>
+            <div className="bk-detail-status-row">
+              <div className="bk-status-dropdown" ref={statusMenuRef}>
                 <button
                   type="button"
-                  className={`books-detail-status-badge status-${book.status}${statusMenuOpen ? ' open' : ''}`}
+                  className={`bk-status-trigger status-${book.status}${statusMenuOpen ? ' open' : ''}`}
                   onClick={() => setStatusMenuOpen((v) => !v)}
                 >
-                  {STATUS_ICON[book.status]}
+                  <span className="bk-status-dot" />
                   {statusLabel}
-                  <IconChevronDown size={12} className={`books-detail-status-chevron${statusMenuOpen ? ' open' : ''}`} />
+                  <IconChevronDown size={12} className="bk-status-chevron" />
                 </button>
                 {statusMenuOpen && (
-                  <div className="books-detail-status-menu">
+                  <div className="bk-status-menu">
                     {statusOptions.map((opt) => (
                       <button
                         key={opt.id}
                         type="button"
-                        className={`books-detail-status-option${opt.id === book.status ? ' active' : ''}`}
+                        className={`bk-status-option status-${opt.id}${opt.id === book.status ? ' active' : ''}`}
                         onClick={() => handleStatusPick(opt.id)}
                       >
-                        {STATUS_ICON[opt.id]}
+                        <span className="bk-status-dot" />
                         {opt.label}
-                        {opt.id === book.status && <IconCheck size={12} className="books-detail-status-check" />}
+                        {opt.id === book.status && <IconCheck size={13} className="bk-status-check" />}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
               {book.status === 'finished' && book.finished_date && (
-                <span className="books-detail-date">{formatISODate(book.finished_date)}</span>
+                <span className="bk-detail-date">{formatISODate(book.finished_date)}</span>
               )}
             </div>
 
+            {book.started_date && (
+              <div className="bk-detail-date">{t.books.startedOn(formatISODate(book.started_date))}</div>
+            )}
+
             {book.tags.length > 0 && (
-              <div className="books-detail-tags">
+              <div className="bk-detail-tags">
                 {book.tags.map((tag) => (
-                  <span key={tag} className="books-tag-chip-sm">{tag}</span>
+                  <span key={tag} className="bk-tag">{tag}</span>
                 ))}
               </div>
             )}
 
             {book.notes && (
-              <div className="books-detail-notes-wrap">
+              <div className="bk-detail-notes-wrap">
                 <div
                   ref={notesRef}
-                  className={`books-detail-notes${notesOverflow ? ' has-fade' : ''}${notesExpanded ? ' expanded' : ''}`}
+                  className={`bk-detail-notes${notesOverflow ? ' has-fade' : ''}${notesExpanded ? ' expanded' : ''}`}
                   style={{ maxHeight: notesExpanded ? notesExpandedHeight : notesCollapsedHeight || undefined }}
                 >
                   {book.notes}
@@ -186,13 +171,13 @@ export default function BookDetailModal({ book, onClose, onEdit, onDelete, onSta
                 {notesOverflow && (
                   <button
                     type="button"
-                    className="books-detail-notes-toggle"
+                    className="bk-detail-notes-toggle"
                     onClick={() => setNotesExpanded((v) => !v)}
                   >
                     {notesExpanded ? t.books.seeLess : t.books.seeMore}
                     <IconChevronDown
                       size={12}
-                      className={`books-detail-notes-chevron${notesExpanded ? ' open' : ''}`}
+                      className={`bk-detail-notes-chevron${notesExpanded ? ' open' : ''}`}
                     />
                   </button>
                 )}
@@ -201,18 +186,18 @@ export default function BookDetailModal({ book, onClose, onEdit, onDelete, onSta
           </div>
         </div>
 
-        <div className="books-modal-footer books-detail-footer">
-          <div className="books-modal-footer-group">
-            <button className="books-modal-btn-cancel books-detail-delete" onClick={onDelete}>
+        <div className="bk-detail-foot">
+          <div className="bk-detail-foot-group">
+            <button className="bk-text-btn danger" onClick={onDelete}>
+              <IconTrash size={14} />
               {t.books.delete}
-              <IconTrash size={13} />
             </button>
-            <button className="books-modal-btn-cancel" onClick={onEdit}>
+            <button className="bk-text-btn" onClick={onEdit}>
+              <IconPencil size={14} />
               {t.books.edit}
-              <IconPencil size={13} />
             </button>
           </div>
-          <button className="books-modal-btn-save" onClick={onClose}>
+          <button className="bk-btn-primary" onClick={onClose}>
             {t.books.done}
           </button>
         </div>
