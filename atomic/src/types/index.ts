@@ -130,7 +130,66 @@ export interface Tag {
   created_at: string;
 }
 
-export type Tab = 'today' | 'kanban' | 'heatmap' | 'calendar' | 'journal' | 'quotes' | 'books' | 'projects';
+export type Tab = 'today' | 'kanban' | 'vision' | 'heatmap' | 'calendar' | 'journal' | 'quotes' | 'books' | 'projects';
+
+// ── Vision (Tầm nhìn) ──
+export type AimKind = 'score' | 'level' | 'amount' | 'checklist';
+export type AimStatus = 'not_started' | 'in_progress' | 'achieved';
+
+export interface Vision {
+  id: number;
+  title: string;
+  target_date: string;       // 'YYYY-MM-DD'
+  start_date: string;        // ngày lập — mốc đầu của thanh "thời gian đã qua"
+  motto: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
+export interface NewVision {
+  title: string;
+  target_date: string;
+  start_date: string;
+  motto?: string | null;
+}
+
+// level: các bậc thấp → cao; bậc có `parts` thì xong khi mọi part xong.
+// checklist: mỗi phần tử là 1 việc (parts luôn rỗng).
+export interface AimItem {
+  name: string;
+  done: boolean;
+  parts: { name: string; done: boolean }[];
+}
+
+export interface VisionAim {
+  id: number;
+  vision_id: number;
+  title: string;
+  category: Category;
+  kind: AimKind;
+  preset: string | null;
+  scale_min: number | null;
+  scale_max: number | null;
+  target_value: number | null;  // score/amount: giá trị đích; level: index bậc mục tiêu
+  unit: string | null;
+  items: AimItem[];
+  status: AimStatus;
+  achieved_date: string | null;
+  next_step: string | null;
+  next_date: string | null;     // 'YYYY-MM'
+  position: number;
+  created_at: string;
+}
+
+export type NewVisionAim = Omit<VisionAim, 'id' | 'position' | 'created_at' | 'achieved_date'>;
+
+export interface VisionAimLog {
+  id: number;
+  aim_id: number;
+  date: string;
+  value: number;
+  note: string | null;
+}
 
 export type JournalType = 'gratitude' | 'lesson';
 

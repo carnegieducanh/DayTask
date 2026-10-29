@@ -23,6 +23,7 @@ export interface UiSlice {
   accentColor: AccentColor;
   customAccentColor: string;
   savedAccentColors: string[];
+  birthDate: string | null; // 'YYYY-MM-DD' — tab Tầm nhìn dùng để tính tuổi
 
   setActiveTab: (tab: Tab) => void;
   toggleTheme: () => void;
@@ -32,6 +33,7 @@ export interface UiSlice {
   setCustomAccentColor: (hex: string) => void;
   saveAccentColor: (hex: string) => void;
   removeAccentColor: (hex: string) => void;
+  setBirthDate: (date: string | null) => void;
   setOpenSettingsModal: (val: boolean) => void;
   setSelectedDate: (date: string) => void;
   setSelectedYear: (year: number) => void;
@@ -62,6 +64,7 @@ export const createUiSlice: StateCreator<AppState, [], [], UiSlice> = (set, get)
   accentColor: (localStorage.getItem('accentColor') as AccentColor) ?? 'blue',
   customAccentColor: localStorage.getItem('customAccentColor') ?? '#185FA5',
   savedAccentColors: JSON.parse(localStorage.getItem('savedAccentColors') ?? '[]'),
+  birthDate: localStorage.getItem('birthDate') || null,
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -97,6 +100,12 @@ export const createUiSlice: StateCreator<AppState, [], [], UiSlice> = (set, get)
     const updated = prev.filter(c => c !== hex);
     localStorage.setItem('savedAccentColors', JSON.stringify(updated));
     set({ savedAccentColors: updated });
+  },
+
+  setBirthDate: (date) => {
+    if (date) localStorage.setItem('birthDate', date);
+    else localStorage.removeItem('birthDate');
+    set({ birthDate: date });
   },
 
   setOpenSettingsModal: (val) => set({ openSettingsModal: val }),

@@ -170,6 +170,13 @@ atomic/
             ├── icons.tsx           # VsCodeLogoIcon/FigmaLogoIcon/PianoKeysIcon + CATEGORY_*_ICON/STATUS_ICON maps
             ├── projectImageUtils.ts  # compressProjectCover (full+thumb)/resizeCoverThumbFromDataUrl/parseCoverPosition — riêng Projects vì cần 2 size ảnh + cover-position drag, khác bookUtils.ts
             └── Pagination.tsx
+        └── vision/   # Tab "Tầm nhìn" (2026-10-28, migration v30: visions / vision_aims / vision_aim_logs) — cột mốc dài hạn kiểu "Năm 35 tuổi", không dùng Zustand (state local + store/visionDb.ts, browser mode có dữ liệu mẫu trong bộ nhớ)
+            ├── VisionView.tsx + vision.css   # State, load toàn bộ 1 lần, xóa có hoàn tác 4s
+            ├── HorizonRail.tsx       # Cột trái "Chân trời": Hôm nay (tuổi từ birthDate trong uiSlice) → các cột mốc, khoảng cách tỉ lệ số năm
+            ├── VisionCharter.tsx     # "Tờ giấy": đầu văn bản, nhịp độ (ngày còn lại / thời gian đã qua / số đã đạt), các điều nhóm theo danh mục, chân văn bản (xem lại mỗi quý)
+            ├── AimRow.tsx, AimMeasure.tsx, AimDetail.tsx, AimChart.tsx   # Dòng mục tiêu: 4 kiểu đo score/level/amount/checklist, con dấu khi đạt, menu trạng thái (portal)
+            ├── VisionModal.tsx, AimModal.tsx   # createPortal ra body (tránh containing block của .main-wrap khi có nền ảnh)
+            └── visionUtils.ts        # Thang điểm có sẵn (TOEIC, BJT band J5→J1+, IELTS), số La Mã, ngày/tuổi, định dạng số
 ```
 
 **Note vị trí custom color picker popup:** `.color-picker-popup-wrap` dùng `position: fixed`, còn `.modal` có `backdrop-filter` — theo spec CSS, `backdrop-filter`/`filter` khác `none` tạo containing block mới cho phần tử `position:fixed` bên trong. Nếu đưa popup này vào trong cây JSX của `GeneralTab` (nằm trong `.modal`), nó sẽ bị định vị/clip theo khung modal 440px thay vì giữa viewport. Vì vậy state + JSX của popup này **cố ý giữ ở `SettingsModal.tsx`** (sibling của `.modal`, không nested), `GeneralTab` chỉ nhận callback `onCustomSwatchClick`/`onSwatchClick` để trigger. `.delete-toast` thì an toàn để nested sâu hơn vì nó dùng `position: absolute` và mọi ancestor liên quan (`.modal`, `.settings-body`, `.settings-tab-panel`) đều `position: static` — không tạo containing block mới.

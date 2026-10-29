@@ -426,6 +426,49 @@ pub fn run() {
             sql: "ALTER TABLE tasks ADD COLUMN deck_position INTEGER DEFAULT NULL;",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 30,
+            description: "create_vision_tables",
+            sql: "CREATE TABLE IF NOT EXISTS visions (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                title       TEXT NOT NULL,
+                target_date TEXT NOT NULL,
+                start_date  TEXT NOT NULL,
+                motto       TEXT DEFAULT NULL,
+                reviewed_at TEXT DEFAULT NULL,
+                created_at  TEXT DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS vision_aims (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                vision_id     INTEGER NOT NULL REFERENCES visions(id) ON DELETE CASCADE,
+                title         TEXT NOT NULL,
+                category      TEXT NOT NULL DEFAULT 'learn',
+                kind          TEXT NOT NULL CHECK(kind IN ('score','level','amount','checklist')),
+                preset        TEXT DEFAULT NULL,
+                scale_min     REAL DEFAULT NULL,
+                scale_max     REAL DEFAULT NULL,
+                target_value  REAL DEFAULT NULL,
+                unit          TEXT DEFAULT NULL,
+                items         TEXT NOT NULL DEFAULT '[]',
+                status        TEXT NOT NULL DEFAULT 'in_progress' CHECK(status IN ('not_started','in_progress','achieved')),
+                achieved_date TEXT DEFAULT NULL,
+                next_step     TEXT DEFAULT NULL,
+                next_date     TEXT DEFAULT NULL,
+                position      INTEGER NOT NULL DEFAULT 0,
+                created_at    TEXT DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS vision_aim_logs (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                aim_id     INTEGER NOT NULL REFERENCES vision_aims(id) ON DELETE CASCADE,
+                date       TEXT NOT NULL,
+                value      REAL NOT NULL,
+                note       TEXT DEFAULT NULL,
+                created_at TEXT DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_vision_aims_vision ON vision_aims(vision_id);
+            CREATE INDEX IF NOT EXISTS idx_vision_aim_logs_aim ON vision_aim_logs(aim_id);",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

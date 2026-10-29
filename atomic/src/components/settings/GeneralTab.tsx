@@ -1,3 +1,5 @@
+import { IconX } from "@tabler/icons-react";
+import { format } from "date-fns";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 import type { Language, AccentColor } from "../../types";
@@ -14,6 +16,7 @@ export default function GeneralTab({ onSwatchClick, onCustomSwatchClick }: Gener
     accentColor,
     customAccentColor,
     autostart, setAutostart,
+    birthDate, setBirthDate,
   } = useAppStore();
   const t = useT();
 
@@ -126,6 +129,39 @@ export default function GeneralTab({ onSwatchClick, onCustomSwatchClick }: Gener
                 onClick={() => setAutostart(!autostart)}
                 aria-label={t.settings.autostart}
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Row 4 left: Birth date — tab Tầm nhìn dùng để tính tuổi */}
+        <div className="settings-general-col settings-general-col--left">
+          <div className="settings-divider" />
+          <div className="settings-section">
+            <div className="settings-row settings-birth-row">
+              <div className="settings-birth-text">
+                <div className="settings-row-label">{t.settings.birthDate}</div>
+                <div className="settings-row-sub">{t.settings.birthDateDesc}</div>
+              </div>
+              <div className="settings-birth-wrap">
+                <input
+                  type="date"
+                  className="settings-date-input"
+                  value={birthDate ?? ""}
+                  max={format(new Date(), "yyyy-MM-dd")}
+                  onChange={(e) => setBirthDate(e.target.value || null)}
+                  aria-label={t.settings.birthDate}
+                />
+                {birthDate && (
+                  <button
+                    className="settings-birth-clear"
+                    onClick={() => setBirthDate(null)}
+                    title={t.settings.clearBirthDate}
+                    aria-label={t.settings.clearBirthDate}
+                  >
+                    <IconX size={13} />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

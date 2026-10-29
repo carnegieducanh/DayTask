@@ -12,6 +12,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconSettings,
+  IconTelescope,
   IconMoon,
   IconSunHigh,
 } from "@tabler/icons-react";
@@ -24,6 +25,7 @@ const TAB_ORDER: Tab[] = [
   "today",
   "calendar",
   "kanban",
+  "vision",
   "projects",
   "books",
   "journal",
@@ -47,6 +49,7 @@ export default function Sidebar() {
     { id: "today",    label: t.nav.today,    icon: <IconSun size={16} /> },
     { id: "calendar", label: t.nav.calendar, icon: <IconCalendar size={16} /> },
     { id: "kanban",   label: t.nav.yearPlan, icon: <IconCalendarStats size={16} /> },
+    { id: "vision",   label: t.nav.vision,   icon: <IconTelescope size={16} /> },
     { id: "projects", label: t.nav.projects, icon: <IconFolderCode size={16} /> },
     { id: "books",    label: t.nav.books,    icon: <IconBooks size={16} /> },
     { id: "journal",  label: t.nav.journal,  icon: <IconNotebook size={16} /> },

@@ -22,6 +22,9 @@ type BookGoalRow = { year: number; goal: number };
 type ProjectFolderRow = { id: number; name: string; category?: string; cover_image: string | null; created_at: string };
 type ProjectRow = { id: number; title: string; category?: string; status: string; start_date: string | null; completed_date: string | null; notes: string | null; link_repo: string | null; link_youtube: string | null; composer?: string | null; cover_image: string | null; cover_image_thumb?: string | null; created_at: string };
 type ProjectFolderLinkRow = { project_id: number; folder_id: number };
+type VisionRow = { id: number; title: string; target_date: string; start_date: string; motto: string | null; reviewed_at: string | null; created_at: string };
+type VisionAimRow = { id: number; vision_id: number; title: string; category: string; kind: string; preset: string | null; scale_min: number | null; scale_max: number | null; target_value: number | null; unit: string | null; items: string; status: string; achieved_date: string | null; next_step: string | null; next_date: string | null; position: number; created_at: string };
+type VisionAimLogRow = { id: number; aim_id: number; date: string; value: number; note: string | null; created_at: string };
 
 async function seedMockData(db: import('@tauri-apps/plugin-sql').default, today: string) {
   // Tasks hôm nay
@@ -137,6 +140,9 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
     let projectFolders: ProjectFolderRow[];
     let projects: ProjectRow[];
     let projectFolderLinks: ProjectFolderLinkRow[];
+    let visions: VisionRow[];
+    let visionAims: VisionAimRow[];
+    let visionAimLogs: VisionAimLogRow[];
 
     if (!isTauri()) {
       tasks = [...mockTasks];
@@ -161,6 +167,9 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
       projectFolders = [];
       projects = [];
       projectFolderLinks = [];
+      visions = [];
+      visionAims = [];
+      visionAimLogs = [];
     } else {
       const db = await getDb();
       tasks = await db.select<Task[]>('SELECT * FROM tasks ORDER BY date ASC, created_at ASC');
@@ -188,6 +197,9 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
       projectFolders = await db.select<ProjectFolderRow[]>('SELECT * FROM project_folders ORDER BY id ASC');
       projects = await db.select<ProjectRow[]>('SELECT * FROM projects ORDER BY id ASC');
       projectFolderLinks = await db.select<ProjectFolderLinkRow[]>('SELECT project_id, folder_id FROM project_folder_links');
+      visions = await db.select<VisionRow[]>('SELECT * FROM visions ORDER BY id ASC');
+      visionAims = await db.select<VisionAimRow[]>('SELECT * FROM vision_aims ORDER BY id ASC');
+      visionAimLogs = await db.select<VisionAimLogRow[]>('SELECT * FROM vision_aim_logs ORDER BY id ASC');
     }
 
     const payload = {
@@ -196,6 +208,8 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
       tasks, goals, checklistItems, categoryColors, tags, taskTags: taskTagPairs, timeEntries,
       journalEntries, weeklyChecklist, vocabWords, quotes, quoteTags, books, bookTags, bookReadingGoals,
       projectFolders, projects, projectFolderLinks,
+      visions, visionAims, visionAimLogs,
+      birthDate: get().birthDate,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -219,6 +233,8 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
       quotes?: QuoteRow[]; quoteTags?: QuoteTagRow[];
       books?: BookRow[]; bookTags?: BookTagRow[]; bookReadingGoals?: BookGoalRow[];
       projectFolders?: ProjectFolderRow[]; projects?: ProjectRow[]; projectFolderLinks?: ProjectFolderLinkRow[];
+      visions?: VisionRow[]; visionAims?: VisionAimRow[]; visionAimLogs?: VisionAimLogRow[];
+      birthDate?: string | null;
     };
     try {
       data = JSON.parse(text);
@@ -411,7 +427,40 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
           }
         }
       }
+
+      if (Array.isArray(data.visions)) {
+        await db.execute('DELETE FROM vision_aim_logs');
+        await db.execute('DELETE FROM vision_aims');
+        await db.execute('DELETE FROM visions');
+        for (const v of data.visions) {
+          await db.execute(
+            'INSERT INTO visions (id, title, target_date, start_date, motto, reviewed_at, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+            [v.id, v.title, v.target_date, v.start_date, v.motto ?? null, v.reviewed_at ?? null, v.created_at]
+          );
+        }
+        if (Array.isArray(data.visionAims)) {
+          for (const a of data.visionAims) {
+            await db.execute(
+              `INSERT INTO vision_aims (id, vision_id, title, category, kind, preset, scale_min, scale_max, target_value, unit, items, status, achieved_date, next_step, next_date, position, created_at)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+              [a.id, a.vision_id, a.title, a.category, a.kind, a.preset ?? null, a.scale_min ?? null, a.scale_max ?? null, a.target_value ?? null,
+               a.unit ?? null, a.items ?? '[]', a.status, a.achieved_date ?? null, a.next_step ?? null, a.next_date ?? null, a.position ?? 0, a.created_at]
+            );
+          }
+        }
+        if (Array.isArray(data.visionAimLogs)) {
+          for (const l of data.visionAimLogs) {
+            await db.execute(
+              'INSERT INTO vision_aim_logs (id, aim_id, date, value, note, created_at) VALUES ($1,$2,$3,$4,$5,$6)',
+              [l.id, l.aim_id, l.date, l.value, l.note ?? null, l.created_at]
+            );
+          }
+        }
+      }
     }
+
+    // Chỉ khôi phục ngày sinh khi backup có ghi field này (backup cũ không có → giữ nguyên)
+    if (typeof data.birthDate === 'string' && data.birthDate) get().setBirthDate(data.birthDate);
 
     const year = new Date().getFullYear();
     await get().loadTasks(get().selectedDate);

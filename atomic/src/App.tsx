@@ -28,6 +28,7 @@ import JournalView from './components/journal/JournalView';
 import QuotesView from './components/quotes/QuotesView';
 import BooksView from './components/books/BooksView';
 import ProjectsView from './components/projects/ProjectsView';
+import VisionView from './components/vision/VisionView';
 import ReminderPopup from './components/ReminderPopup';
 import DeleteToast from './components/DeleteToast';
 import UndoToast from './components/UndoToast';
@@ -388,6 +389,7 @@ function App() {
         <div className="main-wrap" style={{ position: 'relative' }}>
           {activeTab === 'today' && <TodayView />}
           {activeTab === 'kanban' && <KanbanView liveGoals={liveGoals} />}
+          {activeTab === 'vision' && <VisionView />}
           {activeTab === 'heatmap' && <HeatmapView />}
           {activeTab === 'calendar' && <CalendarView />}
           {activeTab === 'journal' && <JournalView />}

@@ -286,6 +286,60 @@
   background: var(--primary);
 }
 
+/* Birth date (tab Tầm nhìn) */
+.settings-birth-row {
+  gap: 12px;
+}
+
+.settings-birth-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-birth-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.settings-date-input {
+  padding: 5px 8px;
+  border-radius: 7px;
+  border: 0.5px solid var(--border-2);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.settings-date-input:focus {
+  border-color: var(--primary);
+}
+
+[data-theme="dark"] .settings-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.settings-birth-clear {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.settings-birth-clear:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
 /* Font size buttons */
 .settings-font-group {
   display: flex;
