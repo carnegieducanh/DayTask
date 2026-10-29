@@ -170,6 +170,7 @@ export const vi = {
     addLabel: "Thêm mục tiêu",
     hintEmpty: "Chưa có việc nào trong tuần này",
     done: "hoàn thành",
+    purposeHint: "Việc cần xong trong tuần",
   },
   today: {
     title: "Hôm nay",

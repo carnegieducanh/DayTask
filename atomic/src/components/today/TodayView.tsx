@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { IconBulb } from "@tabler/icons-react";
 import "./today.css";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import { format } from "date-fns";
@@ -35,14 +36,12 @@ export default function TodayView() {
     language,
     getStreak,
     setReminderPopup,
-    toggleTask,
     taskTimeEntries,
     categoryColors,
   } = useAppStore();
 
   const [showModal, setShowModal] = useState(false);
   const [streak, setStreak] = useState(0);
-  const [pendingCheckIds, setPendingCheckIds] = useState<Set<number>>(new Set());
   const demoPopupShown = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(scrollRef);
@@ -108,26 +107,6 @@ export default function TodayView() {
     setShowModal(true);
   }
 
-  // Agenda tick: show the check immediately, flip the task a beat later so
-  // the tick animation plays before the item re-sorts into the done group.
-  function handleScheduleToggle(taskId: number) {
-    const task = tasks.find((t) => t.id === taskId);
-    if (!task || task.is_done) {
-      toggleTask(taskId);
-      return;
-    }
-
-    setPendingCheckIds((prev) => new Set(prev).add(taskId));
-    setTimeout(() => {
-      toggleTask(taskId);
-      setPendingCheckIds((prev) => {
-        const s = new Set(prev);
-        s.delete(taskId);
-        return s;
-      });
-    }, 400);
-  }
-
   return (
     <>
       {/* Topbar */}
@@ -159,21 +138,24 @@ export default function TodayView() {
             <TodayClockHero />
 
             <div className="today-hero-side today-hero-right">
+              <div className="today-todo-purpose">
+                <IconBulb size={14} />
+                <span>{t.weeklyChecklist.purposeHint}</span>
+              </div>
               <div className="today-glass today-side-card">
                 <WeeklyChecklist selectedDate={selectedDate} />
               </div>
             </div>
           </div>
 
-          {/* Hôm nay | time by category | stats + activity heatmap — ngay dưới đồng hồ để
-              lịch hôm nay nằm trong màn hình đầu; dải tuần xuống cuối */}
+          {/* stats + activity heatmap | time by category | Hôm nay (thứ tự cột do
+              grid-template-areas quyết định) — ngay dưới đồng hồ để lịch hôm nay nằm
+              trong màn hình đầu; dải tuần xuống cuối */}
           <div className="today-glass today-agenda-panel">
             <TodayAgenda
               label={agendaLabel}
               tasks={scheduledTasks}
               entries={taskTimeEntries}
-              pendingCheckIds={pendingCheckIds}
-              onToggle={handleScheduleToggle}
               onAdd={openAdd}
             />
             <div className="today-agenda-divider today-agenda-divider-1" aria-hidden="true" />

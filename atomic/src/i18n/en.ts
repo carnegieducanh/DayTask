@@ -172,6 +172,7 @@ export const en: typeof vi = {
     addLabel: "Add a goal",
     hintEmpty: "Nothing on the list this week",
     done: "done",
+    purposeHint: "Things to get done this week",
   },
   today: {
     title: "Today",

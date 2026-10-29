@@ -74,6 +74,11 @@ async function migrateLegacyWeekKeys(db: Awaited<ReturnType<typeof getDb>>) {
 // (StrictMode runs effects twice in dev) would both copy last week's items.
 let loadQueue: Promise<unknown> = Promise.resolve();
 
+// Latest week that already got last week's unfinished items (or had its own),
+// so the copy runs once per week. localStorage like the other per-device
+// settings; without it (fresh install / old version) the first load copies.
+const CARRIED_WEEK_KEY = 'weeklyChecklistCarriedWeek';
+
 export function dbLoadWeekItems(weekKey: string, todayWeekKey: string): Promise<WeeklyItem[]> {
   const run = loadQueue.then(() => loadWeekItems(weekKey, todayWeekKey));
   loadQueue = run.catch(() => {});
@@ -89,16 +94,21 @@ async function loadWeekItems(weekKey: string, todayWeekKey: string): Promise<Wee
     'SELECT * FROM weekly_checklist WHERE week_key = $1 ORDER BY position, id',
     [weekKey]
   );
-  if (existing.length > 0) return existing.map(rowToItem);
 
-  // Chỉ auto-copy khi đang ở tuần hiện tại và tuần đó chưa có data
-  if (weekKey !== todayWeekKey) return [];
+  // Chỉ auto-copy khi đang ở tuần hiện tại, tuần đó chưa có data và chưa
+  // từng được copy: xóa hết việc của tuần không được làm các việc cũ hiện lại.
+  if (weekKey !== todayWeekKey) return existing.map(rowToItem);
+  const carriedWeek = localStorage.getItem(CARRIED_WEEK_KEY);
+  if (!carriedWeek || carriedWeek < weekKey) localStorage.setItem(CARRIED_WEEK_KEY, weekKey);
+  if (existing.length > 0 || (carriedWeek && carriedWeek >= weekKey)) return existing.map(rowToItem);
 
   const prev = await db.select<{ week_key: string }[]>(
     'SELECT DISTINCT week_key FROM weekly_checklist WHERE week_key < $1 ORDER BY week_key DESC LIMIT 1',
     [weekKey]
   );
-  if (prev.length === 0) return [];
+  // An older week than the last one copied into means that one was emptied
+  // by hand — its leftovers were deleted, don't bring them back.
+  if (prev.length === 0 || (carriedWeek && prev[0].week_key < carriedWeek)) return [];
 
   const incomplete = await db.select<DbRow[]>(
     'SELECT * FROM weekly_checklist WHERE week_key = $1 AND is_done = 0 ORDER BY position, id',

@@ -1,25 +1,27 @@
-import { IconCheck, IconClock, IconPlus, IconSun } from "@tabler/icons-react";
+import { useMemo, useRef } from "react";
+import { IconCheck, IconPlus, IconSun } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 import type { Task, TaskTimeEntry } from "../../types";
+import { useTickCollapse } from "./useTickCollapse";
 
 export default function TodayAgenda({
   label,
   tasks,
   entries,
-  pendingCheckIds,
-  onToggle,
   onAdd,
 }: {
   label: string;
   tasks: Task[];
   entries: TaskTimeEntry[];
-  pendingCheckIds: Set<number>;
-  onToggle: (taskId: number) => void;
   onAdd: () => void;
 }) {
   const t = useT();
   const categoryColors = useAppStore((s) => s.categoryColors);
+
+  const listRef = useRef<HTMLDivElement>(null);
+  const doneIds = useMemo(() => new Set(tasks.filter((task) => task.is_done).map((task) => task.id)), [tasks]);
+  const { checkingIds, blockRef, handleTick } = useTickCollapse(listRef, doneIds);
 
   return (
     <div className="today-agenda">
@@ -30,37 +32,31 @@ export default function TodayAgenda({
         </button>
       </div>
       {tasks.length > 0 ? (
-        <div className="today-agenda-list">
+        <div className="today-agenda-list" ref={listRef}>
           {tasks.map((task) => {
             const entry = entries.find((e) => e.task_id === task.id);
-            const checked = !!task.is_done || pendingCheckIds.has(task.id);
+            const color = task.color ?? categoryColors[task.category];
+            const checked = !!task.is_done || checkingIds.has(task.id);
+            // Same block as the week strip (.tws-block); the whole block ticks,
+            // the drawer click just bubbles up.
             return (
               <div
                 key={task.id}
-                className={`today-agenda-item${checked ? " done" : ""}`}
-                onClick={() => onToggle(task.id)}
+                ref={blockRef(task.id)}
+                className={`tws-block today-agenda-block${checked ? " done" : ""}`}
+                style={{ background: checked ? `color-mix(in srgb, ${color} 40%, transparent)` : color }}
+                onClick={() => handleTick(task)}
                 title={task.is_done ? t.taskCard.markUndone : t.taskCard.markDone}
               >
-                <span
-                  className="today-agenda-bar"
-                  style={{ background: task.color ?? categoryColors[task.category] }}
-                />
-                <div className="today-agenda-body">
-                  <div className="today-agenda-title">{task.title}</div>
-                  <div className="today-agenda-time">
-                    <IconClock size="0.85em" />
+                <button className="tws-block-drawer">
+                  <IconCheck size={18} strokeWidth={3} />
+                </button>
+                <div className="tws-block-body">
+                  <div className="tws-block-time">
                     {entry?.start_time} - {entry?.end_time}
                   </div>
+                  <div className="tws-block-title">{task.title}</div>
                 </div>
-                <button
-                  className={`today-schedule-tick${checked ? " checked" : ""}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggle(task.id);
-                  }}
-                >
-                  <IconCheck size={12} strokeWidth={3} />
-                </button>
               </div>
             );
           })}

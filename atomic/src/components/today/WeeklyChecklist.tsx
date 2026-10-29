@@ -30,6 +30,8 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
   const addInputRef = useRef<HTMLInputElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingDeleteRef = useRef<WeeklyItem | null>(null);
+  pendingDeleteRef.current = pendingDelete;
 
   const today = new Date();
   const selectedDay = new Date(selectedDate + 'T00:00:00');
@@ -38,7 +40,11 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
   const weekRange = formatWeekRange(selectedDay, language === 'vi' ? viLocale : undefined);
 
   useEffect(() => {
-    dbLoadWeekItems(weekKey, todayWeekKey).then(setItems);
+    // An item deleted in this week moments ago is still in the DB until the
+    // undo window ends — keep it hidden when coming back to the week.
+    dbLoadWeekItems(weekKey, todayWeekKey).then(loaded =>
+      setItems(loaded.filter(i => i.id !== pendingDeleteRef.current?.id))
+    );
   }, [weekKey]);
 
   useEffect(() => {
@@ -59,6 +65,12 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
     }, UNDO_DURATION);
     return () => { if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current); };
   }, [pendingDelete]);
+
+  // Leaving Today (another tab) unmounts this before the undo window ends:
+  // finish the delete instead of dropping it, or the item is back next time.
+  useEffect(() => () => {
+    if (pendingDeleteRef.current) dbDeleteWeeklyItem(pendingDeleteRef.current.id);
+  }, []);
 
   async function handleToggle(item: WeeklyItem) {
     if (!item.is_done) {
@@ -127,10 +139,14 @@ export function WeeklyChecklist({ selectedDate }: { selectedDate: string }) {
   function handleUndoDelete() {
     if (!pendingDelete) return;
     if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
-    setItems(prev => {
-      const restored = [...prev, pendingDelete];
-      return restored.sort((a, b) => a.position - b.position || a.id - b.id);
-    });
+    // Undone after switching to another week: it's still in the DB, so it
+    // shows again when its own week loads — don't drop it into this one.
+    if (pendingDelete.week_key === weekKey) {
+      setItems(prev => {
+        const restored = [...prev, pendingDelete];
+        return restored.sort((a, b) => a.position - b.position || a.id - b.id);
+      });
+    }
     setPendingDelete(null);
   }
 
