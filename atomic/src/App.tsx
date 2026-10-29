@@ -6,12 +6,16 @@ import './App.css';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { isTauri } from './store/mockDb';
 import {
+  CollisionDetection,
   DndContext,
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
   DragOverlay,
+  DroppableContainer,
+  Over,
   PointerSensor,
+  UniqueIdentifier,
   useSensor,
   useSensors,
   closestCorners,
@@ -38,6 +42,92 @@ import { useReminder } from './hooks/useReminder';
 import type { Goal, GoalStatus } from './types';
 
 const STATUSES: GoalStatus[] = ['todo', 'doing', 'done'];
+
+function isColumnId(id: UniqueIdentifier): id is GoalStatus {
+  return STATUSES.includes(id as GoalStatus);
+}
+
+// Chọn cột trước theo vị trí ngang của thẻ kéo, rồi closestCorners trong riêng cột
+// đó. Dùng closestCorners trên toàn bảng thì khi thẻ kéo nằm giữa 2 cột, chuyển
+// thẻ sang cột này làm thẻ cột kia trồi lên gần hơn → over nhảy qua lại giữa 2 cột
+// không dừng (Maximum update depth exceeded, bảng trắng). Các cột không xê dịch khi
+// thẻ đổi chỗ nên chọn cột theo trục ngang luôn ổn định.
+const kanbanCollision: CollisionDetection = (args) => {
+  const { collisionRect, droppableContainers, droppableRects } = args;
+  const cx = collisionRect.left + collisionRect.width / 2;
+  let column: DroppableContainer | null = null;
+  let best = Infinity;
+  for (const c of droppableContainers) {
+    const r = droppableRects.get(c.id);
+    if (!isColumnId(c.id) || !r) continue;
+    const dist = cx < r.left ? r.left - cx : cx > r.right ? cx - r.right : 0;
+    if (dist < best) { best = dist; column = c; }
+  }
+  const colNode = column?.node.current;
+  if (!column || !colNode) return closestCorners(args);
+  const inColumn = droppableContainers.filter(
+    (c) => c.id === column.id || (c.node.current !== null && colNode.contains(c.node.current)),
+  );
+  return closestCorners({ ...args, droppableContainers: inColumn });
+};
+
+// Thứ tự id của 1 cột — giống cách KanbanView sắp thẻ (theo position)
+function columnIds(list: Goal[], status: GoalStatus): number[] {
+  return list
+    .filter((g) => g.status === status)
+    .sort((a, b) => a.position - b.position)
+    .map((g) => g.id);
+}
+
+// Đưa thẻ tới vị trí `index` của cột `status` rồi đánh số lại position cho cột
+// đích (và cột nguồn) — KanbanView sắp theo position nên phải đánh số lại thì
+// bản xem trước mới hiện đúng chỗ chèn.
+function moveGoal(list: Goal[], activeId: number, status: GoalStatus, index: number): Goal[] {
+  const active = list.find((g) => g.id === activeId);
+  if (!active) return list;
+  const dest = columnIds(list, status).filter((id) => id !== activeId);
+  dest.splice(Math.max(0, Math.min(index, dest.length)), 0, activeId);
+  const next = new Map<number, Pick<Goal, 'status' | 'position'>>();
+  dest.forEach((id, i) => next.set(id, { status, position: i }));
+  if (active.status !== status) {
+    columnIds(list, active.status)
+      .filter((id) => id !== activeId)
+      .forEach((id, i) => next.set(id, { status: active.status, position: i }));
+  }
+  return list.map((g) => (next.has(g.id) ? { ...g, ...next.get(g.id)! } : g));
+}
+
+// Thẻ sẽ nằm ở đâu (cột + chỉ số cuối cùng trong cột) nếu thả ngay lúc này,
+// tính trên bố cục đang hiển thị `list`:
+//  - không có over / over là chính nó → giữ nguyên chỗ đang hiện
+//  - over là thẻ CÙNG cột → chiếm đúng chỗ thẻ đó (arrayMove), khớp với
+//    verticalListSortingStrategy. Trước đây so tâm 2 thẻ: closestCorners đổi over
+//    ngay khi kéo được nửa ô, còn tâm thì phải qua hết 1 ô → bản xem trước đã đổi
+//    chỗ nhưng thả ra thẻ quay về chỗ cũ.
+//  - over là thẻ khác cột → chèn trên/dưới tuỳ mép trên thẻ kéo đã qua giữa thẻ đó chưa
+//  - over là thân cột (khoảng trống) → cuối cột
+function resolveDropTarget(
+  list: Goal[],
+  activeId: number,
+  over: Over | null,
+  activeTop: number | null,
+): { status: GoalStatus; index: number } | null {
+  const current = list.find((g) => g.id === activeId);
+  if (!current) return null;
+  if (!over || over.id === activeId) {
+    return { status: current.status, index: columnIds(list, current.status).indexOf(activeId) };
+  }
+  if (isColumnId(over.id)) {
+    return { status: over.id, index: columnIds(list, over.id).filter((id) => id !== activeId).length };
+  }
+  const overGoal = list.find((g) => g.id === Number(over.id));
+  if (!overGoal) return null;
+  const ids = columnIds(list, overGoal.status);
+  const overIndex = ids.indexOf(overGoal.id);
+  if (overGoal.status === current.status) return { status: current.status, index: overIndex };
+  const below = activeTop !== null && activeTop > over.rect.top + over.rect.height / 2;
+  return { status: overGoal.status, index: overIndex + (below ? 1 : 0) };
+}
 
 function hexToSecondary(hex: string): string {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -84,8 +174,10 @@ function App() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [dragOverlayWidth, setDragOverlayWidth] = useState<number | null>(null);
-  // Visual-only goals list during drag: moves active card to destination column for sort animation
+  // Visual-only goals list during drag: moves active card to destination column for sort animation.
+  // Ref đi kèm vì onDragOver/onDragEnd có thể chạy trước khi setLiveGoals kịp render.
   const [liveGoals, setLiveGoals] = useState<Goal[] | null>(null);
+  const liveGoalsRef = useRef<Goal[] | null>(null);
 
   // Auto-update state
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -231,136 +323,54 @@ function App() {
     }
   }
 
+  function setLive(next: Goal[] | null) {
+    liveGoalsRef.current = next;
+    setLiveGoals(next);
+  }
+
+  function resetDrag() {
+    setKanbanDragActiveId(null);
+    setDragOverlayWidth(null);
+    setLive(null);
+  }
+
   function handleDragStart(event: DragStartEvent) {
     setKanbanDragActiveId(Number(event.active.id));
     setDragOverlayWidth(event.active.rect.current.initial?.width ?? null);
-    setLiveGoals(null);
+    setLive(null);
   }
 
+  // Chỉ đổi bố cục khi thẻ sang cột khác (hoặc rơi vào khoảng trống của cột).
+  // Đảo thứ tự trong cùng cột để verticalListSortingStrategy tự xem trước.
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
     if (!over || over.id === active.id) return;
 
     const activeId = Number(active.id);
-    const activeGoal = goals.find((g) => g.id === activeId);
-    if (!activeGoal) return;
+    const list = liveGoalsRef.current ?? goals;
+    const current = list.find((g) => g.id === activeId);
+    if (!current) return;
+    if (!isColumnId(over.id) && list.find((g) => g.id === Number(over.id))?.status === current.status) return;
 
-    // Determine which column the cursor is over
-    let destStatus: GoalStatus;
-    if (STATUSES.includes(over.id as GoalStatus)) {
-      destStatus = over.id as GoalStatus;
-    } else {
-      const overGoal = goals.find((g) => g.id === Number(over.id));
-      if (!overGoal) return;
-      destStatus = overGoal.status;
-    }
-
-    if (destStatus === activeGoal.status) {
-      // Hovering back over original column — reset to let native sort handle it
-      setLiveGoals(null);
-      return;
-    }
-
-    // Build live goals: remove active from source, insert into destination
-    const withoutActive = goals.filter((g) => g.id !== activeId);
-    const destGoals = withoutActive
-      .filter((g) => g.status === destStatus)
-      .sort((a, b) => a.position - b.position);
-
-    let insertIndex: number;
-    if (STATUSES.includes(over.id as GoalStatus)) {
-      insertIndex = destGoals.length;
-    } else {
-      const overIndex = destGoals.findIndex((g) => g.id === Number(over.id));
-      const isBelowOverItem =
-        active.rect.current.translated &&
-        active.rect.current.translated.top > over.rect.top + over.rect.height / 2;
-      insertIndex = overIndex >= 0 ? overIndex + (isBelowOverItem ? 1 : 0) : destGoals.length;
-    }
-
-    const movedGoal = { ...activeGoal, status: destStatus };
-    setLiveGoals([
-      ...withoutActive.filter((g) => g.status !== destStatus),
-      ...destGoals.slice(0, insertIndex),
-      movedGoal,
-      ...destGoals.slice(insertIndex),
-    ]);
+    const target = resolveDropTarget(list, activeId, over, active.rect.current.translated?.top ?? null);
+    if (!target) return;
+    if (target.status === current.status && target.index === columnIds(list, current.status).indexOf(activeId)) return;
+    setLive(moveGoal(list, activeId, target.status, target.index));
   }
 
+  // Thả đúng chỗ đang hiển thị: tính trên bố cục xem trước (liveGoals), không phải goals gốc
   function handleDragEnd(event: DragEndEvent) {
-    setKanbanDragActiveId(null);
-    setDragOverlayWidth(null);
-    setLiveGoals(null);
     const { active, over } = event;
     const activeId = Number(active.id);
+    const list = liveGoalsRef.current ?? goals;
+    const target = resolveDropTarget(list, activeId, over, active.rect.current.translated?.top ?? null);
+    resetDrag();
+    if (!target) return;
 
-    // Normal path: dnd-kit gave a clear, non-self target
-    if (over && over.id !== active.id) {
-      const overId = over.id;
-      let newStatus: GoalStatus;
-      let newIndex: number;
-
-      if (STATUSES.includes(overId as GoalStatus)) {
-        newStatus = overId as GoalStatus;
-        newIndex = goals.filter((g) => g.status === newStatus && g.id !== activeId).length;
-      } else {
-        const overGoal = goals.find((g) => g.id === Number(overId));
-        if (!overGoal) return;
-        newStatus = overGoal.status;
-        const targetIds = goals
-          .filter((g) => g.status === newStatus && g.id !== activeId)
-          .sort((a, b) => a.position - b.position)
-          .map((g) => g.id);
-        const overIndex = targetIds.indexOf(Number(overId));
-        const activeRect = active.rect.current.translated;
-        const insertAfter =
-          activeRect
-            ? activeRect.top + activeRect.height / 2 > over.rect.top + over.rect.height / 2
-            : false;
-        newIndex = (overIndex < 0 ? targetIds.length : overIndex) + (insertAfter ? 1 : 0);
-      }
-      reorderGoal(activeId, newStatus, newIndex);
-      return;
-    }
-
-    // Fast-drag fallback: over is null or collision picked the active card itself.
-    // Use the overlay's final screen position to determine target column and index.
-    const overlayRect = active.rect.current.translated;
-    if (!overlayRect) return;
-
-    const cx = overlayRect.left + overlayRect.width / 2;
-    const cy = overlayRect.top + overlayRect.height / 2;
-
-    // Find the nearest column by horizontal distance
-    let targetStatus: GoalStatus | null = null;
-    let minDist = Infinity;
-    for (const status of STATUSES) {
-      const colEl = document.querySelector<HTMLElement>(`[data-kanban-col="${status}"]`);
-      if (!colEl) continue;
-      const r = colEl.getBoundingClientRect();
-      const dist = Math.abs(cx - (r.left + r.width / 2));
-      if (dist < minDist) { minDist = dist; targetStatus = status; }
-    }
-    if (!targetStatus) return;
-
-    const colEl = document.querySelector<HTMLElement>(`[data-kanban-col="${targetStatus}"]`);
-    if (!colEl) return;
-
-    // Find insert index by comparing overlay center Y to each card's midpoint
-    const cardEls = colEl.querySelectorAll<HTMLElement>('[data-card-id]');
-    const colGoals = goals
-      .filter((g) => g.status === targetStatus && g.id !== activeId)
-      .sort((a, b) => a.position - b.position);
-    let newIndex = colGoals.length;
-    let validIdx = 0;
-    for (const cardEl of cardEls) {
-      if (Number(cardEl.getAttribute('data-card-id')) === activeId) continue;
-      const r = cardEl.getBoundingClientRect();
-      if (cy < r.top + r.height / 2) { newIndex = validIdx; break; }
-      validIdx++;
-    }
-
-    reorderGoal(activeId, targetStatus, newIndex);
+    const original = goals.find((g) => g.id === activeId);
+    if (!original) return;
+    if (target.status === original.status && target.index === columnIds(goals, original.status).indexOf(activeId)) return;
+    reorderGoal(activeId, target.status, target.index);
   }
 
   const overlayGoal = kanbanDragActiveId
@@ -370,10 +380,11 @@ function App() {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={kanbanCollision}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      onDragCancel={resetDrag}
     >
       {backgroundEnabled && backgroundImageUrl && (
         <div
