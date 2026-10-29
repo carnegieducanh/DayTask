@@ -15,48 +15,18 @@ import {
   seedJournalIfEmpty,
 } from '../../store/journalDb';
 
-// â"€â"€â"€ Constants â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// ─── Constants ───────────────────────────────────────────────────────────────
 
-const ACCENT_GRATITUDE = 'var(--primary)';
-const ACCENT_LESSON = 'var(--journal-secondary)';
 const LESSON_GROUP_SIZE = 4; // Vấn đề · Nguyên nhân · Trạng thái mong muốn · Hành động
 type JTab = 'gratitude' | 'lesson';
 
-interface TabCfg {
-  accent: string;
-  promptColor: string;
-  bgPrompt: string;
-  borderPrompt: string;
-  borderWrite: string;
-  saveBg: string;
-  saveColor: string;
-  defaultCount: number;
-}
-
-const TABS: Record<JTab, TabCfg> = {
-  gratitude: {
-    accent: ACCENT_GRATITUDE,
-    promptColor: 'var(--journal-prompt-text-g)',
-    bgPrompt: 'var(--journal-gratitude-tint-bg)',
-    borderPrompt: 'var(--journal-gratitude-tint-border)',
-    borderWrite: 'var(--journal-gratitude-write-border)',
-    saveBg: 'var(--primary)',
-    saveColor: '#fff',
-    defaultCount: 3,
-  },
-  lesson: {
-    accent: ACCENT_LESSON,
-    promptColor: 'var(--journal-prompt-text-l)',
-    bgPrompt: 'var(--journal-lesson-tint-bg)',
-    borderPrompt: 'var(--journal-lesson-tint-border)',
-    borderWrite: 'var(--journal-lesson-write-border)',
-    saveBg: 'var(--journal-secondary)',
-    saveColor: '#1a1a1a',
-    defaultCount: LESSON_GROUP_SIZE,
-  },
+// Số ô trống khi ngày đó chưa có ghi chép
+const DEFAULT_COUNT: Record<JTab, number> = {
+  gratitude: 3,
+  lesson: LESSON_GROUP_SIZE,
 };
 
-// â"€â"€â"€ Helpers â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getToday() {
   const d = new Date();
@@ -81,7 +51,7 @@ function fmtDateShort(
 }
 
 function formatSavedTime(updatedAt: string): string {
-  // SQLite datetime('now') tráº£ vá» UTC: "2026-06-05 08:30:00"
+  // SQLite datetime('now') trả về UTC: "2026-06-05 08:30:00"
   const d = new Date(updatedAt.replace(' ', 'T') + 'Z');
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
@@ -90,6 +60,10 @@ function autoResize(el: HTMLTextAreaElement | null) {
   if (!el) return;
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
+}
+
+function emptyItems(type: JTab): string[] {
+  return Array(DEFAULT_COUNT[type]).fill('');
 }
 
 function ensureLessonItems(items: string[]): string[] {
@@ -109,7 +83,7 @@ function chunkLessons(items: string[]): string[][] {
   return groups;
 }
 
-// â"€â"€â"€ AutoTextarea â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// ─── AutoTextarea ────────────────────────────────────────────────────────────
 
 function AutoTextarea({
   value, onChange, placeholder, className,
@@ -136,14 +110,64 @@ function AutoTextarea({
   );
 }
 
-// â"€â"€â"€ WriteCard â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// ─── Write card: header + footer dùng chung cho Biết ơn và Bài học ─────────
+
+function WriteHeader({
+  isToday, dateLabel, savedEntry,
+}: {
+  isToday: boolean;
+  dateLabel: string;
+  savedEntry: JournalEntry | null;
+}) {
+  const { journal: jt } = useT();
+  return (
+    <div className="jm-wc-header">
+      <span className="jm-wc-title">{isToday ? jt.writeToday : jt.writeDate(dateLabel)}</span>
+      {savedEntry ? (
+        <span className="jm-wc-status saved">
+          <IconCheck size={13} /> {jt.savedAt(formatSavedTime(savedEntry.updated_at))}
+        </span>
+      ) : (
+        <span className="jm-wc-status">{dateLabel}</span>
+      )}
+    </div>
+  );
+}
+
+function WriteFooter({
+  charCount, saving, isSaved, hasEntry, canSave, onSave,
+}: {
+  charCount: number;
+  saving: boolean;
+  isSaved: boolean;
+  hasEntry: boolean;
+  canSave: boolean;
+  onSave: () => void;
+}) {
+  const { journal: jt } = useT();
+  return (
+    <div className="jm-wc-footer">
+      <span className="jm-wc-char">{jt.charCount(charCount)}</span>
+      <button className="jm-wc-save" disabled={saving || isSaved || !canSave} onClick={onSave}>
+        {saving
+          ? jt.saving
+          : isSaved
+            ? <><IconCheck size={14} /> {jt.saved}</>
+            : hasEntry
+              ? jt.update
+              : jt.saveToday}
+      </button>
+    </div>
+  );
+}
+
+// ─── WriteCard ───────────────────────────────────────────────────────────────
 
 function WriteCard({
-  items, setItems, cfg, dateLabel, onSave, onClear, saving, todayEntry, isDirty, isToday, placeholder,
+  items, setItems, dateLabel, onSave, onClear, saving, todayEntry, isDirty, isToday, placeholder,
 }: {
   items: string[];
   setItems: (items: string[]) => void;
-  cfg: TabCfg;
   dateLabel: string;
   onSave: () => void;
   onClear: () => void;
@@ -170,69 +194,48 @@ function WriteCard({
 
   return (
     <div className="jm-write-card">
-      <div className="jm-wc-header">
-        <span style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <IconPencil size={13} color="var(--text-secondary)" /> {isToday ? jt.writeToday : jt.writeDate(dateLabel)}
-        </span>
-        {isSaved ? (
-          <span style={{ color: cfg.accent, fontSize: '0.79rem', display: 'flex', alignItems: 'center', gap: 3 }}>
-            <IconCheck size={12} color={cfg.accent} /> {jt.savedAt(formatSavedTime(todayEntry!.updated_at))}
-          </span>
-        ) : (
-          <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{dateLabel}</span>
-        )}
-      </div>
+      <WriteHeader isToday={isToday} dateLabel={dateLabel} savedEntry={isSaved ? todayEntry : null} />
 
-      <div className="jm-wc-items">
+      <ol className="jm-wc-items">
         {items.map((val, idx) => (
-          <div key={idx} className="jm-wc-item">
-            <span className="jm-wc-num" style={{ color: cfg.accent }}>{idx + 1}</span>
+          <li key={idx} className="jm-wc-item">
+            <span className="jm-wc-num">{idx + 1}</span>
             <AutoTextarea
               value={val}
               onChange={v => updateItem(idx, v)}
               placeholder={placeholder}
               className="jm-wc-ta"
             />
-            <button className="jm-wc-del" onClick={() => removeItem(idx)} title={jt.deleteItem}>
-              <IconX size={11} />
+            <button className="jm-wc-del" onClick={() => removeItem(idx)} title={jt.deleteItem} aria-label={jt.deleteItem}>
+              <IconX size={12} />
             </button>
-          </div>
+          </li>
         ))}
-      </div>
+      </ol>
 
       <button className="jm-wc-add" onClick={addItem}>
-        <IconPlus size={12} /> {jt.addItem}
+        <IconPlus size={13} /> {jt.addItem}
       </button>
 
-      <div className="jm-wc-footer">
-        <span className="jm-wc-char">{jt.charCount(charCount)}</span>
-        <button
-          className="jm-wc-save"
-          style={{ background: cfg.saveBg, color: cfg.saveColor }}
-          disabled={saving || isSaved || (!hasContent && !(!!todayEntry && isDirty))}
-          onClick={onSave}
-        >
-          {saving
-            ? jt.saving
-            : isSaved
-              ? <><IconCheck size={13} /> {jt.saved}</>
-              : todayEntry
-                ? jt.update
-                : jt.saveToday}
-        </button>
-      </div>
+      <WriteFooter
+        charCount={charCount}
+        saving={saving}
+        isSaved={isSaved}
+        hasEntry={!!todayEntry}
+        canSave={hasContent || (!!todayEntry && isDirty)}
+        onSave={onSave}
+      />
     </div>
   );
 }
 
-// â"€â"€â"€ LessonWriteCard â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// ─── LessonWriteCard ─────────────────────────────────────────────────────────
 
 function LessonWriteCard({
-  items, setItems, cfg, dateLabel, onSave, onClear, saving, todayEntry, isDirty, isToday,
+  items, setItems, dateLabel, onSave, onClear, saving, todayEntry, isDirty, isToday,
 }: {
   items: string[];
   setItems: (items: string[]) => void;
-  cfg: TabCfg;
   dateLabel: string;
   onSave: () => void;
   onClear: () => void;
@@ -263,38 +266,29 @@ function LessonWriteCard({
 
   return (
     <div className="jm-write-card">
-      <div className="jm-wc-header">
-        <span style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <IconPencil size={13} color="var(--text-secondary)" /> {isToday ? jt.writeToday : jt.writeDate(dateLabel)}
-        </span>
-        {isSaved ? (
-          <span style={{ color: cfg.accent, fontSize: '0.79rem', display: 'flex', alignItems: 'center', gap: 3 }}>
-            <IconCheck size={12} color={cfg.accent} /> {jt.savedAt(formatSavedTime(todayEntry!.updated_at))}
-          </span>
-        ) : (
-          <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{dateLabel}</span>
-        )}
-      </div>
+      <WriteHeader isToday={isToday} dateLabel={dateLabel} savedEntry={isSaved ? todayEntry : null} />
 
       <div className="jm-wc-items">
         {groups.map((group, groupIdx) => (
           <div key={groupIdx} className="jm-lesson-group">
             {groups.length > 1 && (
               <div className="jm-lesson-group-header">
-                <span className="jm-lesson-group-label" style={{ color: cfg.accent }}>
-                  {jt.lessonGroup(groupIdx + 1)}
-                </span>
-                <button className="jm-lesson-group-del" onClick={() => removeGroup(groupIdx)} title={jt.deleteLesson}>
-                  <IconX size={11} />
+                <span className="jm-lesson-group-label">{jt.lessonGroup(groupIdx + 1)}</span>
+                <button
+                  className="jm-lesson-group-del"
+                  onClick={() => removeGroup(groupIdx)}
+                  title={jt.deleteLesson}
+                  aria-label={jt.deleteLesson}
+                >
+                  <IconX size={12} />
                 </button>
               </div>
             )}
             {jt.lessonFields.map((field, fieldIdx) => (
               <div key={fieldIdx} className="jm-lesson-field">
                 <div className="jm-lesson-field-header">
-                  <span className="jm-lesson-field-num" style={{ color: cfg.accent }}>{fieldIdx + 1}.</span>
+                  <span className="jm-lesson-field-num">{fieldIdx + 1}.</span>
                   <span className="jm-lesson-field-label">{field.label}</span>
-                  <IconChevronRight size={10} color="var(--text-secondary)" style={{ flexShrink: 0 }} />
                   <span className="jm-lesson-field-prompt">{field.prompt}</span>
                 </div>
                 <AutoTextarea
@@ -310,38 +304,25 @@ function LessonWriteCard({
       </div>
 
       <button className="jm-wc-add" onClick={addGroup}>
-        <IconPlus size={12} /> {jt.addLesson}
+        <IconPlus size={13} /> {jt.addLesson}
       </button>
 
-      <div className="jm-wc-footer">
-        <span className="jm-wc-char">{jt.charCount(charCount)}</span>
-        <button
-          className="jm-wc-save"
-          style={{ background: cfg.saveBg, color: cfg.saveColor }}
-          disabled={saving || isSaved || (!hasContent && !(!!todayEntry && isDirty))}
-          onClick={onSave}
-        >
-          {saving
-            ? jt.saving
-            : isSaved
-              ? <><IconCheck size={13} /> {jt.saved}</>
-              : todayEntry
-                ? jt.update
-                : jt.saveToday}
-        </button>
-      </div>
+      <WriteFooter
+        charCount={charCount}
+        saving={saving}
+        isSaved={isSaved}
+        hasEntry={!!todayEntry}
+        canSave={hasContent || (!!todayEntry && isDirty)}
+        onSave={onSave}
+      />
     </div>
   );
 }
 
-// â"€â"€â"€ LessonEntryCard â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// ─── Entry cards (lịch sử) ───────────────────────────────────────────────────
 
-function LessonEntryCard({
-  entry, cfg, isEditing, editItems, setEditItems,
-  onEdit, onEditSave, onEditCancel, onDelete,
-}: {
+interface EntryCardProps {
   entry: JournalEntry;
-  cfg: TabCfg;
   isEditing: boolean;
   editItems: string[];
   setEditItems: (items: string[]) => void;
@@ -349,52 +330,63 @@ function LessonEntryCard({
   onEditSave: () => void;
   onEditCancel: () => void;
   onDelete: () => void;
-}) {
+}
+
+function EntryHeader({
+  entry, isEditing, onEdit, onEditSave, onEditCancel, onDelete,
+}: Omit<EntryCardProps, 'editItems' | 'setEditItems'>) {
   const { journal: jt } = useT();
+  return (
+    <div className="jm-ec-header">
+      <span className="jm-ec-date">{fmtDate(entry.date, jt.dowFull, jt.formatDate)}</span>
+      <div className="jm-ec-actions">
+        {isEditing ? (
+          <>
+            <button className="jm-ec-btn confirm" onClick={onEditSave} title={jt.tooltipSave} aria-label={jt.tooltipSave}>
+              <IconCheck size={15} />
+            </button>
+            <button className="jm-ec-btn" onClick={onEditCancel} title={jt.tooltipCancel} aria-label={jt.tooltipCancel}>
+              <IconX size={15} />
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="jm-ec-btn" onClick={onEdit} title={jt.tooltipEdit} aria-label={jt.tooltipEdit}>
+              <IconPencil size={15} stroke={1.6} />
+            </button>
+            <button className="jm-ec-btn danger" onClick={onDelete} title={jt.tooltipDelete} aria-label={jt.tooltipDelete}>
+              <IconTrash size={15} stroke={1.6} />
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LessonEntryCard({ entry, isEditing, editItems, setEditItems, ...actions }: EntryCardProps) {
+  const { journal: jt } = useT();
+  const groups = chunkLessons(isEditing ? editItems : entry.items);
 
   return (
-    <div className="jm-entry-card" id={`entry-${entry.date}`}>
-      <div className="jm-ec-header">
-        <span className="jm-ec-date">{fmtDate(entry.date, jt.dowFull, jt.formatDate)}</span>
-        <div className="jm-ec-actions">
-          {isEditing ? (
-            <>
-              <button className="jm-ec-btn" onClick={onEditSave} title={jt.tooltipSave}>
-                <IconCheck size={13} color={cfg.accent} />
-              </button>
-              <button className="jm-ec-btn" onClick={onEditCancel} title={jt.tooltipCancel}>
-                <IconX size={13} color="var(--text-secondary)" />
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="jm-ec-btn" onClick={onEdit} title={jt.tooltipEdit}>
-                <IconPencil size={13} color="var(--text-secondary)" />
-              </button>
-              <button className="jm-ec-btn" onClick={onDelete} title={jt.tooltipDelete}>
-                <IconTrash size={13} color="var(--text-secondary)" />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+    <article className={`jm-entry-card${isEditing ? ' editing' : ''}`} id={`entry-${entry.date}`}>
+      <EntryHeader entry={entry} isEditing={isEditing} {...actions} />
 
       <div className="jm-ec-items">
-        {isEditing ? (
-          chunkLessons(editItems).map((group, groupIdx) => (
-            <div key={groupIdx} className="jm-ec-lesson-group">
-              {chunkLessons(editItems).length > 1 && (
-                <div className="jm-ec-lesson-group-header">
-                  <span className="jm-ec-lesson-group-label" style={{ color: cfg.accent }}>
-                    {jt.lessonGroup(groupIdx + 1)}
-                  </span>
+        {groups.map((group, groupIdx) => (
+          <div key={groupIdx} className="jm-ec-lesson-group">
+            {groups.length > 1 && (
+              <div className="jm-lesson-group-header">
+                <span className="jm-lesson-group-label">{jt.lessonGroup(groupIdx + 1)}</span>
+              </div>
+            )}
+            {jt.lessonFields.map((field, fieldIdx) => (
+              <div key={fieldIdx} className="jm-ec-lesson-field">
+                <div className="jm-ec-lesson-label">
+                  <span className="jm-lesson-field-num">{fieldIdx + 1}.</span>
+                  {field.label}
                 </div>
-              )}
-              {jt.lessonFields.map((field, fieldIdx) => (
-                <div key={fieldIdx} className="jm-ec-lesson-field">
-                  <div className="jm-ec-lesson-label" style={{ color: cfg.accent }}>
-                    {fieldIdx + 1}. {field.label}
-                  </div>
+                {isEditing ? (
                   <AutoTextarea
                     value={group[fieldIdx] ?? ''}
                     onChange={v => {
@@ -402,92 +394,32 @@ function LessonEntryCard({
                       next[groupIdx * LESSON_GROUP_SIZE + fieldIdx] = v;
                       setEditItems(next);
                     }}
-                    className="jm-wc-ta"
+                    className="jm-lesson-field-ta"
                   />
-                </div>
-              ))}
-            </div>
-          ))
-        ) : (
-          chunkLessons(entry.items).map((group, groupIdx) => (
-            <div key={groupIdx} className="jm-ec-lesson-group">
-              {chunkLessons(entry.items).length > 1 && (
-                <div className="jm-ec-lesson-group-header">
-                  <span className="jm-ec-lesson-group-label" style={{ color: cfg.accent }}>
-                    {jt.lessonGroup(groupIdx + 1)}
-                  </span>
-                </div>
-              )}
-              {jt.lessonFields.map((field, fieldIdx) => (
-                <div key={fieldIdx} className="jm-ec-lesson-field">
-                  <div className="jm-ec-lesson-label" style={{ color: cfg.accent }}>
-                    {fieldIdx + 1}. {field.label}
-                  </div>
-                  {group[fieldIdx] ? (
-                    <div className="jm-ec-lesson-value">{group[fieldIdx]}</div>
-                  ) : (
-                    <div className="jm-ec-lesson-value" style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '0.82rem' }}>—</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ))
-        )}
+                ) : group[fieldIdx] ? (
+                  <p className="jm-ec-lesson-value">{group[fieldIdx]}</p>
+                ) : (
+                  <p className="jm-ec-lesson-value empty">—</p>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
-    </div>
+    </article>
   );
 }
 
-// â"€â"€â"€ EntryCard â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
-
-function EntryCard({
-  entry, cfg, isEditing, editItems, setEditItems,
-  onEdit, onEditSave, onEditCancel, onDelete,
-}: {
-  entry: JournalEntry;
-  cfg: TabCfg;
-  isEditing: boolean;
-  editItems: string[];
-  setEditItems: (items: string[]) => void;
-  onEdit: () => void;
-  onEditSave: () => void;
-  onEditCancel: () => void;
-  onDelete: () => void;
-}) {
-  const { journal: jt } = useT();
-
+function EntryCard({ entry, isEditing, editItems, setEditItems, ...actions }: EntryCardProps) {
   return (
-    <div className="jm-entry-card" id={`entry-${entry.date}`}>
-      <div className="jm-ec-header">
-        <span className="jm-ec-date">{fmtDate(entry.date, jt.dowFull, jt.formatDate)}</span>
-        <div className="jm-ec-actions">
-          {isEditing ? (
-            <>
-              <button className="jm-ec-btn" onClick={onEditSave} title={jt.tooltipSave}>
-                <IconCheck size={13} color={cfg.accent} />
-              </button>
-              <button className="jm-ec-btn" onClick={onEditCancel} title={jt.tooltipCancel}>
-                <IconX size={13} color="var(--text-secondary)" />
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="jm-ec-btn" onClick={onEdit} title={jt.tooltipEdit}>
-                <IconPencil size={13} color="var(--text-secondary)" />
-              </button>
-              <button className="jm-ec-btn" onClick={onDelete} title={jt.tooltipDelete}>
-                <IconTrash size={13} color="var(--text-secondary)" />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+    <article className={`jm-entry-card${isEditing ? ' editing' : ''}`} id={`entry-${entry.date}`}>
+      <EntryHeader entry={entry} isEditing={isEditing} {...actions} />
 
       <div className="jm-ec-items">
         {isEditing ? (
           editItems.map((val, idx) => (
             <div key={idx} className="jm-wc-item">
-              <span className="jm-wc-num" style={{ color: cfg.accent }}>{idx + 1}</span>
+              <span className="jm-wc-num">{idx + 1}</span>
               <AutoTextarea
                 value={val}
                 onChange={v => {
@@ -500,20 +432,21 @@ function EntryCard({
         ) : (
           entry.items.map((text, idx) => (
             <div key={idx} className="jm-ec-item">
-              <span className="jm-ec-num" style={{ color: cfg.accent }}>{idx + 1}</span>
-              <span className="jm-ec-text">{text}</span>
+              <span className="jm-ec-num">{idx + 1}</span>
+              <p className="jm-ec-text">{text}</p>
             </div>
           ))
         )}
       </div>
-    </div>
+    </article>
   );
 }
 
-// â"€â"€â"€ JournalView (main) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// ─── JournalView (main) ──────────────────────────────────────────────────────
 
 export default function JournalView() {
-  const { journal: jt } = useT();
+  const t = useT();
+  const jt = t.journal;
   const now = new Date();
   const todayStr = getToday();
 
@@ -557,8 +490,6 @@ export default function JournalView() {
   useSmoothScroll(mainRef);
   useSmoothScroll(sidebarRef);
 
-  const cfg = TABS[activeType];
-
   const isDirty = selectedEntry
     ? activeType === 'lesson'
       ? JSON.stringify(items) !== JSON.stringify(ensureLessonItems(selectedEntry.items))
@@ -579,7 +510,7 @@ export default function JournalView() {
       setItems(type === 'lesson' ? ensureLessonItems(entry.items) : [...entry.items]);
       setShowPrompt(false);
     } else {
-      setItems(type === 'lesson' ? Array(LESSON_GROUP_SIZE).fill('') : Array(TABS[type].defaultCount).fill(''));
+      setItems(emptyItems(type));
       setShowPrompt(true);
     }
 
@@ -651,7 +582,7 @@ export default function JournalView() {
       setItems(activeType === 'lesson' ? ensureLessonItems(entry.items) : [...entry.items]);
       setShowPrompt(false);
     } else {
-      setItems(activeType === 'lesson' ? Array(LESSON_GROUP_SIZE).fill('') : Array(TABS[activeType].defaultCount).fill(''));
+      setItems(emptyItems(activeType));
       setShowPrompt(true);
     }
     setHistory(hist);
@@ -730,7 +661,7 @@ export default function JournalView() {
       wasSelected = true;
       prevItems = [...items];
       setSelectedEntry(null);
-      setItems(activeType === 'lesson' ? Array(LESSON_GROUP_SIZE).fill('') : Array(TABS[activeType].defaultCount).fill(''));
+      setItems(emptyItems(activeType));
       setShowPrompt(true);
     } else {
       entryToDelete = history.find(e => e.id === id) ?? null;
@@ -776,6 +707,11 @@ export default function JournalView() {
     await refreshSidebar();
   }
 
+  function switchType(type: JTab) {
+    setActiveType(type);
+    mainRef.current?.scrollTo({ top: 0 });
+  }
+
   // Mini calendar geometry
   const calFirstDow = new Date(calYear, calMonth - 1, 1).getDay();
   const calDaysInMonth = new Date(calYear, calMonth, 0).getDate();
@@ -792,23 +728,30 @@ export default function JournalView() {
   const activePromptLines = activeType === 'gratitude' ? jt.gratitudePrompt : jt.lessonPrompt;
   const activePlaceholder = activeType === 'gratitude' ? jt.gratitudePlaceholder : jt.lessonPlaceholder;
   const dateLabel = fmtDateShort(selectedDate, jt.formatDateShort);
+  const isTodaySelected = selectedDate === todayStr;
+  const noteCount = selectedEntry
+    ? activeType === 'lesson'
+      ? Math.ceil(selectedEntry.items.length / LESSON_GROUP_SIZE)
+      : selectedEntry.items.length
+    : null;
 
   return (
-    <div className="journal-view">
+    <div className="journal-view" data-type={activeType}>
 
-      {/* â"€â"€â"€ Sidebar â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
+      {/* ── Sidebar: lịch tháng, chuỗi ngày, thống kê ── */}
       <aside className="journal-sidebar" ref={sidebarRef}>
 
-        {/* Mini Calendar */}
-        <div className="jsc-section">
+        <section className="jsc-section">
           <div className="jsc-cal-header">
-            <button className="jsc-nav-btn" onClick={calPrev}>
-              <IconChevronLeft size={13} />
-            </button>
-            <span className="jsc-cal-title">{jt.monthsShort[calMonth - 1]} {calYear}</span>
-            <button className="jsc-nav-btn" onClick={calNext}>
-              <IconChevronRight size={13} />
-            </button>
+            <span className="jsc-cal-title">{jt.monthTitle(calMonth, calYear)}</span>
+            <div className="jsc-cal-nav">
+              <button className="jsc-nav-btn" onClick={calPrev} title={jt.prevMonth} aria-label={jt.prevMonth}>
+                <IconChevronLeft size={14} />
+              </button>
+              <button className="jsc-nav-btn" onClick={calNext} title={jt.nextMonth} aria-label={jt.nextMonth}>
+                <IconChevronRight size={14} />
+              </button>
+            </div>
           </div>
           <div className="jsc-cal-grid">
             {jt.dowShort.map(d => <div key={d} className="jsc-cal-dow">{d}</div>)}
@@ -816,197 +759,154 @@ export default function JournalView() {
             {Array(calDaysInMonth).fill(null).map((_, i) => {
               const day = i + 1;
               const ds = `${calYear}-${String(calMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-              const isToday = ds === todayStr;
-              const isSelected = ds === selectedDate;
-              const hasEntry = datesWithEntries.has(ds);
-              const isFuture = ds > todayStr;
+              const cls = [
+                'jsc-cal-day',
+                ds === todayStr && 'today',
+                ds === selectedDate && 'selected',
+                datesWithEntries.has(ds) && 'has-entry',
+              ].filter(Boolean).join(' ');
               return (
-                <div
+                <button
                   key={day}
-                  className="jsc-cal-day"
-                  style={{
-                    background: isSelected ? ACCENT_GRATITUDE : 'transparent',
-                    color: isSelected ? '#fff' : (isToday || hasEntry) ? ACCENT_GRATITUDE : 'var(--text-secondary)',
-                    cursor: isFuture ? 'default' : 'pointer',
-                    fontWeight: isSelected || isToday ? 700 : 400,
-                    borderColor: isToday && !isSelected ? ACCENT_GRATITUDE : 'transparent',
-                    opacity: isFuture ? 0.35 : 1,
-                  }}
+                  className={cls}
+                  disabled={ds > todayStr}
                   title={fmtDate(ds, jt.dowFull, jt.formatDate)}
-                  onClick={() => {
-                    if (!isFuture) selectDate(ds);
-                  }}
+                  onClick={() => selectDate(ds)}
                 >
                   {day}
-                </div>
+                </button>
               );
             })}
           </div>
-        </div>
+        </section>
 
-        {/* Streak */}
-        <div className="jsc-streak">
-          <span className="jsc-streak-num" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <IconFlame size={20} color="var(--primary)" /> {streak}
+        <section className="jsc-streak">
+          <span className="jsc-streak-num">{streak}</span>
+          <span className="jsc-streak-label">
+            <IconFlame size={14} /> {jt.streakLabel}
           </span>
-          <span className="jsc-streak-label">{jt.streakLabel}</span>
-        </div>
+        </section>
 
-        {/* Stats */}
-        <div className="jsc-stats">
-          <div className="jsc-stats-label">{jt.thisMonth}</div>
-          <div className="jsc-stat-row">
-            <IconHeart size={13} color={ACCENT_GRATITUDE} style={{ flexShrink: 0 }} />
-            <span style={{ color: ACCENT_GRATITUDE, fontSize: '0.82rem' }}>{jt.gratitudeTab}</span>
-            <span className="jsc-stat-val" style={{ color: ACCENT_GRATITUDE }}>
-              {stats.gratitudeDays} {jt.days}
-            </span>
+        <section className="jsc-stats">
+          <div className="jsc-label">{jt.thisMonth}</div>
+          <div className="jsc-stat-row gratitude">
+            <IconHeart size={14} />
+            <span>{jt.gratitudeTab}</span>
+            <span className="jsc-stat-val">{stats.gratitudeDays} <em>{jt.days}</em></span>
           </div>
-          <div className="jsc-stat-row">
-            <IconBulb size={13} color={ACCENT_LESSON} style={{ flexShrink: 0 }} />
-            <span style={{ color: ACCENT_LESSON, fontSize: '0.82rem' }}>{jt.lessonTab}</span>
-            <span className="jsc-stat-val" style={{ color: ACCENT_LESSON }}>
-              {stats.lessonDays} {jt.days}
-            </span>
+          <div className="jsc-stat-row lesson">
+            <IconBulb size={14} />
+            <span>{jt.lessonTab}</span>
+            <span className="jsc-stat-val">{stats.lessonDays} <em>{jt.days}</em></span>
           </div>
-        </div>
+        </section>
 
       </aside>
 
-      {/* â"€â"€â"€ Main â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
-      <div className="journal-right">
+      {/* ── Main ── */}
+      <div className="journal-main" ref={mainRef}>
+        <div className="jm-page">
 
-        {/* Journal Head â€" ngoÃ i vÃ¹ng scroll */}
-        <div className="jm-head">
-          <div className="jm-head-left">
-            <div className="jm-date">{fmtDate(selectedDate, jt.dowFull, jt.formatDate)}</div>
-            <div className="jm-date-sub">
-              {selectedDate === todayStr ? jt.todayLabel : dateLabel} · {selectedEntry
-                ? jt.itemCount(activeType === 'lesson'
-                    ? Math.ceil(selectedEntry.items.length / LESSON_GROUP_SIZE)
-                    : selectedEntry.items.length)
-                : jt.noNotes}
+          <header className="jm-head">
+            <div className="jm-head-main">
+              <span className="jm-eyebrow">{t.nav.journal}</span>
+              <h1 className="jm-date">{fmtDate(selectedDate, jt.dowFull, jt.formatDate)}</h1>
+              <p className="jm-date-sub">
+                {isTodaySelected ? jt.todayLabel : dateLabel} · {noteCount !== null ? jt.itemCount(noteCount) : jt.noNotes}
+              </p>
             </div>
-          </div>
-          <div className="jm-type-toggle">
-            <button
-              className={`jm-tt-btn${activeType === 'gratitude' ? ' jm-tt-btn--active' : ''}`}
-              style={activeType === 'gratitude'
-                ? { background: TABS.gratitude.saveBg, color: TABS.gratitude.saveColor, fontWeight: 500 }
-                : {}}
-              onClick={() => { setActiveType('gratitude'); mainRef.current?.scrollTo({ top: 0 }); }}
-            >
-              <IconHeart size={13} /> {jt.gratitudeTab}
-            </button>
-            <button
-              className={`jm-tt-btn${activeType === 'lesson' ? ' jm-tt-btn--active' : ''}`}
-              style={activeType === 'lesson'
-                ? { background: TABS.lesson.saveBg, color: TABS.lesson.saveColor, fontWeight: 500 }
-                : {}}
-              onClick={() => { setActiveType('lesson'); mainRef.current?.scrollTo({ top: 0 }); }}
-            >
-              <IconBulb size={13} /> {jt.lessonTab}
-            </button>
+            <div className="jm-type-toggle">
+              <button
+                className={`jm-tt-btn gratitude${activeType === 'gratitude' ? ' active' : ''}`}
+                onClick={() => switchType('gratitude')}
+              >
+                <IconHeart size={14} /> {jt.gratitudeTab}
+              </button>
+              <button
+                className={`jm-tt-btn lesson${activeType === 'lesson' ? ' active' : ''}`}
+                onClick={() => switchType('lesson')}
+              >
+                <IconBulb size={14} /> {jt.lessonTab}
+              </button>
+            </div>
+          </header>
+
+          <div key={contentKey} className="journal-date-content">
+
+            {showPrompt && (
+              <div className="jm-prompt">
+                {activeType === 'gratitude'
+                  ? <IconHeart size={16} className="jm-prompt-icon" />
+                  : <IconBulb size={16} className="jm-prompt-icon" />}
+                <div className="jm-prompt-text">
+                  {activePromptLines.map((line, i) => <div key={i}>{line}</div>)}
+                </div>
+                <button className="jm-prompt-close" onClick={() => setShowPrompt(false)} aria-label={jt.tooltipCancel}>
+                  <IconX size={13} />
+                </button>
+              </div>
+            )}
+
+            {activeType === 'lesson' ? (
+              <LessonWriteCard
+                items={items}
+                setItems={setItems}
+                dateLabel={dateLabel}
+                onSave={handleSave}
+                onClear={handleClear}
+                saving={saving}
+                todayEntry={selectedEntry}
+                isDirty={isDirty}
+                isToday={isTodaySelected}
+              />
+            ) : (
+              <WriteCard
+                items={items}
+                setItems={setItems}
+                dateLabel={dateLabel}
+                onSave={handleSave}
+                onClear={handleClear}
+                saving={saving}
+                todayEntry={selectedEntry}
+                isDirty={isDirty}
+                isToday={isTodaySelected}
+                placeholder={activePlaceholder}
+              />
+            )}
+
+            {history.length > 0 && (
+              <section className="jm-history">
+                <div className="jm-divider">
+                  <span className="jm-divider-line" aria-hidden />
+                  <span className="jm-divider-label">{jt.dividerEarlier}</span>
+                  <span className="jm-divider-line" aria-hidden />
+                </div>
+
+                {history.map(entry => {
+                  const CardComponent = entry.type === 'lesson' ? LessonEntryCard : EntryCard;
+                  return (
+                    <CardComponent
+                      key={entry.id}
+                      entry={entry}
+                      isEditing={editingId === entry.id}
+                      editItems={editItems}
+                      setEditItems={setEditItems}
+                      onEdit={() => {
+                        setEditingId(entry.id);
+                        setEditItems(entry.type === 'lesson' ? ensureLessonItems(entry.items) : [...entry.items]);
+                      }}
+                      onEditSave={() => handleEditSave(entry.id, entry.date)}
+                      onEditCancel={() => setEditingId(null)}
+                      onDelete={() => handleDelete(entry.id)}
+                    />
+                  );
+                })}
+              </section>
+            )}
+
           </div>
         </div>
-
-        <div className="journal-main" ref={mainRef}>
-
-        <div key={contentKey} className="journal-date-content">
-
-        {/* Prompt Banner */}
-        {showPrompt && (
-          <div className="jm-prompt" style={{ background: cfg.bgPrompt, borderColor: cfg.borderPrompt }}>
-            <div className="jm-prompt-inner">
-              {activeType === 'gratitude'
-                ? <IconHeart size={18} color={cfg.promptColor} style={{ flexShrink: 0, marginTop: 1 }} />
-                : <IconBulb size={18} color={cfg.promptColor} style={{ flexShrink: 0, marginTop: 1 }} />}
-              <div className="jm-prompt-text" style={{ color: cfg.promptColor, fontWeight: 500 }}>
-                {activePromptLines.map((line, i) => <div key={i}>{line}</div>)}
-              </div>
-            </div>
-            <button className="jm-prompt-close" onClick={() => setShowPrompt(false)}>
-              <IconX size={12} color="var(--text-secondary)" />
-            </button>
-          </div>
-        )}
-
-        {/* Write Card */}
-        {activeType === 'lesson' ? (
-          <LessonWriteCard
-            items={items}
-            setItems={setItems}
-            cfg={cfg}
-            dateLabel={dateLabel}
-            onSave={handleSave}
-            onClear={handleClear}
-            saving={saving}
-            todayEntry={selectedEntry}
-            isDirty={isDirty}
-            isToday={selectedDate === todayStr}
-          />
-        ) : (
-          <WriteCard
-            items={items}
-            setItems={setItems}
-            cfg={cfg}
-            dateLabel={dateLabel}
-            onSave={handleSave}
-            onClear={handleClear}
-            saving={saving}
-            todayEntry={selectedEntry}
-            isDirty={isDirty}
-            isToday={selectedDate === todayStr}
-            placeholder={activePlaceholder}
-          />
-        )}
-
-        {/* History */}
-        {history.length > 0 && (
-          <>
-            <div className="jm-divider">
-              <div className="jm-divider-line" />
-              <span className="jm-divider-label">{jt.dividerEarlier}</span>
-              <div className="jm-divider-line" />
-            </div>
-
-            {history.map(entry => (
-              entry.type === 'lesson' ? (
-                <LessonEntryCard
-                  key={entry.id}
-                  entry={entry}
-                  cfg={TABS[entry.type as JTab]}
-                  isEditing={editingId === entry.id}
-                  editItems={editItems}
-                  setEditItems={setEditItems}
-                  onEdit={() => { setEditingId(entry.id); setEditItems(ensureLessonItems(entry.items)); }}
-                  onEditSave={() => handleEditSave(entry.id, entry.date)}
-                  onEditCancel={() => setEditingId(null)}
-                  onDelete={() => handleDelete(entry.id)}
-                />
-              ) : (
-                <EntryCard
-                  key={entry.id}
-                  entry={entry}
-                  cfg={TABS[entry.type as JTab]}
-                  isEditing={editingId === entry.id}
-                  editItems={editItems}
-                  setEditItems={setEditItems}
-                  onEdit={() => { setEditingId(entry.id); setEditItems([...entry.items]); }}
-                  onEditSave={() => handleEditSave(entry.id, entry.date)}
-                  onEditCancel={() => setEditingId(null)}
-                  onDelete={() => handleDelete(entry.id)}
-                />
-              )
-            ))}
-
-          </>
-        )}
-
-        </div>{/* end journal-date-content */}
-
-        </div>{/* end journal-main */}
-      </div>{/* end journal-right */}
+      </div>
 
       {pendingDelete && (
         <div className="delete-toast" role="status">

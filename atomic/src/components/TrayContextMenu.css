@@ -57,15 +57,3 @@
   margin: 3px 4px;
   flex-shrink: 0;
 }
-
-/* ═══════════════════════════════════════════════
-   Journal Tab
-   ═══════════════════════════════════════════════ */
-
-.journal-view {
-  position: relative;
-  display: flex;
-  height: 100%;
-  background: var(--bg-primary);
-  overflow: hidden;
-}

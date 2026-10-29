@@ -3,21 +3,16 @@ import './quotes.css';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import ResizableTextarea from '../ResizableTextarea';
 import {
-  IconQuote,
   IconHeart,
   IconHeartFilled,
   IconCopy,
   IconTrash,
   IconPlus,
-  IconSettings,
   IconCheck,
   IconPin,
   IconPinFilled,
   IconSearch,
   IconX,
-  IconSparkles,
-  IconStack2,
-  IconClock,
   IconPencil,
   IconTag,
   IconChevronDown,
@@ -376,14 +371,12 @@ export default function QuotesView() {
   const [pendingDeleteHeroWas, setPendingDeleteHeroWas] = useState<Quote | null>(null);
   const [pendingDeleteQuoteTag, setPendingDeleteQuoteTag] = useState<{ name: string; undo: () => void } | null>(null);
   const mainRef = useRef<HTMLDivElement>(null);
-  const sidebarRef = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modeMenuRef = useRef<HTMLDivElement>(null);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tagDeleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useSmoothScroll(mainRef);
-  useSmoothScroll(sidebarRef);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -560,16 +553,6 @@ export default function QuotesView() {
     if (searchQuery) setSearchQuery('');
   }
 
-  const sectionTitle = (() => {
-    if (langFilter) {
-      const cnt = langCounts.find((l) => l.language === langFilter)?.count ?? 0;
-      return t.quotes.langSection(langFilter, cnt);
-    }
-    if (sidebarFilter === 'favorites') return t.quotes.favSection(favCount);
-    if (sidebarFilter === 'recent') return t.quotes.recentSection;
-    return t.quotes.allSection(totalCount);
-  })();
-
   const pinnedId = getPinnedIdLS();
 
   const heroEmpty = heroMode === 'manual'
@@ -578,155 +561,172 @@ export default function QuotesView() {
     ? t.quotes.heroEmptyFav
     : t.quotes.heroEmpty;
 
+  const heroModes: { id: QuoteHeroMode; label: string }[] = [
+    { id: 'random_daily', label: t.quotes.modeRandomDaily },
+    { id: 'random_favorites', label: t.quotes.modeRandomFav },
+    { id: 'manual', label: t.quotes.modeManual },
+  ];
+  const heroModeLabel = heroModes.find((m) => m.id === heroMode)?.label;
+
+  const today = new Date();
+  const heroDate = t.journal.formatDate(t.journal.dowFull[today.getDay()], today.getDate(), today.getMonth() + 1);
+
+  const libraryTabs: { id: SidebarFilter; label: string; count?: number }[] = [
+    { id: 'all', label: t.quotes.sidebarAll, count: totalCount },
+    { id: 'favorites', label: t.quotes.sidebarFav, count: favCount },
+    { id: 'recent', label: t.quotes.sidebarRecent },
+  ];
+
   return (
     <div className="quotes-wrap">
-      {/* ── Sidebar ── */}
-      <div ref={sidebarRef} className="quotes-sidebar">
-        <div className="quotes-sb-section">
-          <div className="quotes-sb-label">{t.quotes.library}</div>
-          <button
-            className={`quotes-sb-item${sidebarFilter === 'all' && !langFilter ? ' active' : ''}`}
-            onClick={() => handleSidebarFilter('all')}
-          >
-            <IconStack2 size={14} />
-            {t.quotes.sidebarAll}
-            <span className="quotes-sb-count">{totalCount}</span>
-          </button>
-          <button
-            className={`quotes-sb-item${sidebarFilter === 'favorites' ? ' active' : ''}`}
-            onClick={() => handleSidebarFilter('favorites')}
-          >
-            <IconHeart size={14} />
-            {t.quotes.sidebarFav}
-            <span className="quotes-sb-count">{favCount}</span>
-          </button>
-          <button
-            className={`quotes-sb-item${sidebarFilter === 'recent' ? ' active' : ''}`}
-            onClick={() => handleSidebarFilter('recent')}
-          >
-            <IconClock size={14} />
-            {t.quotes.sidebarRecent}
-          </button>
-        </div>
-
-        {langCounts.length > 0 && (
-          <div className="quotes-sb-section">
-            <div className="quotes-sb-label">{t.quotes.language}</div>
-            {langCounts.map(({ language, count }) => (
-              <button
-                key={language}
-                className={`quotes-sb-item${langFilter === language ? ' active' : ''}`}
-                onClick={() => handleLangFilter(language)}
-              >
-                <span className="quotes-lang-badge">{language}</span>
-                <span className="quotes-sb-lang-name">{LANG_NAMES[language] ?? language}</span>
-                <span className="quotes-sb-count">{count}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── Main ── */}
       <div ref={mainRef} className="quotes-main">
-        {/* Hero card */}
-        <div className="quotes-hero">
-          <div className="quotes-hero-top">
-            <div className="quotes-hero-label">
-              <IconSparkles size={12} />
-              {t.quotes.heroLabel}
+        <div className="quotes-page">
+          <header className="quotes-head">
+            <div className="quotes-head-main">
+              <span className="quotes-eyebrow">{t.quotes.navLabel}</span>
+              <h1 className="quotes-title">{t.quotes.pageTitle}</h1>
+              <p className="quotes-subtitle">{t.quotes.headerStats(totalCount, favCount, langCounts.length)}</p>
             </div>
-            <div ref={modeMenuRef} className="quotes-hero-mode-wrap">
-              <button
-                className="quotes-hero-gear"
-                title={t.quotes.heroModeTitle}
-                onClick={() => setShowModeMenu((v) => !v)}
-              >
-                <IconSettings size={13} />
-              </button>
-              {showModeMenu && (
-                <div className="quotes-mode-menu">
-                  {(
-                    [
-                      { id: 'random_daily', label: t.quotes.modeRandomDaily },
-                      { id: 'random_favorites', label: t.quotes.modeRandomFav },
-                      { id: 'manual', label: t.quotes.modeManual },
-                    ] as { id: QuoteHeroMode; label: string }[]
-                  ).map((m) => (
-                    <button
-                      key={m.id}
-                      className={`quotes-mode-item${heroMode === m.id ? ' active' : ''}`}
-                      onClick={() => handleChangeMode(m.id)}
-                    >
-                      <span className="quotes-mode-check">
-                        {heroMode === m.id && <IconCheck size={12} />}
-                      </span>
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+            <button className="quotes-btn-add" onClick={() => setShowAddModal(true)}>
+              <IconPlus size={16} />
+              {t.quotes.addQuote}
+            </button>
+          </header>
 
-          <div className={`quotes-hero-body${heroQuote ? ` quotes-lang-${heroQuote.language.toLowerCase()}` : ''}`}>
-            <div className="quotes-hero-bigmark">
-              <IconQuote size={40} strokeWidth={1.5} />
+          {/* Hero — Quote hôm nay */}
+          <section className="quotes-hero" aria-label={t.quotes.heroLabel}>
+            <div className="quotes-hero-eyebrow">
+              <span className="quotes-hero-eyebrow-rule" aria-hidden />
+              {t.quotes.heroLabel} · {heroDate}
+              <span className="quotes-hero-eyebrow-rule" aria-hidden />
             </div>
+
             {heroQuote ? (
-              <div key={heroAnimKey} className="quotes-hero-content-animate">
-                <div className="quotes-hero-text">{heroQuote.text}</div>
-                {heroQuote.author && (
-                  <div className="quotes-hero-author">
-                    — <span>{heroQuote.author}</span>
-                  </div>
-                )}
+              <div key={heroAnimKey} className={`quotes-hero-content quotes-lang-${heroQuote.language.toLowerCase()}`}>
+                <span className="quotes-hero-mark" aria-hidden>“</span>
+                <blockquote className={`quotes-hero-text${heroQuote.text.length > 160 ? ' long' : ''}`}>
+                  {heroQuote.text}
+                </blockquote>
+                {heroQuote.author && <span className="quotes-hero-author">{heroQuote.author}</span>}
               </div>
             ) : (
               <div className="quotes-hero-empty">{heroEmpty}</div>
             )}
-          </div>
-        </div>
 
-        {/* List section */}
-        <div className="quotes-list-section">
-          <div className="quotes-list-header">
-            <span className="quotes-section-title">{sectionTitle}</span>
-            <button className="quotes-btn-add" onClick={() => setShowAddModal(true)}>
-              <IconPlus size={13} />
-              {t.quotes.addQuote}
-            </button>
-          </div>
+            <div className="quotes-hero-controls">
+              <div ref={modeMenuRef} className="quotes-hero-mode-wrap">
+                <button
+                  className={`quotes-hero-mode${showModeMenu ? ' open' : ''}`}
+                  title={t.quotes.heroModeTitle}
+                  onClick={() => setShowModeMenu((v) => !v)}
+                >
+                  {heroModeLabel}
+                  <IconChevronDown size={14} />
+                </button>
+                {showModeMenu && (
+                  <div className="quotes-mode-menu">
+                    {heroModes.map((m) => (
+                      <button
+                        key={m.id}
+                        className={`quotes-mode-item${heroMode === m.id ? ' active' : ''}`}
+                        onClick={() => handleChangeMode(m.id)}
+                      >
+                        <span className="quotes-mode-check">
+                          {heroMode === m.id && <IconCheck size={12} />}
+                        </span>
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {heroQuote && (
+                <>
+                  <span className="quotes-hero-divider" aria-hidden />
+                  <button
+                    className={`quotes-btn-sm${heroQuote.is_favorite ? ' fav' : ''}`}
+                    onClick={() => handleToggleFavorite(heroQuote)}
+                    title={heroQuote.is_favorite ? t.quotes.unfavorite : t.quotes.favorite}
+                    aria-label={heroQuote.is_favorite ? t.quotes.unfavorite : t.quotes.favorite}
+                  >
+                    {heroQuote.is_favorite ? <IconHeartFilled size={16} /> : <IconHeart size={16} stroke={1.6} />}
+                  </button>
+                  <button
+                    className="quotes-btn-sm"
+                    onClick={() => handleCopy(heroQuote)}
+                    title={copiedId === heroQuote.id ? t.quotes.copied : t.quotes.copy}
+                    aria-label={t.quotes.copy}
+                  >
+                    {copiedId === heroQuote.id ? <IconCheck size={16} stroke={1.6} /> : <IconCopy size={16} stroke={1.6} />}
+                  </button>
+                </>
+              )}
+            </div>
+          </section>
 
-          {/* Search bar */}
-          <div className="quotes-search-wrap">
-            <IconSearch size={13} className="quotes-search-icon" />
-            <input
-              className="quotes-search-input"
-              placeholder={t.quotes.searchPlaceholder}
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              spellCheck={false}
-            />
-            <span className="quotes-search-line" aria-hidden>{t.quotes.searchPlaceholder}</span>
-            {searchQuery && (
-              <button
-                className="quotes-search-clear"
-                onClick={() => {
-                  setSearchQuery('');
-                  loadQuotes(sidebarFilter, langFilter, '');
-                }}
-              >
-                <IconX size={12} />
-              </button>
-            )}
-          </div>
+          {/* List section */}
+          <section className="quotes-list-section">
+            <div className="quotes-toolbar">
+              <div className="quotes-filters">
+                <div className="quotes-tabs" role="group" aria-label={t.quotes.library}>
+                  {libraryTabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      className={`quotes-tab${sidebarFilter === tab.id && !langFilter ? ' active' : ''}`}
+                      onClick={() => handleSidebarFilter(tab.id)}
+                    >
+                      {tab.label}
+                      {tab.count !== undefined && <span className="quotes-tab-count">{tab.count}</span>}
+                    </button>
+                  ))}
+                </div>
 
-          {/* Quote list */}
-          <div className="quotes-list">
+                {langCounts.length > 0 && (
+                  <>
+                    <span className="quotes-toolbar-divider" aria-hidden />
+                    <div className="quotes-langs" role="group" aria-label={t.quotes.language}>
+                      {langCounts.map(({ language, count }) => (
+                        <button
+                          key={language}
+                          className={`quotes-lang-btn${langFilter === language ? ' active' : ''}`}
+                          title={`${LANG_NAMES[language] ?? language} · ${count}`}
+                          onClick={() => handleLangFilter(language)}
+                        >
+                          {language}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="quotes-search">
+                <IconSearch size={15} stroke={1.6} />
+                <input
+                  className="quotes-search-input"
+                  aria-label={t.quotes.searchPlaceholder}
+                  placeholder={t.quotes.searchPlaceholder}
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  spellCheck={false}
+                />
+                {searchQuery && (
+                  <button
+                    className="quotes-search-clear"
+                    onClick={() => {
+                      setSearchQuery('');
+                      loadQuotes(sidebarFilter, langFilter, '');
+                    }}
+                  >
+                    <IconX size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+
             {quotes.length === 0 ? (
               <div className="quotes-empty-state">
-                <IconQuote size={36} className="quotes-empty-icon" />
+                <span className="quotes-empty-mark" aria-hidden>“</span>
                 <p className="quotes-empty-text">
                   {searchQuery
                     ? t.quotes.emptySearch
@@ -736,70 +736,90 @@ export default function QuotesView() {
                 </p>
                 {!searchQuery && sidebarFilter !== 'favorites' && (
                   <button className="quotes-btn-add" onClick={() => setShowAddModal(true)}>
-                    <IconPlus size={13} />
+                    <IconPlus size={16} />
                     {t.quotes.addQuote}
                   </button>
                 )}
               </div>
             ) : (
-              quotes.map((quote) => (
-                <div key={quote.id} className={`quotes-item quotes-lang-${quote.language.toLowerCase()}${heroQuote?.id === quote.id ? ' hero-active' : ''}`}>
-                  <div className="quotes-item-body" onClick={() => { setHeroQuote(quote); setHeroAnimKey((k) => k + 1); }}>
-                    <div className="quotes-item-text">{quote.text}</div>
-                    <div className="quotes-item-meta">
-                      {quote.author && (
-                        <span className="quotes-item-author">— {quote.author}</span>
-                      )}
-                      <span className="quotes-lang-tag">{quote.language}</span>
-                      {quote.tags.map((tag) => (
-                        <span key={tag} className="quotes-tag-chip-sm">{tag}</span>
-                      ))}
-                    </div>
-                  </div>
+              <ol className="quotes-list">
+                {quotes.map((quote, i) => {
+                  const isHero = heroQuote?.id === quote.id;
+                  return (
+                    <li
+                      key={quote.id}
+                      className={`quotes-item quotes-lang-${quote.language.toLowerCase()}${isHero ? ' hero-active' : ''}`}
+                    >
+                      <span className="quotes-item-num">{String(i + 1).padStart(2, '0')}</span>
 
-                  <div className="quotes-item-actions">
-                    {heroMode === 'manual' && (
-                      <button
-                        className={`quotes-btn-sm${pinnedId === quote.id ? ' pinned' : ''}`}
-                        onClick={() => handlePin(quote)}
-                        title={pinnedId === quote.id ? t.quotes.pinned : t.quotes.pin}
-                      >
-                        {pinnedId === quote.id ? <IconPinFilled size={14} /> : <IconPin size={14} />}
-                      </button>
-                    )}
-                    <button
-                      className={`quotes-btn-sm${quote.is_favorite ? ' fav' : ''}`}
-                      onClick={() => handleToggleFavorite(quote)}
-                      title={quote.is_favorite ? t.quotes.unfavorite : t.quotes.favorite}
-                    >
-                      {quote.is_favorite ? <IconHeartFilled size={14} /> : <IconHeart size={14} />}
-                    </button>
-                    <button
-                      className="quotes-btn-sm"
-                      onClick={() => handleCopy(quote)}
-                      title={copiedId === quote.id ? t.quotes.copied : t.quotes.copy}
-                    >
-                      {copiedId === quote.id ? <IconCheck size={14} /> : <IconCopy size={14} />}
-                    </button>
-                    <button
-                      className="quotes-btn-sm"
-                      onClick={() => setEditingQuote(quote)}
-                      title={t.quotes.edit}
-                    >
-                      <IconPencil size={14} />
-                    </button>
-                    <button
-                      className="quotes-btn-sm danger"
-                      onClick={() => handleDelete(quote)}
-                      title={t.quotes.delete}
-                    >
-                      <IconTrash size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))
+                      <div className="quotes-item-body" onClick={() => { setHeroQuote(quote); setHeroAnimKey((k) => k + 1); }}>
+                        <p className="quotes-item-text">{quote.text}</p>
+                        <div className="quotes-item-meta">
+                          {quote.author && (
+                            <>
+                              <span className="quotes-item-author">{quote.author}</span>
+                              <span aria-hidden>·</span>
+                            </>
+                          )}
+                          <span className="quotes-lang-tag">{quote.language}</span>
+                          {quote.tags.length > 0 && (
+                            <>
+                              <span aria-hidden>·</span>
+                              <span className="quotes-item-tags">{quote.tags.join(', ')}</span>
+                            </>
+                          )}
+                          {!!quote.is_favorite && (
+                            <IconHeartFilled size={13} className="quotes-item-fav" role="img" aria-label={t.quotes.favorite} />
+                          )}
+                          {isHero && <span className="quotes-item-hero-note">— {t.quotes.heroShowing}</span>}
+                        </div>
+                      </div>
+
+                      <div className="quotes-item-actions">
+                        {heroMode === 'manual' && (
+                          <button
+                            className={`quotes-btn-sm${pinnedId === quote.id ? ' pinned' : ''}`}
+                            onClick={() => handlePin(quote)}
+                            title={pinnedId === quote.id ? t.quotes.pinned : t.quotes.pin}
+                          >
+                            {pinnedId === quote.id ? <IconPinFilled size={15} /> : <IconPin size={15} stroke={1.6} />}
+                          </button>
+                        )}
+                        <button
+                          className={`quotes-btn-sm${quote.is_favorite ? ' fav' : ''}`}
+                          onClick={() => handleToggleFavorite(quote)}
+                          title={quote.is_favorite ? t.quotes.unfavorite : t.quotes.favorite}
+                        >
+                          {quote.is_favorite ? <IconHeartFilled size={15} /> : <IconHeart size={15} stroke={1.6} />}
+                        </button>
+                        <button
+                          className="quotes-btn-sm"
+                          onClick={() => handleCopy(quote)}
+                          title={copiedId === quote.id ? t.quotes.copied : t.quotes.copy}
+                        >
+                          {copiedId === quote.id ? <IconCheck size={15} stroke={1.6} /> : <IconCopy size={15} stroke={1.6} />}
+                        </button>
+                        <button
+                          className="quotes-btn-sm"
+                          onClick={() => setEditingQuote(quote)}
+                          title={t.quotes.edit}
+                        >
+                          <IconPencil size={15} stroke={1.6} />
+                        </button>
+                        <button
+                          className="quotes-btn-sm danger"
+                          onClick={() => handleDelete(quote)}
+                          title={t.quotes.delete}
+                        >
+                          <IconTrash size={15} stroke={1.6} />
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
             )}
-          </div>
+          </section>
         </div>
       </div>
 

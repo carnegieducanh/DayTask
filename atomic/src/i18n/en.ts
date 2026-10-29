@@ -400,6 +400,12 @@ export const en: typeof vi = {
     noNotes: "no notes yet",
     dividerEarlier: "Earlier",
     streakLabel: "days in a row",
+    monthTitle: (month: number, year: number) => {
+      const names = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      return `${names[month - 1]} ${year}`;
+    },
+    prevMonth: "Previous month",
+    nextMonth: "Next month",
     thisMonth: "This month",
     days: "days",
     deletedEntry: (date: string) => `Deleted · ${date}`,
@@ -468,10 +474,10 @@ export const en: typeof vi = {
     tagsPlaceholder: "Type a tag, press Enter to add...",
     save: "Add quote",
     cancel: "Cancel",
-    allSection: (n: number) => `All · ${n}`,
-    favSection: (n: number) => `Favorites · ${n}`,
-    recentSection: "Recent",
-    langSection: (lang: string, n: number) => `${lang} · ${n}`,
+    pageTitle: "Commonplace book",
+    headerStats: (total: number, fav: number, langs: number) =>
+      `${total} ${total === 1 ? "quote" : "quotes"} · ${fav} ${fav === 1 ? "favorite" : "favorites"} · ${langs} ${langs === 1 ? "language" : "languages"}`,
+    heroShowing: "shown above",
     todayPlaceholder: "Add a quote →",
   },
   books: {
