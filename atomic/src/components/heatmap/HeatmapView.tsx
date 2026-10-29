@@ -1,17 +1,101 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import './heatmap.css';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, addWeeks, addMonths, addDays, isToday, format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
-import {
-  IconTrophy, IconCalendar, IconChartBar, IconAward,
-} from '@tabler/icons-react';
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
 import type { CategoryStat, TagStat } from '../../types';
 import HeatmapGrid from './HeatmapGrid';
 import TopStatsSection, { type StatItem } from './TopStatsSection';
 import { fmtMinutes, fmtHoursFloat, fmtDateRange } from './heatmapFormat';
+
+// ── Small presentational pieces ─────────────────────────────────────────────
+
+function SectionHead({ num, title, children }: { num: string; title: string; children?: ReactNode }) {
+  return (
+    <div className="hv-section-head">
+      <span className="hv-section-num">{num}</span>
+      <h2 className="hv-section-title">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function PeriodNav({
+  label, prevLabel, nextLabel, onPrev, onNext, nextDisabled,
+}: {
+  label: string;
+  prevLabel: string;
+  nextLabel: string;
+  onPrev: () => void;
+  onNext: () => void;
+  nextDisabled: boolean;
+}) {
+  return (
+    <div className="hv-period-nav">
+      <button className="hv-round-btn" onClick={onPrev} title={prevLabel} aria-label={prevLabel}>
+        <IconChevronLeft size={15} />
+      </button>
+      <span className="hv-period-label">{label}</span>
+      <button className="hv-round-btn" onClick={onNext} disabled={nextDisabled} title={nextLabel} aria-label={nextLabel}>
+        <IconChevronRight size={15} />
+      </button>
+    </div>
+  );
+}
+
+function Figure({
+  label, value, unit, sub, children,
+}: {
+  label: string;
+  value: ReactNode;
+  unit?: string;
+  sub?: ReactNode;
+  children?: ReactNode; // inline extras after the value (delta…)
+}) {
+  return (
+    <div className="hv-figure">
+      <span className="hv-figure-label">{label}</span>
+      <span className="hv-figure-value">
+        <span className="hv-figure-num">{value}</span>
+        {unit && <span className="hv-figure-unit">{unit}</span>}
+        {children}
+      </span>
+      {sub && <span className="hv-figure-sub">{sub}</span>}
+    </div>
+  );
+}
+
+function MonthChart({
+  bars, labels, activeIdx,
+}: {
+  bars: { pct: number; title: string }[];
+  labels: string[];
+  activeIdx: number | null;
+}) {
+  return (
+    <div className="hv-chart">
+      {bars.map((b, i) => (
+        <div key={i} className="hv-chart-col" title={b.title}>
+          <div className="hv-chart-track">
+            <div className={`hv-chart-bar${i === activeIdx ? ' active' : ''}`} style={{ height: `${b.pct}%` }} />
+          </div>
+          <span className="hv-chart-label">{labels[i]}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Bar height in % of the track — non-zero values keep a visible sliver.
+function barPct(value: number, max: number): number {
+  if (value <= 0) return 0;
+  return Math.max(4, Math.round((value / Math.max(max, 1)) * 100));
+}
+
+// ── HeatmapView ─────────────────────────────────────────────────────────────
 
 export default function HeatmapView() {
   const t = useT();
@@ -92,6 +176,7 @@ export default function HeatmapView() {
 
   const isCurrentYear = selectedYear === new Date().getFullYear();
   const currentMonth = new Date().getMonth(); // 0-indexed
+  const activeMonthIdx = isCurrentYear ? currentMonth : null;
 
   // ── Basic aggregates ──────────────────────────────────────────────────────
   const totalDone    = heatmap.reduce((s, d) => s + d.count, 0);
@@ -175,7 +260,7 @@ export default function HeatmapView() {
   const monthPeriodTitle = monthOffset === 0 ? t.heatmap.thisMonth : monthRangeLabel;
   const monthPeriodPrev  = monthOffset === 0 ? t.heatmap.prevMonth : prevMonthRangeLabel;
 
-  // ── Bottom stat helpers ───────────────────────────────────────────────────
+  // ── Record helpers ────────────────────────────────────────────────────────
   const longestStreak = useMemo(() => {
     if (heatmap.length === 0) return 0;
     const dates = heatmap.map((d) => d.date).sort();
@@ -225,310 +310,251 @@ export default function HeatmapView() {
   const monthTagsList           = useMemo(() => heatmapMonthTagStats.map(mapTag), [heatmapMonthTagStats]);
   const monthTagsListPrev       = useMemo(() => heatmapMonthTagStatsPrev.map(mapTag), [heatmapMonthTagStatsPrev]);
 
-  // ── Completion trend ──────────────────────────────────────────────────────
-  const maxCompletionRate = Math.max(
-    ...monthStatsArray.map((m) => m.created > 0 ? Math.round(m.done / m.created * 100) : 0),
-    1
-  );
+  // ── Year charts ───────────────────────────────────────────────────────────
+  const taskBars = monthlyTotals.map((count, i) => ({
+    pct: barPct(count, maxMonthly),
+    title: `${t.heatmap.monthsShort[i]}: ${count}`,
+  }));
+
+  const completionRates = monthStatsArray.map((m) => (m.created > 0 ? Math.round((m.done / m.created) * 100) : 0));
+  const maxCompletionRate = Math.max(...completionRates, 1);
+  const completionBars = monthStatsArray.map((ms, i) => ({
+    pct: barPct(completionRates[i], maxCompletionRate),
+    title: `${t.heatmap.monthsShort[i]}: ${completionRates[i]}% (${ms.done}/${ms.created})`,
+  }));
+
+  const deltaClass = (d: number) => (d > 0 ? ' up' : d < 0 ? ' down' : '');
 
   return (
-    <>
-      <div className="view-topbar">
-        <div>
-          <div className="view-title">{t.heatmap.title}</div>
-          <div className="view-subtitle">{t.heatmap.subtitle(totalDone, activeDays)}</div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button className="icon-btn" onClick={() => setSelectedYear(selectedYear - 1)}>←</button>
-          <span style={{ fontSize: 15, fontWeight: 500, minWidth: 40, textAlign: 'center' }}>
-            {selectedYear}
-          </span>
-          <button className="icon-btn" onClick={() => setSelectedYear(selectedYear + 1)}>→</button>
-        </div>
-      </div>
+    <div className="hv-wrap" ref={contentRef}>
+      <div className="hv-page">
 
-      <div className="view-content" ref={contentRef}>
-
-        {/* ═══════════════════════ NĂM ═══════════════════════ */}
-        <div className="heatmap-tier-header">{t.heatmap.tierYear} {selectedYear}</div>
-
-        <div className="stats-row stats-row--4">
-          <div className="stat-card">
-            <div className="stat-label">{t.heatmap.currentStreak}</div>
-            <div className="stat-value">{streak}</div>
-            <div className="stat-sub">{t.heatmap.streakDays}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">{t.heatmap.activeDays}</div>
-            <div className="stat-value">{activeDays}</div>
-            <div className="stat-sub">{t.heatmap.activeDaysIn(selectedYear)}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">{t.heatmap.tasksDone}</div>
-            <div className="stat-value">{totalDone}</div>
-            <div className="stat-sub">{t.heatmap.totalIn(selectedYear)}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">{t.heatmap.totalHours}</div>
-            <div className="stat-value">{fmtHoursFloat(totalMinutes)}</div>
-            <div className="stat-sub">{t.heatmap.hoursIn(selectedYear)}</div>
-          </div>
-        </div>
-
-        {/* ── Heatmap grid + mode toggle ────────────────────────────────────── */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div className="section-label">{t.heatmap.activityIn(selectedYear)}</div>
-            <div className="heatmap-mode-toggle">
-              <button
-                className={`heatmap-mode-btn${heatmapMode === 'count' ? ' heatmap-mode-btn--active' : ''}`}
-                onClick={() => setHeatmapMode('count')}
-              >
-                {t.heatmap.countMode}
-              </button>
-              <button
-                className={`heatmap-mode-btn${heatmapMode === 'hours' ? ' heatmap-mode-btn--active' : ''}`}
-                onClick={() => setHeatmapMode('hours')}
-              >
-                {t.heatmap.hoursMode}
-              </button>
+        <header className="hv-head">
+          <div className="hv-head-main">
+            <span className="hv-eyebrow">{t.nav.heatmap}</span>
+            <div className="hv-title-row">
+              <h1 className="hv-title">{t.heatmap.tierYear} {selectedYear}</h1>
+              <div className="hv-year-nav">
+                <button
+                  className="hv-round-btn"
+                  onClick={() => setSelectedYear(selectedYear - 1)}
+                  title={t.nav.prevYear}
+                  aria-label={t.nav.prevYear}
+                >
+                  <IconChevronLeft size={16} />
+                </button>
+                <button
+                  className="hv-round-btn"
+                  onClick={() => setSelectedYear(selectedYear + 1)}
+                  title={t.nav.nextYear}
+                  aria-label={t.nav.nextYear}
+                >
+                  <IconChevronRight size={16} />
+                </button>
+              </div>
             </div>
+            <p className="hv-subtitle">{t.heatmap.subtitle(totalDone, activeDays)}</p>
           </div>
-          <HeatmapGrid
-            year={selectedYear}
-            data={heatmap}
-            mode={heatmapMode}
-            durations={heatmapDurations}
-          />
-        </div>
-
-        {/* ═══════════════════════ TUẦN ═══════════════════════ */}
-        <div className="heatmap-tier-header">{t.heatmap.tierWeek}</div>
-
-        {isCurrentYear && (
-          <div className="heatmap-period-nav">
-            <button className="icon-btn" onClick={() => setWeekOffset((o) => o - 1)}>←</button>
-            <span className="heatmap-period-label">{weekRangeLabel}</span>
-            <button className="icon-btn" onClick={() => setWeekOffset((o) => o + 1)} disabled={weekOffset >= 0}>→</button>
+          <div className="hv-tabs">
+            <button
+              className={`hv-tab${heatmapMode === 'count' ? ' active' : ''}`}
+              onClick={() => setHeatmapMode('count')}
+            >
+              {t.heatmap.countMode}
+            </button>
+            <button
+              className={`hv-tab${heatmapMode === 'hours' ? ' active' : ''}`}
+              onClick={() => setHeatmapMode('hours')}
+            >
+              {t.heatmap.hoursMode}
+            </button>
           </div>
-        )}
+        </header>
 
+        {/* Tuần + Tháng lên đầu (chỉ có ở năm hiện tại), Năm xuống cuối — số La Mã theo thứ tự hiển thị */}
+
+        {/* ═══════════════════════ I · TUẦN ═══════════════════════ */}
         {isCurrentYear && (
-          <div>
-            <div className="weekly-strip">
+          <section className="hv-section">
+            <SectionHead num="I" title={t.heatmap.tierWeek}>
+              <PeriodNav
+                label={weekRangeLabel}
+                prevLabel={t.heatmap.prevWeek}
+                nextLabel={t.heatmap.nextWeek}
+                onPrev={() => setWeekOffset((o) => o - 1)}
+                onNext={() => setWeekOffset((o) => o + 1)}
+                nextDisabled={weekOffset >= 0}
+              />
+            </SectionHead>
+
+            <div className="hv-week">
               {weekDays.map((day) => {
-                const dateStr   = format(day, 'yyyy-MM-dd');
-                const tasks     = weekTaskMap[dateStr] ?? 0;
-                const mins      = weekDurationMap[dateStr] ?? 0;
-                const isTodayFl = isToday(day);
-                const dayLabel  = language === 'vi'
+                const dateStr  = format(day, 'yyyy-MM-dd');
+                const tasks    = weekTaskMap[dateStr] ?? 0;
+                const mins     = weekDurationMap[dateStr] ?? 0;
+                const dayLabel = language === 'vi'
                   ? format(day, 'EEE', { locale: viLocale })
                   : format(day, 'EEE');
+                const cls = [
+                  'hv-day',
+                  isToday(day) && 'today',
+                  tasks === 0 && mins === 0 && 'empty',
+                ].filter(Boolean).join(' ');
                 return (
-                  <div key={dateStr} className={`weekly-strip-cell${isTodayFl ? ' weekly-strip-cell--today' : ''}`}>
-                    <div className="weekly-strip-dow">{dayLabel}</div>
-                    <div className="weekly-strip-date">{format(day, 'd')}</div>
-                    <div className="weekly-strip-tasks">{tasks > 0 ? `${tasks} task` : '—'}</div>
-                    <div className="weekly-strip-hours">{mins > 0 ? fmtMinutes(mins, t.heatmap.hourUnitShort, t.heatmap.minuteUnitShort) : '—'}</div>
+                  <div key={dateStr} className={cls}>
+                    <span className="hv-day-dow">{dayLabel}</span>
+                    <span className="hv-day-date">{format(day, 'd')}</span>
+                    <span className="hv-day-tasks">{tasks > 0 ? `${tasks} task` : '—'}</span>
+                    <span className="hv-day-hours">
+                      {mins > 0 ? fmtMinutes(mins, t.heatmap.hourUnitShort, t.heatmap.minuteUnitShort) : '—'}
+                    </span>
                   </div>
                 );
               })}
             </div>
-          </div>
+
+            <TopStatsSection
+              title={weekPeriodTitle}
+              mode={heatmapMode}
+              compare={weekCompare}
+              onCompareChange={setWeekCompare}
+              categoriesLabel={heatmapMode === 'hours' ? t.heatmap.topCategoriesHours : t.heatmap.topCategories}
+              tagsLabel={heatmapMode === 'hours' ? t.heatmap.topHours : t.heatmap.topTags}
+              categoriesCurrent={weekCategoriesList}
+              categoriesPrev={weekCategoriesListPrev}
+              tagsCurrent={weekTagsList}
+              tagsPrev={weekTagsListPrev}
+              currentLabel={weekPeriodTitle}
+              prevLabel={weekPeriodPrev}
+            />
+          </section>
         )}
 
+        {/* ═══════════════════════ II · THÁNG ═══════════════════════ */}
         {isCurrentYear && (
-          <TopStatsSection
-            title={weekPeriodTitle}
-            mode={heatmapMode}
-            compare={weekCompare}
-            onCompareChange={setWeekCompare}
-            categoriesLabel={heatmapMode === 'hours' ? t.heatmap.topCategoriesHours : t.heatmap.topCategories}
-            tagsLabel={heatmapMode === 'hours' ? t.heatmap.topHours : t.heatmap.topTags}
-            categoriesCurrent={weekCategoriesList}
-            categoriesPrev={weekCategoriesListPrev}
-            tagsCurrent={weekTagsList}
-            tagsPrev={weekTagsListPrev}
-            currentLabel={weekPeriodTitle}
-            prevLabel={weekPeriodPrev}
-          />
-        )}
+          <section className="hv-section">
+            <SectionHead num="II" title={t.heatmap.tierMonth}>
+              <PeriodNav
+                label={monthRangeLabel}
+                prevLabel={t.heatmap.prevMonth}
+                nextLabel={t.heatmap.nextMonth}
+                onPrev={() => setMonthOffset((o) => o - 1)}
+                onNext={() => setMonthOffset((o) => o + 1)}
+                nextDisabled={monthOffset >= 0}
+              />
+            </SectionHead>
 
-        {/* ═══════════════════════ THÁNG ═══════════════════════ */}
-        <div className="heatmap-tier-header">{t.heatmap.tierMonth}</div>
-
-        {isCurrentYear && (
-          <div className="heatmap-period-nav">
-            <button className="icon-btn" onClick={() => setMonthOffset((o) => o - 1)}>←</button>
-            <span className="heatmap-period-label">{monthRangeLabel}</span>
-            <button className="icon-btn" onClick={() => setMonthOffset((o) => o + 1)} disabled={monthOffset >= 0}>→</button>
-          </div>
-        )}
-
-        {isCurrentYear && (
-          <div className="heatmap-month-summary">
-            <div className="month-card-row month-card-row--first">
-              <span className="month-card-label">{t.heatmap.thisMonth}</span>
-              <span className="month-card-val">{`${t.heatmap.monthsShort[monthStartDate.getMonth()]} ${monthStartDate.getFullYear()}`}</span>
-            </div>
-
-            <div className="month-card-row">
-              <span className="month-card-label">{t.heatmap.tasksDone}</span>
-              <div className="month-card-right">
-                <span className="month-card-val">{thisMonthStat.done}</span>
+            <div className="hv-figures hv-figures--md">
+              <Figure label={t.heatmap.tasksDone} value={thisMonthStat.done}>
                 {prevMonthStat.done > 0 && (
-                  <span className={`month-card-delta${tasksDelta > 0 ? ' delta-up' : tasksDelta < 0 ? ' delta-down' : ''}`}>
+                  <span className={`hv-delta${deltaClass(tasksDelta)}`}>
                     {tasksDelta > 0 ? `+${tasksDelta}` : tasksDelta}
                   </span>
                 )}
-              </div>
-            </div>
+              </Figure>
 
-            <div className="month-card-row">
-              <span className="month-card-label">{t.heatmap.totalHours}</span>
-              <div className="month-card-right">
-                <span className="month-card-val">
-                  {thisMonthMinutes > 0 ? `${fmtHoursFloat(thisMonthMinutes)}${t.heatmap.hoursUnit}` : '—'}
-                </span>
+              <Figure
+                label={t.heatmap.totalHours}
+                value={thisMonthMinutes > 0 ? fmtHoursFloat(thisMonthMinutes) : '—'}
+                unit={thisMonthMinutes > 0 ? t.heatmap.hoursUnit : undefined}
+              >
                 {prevMonthMinutes > 0 && minutesDelta !== 0 && (
-                  <span className={`month-card-delta${minutesDelta > 0 ? ' delta-up' : ' delta-down'}`}>
-                    {minutesDelta > 0 ? `+${fmtHoursFloat(minutesDelta)}` : `${fmtHoursFloat(minutesDelta)}`}{t.heatmap.hoursUnit}
+                  <span className={`hv-delta${deltaClass(minutesDelta)}`}>
+                    {minutesDelta > 0 ? `+${fmtHoursFloat(minutesDelta)}` : fmtHoursFloat(minutesDelta)} {t.heatmap.hoursUnit}
                   </span>
                 )}
-              </div>
+              </Figure>
+
+              {thisMonthRate !== null && (
+                <Figure
+                  label={t.heatmap.completionRate}
+                  value={`${thisMonthRate}%`}
+                  sub={
+                    <span className="hv-rate-bar" aria-hidden>
+                      <span style={{ width: `${thisMonthRate}%` }} />
+                    </span>
+                  }
+                />
+              )}
+
+              {heatmapTopTagHours && (
+                <Figure
+                  label={t.heatmap.topTagHours}
+                  value={
+                    <>
+                      <i className="hv-dot" style={{ background: heatmapTopTagHours.color }} />
+                      <span className="hv-figure-text">{heatmapTopTagHours.name}</span>
+                    </>
+                  }
+                  sub={`${fmtHoursFloat(heatmapTopTagHours.minutes)} ${t.heatmap.hoursUnit}`}
+                />
+              )}
             </div>
 
-            {thisMonthRate !== null && (
-              <div className="month-card-rate-wrap">
-                <div className="month-card-rate-header">
-                  <span className="month-card-label">{t.heatmap.completionRate}</span>
-                  <span className="month-card-val">{thisMonthRate}%</span>
-                </div>
-                <div className="month-card-rate-bar">
-                  <div className="month-card-rate-fill" style={{ width: `${thisMonthRate}%` }} />
-                </div>
-              </div>
-            )}
-
-            {heatmapTopTagHours && (
-              <div className="month-card-row">
-                <span className="month-card-label">{t.heatmap.topTagHours}</span>
-                <div className="month-card-right">
-                  <span
-                    className="month-card-tag-dot"
-                    style={{ background: heatmapTopTagHours.color }}
-                  />
-                  <span className="month-card-val">{heatmapTopTagHours.name}</span>
-                  <span className="month-card-delta" style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                    {fmtHoursFloat(heatmapTopTagHours.minutes)}{t.heatmap.hoursUnit}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+            <TopStatsSection
+              title={monthPeriodTitle}
+              mode={heatmapMode}
+              compare={monthCompare}
+              onCompareChange={setMonthCompare}
+              categoriesLabel={heatmapMode === 'hours' ? t.heatmap.topCategoriesMonthHours : t.heatmap.topCategoriesMonth}
+              tagsLabel={heatmapMode === 'hours' ? t.heatmap.topHoursMonth : t.heatmap.topTagsMonth}
+              categoriesCurrent={monthCategoriesList}
+              categoriesPrev={monthCategoriesListPrev}
+              tagsCurrent={monthTagsList}
+              tagsPrev={monthTagsListPrev}
+              currentLabel={monthPeriodTitle}
+              prevLabel={monthPeriodPrev}
+            />
+          </section>
         )}
 
-        {isCurrentYear && (
-          <TopStatsSection
-            title={monthPeriodTitle}
-            mode={heatmapMode}
-            compare={monthCompare}
-            onCompareChange={setMonthCompare}
-            categoriesLabel={heatmapMode === 'hours' ? t.heatmap.topCategoriesMonthHours : t.heatmap.topCategoriesMonth}
-            tagsLabel={heatmapMode === 'hours' ? t.heatmap.topHoursMonth : t.heatmap.topTagsMonth}
-            categoriesCurrent={monthCategoriesList}
-            categoriesPrev={monthCategoriesListPrev}
-            tagsCurrent={monthTagsList}
-            tagsPrev={monthTagsListPrev}
-            currentLabel={monthPeriodTitle}
-            prevLabel={monthPeriodPrev}
-          />
-        )}
+        {/* ═══════════════════════ III · NĂM ═══════════════════════ */}
+        <section className="hv-section">
+          <SectionHead num={isCurrentYear ? 'III' : 'I'} title={t.heatmap.tierYear} />
 
-        {/* ── Monthly bar chart ────────────────────────────────────────────── */}
-        <div>
-          <div className="section-label" style={{ marginBottom: 12 }}>{t.heatmap.tasksByMonth}</div>
-          <div className="monthly-chart">
-            {monthlyTotals.map((count, i) => {
-              const barH     = Math.round((count / maxMonthly) * 80) || (count > 0 ? 3 : 0);
-              const isActive = isCurrentYear && i === currentMonth;
-              return (
-                <div key={i} className="monthly-bar-col">
-                  <div className="monthly-bar-track">
-                    <div
-                      className={`monthly-bar${isActive ? ' monthly-bar--active' : ''}`}
-                      style={{ height: barH }}
-                      title={`${t.heatmap.monthsShort[i]}: ${count}`}
-                    />
-                  </div>
-                  <span className="monthly-bar-label">{t.heatmap.monthsShort[i]}</span>
-                </div>
-              );
-            })}
+          <div className="hv-figures">
+            <Figure label={t.heatmap.currentStreak} value={streak} sub={t.heatmap.streakDays} />
+            <Figure label={t.heatmap.activeDays} value={activeDays} sub={t.heatmap.activeDaysIn(selectedYear)} />
+            <Figure label={t.heatmap.tasksDone} value={totalDone} sub={t.heatmap.totalIn(selectedYear)} />
+            <Figure label={t.heatmap.totalHours} value={fmtHoursFloat(totalMinutes)} sub={t.heatmap.hoursIn(selectedYear)} />
           </div>
-        </div>
 
-        {/* ── Completion rate trend ─────────────────────────────────────────── */}
-        <div>
-          <div className="section-label" style={{ marginBottom: 12 }}>{t.heatmap.completionTrend}</div>
-          <div className="monthly-chart">
-            {monthStatsArray.map((ms, i) => {
-              const rate    = ms.created > 0 ? Math.round((ms.done / ms.created) * 100) : 0;
-              const barH    = Math.round((rate / Math.max(maxCompletionRate, 1)) * 80) || (rate > 0 ? 3 : 0);
-              const isActive = isCurrentYear && i === currentMonth;
-              return (
-                <div key={i} className="monthly-bar-col">
-                  <div className="monthly-bar-track" title={`${t.heatmap.monthsShort[i]}: ${rate}% (${ms.done}/${ms.created})`}>
-                    <div
-                      className={`monthly-bar completion-bar${isActive ? ' monthly-bar--active' : ''}`}
-                      style={{ height: barH }}
-                    />
-                  </div>
-                  <span className="monthly-bar-label">{t.heatmap.monthsShort[i]}</span>
-                </div>
-              );
-            })}
+          <div className="hv-block">
+            <div className="hv-label">{t.heatmap.activityIn(selectedYear)}</div>
+            <HeatmapGrid
+              year={selectedYear}
+              data={heatmap}
+              mode={heatmapMode}
+              durations={heatmapDurations}
+            />
           </div>
-        </div>
 
-        {/* ── Bottom 4 stat cards ───────────────────────────────────────────── */}
-        <div className="stats-row-4">
-          <div className="stat-card-sm">
-            <div className="stat-card-sm-label">{t.heatmap.longestStreak}</div>
-            <div className="stat-card-sm-row">
-              <IconTrophy size={20} className="stat-card-sm-icon stat-icon-trophy" />
-              <span className="stat-card-sm-value">{longestStreak}</span>
-              <span className="stat-card-sm-unit">{t.heatmap.dayUnit}</span>
+          <div className="hv-charts">
+            <div className="hv-block">
+              <div className="hv-label">{t.heatmap.tasksByMonth}</div>
+              <MonthChart bars={taskBars} labels={t.heatmap.monthsShort} activeIdx={activeMonthIdx} />
+            </div>
+            <div className="hv-block">
+              <div className="hv-label">{t.heatmap.completionTrend}</div>
+              <MonthChart bars={completionBars} labels={t.heatmap.monthsShort} activeIdx={activeMonthIdx} />
             </div>
           </div>
-          <div className="stat-card-sm">
-            <div className="stat-card-sm-label">{t.heatmap.mostActiveDay}</div>
-            <div className="stat-card-sm-row">
-              <IconCalendar size={20} className="stat-card-sm-icon" />
-              <span className="stat-card-sm-value">
-                {mostActiveDay ? formatDay(mostActiveDay.date) : '—'}
-              </span>
+
+          <div className="hv-block">
+            <div className="hv-label">{t.heatmap.records}</div>
+            <div className="hv-figures hv-figures--sm">
+              <Figure label={t.heatmap.longestStreak} value={longestStreak} unit={t.heatmap.dayUnit} />
+              <Figure label={t.heatmap.mostActiveDay} value={mostActiveDay ? formatDay(mostActiveDay.date) : '—'} />
+              <Figure label={t.heatmap.avgPerDay} value={avgPerDay} />
+              <Figure
+                label={t.heatmap.bestMonth}
+                value={bestMonthIdx !== null ? t.heatmap.bestMonthLabel(bestMonthIdx + 1) : '—'}
+              />
             </div>
           </div>
-          <div className="stat-card-sm">
-            <div className="stat-card-sm-label">{t.heatmap.avgPerDay}</div>
-            <div className="stat-card-sm-row">
-              <IconChartBar size={20} className="stat-card-sm-icon" />
-              <span className="stat-card-sm-value">{avgPerDay}</span>
-            </div>
-          </div>
-          <div className="stat-card-sm">
-            <div className="stat-card-sm-label">{t.heatmap.bestMonth}</div>
-            <div className="stat-card-sm-row">
-              <IconAward size={20} className="stat-card-sm-icon stat-icon-award" />
-              <span className="stat-card-sm-value">
-                {bestMonthIdx !== null ? t.heatmap.bestMonthLabel(bestMonthIdx + 1) : '—'}
-              </span>
-            </div>
-          </div>
-        </div>
+        </section>
 
       </div>
-    </>
+    </div>
   );
 }

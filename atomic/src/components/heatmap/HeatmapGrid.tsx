@@ -32,7 +32,7 @@ interface Props {
 export default function HeatmapGrid({ year, data, mode = 'count', durations = [] }: Props) {
   const t = useT();
   const { theme, language, accentColor, customAccentColor } = useAppStore();
-  const LEVEL_COLORS = getHeatmapColors(accentColor, theme, 'var(--border-2)', customAccentColor);
+  const LEVEL_COLORS = getHeatmapColors(accentColor, theme, 'var(--hv-track)', customAccentColor);
 
   const activityMap = useMemo(() => {
     const m: Record<string, number> = {};
@@ -83,7 +83,7 @@ export default function HeatmapGrid({ year, data, mode = 'count', durations = []
                   {week.map((day, di) => {
                     if (!day) return <div key={di} className="hm-cell" style={{ background: 'transparent' }} />;
                     const dateStr = format(day, 'yyyy-MM-dd');
-                    const todayBorder = isToday(day) ? '1.5px solid var(--primary)' : undefined;
+                    const todayBorder = isToday(day) ? '1.5px solid var(--hv-ink)' : undefined;
                     const formattedDate = language === 'vi'
                       ? format(day, 'd MMM', { locale: viLocale })
                       : format(day, 'MMM d');

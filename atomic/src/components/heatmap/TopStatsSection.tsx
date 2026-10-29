@@ -83,15 +83,22 @@ export default function TopStatsSection({
   const maxCategoryCompareValue = Math.max(...categoriesMerged.flatMap((m) => [statValue(m.a, mode), statValue(m.b, mode)]), 1);
   const maxTagCompareValue = Math.max(...tagsMerged.flatMap((m) => [statValue(m.a, mode), statValue(m.b, mode)]), 1);
 
+  const renderName = (name: string, color: string, extraClass = '') => (
+    <span className={`tag-stat-name${extraClass}`}>
+      <i className="hv-dot" style={{ background: color }} />
+      <span className="tag-stat-label">{name}</span>
+    </span>
+  );
+
   const renderSingleList = (list: StatItem[], max: number) => {
     if (list.length === 0) {
-      return <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)' }}>{t.heatmap.noTagData}</div>;
+      return <div className="hv-empty">{t.heatmap.noTagData}</div>;
     }
     return (
       <div className="tag-stats-list">
         {list.map((stat) => (
           <div key={stat.key} className="tag-stat-row">
-            <span className="tag-stat-name" style={{ color: stat.color }}>{stat.name}</span>
+            {renderName(stat.name, stat.color)}
             <div className="tag-stat-bar-wrap">
               <div
                 className="tag-stat-bar"
@@ -116,7 +123,7 @@ export default function TopStatsSection({
   // each column's width is driven by its widest cell across the whole list, not just its own row.
   const renderCompareList = (merged: MergedStat[], max: number) => {
     if (merged.length === 0) {
-      return <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)' }}>{t.heatmap.noTagData}</div>;
+      return <div className="hv-empty">{t.heatmap.noTagData}</div>;
     }
     return (
       <div className="tag-stats-compare-grid">
@@ -125,11 +132,11 @@ export default function TopStatsSection({
           const bVal = statValue(item.b, mode);
           const delta = aVal - bVal;
           const deltaLabel = mode === 'hours' ? fmtMins(Math.abs(delta)) : String(Math.abs(delta));
-          const deltaClass = delta > 0 ? ' delta-up' : delta < 0 ? ' delta-down' : '';
+          const deltaClass = delta > 0 ? ' up' : delta < 0 ? ' down' : '';
           return (
             <div key={item.key} style={{ display: 'contents' }}>
               {idx > 0 && <div className="tsc-spacer" />}
-              <span className="tag-stat-name tsc-span2" style={{ color: item.color }}>{item.name}</span>
+              {renderName(item.name, item.color, ' tsc-span2')}
               <div className="tag-stat-bar-wrap tag-stat-bar-wrap--sm">
                 <div className="tag-stat-bar" style={{ width: `${Math.round((aVal / max) * 100)}%`, background: item.color }} />
               </div>
@@ -149,20 +156,14 @@ export default function TopStatsSection({
   };
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <div className="section-label">{title}</div>
-        <div className="heatmap-mode-toggle">
-          <button
-            className={`heatmap-mode-btn${!compare ? ' heatmap-mode-btn--active' : ''}`}
-            onClick={() => onCompareChange(false)}
-          >
+    <div className="hv-topstats">
+      <div className="hv-topstats-head">
+        <span className="hv-label">{title}</span>
+        <div className="hv-tabs hv-tabs--sm">
+          <button className={`hv-tab${!compare ? ' active' : ''}`} onClick={() => onCompareChange(false)}>
             {t.heatmap.singlePeriod}
           </button>
-          <button
-            className={`heatmap-mode-btn${compare ? ' heatmap-mode-btn--active' : ''}`}
-            onClick={() => onCompareChange(true)}
-          >
+          <button className={`hv-tab${compare ? ' active' : ''}`} onClick={() => onCompareChange(true)}>
             {t.heatmap.comparePeriod}
           </button>
         </div>
@@ -171,7 +172,7 @@ export default function TopStatsSection({
       {compare && (
         <div className="tag-stat-compare-legend">
           <span className="tag-stat-compare-legend-item">
-            <i className="tag-stat-compare-dot tag-stat-compare-dot--a" />{currentLabel}
+            <i className="tag-stat-compare-dot" />{currentLabel}
           </span>
           <span className="tag-stat-compare-legend-item">
             <i className="tag-stat-compare-dot tag-stat-compare-dot--b" />{prevLabel}
@@ -179,13 +180,13 @@ export default function TopStatsSection({
         </div>
       )}
 
-      <div className="heatmap-two-col">
-        <div style={{ flex: '1 1 0', minWidth: 0 }}>
-          <div className="section-label" style={{ marginBottom: 12 }}>{categoriesLabel}</div>
+      <div className="hv-topstats-cols">
+        <div className="hv-topstats-col">
+          <div className="hv-sublabel">{categoriesLabel}</div>
           {compare ? renderCompareList(categoriesMerged, maxCategoryCompareValue) : renderSingleList(categoriesCurrent, maxCategoryValue)}
         </div>
-        <div style={{ flex: '1 1 0', minWidth: 0 }}>
-          <div className="section-label" style={{ marginBottom: 12 }}>{tagsLabel}</div>
+        <div className="hv-topstats-col">
+          <div className="hv-sublabel">{tagsLabel}</div>
           {compare ? renderCompareList(tagsMerged, maxTagCompareValue) : renderSingleList(tagsSingle, maxTagValue)}
         </div>
       </div>

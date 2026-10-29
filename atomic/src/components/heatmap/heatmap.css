@@ -1,41 +1,369 @@
-/* ── Tier headers (Tuần / Tháng / Năm) ── */
-.heatmap-tier-header {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--border-1);
+/* ── Tab Heatmap — phong cách "biên niên" (cùng ngôn ngữ với Kế hoạch năm / Tầm nhìn) ──
+   Header "Năm 2026" + 3 mục đánh số La Mã (Năm / Tuần / Tháng), số liệu là chữ Lora
+   ngăn bằng đường kẻ dọc thay cho thẻ. Ô heatmap vẫn theo màu nhấn (getHeatmapColors),
+   thang nhạt → đậm giữ nguyên ở cả hai theme. */
+
+.hv-wrap {
+  --hv-stage: #f3f1ec;
+  --hv-rule: #ddd7cb;
+  --hv-rule-soft: #e8e3d9;
+  --hv-track: #e6e1d6;
+  --hv-bar: #c9c2b4;
+  --hv-ink: #2a2723;
+  --hv-ink-2: #45413a;
+  --hv-muted: #6e695f;
+  --hv-seal: #a8322a;
+  --hv-up: #356b45;
+  --hv-serif: "Lora", "Yu Mincho", Georgia, serif;
 }
 
-/* ── Week/Month tier prev/next navigation ── */
-.heatmap-period-nav {
+[data-theme="dark"] .hv-wrap {
+  --hv-stage: #151515;
+  --hv-rule: #34322e;
+  --hv-rule-soft: #262523;
+  --hv-track: #2c2c2b;
+  --hv-bar: #4a4743;
+  --hv-ink: #ebe7df;
+  --hv-ink-2: #cfcac0;
+  --hv-muted: #8f8a80;
+  --hv-seal: #d76a5c;
+  --hv-up: #86b893;
+}
+
+/* ── Layout ── */
+.hv-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--hv-stage);
+  color: var(--hv-ink);
+  container: hv / inline-size;
+}
+
+.hv-wrap::-webkit-scrollbar {
+  width: 4px;
+}
+.hv-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hv-wrap::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 2px;
+}
+
+.hv-page {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2.25rem 2.5rem 4rem;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 10px 0 12px;
+  flex-direction: column;
+  gap: 3.5rem;
 }
 
-.heatmap-period-label {
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  min-width: 160px;
-  text-align: center;
-}
-
-/* ── Heatmap tab enter animations ── */
-.view-topbar:not(.today-topbar) {
+.hv-head {
   animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
-.view-content:not(.today-content) {
+.hv-section {
   animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.06s both;
 }
 
-/* ── Heatmap ── */
-.heatmap-wrap {
+/* ── Header ── */
+.hv-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0 1.5rem;
+  border-bottom: 1px solid var(--hv-rule);
+}
+
+.hv-head-main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding-bottom: 1.25rem;
+}
+
+.hv-eyebrow,
+.hv-label {
+  font-size: 0.69rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hv-muted);
+}
+
+.hv-title-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.hv-title {
+  margin: 0;
+  font-family: var(--hv-serif);
+  font-size: 2.5rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--hv-ink);
+}
+
+.hv-year-nav {
+  display: flex;
+  gap: 6px;
+}
+
+.hv-round-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--hv-rule);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--hv-ink-2);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.hv-round-btn:hover:not(:disabled) {
+  background: var(--hv-rule-soft);
+  border-color: var(--hv-muted);
+}
+.hv-round-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.hv-subtitle {
+  margin: 0;
+  font-family: var(--hv-serif);
+  font-style: italic;
+  font-size: 0.94rem;
+  color: var(--hv-muted);
+}
+
+/* Tabs gạch chân — đè lên đường kẻ của khối chứa (margin-bottom: -1px) */
+.hv-tabs {
+  display: flex;
+  gap: 1.375rem;
+}
+
+.hv-tab {
+  display: inline-flex;
+  align-items: center;
+  height: 2.5rem;
+  margin-bottom: -1px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1.5px solid transparent;
+  background: transparent;
+  color: var(--hv-ink-2);
+  font-family: var(--font);
+  font-size: 0.84rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+.hv-tab:hover,
+.hv-tab.active {
+  color: var(--hv-ink);
+}
+.hv-tab.active {
+  border-bottom-color: var(--hv-ink);
+}
+
+.hv-tabs--sm {
+  gap: 1rem;
+}
+.hv-tabs--sm .hv-tab {
+  height: 2rem;
+  font-size: 0.79rem;
+}
+
+/* ── Section (I · Năm, II · Tuần, III · Tháng) ── */
+.hv-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.hv-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  min-height: 2.25rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 3px double var(--hv-rule);
+}
+
+.hv-section-num {
+  min-width: 2rem;
+  font-family: var(--hv-serif);
+  font-style: italic;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--hv-muted);
+}
+
+.hv-section-title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hv-ink-2);
+}
+
+.hv-period-nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.hv-period-label {
+  min-width: 10rem;
+  text-align: center;
+  font-family: var(--hv-serif);
+  font-style: italic;
+  font-size: 0.94rem;
+  color: var(--hv-ink-2);
+}
+
+.hv-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+/* ── Figures: số liệu Lora, ngăn bằng đường kẻ dọc ── */
+.hv-figures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  row-gap: 1.5rem;
+}
+
+.hv-figure {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
+  padding: 0 1.25rem;
+  border-left: 1px solid var(--hv-rule);
+}
+.hv-figure:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.hv-figure-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  color: var(--hv-muted);
+}
+
+.hv-figure-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  min-width: 0;
+  font-family: var(--hv-serif);
+  font-size: 2.25rem;
+  font-weight: 400;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--hv-ink);
+}
+.hv-figures--md .hv-figure-value {
+  font-size: 1.75rem;
+}
+.hv-figures--sm .hv-figure-value {
+  font-size: 1.5rem;
+}
+
+.hv-figure-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.hv-figure-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hv-figure-unit {
+  font-style: italic;
+  font-size: 0.94rem;
+  color: var(--hv-muted);
+}
+
+.hv-figure-sub {
+  font-family: var(--hv-serif);
+  font-style: italic;
+  font-size: 0.88rem;
+  color: var(--hv-muted);
+}
+
+.hv-delta {
+  font-style: italic;
+  font-size: 1rem;
+  white-space: nowrap;
+  color: var(--hv-muted);
+}
+.hv-delta.up,
+.tsc-delta.up {
+  color: var(--hv-up);
+}
+.hv-delta.down,
+.tsc-delta.down {
+  color: var(--hv-seal);
+}
+
+.hv-rate-bar {
+  display: block;
+  position: relative;
+  width: 100%;
+  max-width: 9rem;
+  height: 3px;
+  margin-top: 0.375rem;
+  background: var(--hv-track);
+}
+.hv-rate-bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--hv-seal);
+  transition: width 0.4s ease;
+}
+
+.hv-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ── Heatmap grid (HeatmapGrid.tsx) ── */
+.heatmap-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   overflow-x: auto;
   padding-bottom: 4px;
 }
@@ -44,7 +372,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
-  gap: 10px 22px;
+  gap: 14px 22px;
 }
 
 .heatmap-month-block {
@@ -54,9 +382,10 @@
 }
 
 .heatmap-month-block-label {
-  font-size: 0.79rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-family: var(--hv-serif);
+  font-style: italic;
+  font-size: 0.84rem;
+  color: var(--hv-muted);
 }
 
 .heatmap-month-block-grid {
@@ -86,9 +415,10 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.79rem;
-  color: var(--text-secondary);
-  margin-top: 4px;
+  font-family: var(--hv-serif);
+  font-style: italic;
+  font-size: 0.84rem;
+  color: var(--hv-muted);
 }
 
 .hm-legend-cell {
@@ -97,352 +427,223 @@
   border-radius: 2px;
 }
 
-/* ── Monthly bar chart ── */
-.monthly-chart {
-  display: flex;
-  gap: 4px;
-  align-items: flex-end;
+/* ── Year charts: 12 cột mảnh trên một đường đáy ── */
+.hv-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem 3rem;
 }
 
-.monthly-bar-col {
-  flex: 1;
+.hv-chart {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.hv-chart-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  min-width: 0;
 }
 
-.monthly-bar-track {
+.hv-chart-track {
   width: 100%;
-  height: 80px;
+  height: 5.5rem;
   display: flex;
   align-items: flex-end;
+  justify-content: center;
+  border-bottom: 1px solid var(--hv-rule);
 }
 
-.monthly-bar {
-  width: 100%;
-  background: var(--primary);
-  opacity: 0.35;
-  border-radius: 3px 3px 0 0;
+.hv-chart-bar {
+  width: 55%;
+  max-width: 1.25rem;
   min-height: 0;
+  background: var(--hv-bar);
+  border-radius: 1px 1px 0 0;
   transition: height 0.3s ease;
 }
-
-.monthly-bar--active {
-  opacity: 1;
+.hv-chart-bar.active {
+  background: var(--hv-seal);
 }
 
-.monthly-bar-label {
-  font-size: 0.71rem;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
-/* ── Bottom 4 stat cards ── */
-.stats-row-4 {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-
-.stat-card-sm {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stat-card-sm-label {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  line-height: 1.3;
-}
-
-.stat-card-sm-row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.stat-card-sm-icon {
-  color: var(--text-secondary);
-  flex-shrink: 0;
-}
-
-.stat-icon-trophy {
-  color: #c9900a;
-}
-
-.stat-icon-award {
-  color: #c9900a;
-}
-
-.stat-card-sm-value {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
-.stat-card-sm-unit {
-  font-size: 0.86rem;
-  color: var(--text-secondary);
-  margin-top: 2px;
-}
-
-/* ── Heatmap Dashboard Extensions ── */
-
-.stats-row--4 {
-  grid-template-columns: repeat(4, 1fr);
-}
-
-/* Mode toggle (Count | Hours) */
-.heatmap-mode-toggle {
-  display: flex;
-  gap: 2px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
-  padding: 3px;
-}
-
-.heatmap-mode-btn {
-  padding: 3px 10px;
-  border-radius: calc(var(--radius-md) - 2px);
-  font-size: 0.79rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition:
-    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.heatmap-mode-btn--active {
-  background: var(--primary);
-  color: #fff;
-}
-
-/* Weekly summary strip */
-.weekly-strip {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-}
-
-.weekly-strip-cell {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
-  padding: 10px 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  border: 1px solid transparent;
-  transition: border-color 0.15s;
-}
-
-.weekly-strip-cell--today {
-  border-color: var(--primary);
-}
-
-.weekly-strip-dow {
-  font-size: 0.71rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.weekly-strip-date {
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
-.weekly-strip-tasks {
-  font-size: 0.79rem;
-  color: var(--primary);
-  font-weight: 500;
-}
-
-.weekly-strip-hours {
-  font-size: 0.71rem;
-  color: var(--text-muted);
-}
-
-/* Two-column layout for heatmap sections */
-.heatmap-two-col {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-}
-
-/* Monthly summary strip (horizontal, below bar chart) */
-.heatmap-month-summary {
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-}
-
-.month-card-row--first {
-  padding-left: 0;
-}
-
-.month-card-row {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 4px 16px;
-  border-right: 0.5px solid var(--border-1);
-}
-
-.month-card-label {
+.hv-chart-label {
+  font-family: var(--hv-serif);
+  font-style: italic;
   font-size: 0.72rem;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
   white-space: nowrap;
+  color: var(--hv-muted);
 }
 
-.month-card-right {
+/* ── Week strip: 7 cột ngăn bằng đường kẻ ── */
+.hv-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-bottom: 1px solid var(--hv-rule);
+}
+
+.hv-day {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+  min-width: 0;
+  padding: 0.5rem 0.25rem 1.125rem;
+  border-left: 1px solid var(--hv-rule-soft);
+}
+.hv-day:first-child {
+  border-left: 0;
 }
 
-.month-card-val {
-  font-size: 1.2rem;
+.hv-day-dow {
+  font-size: 0.64rem;
   font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hv-muted);
 }
 
-.month-card-delta {
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 3px;
-  padding: 1px 4px;
+.hv-day-date {
+  font-family: var(--hv-serif);
+  font-size: 1.75rem;
+  line-height: 1.15;
+  color: var(--hv-ink);
 }
 
-.delta-up {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.12);
+.hv-day-tasks {
+  font-family: var(--hv-serif);
+  font-style: italic;
+  font-size: 0.86rem;
+  color: var(--hv-ink-2);
 }
 
-.delta-down {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.12);
+.hv-day-hours {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--hv-muted);
 }
 
-.month-card-rate-wrap {
-  padding: 4px 0 4px 16px;
+.hv-day.empty .hv-day-date,
+.hv-day.empty .hv-day-tasks {
+  color: var(--hv-muted);
+}
+
+.hv-day.today .hv-day-dow,
+.hv-day.today .hv-day-date {
+  color: var(--hv-seal);
+}
+
+/* ── Top categories / tags (TopStatsSection.tsx) ── */
+.hv-topstats {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  flex: 1;
-  min-width: 100px;
+  gap: 1.25rem;
 }
 
-.month-card-rate-header {
+.hv-topstats-head {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--hv-rule);
+}
+.hv-topstats-head .hv-label {
+  padding-bottom: 0.625rem;
 }
 
-.month-card-rate-bar {
-  height: 5px;
-  background: var(--bg-hover);
-  border-radius: 3px;
-  overflow: hidden;
+.hv-topstats-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.75rem 3rem;
 }
 
-.month-card-rate-fill {
-  height: 100%;
-  background: var(--primary);
-  border-radius: 3px;
-  transition: width 0.4s ease;
+.hv-topstats-col {
+  min-width: 0;
 }
 
-.month-card-tag-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.hv-sublabel {
+  margin-bottom: 0.875rem;
+  font-family: var(--hv-serif);
+  font-style: italic;
+  font-size: 0.94rem;
+  color: var(--hv-ink-2);
 }
 
-/* Top tags horizontal bars */
+.hv-empty {
+  font-family: var(--hv-serif);
+  font-style: italic;
+  font-size: 0.88rem;
+  color: var(--hv-muted);
+}
+
 .tag-stats-list {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 0.7rem;
 }
 
 .tag-stat-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr) 6.25rem;
   align-items: center;
-  gap: 8px;
+  column-gap: 0.75rem;
 }
 
 .tag-stat-name {
-  font-size: 0.79rem;
-  font-weight: 500;
-  width: 72px;
-  flex-shrink: 0;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 0.84rem;
+  color: var(--hv-ink-2);
+}
+
+.tag-stat-label {
+  min-width: 0;
   overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .tag-stat-bar-wrap {
-  flex: 1;
-  height: 7px;
-  background: var(--bg-tertiary, var(--bg-hover));
-  border-radius: 4px;
+  height: 5px;
+  background: var(--hv-track);
+  border-radius: 1px;
   overflow: hidden;
 }
 
 .tag-stat-bar {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 1px;
   transition: width 0.4s ease;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 /* Light theme: many category/tag colors are pale (yellow, lime, pink...) and wash out
-   against a white page — full opacity + a faint dark outline keeps them legible without
-   touching the dark theme rendering, which already reads fine at 0.85. */
+   against the paper — full opacity + a faint dark outline keeps them legible without
+   touching the dark theme rendering. */
 [data-theme="light"] .tag-stat-bar {
   opacity: 1;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
 }
 
 .tag-stat-hours {
-  font-size: 0.71rem;
-  width: 62px;
   text-align: right;
   white-space: nowrap;
-  flex-shrink: 0;
+  font-family: var(--hv-serif);
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .tag-stat-hours-value {
-  color: var(--text-secondary);
-  font-weight: 600;
+  color: var(--hv-ink);
 }
 
 .tag-stat-days-value {
-  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.78rem;
+  color: var(--hv-muted);
 }
 
 /* Compare mode (this vs previous week/month) — 2 stacked mini bars per row.
@@ -451,9 +652,9 @@
    whole list, not just its own row. */
 .tag-stats-compare-grid {
   display: grid;
-  grid-template-columns: 72px 1fr auto auto;
-  column-gap: 8px;
-  row-gap: 3px;
+  grid-template-columns: 7.5rem minmax(0, 1fr) auto auto;
+  column-gap: 0.75rem;
+  row-gap: 4px;
   align-items: center;
 }
 
@@ -464,18 +665,18 @@
 
 .tsc-spacer {
   grid-column: 1 / -1;
-  height: 4px;
+  height: 6px;
 }
 
-.tag-stat-bar-wrap--sm {
-  height: 5px;
+.tag-stats-compare-grid .tag-stat-bar-wrap {
+  height: 4px;
 }
 
 .tag-stat-bar--prev {
   opacity: 0.35;
 }
 
-/* Light theme: 0.35 opacity fades almost to white on a light page, so give the
+/* Light theme: 0.35 opacity fades almost to nothing on the paper, so give the
    "previous period" bar a higher floor + faint outline — still visibly fainter
    than the current-period bar above it, just not invisible. */
 [data-theme="light"] .tag-stat-bar--prev {
@@ -484,54 +685,70 @@
 }
 
 .tsc-value {
-  font-size: 0.68rem;
-  color: var(--text-muted);
   text-align: right;
   white-space: nowrap;
+  font-family: var(--hv-serif);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--hv-muted);
 }
 
 .tsc-delta {
-  font-size: 0.71rem;
-  font-weight: 600;
-  border-radius: 3px;
-  padding: 1px 5px;
+  min-width: 2.75rem;
+  text-align: right;
   white-space: nowrap;
-  text-align: center;
+  font-family: var(--hv-serif);
+  font-style: italic;
+  font-size: 0.84rem;
 }
 
 .tag-stat-compare-legend {
   display: flex;
-  gap: 14px;
-  margin-bottom: 10px;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
+  gap: 1.25rem;
+  font-family: var(--hv-serif);
+  font-style: italic;
+  font-size: 0.86rem;
+  color: var(--hv-muted);
 }
 
 .tag-stat-compare-legend-item {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .tag-stat-compare-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--primary);
   display: inline-block;
-  font-style: normal;
+  width: 14px;
+  height: 4px;
+  border-radius: 1px;
+  background: var(--hv-ink-2);
 }
 
 .tag-stat-compare-dot--b {
   opacity: 0.35;
 }
 
-/* Completion rate bar (reuses .monthly-bar styles with accent) */
-.completion-bar {
-  background: var(--primary);
-  opacity: 0.7;
+/* ── Cửa sổ hẹp ── */
+@container hv (max-width: 46rem) {
+  .hv-page {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  .hv-figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hv-figure:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .hv-charts,
+  .hv-topstats-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
-.completion-bar.monthly-bar--active {
-  opacity: 1;
+/* ── Glass mode (nền ảnh) ── */
+html.has-bg-image .hv-wrap {
+  background: transparent;
 }

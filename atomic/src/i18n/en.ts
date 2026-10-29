@@ -282,6 +282,9 @@ export const en: typeof vi = {
     comparePeriod: "Compare",
     prevWeek: "Last Week",
     prevMonth: "Last Month",
+    nextWeek: "Next week",
+    nextMonth: "Next month",
+    records: "Records",
   },
   calendar: {
     today: "Today",

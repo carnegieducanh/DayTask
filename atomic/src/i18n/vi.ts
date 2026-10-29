@@ -273,6 +273,9 @@ export const vi = {
     comparePeriod: "So sánh",
     prevWeek: "Tuần trước",
     prevMonth: "Tháng trước",
+    nextWeek: "Tuần sau",
+    nextMonth: "Tháng sau",
+    records: "Kỷ lục",
   },
   calendar: {
     today: "Hôm nay",
