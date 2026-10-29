@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 import { format } from 'date-fns';
-import type { Task, Goal, GoalChecklistItem, CategoryColors, Category, Tag, TaskTimeEntry, Quarter } from '../../types';
+import type { Task, Goal, GoalStatus, GoalChecklistItem, CategoryColors, Category, Tag, TaskTimeEntry, Quarter } from '../../types';
 import {
   isTauri,
   mockTasks, mockGoals, mockChecklist, mockTags, mockTaskTags, mockTimeEntries,
@@ -86,8 +86,8 @@ async function seedMockData(db: import('@tauri-apps/plugin-sql').default, today:
     ['Tăng cân lên 70kg', 'Gym 4 buổi/tuần, chế độ dinh dưỡng', 'health', 'high', 2026, 'Q3', 'doing', 55, 0],
     ['Học Python & Data Science', 'Hoàn thành 3 khóa online, làm 2 project', 'learn', 'high', 2026, 'Q4', 'doing', 35, 1],
     ['Tiết kiệm 50 triệu', 'Đặt aside 5 triệu/tháng tự động', 'personal', 'mid', 2026, 'full', 'doing', 40, 2],
-    ['Đọc 12 cuốn sách', 'Mỗi tháng 1 cuốn, ghi chú tóm tắt', 'personal', 'low', 2026, 'full', 'review', 75, 0],
-    ['Ra mắt side project', 'App quản lý chi tiêu cá nhân', 'work', 'high', 2026, 'Q2', 'review', 85, 1],
+    ['Đọc 12 cuốn sách', 'Mỗi tháng 1 cuốn, ghi chú tóm tắt', 'personal', 'low', 2026, 'full', 'doing', 75, 3],
+    ['Ra mắt side project', 'App quản lý chi tiêu cá nhân', 'work', 'high', 2026, 'Q2', 'doing', 85, 4],
     ['Lập kế hoạch tài chính năm', 'Ngân sách, đầu tư, quỹ khẩn cấp', 'personal', 'high', 2026, 'Q1', 'done', 100, 0],
     ['Khám sức khỏe định kỳ', 'Xét nghiệm tổng quát đầu năm', 'health', 'low', 2026, 'Q1', 'done', 100, 1],
     ['Setup môi trường làm việc', 'Màn hình, bàn phím cơ, microphone', 'work', 'low', 2026, 'Q1', 'done', 100, 2],
@@ -225,7 +225,8 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
   importAllData: async (file: File) => {
     const text = await file.text();
     // `quarter` (singular) hỗ trợ đọc backup cũ trước khi Quarter deadline hỗ trợ multi-select.
-    type ImportedGoal = Omit<Goal, 'quarters'> & { quarters?: Quarter[]; quarter?: Quarter };
+    // `status: 'review'` có trong backup trước khi bỏ cột "Đang review" (migration v31).
+    type ImportedGoal = Omit<Goal, 'quarters' | 'status'> & { quarters?: Quarter[]; quarter?: Quarter; status: GoalStatus | 'review' };
     let data: {
       tasks?: Task[]; goals?: ImportedGoal[]; checklistItems?: GoalChecklistItem[]; categoryColors?: CategoryColors;
       tags?: Tag[]; taskTags?: Array<{ task_id: number; tag_id: number }>; timeEntries?: TaskTimeEntry[];
@@ -244,13 +245,20 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
     if (!Array.isArray(data.tasks) || !Array.isArray(data.goals) || !Array.isArray(data.checklistItems)) {
       throw new Error('File không hợp lệ — thiếu trường tasks / goals / checklistItems');
     }
+    // Goal 'review' gộp vào 'doing', xếp sau các goal sẵn có — giống migration v31
+    const goals: Goal[] = data.goals.map((g) => ({
+      ...g,
+      quarters: g.quarters ?? (g.quarter ? [g.quarter] : ['Q1' as Quarter]),
+      status: g.status === 'review' ? 'doing' : g.status,
+      position: g.status === 'review' ? g.position + 1000 : g.position,
+    }));
 
     if (!isTauri()) {
       mockTasks.length = 0;
       mockGoals.length = 0;
       mockChecklist.length = 0;
       mockTasks.push(...data.tasks);
-      mockGoals.push(...data.goals.map((g) => ({ ...g, quarters: g.quarters ?? (g.quarter ? [g.quarter] : ['Q1' as Quarter]) })));
+      mockGoals.push(...goals);
       mockChecklist.push(...data.checklistItems);
       if (data.categoryColors) {
         localStorage.setItem('categoryColors', JSON.stringify(data.categoryColors));
@@ -284,12 +292,11 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
            t.series_id ?? null, t.repeat_end_date ?? null, t.created_at, t.color ?? null]
         );
       }
-      for (const g of data.goals) {
-        const quarters = g.quarters ?? (g.quarter ? [g.quarter] : ['Q1' as Quarter]);
+      for (const g of goals) {
         await db.execute(
           `INSERT INTO goals (id, title, description, category, priority, year, quarters, status, progress, position, created_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-          [g.id, g.title, g.description ?? null, g.category, g.priority, g.year, quartersToDb(quarters), g.status, g.progress, g.position, g.created_at]
+          [g.id, g.title, g.description ?? null, g.category, g.priority, g.year, quartersToDb(g.quarters), g.status, g.progress, g.position, g.created_at]
         );
       }
       for (const ci of data.checklistItems) {

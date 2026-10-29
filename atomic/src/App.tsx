@@ -37,7 +37,7 @@ import UpdateDialog from './components/UpdateDialog';
 import { useReminder } from './hooks/useReminder';
 import type { Goal, GoalStatus } from './types';
 
-const STATUSES: GoalStatus[] = ['todo', 'doing', 'review', 'done'];
+const STATUSES: GoalStatus[] = ['todo', 'doing', 'done'];
 
 function hexToSecondary(hex: string): string {
   const r = parseInt(hex.slice(1, 3), 16) / 255;

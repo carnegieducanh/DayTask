@@ -76,15 +76,9 @@
   --pri-low: #6baf6b;
 
   /* Kanban columns */
-  --col-todo-bg: #f1efe8;
-  --col-todo-badge: #d3d1c7;
-  --col-todo-title: #444441;
   --col-doing-bg: #e6f1fb;
   --col-doing-badge: #b5d4f4;
   --col-doing-title: var(--primary);
-  --col-review-bg: #faeeda;
-  --col-review-badge: #fac775;
-  --col-review-title: #633806;
   --col-done-bg: #eaf3de;
   --col-done-badge: #c0dd97;
   --col-done-title: #27500a;
@@ -109,15 +103,9 @@
   --primary: #7ab0e0;
 
   /* Kanban columns — all neutral dark, no color tinting */
-  --col-todo-bg: #1a1a1a;
-  --col-todo-badge: #2e2e2e;
-  --col-todo-title: #cfcec8;
   --col-doing-bg: #1a1a1a;
   --col-doing-badge: #2e2e2e;
   --col-doing-title: var(--primary);
-  --col-review-bg: #1a1a1a;
-  --col-review-badge: #2e2e2e;
-  --col-review-title: #f0a860;
   --col-done-bg: #1a1a1a;
   --col-done-badge: #2e2e2e;
   --col-done-title: #8ed36a;
@@ -1162,8 +1150,6 @@ html.has-bg-image .sidebar {
   -webkit-backdrop-filter: blur(var(--bg-glass-blur)) saturate(var(--bg-glass-saturate));
 }
 
-html.has-bg-image .kanban-column,
-html.has-bg-image .kanban-stats-bar,
 html.has-bg-image .journal-sidebar,
 html.has-bg-image .quotes-sidebar,
 html.has-bg-image .books-sidebar,

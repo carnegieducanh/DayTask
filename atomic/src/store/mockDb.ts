@@ -86,8 +86,8 @@ export const mockGoals: Goal[] = [
   { id: 5, title: 'Tăng cân lên 70kg', description: 'Gym 4 buổi/tuần, chế độ dinh dưỡng', category: 'health', priority: 'high', year: 2026, quarters: ['Q3'], status: 'doing', progress: 55, position: 0, created_at: today },
   { id: 6, title: 'Học Python & Data Science', description: 'Hoàn thành 3 khóa online, làm 2 project', category: 'learn', priority: 'high', year: 2026, quarters: ['Q3', 'Q4'], status: 'doing', progress: 35, position: 1, created_at: today },
   { id: 7, title: 'Tiết kiệm 50 triệu', description: 'Đặt aside 5 triệu/tháng tự động', category: 'personal', priority: 'mid', year: 2026, quarters: ['full'], status: 'doing', progress: 40, position: 2, created_at: today },
-  { id: 8, title: 'Đọc 12 cuốn sách', description: 'Mỗi tháng 1 cuốn, ghi chú tóm tắt', category: 'personal', priority: 'low', year: 2026, quarters: ['full'], status: 'review', progress: 75, position: 0, created_at: today },
-  { id: 9, title: 'Ra mắt side project', description: 'App quản lý chi tiêu cá nhân', category: 'work', priority: 'high', year: 2026, quarters: ['Q2'], status: 'review', progress: 85, position: 1, created_at: today },
+  { id: 8, title: 'Đọc 12 cuốn sách', description: 'Mỗi tháng 1 cuốn, ghi chú tóm tắt', category: 'personal', priority: 'low', year: 2026, quarters: ['full'], status: 'doing', progress: 75, position: 3, created_at: today },
+  { id: 9, title: 'Ra mắt side project', description: 'App quản lý chi tiêu cá nhân', category: 'work', priority: 'high', year: 2026, quarters: ['Q2'], status: 'doing', progress: 85, position: 4, created_at: today },
   { id: 10, title: 'Lập kế hoạch tài chính năm', description: 'Ngân sách, đầu tư, quỹ khẩn cấp', category: 'personal', priority: 'high', year: 2026, quarters: ['Q1'], status: 'done', progress: 100, position: 0, created_at: today },
   { id: 11, title: 'Khám sức khỏe định kỳ', description: 'Xét nghiệm tổng quát đầu năm', category: 'health', priority: 'low', year: 2026, quarters: ['Q1'], status: 'done', progress: 100, position: 1, created_at: today },
   { id: 12, title: 'Setup môi trường làm việc', description: 'Màn hình, bàn phím cơ, microphone', category: 'work', priority: 'low', year: 2026, quarters: ['Q1'], status: 'done', progress: 100, position: 2, created_at: today },
@@ -104,7 +104,7 @@ export const mockChecklist: GoalChecklistItem[] = [
   { id: _nextChecklistId++, goal_id: 5, text: 'Tập 4 buổi/tuần đủ 1 tháng', is_done: 1, position: 2 },
   { id: _nextChecklistId++, goal_id: 5, text: 'Đạt 65kg', is_done: 0, position: 3 },
   { id: _nextChecklistId++, goal_id: 5, text: 'Đạt 70kg', is_done: 0, position: 4 },
-  // Goal 8 — Đọc 12 cuốn sách (review, 9/12 done)
+  // Goal 8 — Đọc 12 cuốn sách (doing, 9/12 done)
   { id: _nextChecklistId++, goal_id: 8, text: 'Atomic Habits', is_done: 1, position: 0 },
   { id: _nextChecklistId++, goal_id: 8, text: 'Deep Work', is_done: 1, position: 1 },
   { id: _nextChecklistId++, goal_id: 8, text: 'The 4-Hour Workweek', is_done: 1, position: 2 },
@@ -277,7 +277,7 @@ export function dbGetGoals(year: number): Goal[] {
   return mockGoals
     .filter((g) => g.year === year)
     .sort((a, b) => {
-      const order = { todo: 0, doing: 1, review: 2, done: 3 };
+      const order = { todo: 0, doing: 1, done: 2 };
       return order[a.status] - order[b.status] || a.position - b.position;
     });
 }

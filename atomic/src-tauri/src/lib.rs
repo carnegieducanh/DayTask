@@ -469,6 +469,15 @@ pub fn run() {
             CREATE INDEX IF NOT EXISTS idx_vision_aim_logs_aim ON vision_aim_logs(aim_id);",
             kind: MigrationKind::Up,
         },
+        // Bỏ cột "Đang review" ở Kế hoạch năm: gộp vào "Đang thực hiện", xếp sau các
+        // mục tiêu sẵn có (+1000; lần kéo thả đầu tiên sẽ đánh số lại 0..n).
+        // CHECK của cột status vẫn còn 'review' — để nguyên, không cần dựng lại bảng.
+        Migration {
+            version: 31,
+            description: "merge_goal_review_into_doing",
+            sql: "UPDATE goals SET status = 'doing', position = position + 1000 WHERE status = 'review';",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

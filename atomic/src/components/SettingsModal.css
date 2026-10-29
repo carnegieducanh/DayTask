@@ -99,20 +99,6 @@
   color: var(--primary);
 }
 
-.goal-checklist-progress {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 5px 0 2px;
-}
-
-.goal-progress-xy {
-  font-size: 0.71rem;
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
 /* ── Settings Modal ── */
 .modal-settings {
   width: 580px;

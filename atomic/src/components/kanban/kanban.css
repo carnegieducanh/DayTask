@@ -1,195 +1,519 @@
-/* ── Priority dot ── */
-.priority-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.priority-dot.high {
-  background: var(--pri-high);
-}
-.priority-dot.mid {
-  background: var(--pri-mid);
-}
-.priority-dot.low {
-  background: var(--pri-low);
+/* ── Tab Kế hoạch năm — phong cách "biên niên" (cùng ngôn ngữ với tab Tầm nhìn) ──
+   Nền giấy ấm, chữ có chân (Lora), cột phân cách bằng đường kẻ mảnh, thẻ giữ nền
+   pastel đặc theo màu danh mục ở cả hai theme.
+   Token đặt ở :root (không phải .yp-wrap) vì DragOverlay render ngoài .yp-wrap. */
+
+:root {
+  --yp-stage: #f3f1ec;
+  --yp-rule: #ddd7cb;
+  --yp-rule-soft: #ebe6dc;
+  --yp-track: #e6e1d6;
+  --yp-time: #8f897e;
+  --yp-seal: #a8322a;
+  --yp-ink: #2a2723;
+  --yp-ink-2: #45413a;
+  --yp-on-ink: #fffefb;
+  --yp-muted: #6e695f;
+  --yp-serif: "Lora", "Yu Mincho", Georgia, serif;
+  --yp-card-shadow: 0 1px 0 rgba(40, 32, 20, 0.05), 0 10px 22px -18px rgba(40, 32, 20, 0.55);
 }
 
-/* ── Kanban (Year Plan) tab enter animations ── */
-.kanban-stats-bar {
+[data-theme="dark"] {
+  --yp-stage: #151515;
+  --yp-rule: #34322e;
+  --yp-rule-soft: #2a2927;
+  --yp-track: #2c2c2b;
+  --yp-time: #6f6c66;
+  --yp-seal: #d76a5c;
+  --yp-ink: #ebe7df;
+  --yp-ink-2: #cfcac0;
+  --yp-on-ink: #1d1d1c;
+  --yp-muted: #8f8a80;
+  --yp-card-shadow: 0 12px 24px -18px rgba(0, 0, 0, 0.9);
+}
+
+/* ── Layout ── */
+.yp-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 26px 32px 0;
+  background: var(--yp-stage);
+  color: var(--yp-ink);
+}
+
+/* Enter animations */
+.yp-head {
   animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
-.kanban-drag-hint {
+.yp-ruler {
   animation: today-main-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
 }
 .kanban-board {
   animation: today-main-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
 }
 
-/* ── Kanban ── */
-.kanban-drag-hint {
+/* ── Header ── */
+.yp-head {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 6px;
-  padding: 15px 20px 0;
-  /* padding-top: 10px; */
-  font-size: 0.86rem;
-  color: var(--text-secondary);
-  /* border-bottom: 0.5px solid var(--border-1); */
+  gap: 16px 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--yp-rule);
   flex-shrink: 0;
 }
 
-.kanban-drag-hint-text {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.kanban-drag-hint-text svg {
-  width: 1.5em;
-  height: 1.5em;
-}
-
-/* Kanban board: columns không scale layout, dùng px cố định.
-   DragOverlay sẽ đo BCR chính xác vì không có zoom factor trong hệ tọa độ. */
-.kanban-board {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(220px, 1fr));
-  gap: 12px;
-  padding: 16px 20px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  align-items: start;
-}
-
-.kanban-column {
-  background: var(--bg-secondary);
-  border: 0.5px solid var(--border-1);
-  border-radius: var(--radius-lg);
+.yp-head-main {
   display: flex;
   flex-direction: column;
-  min-height: 200px;
-  max-height: calc(100vh - 160px);
-  outline-offset: -2px;
-  overflow: hidden;
-  transition:
-    outline 0.12s ease,
-    box-shadow 0.12s ease;
+  gap: 8px;
+  min-width: 0;
 }
 
-.kanban-col-header {
+.yp-eyebrow {
+  font-size: 0.69rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--yp-muted);
+}
+
+.yp-title-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.71em 1em;
-  flex-shrink: 0;
+  gap: 16px;
 }
 
-/* Icons in column header scale with header font-size */
-.kanban-col-header svg {
+.yp-title {
+  margin: 0;
+  font-family: var(--yp-serif);
+  font-size: 2.5rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--yp-ink);
+}
+
+.yp-year-nav {
+  display: flex;
+  gap: 6px;
+}
+
+.yp-round-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--yp-rule);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--yp-ink-2);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.yp-round-btn:hover {
+  background: var(--yp-rule-soft);
+  border-color: var(--yp-muted);
+}
+.yp-round-btn svg {
   width: 1em;
   height: 1em;
 }
 
-.kanban-col-title {
-  font-size: 0.93rem;
-  font-weight: 600;
-  color: var(--text-primary);
+.yp-subtitle {
+  margin: 0;
+  font-family: var(--yp-serif);
+  font-style: italic;
+  font-size: 0.94rem;
+  color: var(--yp-muted);
 }
 
-.kanban-col-badge {
-  font-size: 0.86rem;
-  font-weight: 500;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 4px;
-  display: inline-flex;
+.yp-add-btn {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 999px;
+  gap: 8px;
+  height: 38px;
+  padding: 0 18px 0 14px;
+  border: 1px solid var(--yp-ink);
+  border-radius: 4px;
+  background: var(--yp-ink);
+  color: var(--yp-on-ink);
+  font-family: var(--font);
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.yp-add-btn:hover {
+  opacity: 0.86;
+}
+.yp-add-btn svg {
+  width: 1.15em;
+  height: 1.15em;
+}
+
+/* ── Thước năm: Thời gian vs Mục tiêu ── */
+.yp-ruler {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) 48px;
+  column-gap: 18px;
+  row-gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.yp-ruler-quarters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.yp-ruler-quarters span {
+  padding-left: 10px;
+  border-left: 1px solid var(--yp-rule);
+  font-size: 0.69rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--yp-muted);
+}
+
+.yp-ruler-label {
+  font-size: 0.75rem;
+  color: var(--yp-muted);
+}
+
+.yp-track {
+  position: relative;
+  height: 3px;
+  background: var(--yp-track);
+}
+
+.yp-track-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  transition: width 0.4s ease;
+}
+.yp-track-fill--time {
+  background: var(--yp-time);
+}
+.yp-track-fill--goal {
+  background: var(--yp-seal);
+}
+
+/* Khấc chia quý trên thanh */
+.yp-notch {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--yp-stage);
+}
+
+/* Mốc hôm nay — chỉ hiện khi đang xem năm hiện tại */
+.yp-today {
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
   box-sizing: border-box;
-  color: var(--text-primary);
+  border: 1.5px solid var(--yp-ink-2);
+  border-radius: 50%;
+  background: var(--yp-stage);
+}
+
+.yp-ruler-pct {
+  font-family: var(--yp-serif);
+  font-size: 1.1rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--yp-ink-2);
+}
+.yp-ruler-pct--goal {
+  color: var(--yp-seal);
+}
+
+/* ── Board ──
+   Cột không đóng khung, phân cách bằng đường kẻ dọc; cột cao hết phần còn lại,
+   thân cột cao theo nội dung và tự cuộn khi tràn (giống hành vi kéo thả cũ). */
+.kanban-board {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  /* cột có padding 16px hai bên — kéo ra để mép chữ thẳng hàng với header */
+  margin: 0 -16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.kanban-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 16px;
+  border-left: 1px solid var(--yp-rule);
+  transition: background 0.15s ease;
+}
+.kanban-column:first-child {
+  border-left-color: transparent;
+}
+.kanban-column.is-over {
+  background: color-mix(in srgb, var(--yp-ink) 3.5%, transparent);
+}
+
+.kanban-col-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 2px 10px;
+  border-bottom: 3px double var(--yp-rule);
+  flex-shrink: 0;
+}
+
+.kanban-col-numeral {
+  min-width: 26px;
+  font-family: var(--yp-serif);
+  font-style: italic;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--yp-muted);
+}
+
+.kanban-col-title {
+  flex: 1;
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--yp-ink-2);
+}
+
+.kanban-col-count {
+  font-family: var(--yp-serif);
+  font-size: 0.94rem;
+  color: var(--yp-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .kanban-col-body {
-  flex: 1;
+  flex: 0 1 auto;
+  min-height: 60px;
   overflow-y: auto;
-  padding: 8px;
+  padding: 14px 2px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-height: 60px;
+  gap: 12px;
 }
 
 .kanban-empty {
-  font-size: 0.93rem;
-  color: var(--text-secondary);
+  font-family: var(--yp-serif);
+  font-style: italic;
+  font-size: 0.88rem;
+  color: var(--yp-muted);
   text-align: center;
-  padding: 24px 12px;
+  padding: 22px 12px;
 }
 
-/* ── Goal Card ── */
-.goal-card {
-  background: var(--bg-primary);
-  border: 0.5px solid var(--border-1);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
+.kanban-add-btn {
+  flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  cursor: grab;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 2px 18px;
+  padding: 9px 10px;
+  border: 1px dashed var(--yp-rule);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--yp-muted);
+  font-family: var(--yp-serif);
+  font-style: italic;
+  font-size: 0.88rem;
+  cursor: pointer;
   transition:
-    border-color 0.1s,
-    box-shadow 0.1s;
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+}
+.kanban-add-btn svg {
+  width: 1em;
+  height: 1em;
+}
+.kanban-add-btn:hover {
+  color: var(--yp-ink);
+  border-color: var(--yp-muted);
+  background: color-mix(in srgb, var(--yp-ink) 3%, transparent);
+}
+
+/* ── Goal Card ──
+   Nền = màu danh mục (inline), chữ luôn tối vì nền luôn là pastel ở cả hai theme. */
+.goal-card {
+  position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  padding: 13px 15px 12px;
+  box-shadow: var(--yp-card-shadow);
+  cursor: grab;
+  transition: box-shadow 0.15s;
 }
 .goal-card:active {
   cursor: grabbing;
 }
 .goal-card:hover {
-  border-color: var(--border-2);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  box-shadow:
+    inset 0 0 0 999px rgba(0, 0, 0, 0.05),
+    var(--yp-card-shadow);
 }
 
-/* Dark mode */
-[data-theme="dark"] .goal-card {
-  background: #2c2c2c;
-  border-color: rgba(255, 255, 255, 0.07);
+/* Icons inside goal cards scale with card font-size */
+.goal-card svg {
+  width: 1em;
+  height: 1em;
+}
+
+.goal-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.goal-card-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+}
+
+.goal-cat {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Dấu son cho mục tiêu đã hoàn thành */
+.goal-seal {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid #a8322a;
+  border-radius: 50%;
+  color: #a8322a;
+  font-size: 0.75rem;
 }
 
 /* Delete button hidden until hover */
 .goal-card .goal-card-delete {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
+  margin: -3px -4px -3px 0;
   flex-shrink: 0;
+  border: none;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.86rem;
   opacity: 0;
   pointer-events: none;
   transition:
     opacity 0.15s,
     background 0.15s;
 }
-.goal-card--colored .goal-card-delete {
-  color: rgba(0, 0, 0, 0.72);
-}
 .goal-card:hover .goal-card-delete {
   opacity: 1;
   pointer-events: auto;
 }
+.goal-card .goal-card-delete:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.85);
+}
 
-/* Icons inside goal cards scale with card font-size */
-.goal-card svg,
-.goal-card-drag-overlay svg {
-  width: 1em;
-  height: 1em;
+.goal-title {
+  font-family: var(--yp-serif);
+  font-size: 1.06rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.goal-desc {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.64);
+}
+
+.goal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.goal-quarter {
+  font-family: var(--yp-serif);
+  font-style: italic;
+  font-size: 0.82rem;
+  color: rgba(0, 0, 0, 0.66);
+}
+
+.goal-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.66);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.goal-check-track {
+  position: relative;
+  width: 40px;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.goal-check-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  transition: width 0.3s ease;
 }
 
 /* Ghost placeholder at original position while dragging */
 .goal-card-ghost {
-  background: var(--border-1) !important;
+  background: var(--yp-rule) !important;
   opacity: 0.55;
-  border: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
 .goal-card-ghost > * {
   visibility: hidden;
@@ -197,227 +521,24 @@
 
 /* Lifted card rendered in DragOverlay — shows as a card while airborne */
 .goal-card-drag-overlay {
-  background: var(--bg-primary);
-  border: 0.5px solid var(--border-2);
-  border-radius: var(--radius-md);
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.18),
-    0 2px 8px rgba(0, 0, 0, 0.1);
-  transform: rotate(4deg) !important;
-  opacity: 0.82;
+    0 18px 36px -14px rgba(40, 32, 20, 0.45),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: rotate(3deg) !important;
+  opacity: 0.9;
   cursor: grabbing !important;
-}
-[data-theme="dark"] .goal-card-drag-overlay {
-  background: #2c2c2c;
-  border-color: rgba(255, 255, 255, 0.1);
 }
 .goal-card-drag-overlay * {
   cursor: grabbing !important;
 }
 
-.goal-drag-handle {
-  color: var(--text-secondary);
-  font-size: 0.86rem;
-  letter-spacing: 1px;
-  cursor: grab;
-  align-self: flex-start;
-  line-height: 1;
-  padding: 1px 2px;
-  border-radius: 3px;
-}
-
-.goal-drag-handle:hover {
-  background: var(--border-1);
-}
-.goal-drag-handle:active {
-  cursor: grabbing;
-}
-
-.goal-card-body {
-  cursor: pointer;
-}
-
-.goal-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-}
-
-.goal-desc {
-  font-size: 0.86rem;
-  color: var(--text-secondary);
-  line-height: 1.4;
-  margin-bottom: 4px;
-}
-
-.goal-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.goal-quarter {
-  font-size: 0.79rem;
-  color: var(--text-secondary);
-  background: var(--border-1);
-  padding: 2px 7px;
-  border-radius: 99px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.goal-card--colored .goal-title {
-  color: rgba(0, 0, 0, 0.88);
-}
-
-.goal-card--colored .goal-desc {
-  color: rgba(0, 0, 0, 0.65);
-}
-
-.goal-card--colored .goal-quarter {
-  color: rgba(0, 0, 0, 0.72);
-  background: rgba(0, 0, 0, 0.12);
-}
-.goal-card--colored:hover {
-  box-shadow:
-    inset 0 0 0 999px rgba(0, 0, 0, 0.07),
-    0 2px 8px rgba(0, 0, 0, 0.07);
-}
-
-.goal-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* ── Year pill (Kanban drag-hint row) ── */
-.year-pill {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  border: 0.5px solid var(--border-1);
-  border-radius: var(--radius-md);
-  padding: 2px 4px;
-}
-
-.year-pill .icon-btn {
-  width: 24px;
-  height: 24px;
-  border: none;
+/* ── Glass mode (nền ảnh) ── */
+html.has-bg-image .yp-wrap {
   background: transparent;
 }
-
-/* ── Kanban stats bar ── */
-.kanban-stats-bar {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 0 20px;
-  border-bottom: 0.5px solid var(--border-1);
-  background: var(--bg-secondary);
-  flex-shrink: 0;
-  flex-wrap: wrap;
-}
-
-.kanban-stat-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 7px 12px 7px 0;
-  margin-right: 12px;
-  font-size: 0.93rem;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
-.kanban-stat-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.kanban-stat-num {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.kanban-progress-wrap {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 0;
-  min-width: 160px;
-}
-
-.kanban-prog-track {
-  flex: 1;
-  height: 5px;
-  background: var(--border-1);
-  border-radius: 99px;
-  overflow: hidden;
-}
-
-.kanban-prog-fill {
-  height: 100%;
-  background: var(--primary);
-  border-radius: 99px;
-  transition: width 0.3s ease;
-}
-
-.kanban-prog-pct {
-  font-size: 0.93rem;
-  font-weight: 500;
-  color: var(--primary);
-  min-width: 32px;
-}
-
-/* ── Kanban add button (mockup style) ── */
-.kanban-add-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 10px;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 0.93rem;
-  cursor: pointer;
-  transition:
-    color 0.1s,
-    background 0.1s;
-  flex-shrink: 0;
-}
-
-.kanban-add-btn svg {
-  width: 1em;
-  height: 1em;
-}
-
-.kanban-add-btn:hover {
-  color: var(--primary);
-  background: var(--bg-secondary);
-}
-
-/* ── Goal card progress bar ── */
-.goal-progress-wrap {
-  height: 3px;
-  background: var(--border-1);
-  border-radius: 99px;
-  overflow: hidden;
-  flex: 1;
-}
-
-.goal-progress-fill {
-  height: 100%;
-  border-radius: 99px;
-  transition: width 0.3s ease;
+html.has-bg-image .yp-notch,
+html.has-bg-image .yp-today {
+  background: var(--bg-glass-panel);
 }
 
 /* ── Checklist in modal ── */

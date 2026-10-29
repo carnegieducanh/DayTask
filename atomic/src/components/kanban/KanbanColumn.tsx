@@ -4,13 +4,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import {
-  IconCircleDashed,
-  IconLoader,
-  IconEye,
-  IconCircleCheck,
-  IconPlus,
-} from "@tabler/icons-react";
+import { IconPlus } from "@tabler/icons-react";
 import { useT } from "../../i18n";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import GoalCard from "./GoalCard";
@@ -23,41 +17,11 @@ interface Props {
   onAddGoal: (status: GoalStatus) => void;
 }
 
-const COL_STYLE: Record<GoalStatus, {
-  icon: React.ReactNode;
-  headerBg: string;
-  badgeBg: string;
-  badgeColor: string;
-  titleColor: string;
-}> = {
-  todo: {
-    icon: <IconCircleDashed size={14} />,
-    headerBg: "var(--col-todo-bg)",
-    badgeBg: "var(--col-todo-badge)",
-    badgeColor: "var(--col-todo-title)",
-    titleColor: "var(--col-todo-title)",
-  },
-  doing: {
-    icon: <IconLoader size={14} />,
-    headerBg: "var(--col-doing-bg)",
-    badgeBg: "var(--col-doing-badge)",
-    badgeColor: "var(--col-doing-title)",
-    titleColor: "var(--col-doing-title)",
-  },
-  review: {
-    icon: <IconEye size={14} />,
-    headerBg: "var(--col-review-bg)",
-    badgeBg: "var(--col-review-badge)",
-    badgeColor: "var(--col-review-title)",
-    titleColor: "var(--col-review-title)",
-  },
-  done: {
-    icon: <IconCircleCheck size={14} />,
-    headerBg: "var(--col-done-bg)",
-    badgeBg: "var(--col-done-badge)",
-    badgeColor: "var(--col-done-title)",
-    titleColor: "var(--col-done-title)",
-  },
+// Số La Mã đầu cột — phong cách "biên niên" giống tab Tầm nhìn
+const NUMERAL: Record<GoalStatus, string> = {
+  todo: "I",
+  doing: "II",
+  done: "III",
 };
 
 export default function KanbanColumn({
@@ -67,36 +31,17 @@ export default function KanbanColumn({
   onAddGoal,
 }: Props) {
   const t = useT();
-  const cfg = COL_STYLE[status];
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   const bodyRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(bodyRef);
 
   return (
-    <div
-      className="kanban-column"
-      style={{ outline: isOver ? `2px solid var(--primary)` : undefined }}
-    >
+    <div className={`kanban-column${isOver ? " is-over" : ""}`}>
       <div className="kanban-col-header">
-        <div
-          className="kanban-col-title"
-          style={{
-            color: cfg.titleColor,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          {cfg.icon}
-          {t.kanban.status[status]}
-        </div>
-        <span
-          className="kanban-col-badge"
-          style={{ background: cfg.badgeBg, color: cfg.badgeColor }}
-        >
-          {goals.length > 9 ? "9+" : goals.length}
-        </span>
+        <span className="kanban-col-numeral">{NUMERAL[status]}</span>
+        <h2 className="kanban-col-title">{t.kanban.status[status]}</h2>
+        <span className="kanban-col-count">{String(goals.length).padStart(2, "0")}</span>
       </div>
 
       <SortableContext
@@ -112,7 +57,7 @@ export default function KanbanColumn({
           data-kanban-col={status}
         >
           {goals.map((g) => (
-            <GoalCard key={g.id} goal={g} onEdit={onEdit} status={status} />
+            <GoalCard key={g.id} goal={g} onEdit={onEdit} />
           ))}
           {goals.length === 0 && (
             <div className="kanban-empty">{t.kanban.emptyColumn}</div>
