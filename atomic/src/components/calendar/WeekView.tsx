@@ -156,10 +156,7 @@ export default function WeekView({
                   >
                     <span className="cal-week-task-title">{task.title}</span>
                     <div className="cal-week-task-footer">
-                      <span
-                        className="cal-week-task-badge"
-                        style={{ background: 'rgba(255,255,255,0.3)', color: 'rgba(0,0,0,0.72)' }}
-                      >
+                      <span className="cal-week-task-badge">
                         {t.cat[task.category] ?? task.category}
                       </span>
                       {duration && (

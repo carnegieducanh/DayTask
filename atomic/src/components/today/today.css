@@ -2039,7 +2039,8 @@
 /* ── Mini Calendar trong tab Hôm nay — kiểu lịch in ──
    MiniCalendar dùng chung với tab Lịch nên chỉ chỉnh trong .today-hero-left,
    đặt sau các rule gốc ở trên. Chủ nhật màu son như lịch giấy; hôm nay = vòng
-   son, ngày đang chọn = nền mực. */
+   son, ngày đang chọn = nền màu chủ đạo (--primary, người dùng yêu cầu cho mọi
+   lịch nhỏ trong app). */
 .today-hero-left .mini-calendar {
   max-width: 17.5rem;
   margin: 0 auto;
@@ -2116,9 +2117,9 @@
 }
 
 .today-hero-left .mini-cal-day.selected {
-  background: var(--td-ink);
-  border-color: var(--td-ink);
-  color: var(--td-paper);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
   font-weight: 400;
 }
 

@@ -203,11 +203,12 @@
   color: var(--jn-seal);
 }
 
+/* Ngày đang chọn = nền màu chủ đạo, như mọi lịch nhỏ trong app */
 .jsc-cal-day.selected,
 .jsc-cal-day.selected:hover {
-  background: var(--jn-ink);
-  border-color: var(--jn-ink);
-  color: var(--jn-stage);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
 }
 
 /* ─── Sidebar: chuỗi ngày + thống kê ─── */

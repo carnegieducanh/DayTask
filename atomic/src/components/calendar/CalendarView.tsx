@@ -77,40 +77,37 @@ function CalToolbar({
     else setCurrentDate(addWeeks(currentDate, 1));
   }
 
+  // Nav buttons sit before the title so they don't shift when the label's
+  // length changes (clicking › repeatedly keeps hitting the same spot).
   return (
-    <div className="cal-toolbar">
-      <div className="cal-toolbar-views">
-        <button
-          className={`cal-toolbar-btn cal-view-btn${view === "day" ? " active" : ""}`}
-          onClick={() => setView("day")}
-        >
-          {t.calendar.day}
-        </button>
-        <button
-          className={`cal-toolbar-btn cal-view-btn${view === "week" ? " active" : ""}`}
-          onClick={() => setView("week")}
-        >
-          {t.calendar.week}
-        </button>
-        <button
-          className={`cal-toolbar-btn cal-view-btn${view === "month" ? " active" : ""}`}
-          onClick={() => setView("month")}
-        >
-          {t.calendar.month}
-        </button>
+    <header className="cal-head">
+      <div className="cal-head-main">
+        <span className="cal-eyebrow">{t.nav.calendar}</span>
+        <div className="cal-title-row">
+          <button className="cal-today-btn" onClick={() => setCurrentDate(new Date())}>
+            {t.calendar.today}
+          </button>
+          <button className="cal-round-btn" onClick={handlePrev}>
+            <IconChevronLeft size={16} />
+          </button>
+          <button className="cal-round-btn" onClick={handleNext}>
+            <IconChevronRight size={16} />
+          </button>
+          <h1 className="cal-title">{label}</h1>
+        </div>
       </div>
-      <div className="cal-toolbar-nav">
-        <button className="cal-toolbar-btn cal-nav-arrow" onClick={handlePrev}><IconChevronLeft size={32} stroke={3} /></button>
-        <button className="cal-toolbar-btn cal-nav-arrow" onClick={handleNext}><IconChevronRight size={32} stroke={3} /></button>
-        <span className="cal-toolbar-label">{label}</span>
-        <button
-          className="cal-toolbar-btn cal-today-btn"
-          onClick={() => setCurrentDate(new Date())}
-        >
-          {t.calendar.today}
-        </button>
+      <div className="cal-tabs">
+        {(["day", "week", "month"] as const).map((v) => (
+          <button
+            key={v}
+            className={`cal-tab${view === v ? " active" : ""}`}
+            onClick={() => setView(v)}
+          >
+            {t.calendar[v]}
+          </button>
+        ))}
       </div>
-    </div>
+    </header>
   );
 }
 
