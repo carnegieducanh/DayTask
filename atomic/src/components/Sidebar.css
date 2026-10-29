@@ -1,23 +1,49 @@
-/* ── Top Nav Bar (was Sidebar) ── */
+/* ── Top Nav Bar (was Sidebar) — phong cách editorial: măng-sét báo ──
+   Nền giấy cùng tông các trang, chữ "Atomic" Lora, tab gạch chân đè lên đường
+   kẻ đáy (thay pill tô màu), số việc chờ là chữ số son nhỏ kiểu chú thích.
+   Đường kẻ đáy là box-shadow inset của .sidebar (vẽ dưới nội dung) để gạch chân
+   tab — cũng là box-shadow inset, nằm trong vùng cuộn ngang — phủ được lên nó. */
+.sidebar {
+  --nv-stage: #f3f1ec;
+  --nv-paper: #fffefb;
+  --nv-rule: #ddd7cb;
+  --nv-rule-soft: #e8e3d9;
+  --nv-ink: #2a2723;
+  --nv-ink-2: #45413a;
+  --nv-muted: #6e695f;
+  --nv-seal: #a8322a;
+  --nv-serif: "Lora", "Yu Mincho", Georgia, serif;
+}
+
+[data-theme="dark"] .sidebar {
+  --nv-stage: #151515;
+  --nv-paper: #1d1d1c;
+  --nv-rule: #34322e;
+  --nv-rule-soft: #262523;
+  --nv-ink: #ebe7df;
+  --nv-ink-2: #cfcac0;
+  --nv-muted: #8f8a80;
+  --nv-seal: #d76a5c;
+}
+
 .sidebar {
   width: 100%;
-  background: var(--bg-secondary);
-  border-bottom: 0.5px solid var(--border-1);
+  min-height: 49px; /* giữ đúng chiều cao cũ — tab Hôm nay tính bố cục "lọt màn hình đầu" theo nó */
+  background: var(--nv-stage);
+  box-shadow: inset 0 -1px 0 var(--nv-rule);
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: stretch;
   flex-shrink: 0;
-  padding: 0 12px;
+  padding: 0 1rem 0 12px;
   gap: 0;
 }
 
 .sidebar-header {
-  padding: 0 12px 0 4px;
+  padding: 0 1.25rem 0 4px;
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  height: 48px;
-  /* border-right: 0.5px solid var(--border-1); */
   margin-right: 6px;
   cursor: pointer;
 }
@@ -25,39 +51,31 @@
 .app-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 1.07rem;
-  font-weight: 500;
-  color: var(--greeting-color);
+  gap: 0.625rem;
+  font-family: var(--nv-serif);
+  font-size: 1.32rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--nv-ink);
   white-space: nowrap;
-}
-
-.app-logo-icon {
-  width: 28px;
-  height: 28px;
-  background: var(--primary);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
 }
 
 .sidebar-nav-viewport {
   position: relative;
   flex: 1;
   min-width: 0;
-  margin-right: 8px;
+  display: flex;
+  margin-right: 0.75rem;
 }
 
 .sidebar-nav {
-  padding: 5px 0;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
   display: flex;
   flex-direction: row;
-  gap: 2px;
-  align-items: center;
+  gap: 1.375rem;
+  align-items: stretch;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -67,10 +85,11 @@
   display: none;
 }
 
+/* Mũi tên cuộn khi cửa sổ hẹp: chừa 1px đáy để không che đường kẻ */
 .sidebar-nav-arrow {
   position: absolute;
   top: 0;
-  bottom: 0;
+  bottom: 1px;
   width: 40px;
   display: flex;
   align-items: center;
@@ -94,26 +113,26 @@
 .sidebar-nav-arrow-left {
   left: 0;
   justify-content: flex-start;
-  background: linear-gradient(to right, var(--bg-secondary) 60%, transparent);
+  background: linear-gradient(to right, var(--nv-stage) 60%, transparent);
 }
 
 .sidebar-nav-arrow-right {
   right: 0;
   justify-content: flex-end;
-  background: linear-gradient(to left, var(--bg-secondary) 60%, transparent);
+  background: linear-gradient(to left, var(--nv-stage) 60%, transparent);
 }
 
 .sidebar-nav-arrow-icon {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--bg-primary);
-  border: 0.5px solid var(--border-1);
+  background: var(--nv-paper);
+  border: 1px solid var(--nv-rule);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+  color: var(--nv-ink-2);
+  box-shadow: 0 1px 4px rgba(40, 32, 20, 0.12);
   transition:
     background 0.1s,
     color 0.1s,
@@ -126,38 +145,42 @@
 }
 
 .sidebar-nav-arrow:hover .sidebar-nav-arrow-icon {
-  background: var(--border-1);
-  color: var(--text-primary);
+  background: var(--nv-rule-soft);
+  color: var(--nv-ink);
 }
 
 .sidebar-nav-arrow:active .sidebar-nav-arrow-icon {
   transform: scale(0.9);
 }
 
+/* Tab: chữ mực, gạch chân 2px màu chủ đạo (người dùng chọn) khi đang mở; hover
+   gạch chân màu kẻ. Không đổi font-weight khi active để chữ không nhảy. */
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  color: var(--text-secondary);
-  font-size: 0.93rem;
-  background: transparent;
+  gap: 0.45rem;
+  padding: 0 0.125rem;
   border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: inset 0 -2px 0 transparent;
+  cursor: pointer;
+  color: var(--nv-ink-2);
+  font-family: var(--font);
+  font-size: 0.9rem;
   width: auto;
   text-align: left;
   white-space: nowrap;
   flex-shrink: 0;
   transition:
-    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.2s,
+    box-shadow 0.2s,
     transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .nav-item:hover {
-  background: var(--border-1);
-  color: var(--text-primary);
+  color: var(--nv-ink);
+  box-shadow: inset 0 -2px 0 var(--nv-rule);
 }
 
 .nav-item:active {
@@ -165,10 +188,8 @@
 }
 
 .nav-item.active {
-  background: var(--primary);
-  color: #fff;
-  font-weight: 500;
-  border-color: var(--primary);
+  color: var(--nv-ink);
+  box-shadow: inset 0 -2px 0 var(--primary);
 }
 
 .nav-icon {
@@ -179,6 +200,12 @@
   justify-content: center;
   flex-shrink: 0;
   line-height: 1;
+  color: var(--nv-muted);
+  transition: color 0.2s;
+}
+.nav-item:hover .nav-icon,
+.nav-item.active .nav-icon {
+  color: var(--nv-ink);
 }
 
 /* Nav icon SVGs: 1em relative to nav-icon's font-size = 1.14rem → 16px default */
@@ -187,26 +214,40 @@
   height: 1em;
 }
 
+/* Số việc chờ: chữ số Lora son nhỏ, nâng lên như dấu chú thích — không viên thuốc */
 .nav-badge {
-  margin-left: 2px;
-  background: var(--primary);
-  color: #fff;
-  font-size: 0.79rem;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 3px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  font-weight: 500;
-  box-sizing: border-box;
+  position: relative;
+  top: -0.5em;
+  margin-left: -0.15rem;
+  font-family: var(--nv-serif);
+  font-size: 0.78rem;
+  font-variant-numeric: lining-nums tabular-nums;
+  line-height: 1;
+  color: var(--nv-seal);
 }
 
 .sidebar-footer {
   padding: 5px 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.5rem;
   flex-shrink: 0;
+}
+
+/* Cài đặt / đổi theme: nút tròn viền mảnh (chỉ trong navbar, .icon-btn chung giữ nguyên) */
+.sidebar-footer .icon-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--nv-rule);
+  border-radius: 50%;
+  color: var(--nv-ink-2);
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.sidebar-footer .icon-btn:hover {
+  background: var(--nv-rule-soft);
+  border-color: var(--nv-muted);
+  color: var(--nv-ink);
 }

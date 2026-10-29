@@ -46,15 +46,15 @@ export default function Sidebar() {
   } = useAppStore();
 
   const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "today",    label: t.nav.today,    icon: <IconSun size={16} /> },
-    { id: "calendar", label: t.nav.calendar, icon: <IconCalendar size={16} /> },
-    { id: "kanban",   label: t.nav.yearPlan, icon: <IconCalendarStats size={16} /> },
-    { id: "vision",   label: t.nav.vision,   icon: <IconTelescope size={16} /> },
-    { id: "projects", label: t.nav.projects, icon: <IconFolderCode size={16} /> },
-    { id: "books",    label: t.nav.books,    icon: <IconBooks size={16} /> },
-    { id: "journal",  label: t.nav.journal,  icon: <IconNotebook size={16} /> },
-    { id: "quotes",   label: t.nav.quotes,   icon: <IconQuote size={16} /> },
-    { id: "heatmap",  label: t.nav.heatmap,  icon: <IconChartDots size={16} /> },
+    { id: "today",    label: t.nav.today,    icon: <IconSun size={16} stroke={1.75} /> },
+    { id: "calendar", label: t.nav.calendar, icon: <IconCalendar size={16} stroke={1.75} /> },
+    { id: "kanban",   label: t.nav.yearPlan, icon: <IconCalendarStats size={16} stroke={1.75} /> },
+    { id: "vision",   label: t.nav.vision,   icon: <IconTelescope size={16} stroke={1.75} /> },
+    { id: "projects", label: t.nav.projects, icon: <IconFolderCode size={16} stroke={1.75} /> },
+    { id: "books",    label: t.nav.books,    icon: <IconBooks size={16} stroke={1.75} /> },
+    { id: "journal",  label: t.nav.journal,  icon: <IconNotebook size={16} stroke={1.75} /> },
+    { id: "quotes",   label: t.nav.quotes,   icon: <IconQuote size={16} stroke={1.75} /> },
+    { id: "heatmap",  label: t.nav.heatmap,  icon: <IconChartDots size={16} stroke={1.75} /> },
   ];
 
   const pendingCount = tasks.filter((t) => !t.is_done).length;
@@ -177,7 +177,7 @@ export default function Sidebar() {
           tabIndex={canScrollLeft ? 0 : -1}
           aria-hidden={!canScrollLeft}
         >
-          <span className="sidebar-nav-arrow-icon"><IconChevronLeft size={16} /></span>
+          <span className="sidebar-nav-arrow-icon"><IconChevronLeft size={16} stroke={1.75} /></span>
         </button>
         <div className="sidebar-nav" ref={navRef}>
           {NAV_ITEMS.map((item) => (
@@ -203,7 +203,7 @@ export default function Sidebar() {
           tabIndex={canScrollRight ? 0 : -1}
           aria-hidden={!canScrollRight}
         >
-          <span className="sidebar-nav-arrow-icon"><IconChevronRight size={16} /></span>
+          <span className="sidebar-nav-arrow-icon"><IconChevronRight size={16} stroke={1.75} /></span>
         </button>
       </div>
 
@@ -214,14 +214,14 @@ export default function Sidebar() {
           title={t.nav.settings}
           onClick={() => setOpenSettingsModal(true)}
         >
-          <IconSettings size={16} />
+          <IconSettings size={16} stroke={1.75} />
         </button>
         <button
           className="icon-btn"
           title={theme === 'light' ? t.nav.darkMode : t.nav.lightMode}
           onClick={toggleTheme}
         >
-          {theme === 'light' ? <IconMoon size={16} /> : <IconSunHigh size={16} />}
+          {theme === 'light' ? <IconMoon size={16} stroke={1.75} /> : <IconSunHigh size={16} stroke={1.75} />}
         </button>
       </div>
     </nav>
