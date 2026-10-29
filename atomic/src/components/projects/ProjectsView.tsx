@@ -1,19 +1,14 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
-import '../books/books.css'; // .books-sidebar/.books-wrap dùng chung với Books tab
+import '../books/books.css'; // modal thêm/sửa (.books-modal-*) dùng chung với Books tab
 import './projects.css';
 import { format } from 'date-fns';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
 import {
-  IconFolderCode,
   IconPlus,
   IconX,
   IconSearch,
-  IconTag,
   IconChevronDown,
-  IconClockHour4,
-  IconCircleCheck,
-  IconStack2,
-  IconArrowLeft,
+  IconChevronLeft,
 } from '@tabler/icons-react';
 import type { Project, ProjectFolder, FolderTag, ProjectStatus, ProjectCategory, NewProject } from '../../types';
 import {
@@ -94,9 +89,6 @@ export default function ProjectsView() {
   const deleteFolderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteFolderTagTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seedStartedRef = useRef(false);
-  const titleRowRef = useRef<HTMLDivElement>(null);
-  const titleTabLabelRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const [titleIndicatorStyle, setTitleIndicatorStyle] = useState<{ left: number; top: number; width: number } | null>(null);
 
   useSmoothScroll(mainRef);
   useSmoothScroll(sidebarRef);
@@ -453,15 +445,6 @@ export default function ProjectsView() {
 
   const copy = t.projects.categoryCopy[category];
 
-  useLayoutEffect(() => {
-    const row = titleRowRef.current;
-    const label = titleTabLabelRefs.current[viewAllProjects ? 1 : 0];
-    if (!row || !label) return;
-    const rowRect = row.getBoundingClientRect();
-    const labelRect = label.getBoundingClientRect();
-    setTitleIndicatorStyle({ left: labelRect.left - rowRect.left, top: labelRect.bottom - rowRect.top - 2, width: labelRect.width });
-  }, [viewAllProjects, copy.pageTitle, t.projects.viewAll]);
-
   // Danh sách tag luôn đầy đủ, không ẩn theo status/year filter và không phân trang
   // — chỉ số đếm (project_count) trên mỗi tag thay đổi theo filter đang chọn.
   // Thứ tự cố định theo lúc tạo (id tăng dần, đã sort ở SQL), không đổi theo
@@ -471,344 +454,312 @@ export default function ProjectsView() {
     [folderTags, tagSearch]
   );
 
-  const headerSubText = useMemo(() => {
-    if (statusFilter === 'in_progress') return copy.totalCount(yearStats.inProgress);
-    if (statusFilter === 'completed') return copy.totalCount(yearStats.completed);
-    return copy.totalCount(yearStats.total);
-  }, [yearStats, copy, statusFilter]);
+  // Số đếm trên tab "Tất cả" = số dự án khớp năm + trạng thái đang lọc
+  const filteredCount = statusFilter === 'in_progress'
+    ? yearStats.inProgress
+    : statusFilter === 'completed'
+    ? yearStats.completed
+    : yearStats.total;
+
+  const summaryText = yearStats.total === 0
+    ? copy.totalCount(0)
+    : [
+        copy.totalCount(yearStats.total),
+        `${yearStats.inProgress} ${copy.statusInProgress.toLowerCase()}`,
+        `${yearStats.completed} ${copy.statusCompleted.toLowerCase()}`,
+      ].join(' · ');
 
   const emptyProjectsText = searchQuery ? copy.emptySearch : (viewAllProjects ? copy.emptyAll : copy.emptyItems);
 
+  function renderTools(folderName: string) {
+    return (
+      <div className="pj-tools">
+        <div className="pj-search">
+          <IconSearch size={14} />
+          <input
+            placeholder={copy.searchPlaceholder}
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            spellCheck={false}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="pj-search-clear"
+              onClick={() => { setSearchQuery(''); setProjectPage(1); loadProjects(category, folderName, statusFilter, yearFilter, '', sortBy, 1); }}
+            >
+              <IconX size={12} />
+            </button>
+          )}
+        </div>
+        <label className="pj-sort">
+          <span className="pj-sort-label">{t.projects.sortBy}</span>
+          <select
+            className="pj-sort-select"
+            value={sortBy}
+            onChange={(e) => { setSortBy(e.target.value as SortBy); setProjectPage(1); }}
+          >
+            <option value="date">{t.projects.sortDate}</option>
+            <option value="title">{t.projects.sortTitle}</option>
+            <option value="status">{t.projects.sortStatus}</option>
+          </select>
+        </label>
+      </div>
+    );
+  }
+
+  function renderProjects(viewKey: string) {
+    return (
+      <div key={viewKey} className="pj-content">
+        {projects.length === 0 ? (
+          <p className="pj-empty">{emptyProjectsText}</p>
+        ) : (
+          <>
+            <div className="pj-grid">
+              {projects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onView={() => setViewingProject(project)}
+                  onEdit={() => setEditingProject(project)}
+                  onDelete={() => handleDeleteProject(project)}
+                  onRepositionCover={(position) => handleRepositionCover(project, position)}
+                />
+              ))}
+            </div>
+            <Pagination page={projectPage} total={projectsTotal} pageSize={PROJECT_PAGE_SIZE} onChange={setProjectPage} />
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <>
-      <div className="projects-category-tabs">
+    <div className="pj-wrap">
+      <nav className="pj-sections">
         {(['product', 'figma', 'piano'] as ProjectCategory[]).map((cat) => (
           <button
             key={cat}
-            className={`projects-category-tab${category === cat ? ' active' : ''}`}
+            type="button"
+            className={`pj-section-tab${category === cat ? ' active' : ''}`}
             onClick={() => handleCategoryChange(cat)}
           >
             {CATEGORY_TAB_ICON[cat]}
             {t.projects.categoryLabels[cat]}
           </button>
         ))}
-      </div>
-      <div className="books-wrap">
-      {/* ── Sidebar ── */}
-      <div ref={sidebarRef} className="books-sidebar projects-sidebar">
-        <div key={`status-${category}`} className="books-sb-section projects-sidebar-anim">
-          <div className="books-sb-label">{t.nav.projects}</div>
-          <button
-            className={`books-sb-item${statusFilter === 'all' ? ' active' : ''}`}
-            onClick={() => handleStatusFilter('all')}
-          >
-            <IconStack2 size={14} />
-            {t.projects.statusAll}
-            <span className="books-sb-count">{stats.total}</span>
-          </button>
-          <button
-            className={`books-sb-item${statusFilter === 'in_progress' ? ' active' : ''}`}
-            onClick={() => handleStatusFilter('in_progress')}
-          >
-            <IconClockHour4 size={14} />
-            {copy.statusInProgress}
-            <span className="books-sb-count">{stats.inProgress}</span>
-          </button>
-          <button
-            className={`books-sb-item${statusFilter === 'completed' ? ' active' : ''}`}
-            onClick={() => handleStatusFilter('completed')}
-          >
-            <IconCircleCheck size={14} />
-            {copy.statusCompleted}
-            <span className="books-sb-count">{stats.completed}</span>
-          </button>
-        </div>
+      </nav>
 
-        {years.length > 0 && (
-          <div className="books-sb-section">
-            <div className="books-sb-label">{t.projects.byYear}</div>
-            <div
-              key={`years-${category}`}
-              ref={yearListRef}
-              className={`projects-year-list${years.length > YEAR_LIST_VISIBLE ? ' collapsible' : ''}${yearListExpanded ? ' expanded' : ''}`}
-              style={{ maxHeight: yearListExpanded ? yearListFullHeight : (yearListCollapsedHeight ?? yearListFullHeight) }}
+      <div className="pj-body">
+        {/* ── Cột lọc ── */}
+        <aside ref={sidebarRef} className="pj-rail">
+          <section key={`status-${category}`} className="pj-rail-section pj-rail-anim">
+            <div className="pj-rail-label">{t.projects.statusLabel}</div>
+            <button
+              type="button"
+              className={`pj-rail-item${statusFilter === 'all' ? ' active' : ''}`}
+              onClick={() => handleStatusFilter('all')}
             >
-              {years.map(({ year, count }) => (
-                <button
-                  key={year}
-                  className={`books-sb-item${yearFilter === year ? ' active' : ''}`}
-                  onClick={() => handleYearFilter(year)}
-                >
-                  <span className="books-year-badge">{year}</span>
-                  <span className="books-sb-count">{count}</span>
-                </button>
-              ))}
-            </div>
-            {years.length > YEAR_LIST_VISIBLE && (
-              <button
-                type="button"
-                className="projects-year-list-toggle"
-                onClick={() => setYearListExpanded((v) => !v)}
-              >
-                {yearListExpanded ? t.projects.seeLess : t.projects.seeMore}
-                <IconChevronDown size={12} className={`projects-year-list-chevron${yearListExpanded ? ' open' : ''}`} />
-              </button>
-            )}
-          </div>
-        )}
+              <span className="pj-status-dot" />
+              <span className="pj-rail-name">{t.projects.statusAll}</span>
+              <span className="pj-rail-count">{stats.total}</span>
+            </button>
+            <button
+              type="button"
+              className={`pj-rail-item${statusFilter === 'in_progress' ? ' active' : ''}`}
+              onClick={() => handleStatusFilter('in_progress')}
+            >
+              <span className="pj-status-dot status-in_progress" />
+              <span className="pj-rail-name">{copy.statusInProgress}</span>
+              <span className="pj-rail-count">{stats.inProgress}</span>
+            </button>
+            <button
+              type="button"
+              className={`pj-rail-item${statusFilter === 'completed' ? ' active' : ''}`}
+              onClick={() => handleStatusFilter('completed')}
+            >
+              <span className="pj-status-dot status-completed" />
+              <span className="pj-rail-name">{copy.statusCompleted}</span>
+              <span className="pj-rail-count">{stats.completed}</span>
+            </button>
+          </section>
 
-        {folderTags.length > 0 && (
-          <div className="books-sb-section">
-            <div className="books-sb-label">{t.calendar.filterTags}</div>
-            <div className="books-sb-tag-search-wrap">
-              <IconSearch size={12} className="books-sb-tag-search-icon" />
+          {years.length > 0 && (
+            <section className="pj-rail-section">
+              <div className="pj-rail-label">{t.projects.byYear}</div>
+              <div
+                key={`years-${category}`}
+                ref={yearListRef}
+                className={`pj-year-list${years.length > YEAR_LIST_VISIBLE ? ' collapsible' : ''}${yearListExpanded ? ' expanded' : ''}`}
+                style={{ maxHeight: yearListExpanded ? yearListFullHeight : (yearListCollapsedHeight ?? yearListFullHeight) }}
+              >
+                {years.map(({ year, count }) => (
+                  <button
+                    key={year}
+                    type="button"
+                    className={`pj-rail-item${yearFilter === year ? ' active' : ''}`}
+                    onClick={() => handleYearFilter(year)}
+                  >
+                    <span className="pj-rail-name pj-rail-year">{year}</span>
+                    <span className="pj-rail-count">{count}</span>
+                  </button>
+                ))}
+              </div>
+              {years.length > YEAR_LIST_VISIBLE && (
+                <button
+                  type="button"
+                  className="pj-rail-more"
+                  onClick={() => setYearListExpanded((v) => !v)}
+                >
+                  {yearListExpanded ? t.projects.seeLess : t.projects.seeMore}
+                  <IconChevronDown size={12} className={`pj-rail-more-chevron${yearListExpanded ? ' open' : ''}`} />
+                </button>
+              )}
+            </section>
+          )}
+
+          {folderTags.length > 0 && (
+            <section className="pj-rail-section">
+              <div className="pj-rail-label">{t.calendar.filterTags}</div>
               <input
-                className="books-sb-tag-search"
+                className="pj-rail-search"
                 type="text"
                 placeholder={t.calendar.filterTagSearch}
                 value={tagSearch}
                 onChange={(e) => setTagSearch(e.target.value)}
                 spellCheck={false}
               />
-            </div>
-            <div key={`tags-${category}`} className="projects-tag-list-anim">
-              <div className="books-sb-tag-list">
+              <div key={`tags-${category}`} className="pj-rail-list pj-rail-tags-anim">
                 {filteredTagFolders.length === 0 ? (
-                  <div className="books-sb-tag-empty">{t.tags.noTags}</div>
+                  <div className="pj-rail-empty">{t.tags.noTags}</div>
                 ) : (
                   filteredTagFolders.map((folder) => (
                     <button
                       key={folder.id}
-                      className={`books-sb-item${openFolder?.id === folder.id ? ' active' : ''}`}
+                      type="button"
+                      className={`pj-rail-item${openFolder?.id === folder.id ? ' active' : ''}`}
                       onClick={() => handleOpenFolder(folder)}
                     >
-                      <IconTag size={13} />
-                      <span className="books-sb-item-name">{folder.name}</span>
-                      <span className="books-sb-count">{folder.project_count}</span>
+                      <span className="pj-rail-name">{folder.name}</span>
+                      <span className="pj-rail-count">{folder.project_count}</span>
                     </button>
                   ))
                 )}
               </div>
-            </div>
-          </div>
-        )}
-      </div>
+            </section>
+          )}
+        </aside>
 
-      {/* ── Main ── */}
-      <div ref={mainRef} className="books-main projects-main">
-        {!openFolder ? (
-          <>
-            <div className="books-header">
-              <div>
-                <div className="projects-title-row" ref={titleRowRef}>
-                  <button
-                    type="button"
-                    className={`projects-title-tab${!viewAllProjects ? ' active' : ''}`}
-                    onClick={() => setViewAllProjects(false)}
-                  >
-                    <span className="projects-title-tab-label" ref={(el) => { titleTabLabelRefs.current[0] = el; }}>{copy.pageTitle}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`projects-title-tab${viewAllProjects ? ' active' : ''}`}
-                    onClick={handleShowAllProjects}
-                  >
-                    <span className="projects-title-tab-label" ref={(el) => { titleTabLabelRefs.current[1] = el; }}>{t.projects.viewAll}</span>
-                  </button>
-                  {titleIndicatorStyle && (
-                    <span
-                      className="projects-title-indicator"
-                      style={{
-                        transform: `translate(${titleIndicatorStyle.left}px, ${titleIndicatorStyle.top}px)`,
-                        width: titleIndicatorStyle.width,
-                      }}
-                    />
-                  )}
-                </div>
-                <div className="books-header-sub">{viewAllProjects ? copy.totalCount(projectsTotal) : headerSubText}</div>
-              </div>
-              {viewAllProjects ? (
-                <button className="books-btn-add" onClick={() => setShowAddProjectModal(true)}>
-                  <IconPlus size={13} />
-                  {copy.addItem}
-                </button>
-              ) : (
-                <button className="books-btn-add" onClick={() => setShowAddFolderModal(true)}>
-                  <IconPlus size={13} />
-                  {t.projects.addFolder}
-                </button>
-              )}
-            </div>
-
-            {!viewAllProjects ? (
-              <div key={`${category}-${statusFilter}-${yearFilter ?? ''}`} className="books-content-view">
-                {folderTags.length === 0 ? (
-                  <div className="books-empty-state">
-                    <IconFolderCode size={36} className="books-empty-icon" />
-                    <p className="books-empty-text">{t.projects.emptyFolders}</p>
-                    <button className="books-btn-add" onClick={() => setShowAddFolderModal(true)}>
-                      <IconPlus size={13} />
+        {/* ── Trang chính ── */}
+        <div ref={mainRef} className="pj-main">
+          <div className="pj-page">
+            {!openFolder ? (
+              <>
+                <header className="pj-head">
+                  <div className="pj-head-main">
+                    <span className="pj-eyebrow">
+                      {t.projects.categoryLabels[category]}
+                      {yearFilter !== null && ` · ${yearFilter}`}
+                    </span>
+                    <h1 className="pj-title">{copy.pageTitle}</h1>
+                    <p className="pj-subtitle">{summaryText}</p>
+                  </div>
+                  {viewAllProjects ? (
+                    <button type="button" className="pj-btn-primary" onClick={() => setShowAddProjectModal(true)}>
+                      <IconPlus size={15} />
+                      {copy.addItem}
+                    </button>
+                  ) : (
+                    <button type="button" className="pj-btn-primary" onClick={() => setShowAddFolderModal(true)}>
+                      <IconPlus size={15} />
                       {t.projects.addFolder}
                     </button>
+                  )}
+                </header>
+
+                <div className="pj-toolbar">
+                  <div className="pj-tabs">
+                    <button
+                      type="button"
+                      className={`pj-tab${!viewAllProjects ? ' active' : ''}`}
+                      onClick={() => setViewAllProjects(false)}
+                    >
+                      {t.projects.tabFolders}
+                      <span className="pj-tab-count">{foldersTotal}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`pj-tab${viewAllProjects ? ' active' : ''}`}
+                      onClick={handleShowAllProjects}
+                    >
+                      {copy.tabAll}
+                      <span className="pj-tab-count">{filteredCount}</span>
+                    </button>
                   </div>
-                ) : folders.length === 0 ? (
-                  <div className="books-empty-state">
-                    <IconFolderCode size={36} className="books-empty-icon" />
-                    <p className="books-empty-text">{t.projects.emptyFolderResults}</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="projects-folder-grid">
-                      {folders.map((folder) => (
-                        <FolderCard
-                          key={folder.id}
-                          folder={folder}
-                          onOpen={() => handleOpenFolder(folder)}
-                          onEdit={() => setEditingFolder(folder)}
-                          onDelete={() => handleDeleteFolder(folder)}
-                          onRepositionCover={(position) => handleRepositionFolderCover(folder, position)}
-                        />
-                      ))}
-                    </div>
-                    <Pagination page={folderPage} total={foldersTotal} pageSize={FOLDER_PAGE_SIZE} onChange={setFolderPage} />
-                  </>
-                )}
-              </div>
-            ) : (
-              <>
-                <div className="books-toolbar">
-                  <div className="books-search-wrap">
-                    <IconSearch size={13} className="books-search-icon" />
-                    <input
-                      className="books-search-input"
-                      placeholder={copy.searchPlaceholder}
-                      value={searchQuery}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      spellCheck={false}
-                    />
-                    {searchQuery && (
-                      <button
-                        className="books-search-clear"
-                        onClick={() => { setSearchQuery(''); setProjectPage(1); loadProjects(category, '', statusFilter, yearFilter, '', sortBy, 1); }}
-                      >
-                        <IconX size={12} />
-                      </button>
+                  {viewAllProjects && renderTools('')}
+                </div>
+
+                {!viewAllProjects ? (
+                  <div key={`${category}-${statusFilter}-${yearFilter ?? ''}`} className="pj-content">
+                    {folderTags.length === 0 ? (
+                      <div className="pj-empty">
+                        <p>{t.projects.emptyFolders}</p>
+                        <button type="button" className="pj-btn-primary" onClick={() => setShowAddFolderModal(true)}>
+                          <IconPlus size={15} />
+                          {t.projects.addFolder}
+                        </button>
+                      </div>
+                    ) : folders.length === 0 ? (
+                      <p className="pj-empty">{t.projects.emptyFolderResults}</p>
+                    ) : (
+                      <>
+                        <div className="pj-grid">
+                          {folders.map((folder) => (
+                            <FolderCard
+                              key={folder.id}
+                              folder={folder}
+                              onOpen={() => handleOpenFolder(folder)}
+                              onEdit={() => setEditingFolder(folder)}
+                              onDelete={() => handleDeleteFolder(folder)}
+                              onRepositionCover={(position) => handleRepositionFolderCover(folder, position)}
+                            />
+                          ))}
+                        </div>
+                        <Pagination page={folderPage} total={foldersTotal} pageSize={FOLDER_PAGE_SIZE} onChange={setFolderPage} />
+                      </>
                     )}
                   </div>
-                  <select
-                    className="books-sort-select"
-                    value={sortBy}
-                    onChange={(e) => { setSortBy(e.target.value as SortBy); setProjectPage(1); }}
-                  >
-                    <option value="date">{t.projects.sortDate}</option>
-                    <option value="title">{t.projects.sortTitle}</option>
-                    <option value="status">{t.projects.sortStatus}</option>
-                  </select>
-                </div>
+                ) : (
+                  renderProjects(`all-${statusFilter}-${yearFilter ?? ''}`)
+                )}
+              </>
+            ) : (
+              <>
+                <header className="pj-head">
+                  <div className="pj-head-main">
+                    <button type="button" className="pj-back" onClick={handleBack} title={t.projects.back}>
+                      <IconChevronLeft size={13} />
+                      {copy.pageTitle}
+                    </button>
+                    <h1 className="pj-title">{openFolder.name}</h1>
+                    <p className="pj-subtitle">
+                      {copy.folderCount(projectsTotal)}
+                      {yearFilter !== null && ` · ${yearFilter}`}
+                    </p>
+                  </div>
+                  <button type="button" className="pj-btn-primary" onClick={() => setShowAddProjectModal(true)}>
+                    <IconPlus size={15} />
+                    {copy.addItem}
+                  </button>
+                </header>
 
-                <div key={`all-${statusFilter}-${yearFilter ?? ''}`} className="books-content-view">
-                  {projects.length === 0 ? (
-                    <div className="books-empty-state">
-                      <IconFolderCode size={36} className="books-empty-icon" />
-                      <p className="books-empty-text">{emptyProjectsText}</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="projects-card-grid">
-                        {projects.map((project) => (
-                          <ProjectCard
-                            key={project.id}
-                            project={project}
-                            onView={() => setViewingProject(project)}
-                            onEdit={() => setEditingProject(project)}
-                            onDelete={() => handleDeleteProject(project)}
-                            onRepositionCover={(position) => handleRepositionCover(project, position)}
-                          />
-                        ))}
-                      </div>
-                      <Pagination page={projectPage} total={projectsTotal} pageSize={PROJECT_PAGE_SIZE} onChange={setProjectPage} />
-                    </>
-                  )}
-                </div>
+                <div className="pj-toolbar">{renderTools(openFolder.name)}</div>
+
+                {renderProjects(`${openFolder.id}-${statusFilter}-${yearFilter ?? ''}`)}
               </>
             )}
-          </>
-        ) : (
-          <>
-            <div className="books-header">
-              <div className="projects-header-title-group">
-                <button className="icon-btn" onClick={handleBack} title={t.projects.back}>
-                  <IconArrowLeft size={16} />
-                </button>
-                <div>
-                  <div className="books-header-title">{openFolder.name}</div>
-                  <div className="books-header-sub">{copy.folderCount(projectsTotal)}</div>
-                </div>
-              </div>
-              <div className="books-header-actions">
-                <button className="books-btn-add" onClick={() => setShowAddProjectModal(true)}>
-                  <IconPlus size={13} />
-                  {copy.addItem}
-                </button>
-              </div>
-            </div>
-
-            <div className="books-toolbar">
-              <div className="books-search-wrap">
-                <IconSearch size={13} className="books-search-icon" />
-                <input
-                  className="books-search-input"
-                  placeholder={copy.searchPlaceholder}
-                  value={searchQuery}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  spellCheck={false}
-                />
-                {searchQuery && (
-                  <button
-                    className="books-search-clear"
-                    onClick={() => { setSearchQuery(''); setProjectPage(1); loadProjects(category, openFolder.name, statusFilter, yearFilter, '', sortBy, 1); }}
-                  >
-                    <IconX size={12} />
-                  </button>
-                )}
-              </div>
-              <select
-                className="books-sort-select"
-                value={sortBy}
-                onChange={(e) => { setSortBy(e.target.value as SortBy); setProjectPage(1); }}
-              >
-                <option value="date">{t.projects.sortDate}</option>
-                <option value="title">{t.projects.sortTitle}</option>
-                <option value="status">{t.projects.sortStatus}</option>
-              </select>
-            </div>
-
-            <div key={`${openFolder.id}-${statusFilter}-${yearFilter ?? ''}`} className="books-content-view">
-              {projects.length === 0 ? (
-                <div className="books-empty-state">
-                  <IconFolderCode size={36} className="books-empty-icon" />
-                  <p className="books-empty-text">{emptyProjectsText}</p>
-                </div>
-              ) : (
-                <>
-                  <div className="projects-card-grid">
-                    {projects.map((project) => (
-                      <ProjectCard
-                        key={project.id}
-                        project={project}
-                        onView={() => setViewingProject(project)}
-                        onEdit={() => setEditingProject(project)}
-                        onDelete={() => handleDeleteProject(project)}
-                        onRepositionCover={(position) => handleRepositionCover(project, position)}
-                      />
-                    ))}
-                  </div>
-                  <Pagination page={projectPage} total={projectsTotal} pageSize={PROJECT_PAGE_SIZE} onChange={setProjectPage} />
-                </>
-              )}
-            </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
 
       {showAddFolderModal && (
@@ -869,7 +820,6 @@ export default function ProjectsView() {
           <button className="delete-toast-undo" onClick={handleUndoFolderTagDelete}>{t.toast.undo}</button>
         </div>
       )}
-      </div>
-    </>
+    </div>
   );
 }

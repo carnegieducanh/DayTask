@@ -4,7 +4,7 @@ import type { Project } from '../../types';
 import { useT } from '../../i18n';
 import { formatISODate } from '../../utils/imageUtils';
 import { clampPercent, parseCoverPosition } from './projectImageUtils';
-import { CATEGORY_CARD_ICON, STATUS_ICON } from './icons';
+import { CATEGORY_CARD_ICON } from './icons';
 
 export default function ProjectCard({
   project, onView, onEdit, onDelete, onRepositionCover,
@@ -18,7 +18,7 @@ export default function ProjectCard({
   const dateText = project.status === 'completed' && project.completed_date
     ? formatISODate(project.completed_date)
     : project.start_date
-    ? t.projects.inProgressSince(formatISODate(project.start_date))
+    ? t.projects.since(formatISODate(project.start_date))
     : null;
 
   const [repositioning, setRepositioning] = useState(false);
@@ -81,8 +81,8 @@ export default function ProjectCard({
   }
 
   return (
-    <div className={`projects-card${repositioning ? ' is-repositioning' : ''}`} onClick={onView}>
-      <div className="projects-card-cover" ref={coverRef} onClick={handleCoverClick}>
+    <article className={`pj-card${repositioning ? ' is-repositioning' : ''}`} onClick={onView}>
+      <div className="pj-cover" ref={coverRef} onClick={handleCoverClick}>
         {project.cover_image ? (
           <img
             ref={imgRef}
@@ -95,52 +95,52 @@ export default function ProjectCard({
             onPointerUp={handlePointerUp}
           />
         ) : (
-          <div className="projects-folder-cover-placeholder">
+          <div className="pj-cover-empty">
             {CATEGORY_CARD_ICON[project.category]}
           </div>
         )}
         {repositioning ? (
           <>
             <div className="projects-cover-reposition-hint">{t.projects.coverRepositionHint}</div>
-            <div className="projects-folder-actions">
-              <button className="projects-folder-action-btn" onClick={confirmReposition} title={t.projects.done}>
-                <IconCheck size={13} />
+            <div className="pj-cover-actions">
+              <button className="pj-cover-btn" onClick={confirmReposition} title={t.projects.done}>
+                <IconCheck size={14} />
               </button>
-              <button className="projects-folder-action-btn danger" onClick={cancelReposition} title={t.projects.cancel}>
-                <IconX size={13} />
+              <button className="pj-cover-btn danger" onClick={cancelReposition} title={t.projects.cancel}>
+                <IconX size={14} />
               </button>
             </div>
           </>
         ) : (
-          <div className="projects-folder-actions">
+          <div className="pj-cover-actions">
             {project.cover_image && (
-              <button className="projects-folder-action-btn" onClick={startReposition} title={t.projects.coverReposition}>
-                <IconArrowsMove size={13} />
+              <button className="pj-cover-btn" onClick={startReposition} title={t.projects.coverReposition}>
+                <IconArrowsMove size={14} />
               </button>
             )}
-            <button className="projects-folder-action-btn" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
-              <IconPencil size={13} />
+            <button className="pj-cover-btn" onClick={(e) => { e.stopPropagation(); onEdit(); }} title={t.projects.edit}>
+              <IconPencil size={14} />
             </button>
-            <button className="projects-folder-action-btn danger" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
-              <IconTrash size={13} />
+            <button className="pj-cover-btn danger" onClick={(e) => { e.stopPropagation(); onDelete(); }} title={t.projects.delete}>
+              <IconTrash size={14} />
             </button>
           </div>
         )}
       </div>
-      <div className="projects-card-body">
-        <div className="projects-card-head">
-          <span className={`projects-status-badge status-${project.status}`}>
-            {STATUS_ICON[project.status]}
+      <div className="pj-caption">
+        <div className="pj-card-status">
+          <span className={`pj-status status-${project.status}`}>
+            <span className="pj-status-dot" />
             {statusLabel}
           </span>
-          {dateText && <span className="projects-card-date">{dateText}</span>}
+          {dateText && <span className="pj-card-date">{dateText}</span>}
         </div>
-        <div className="projects-card-title" title={project.title}>{project.title}</div>
-        {project.composer && <div className="projects-card-composer">{project.composer}</div>}
-        {project.notes && <div className="projects-card-notes">{project.notes}</div>}
+        <h3 className="pj-card-title" title={project.title}>{project.title}</h3>
+        {project.composer && <div className="pj-byline">{project.composer}</div>}
+        {project.notes && <p className="pj-card-notes">{project.notes}</p>}
         {project.folders.length > 0 && <ProjectCardTags folders={project.folders} />}
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -159,7 +159,7 @@ function ProjectCardTags({ folders }: { folders: string[] }) {
       const chips = Array.from(ruler.querySelectorAll<HTMLElement>('[data-tag-chip]'));
       const moreEl = ruler.querySelector<HTMLElement>('[data-tag-more]');
       const containerWidth = container.clientWidth;
-      const gap = 4;
+      const gap = parseFloat(getComputedStyle(container).columnGap) || 0;
       const moreWidth = moreEl?.offsetWidth ?? 0;
 
       let total = 0;
@@ -187,18 +187,18 @@ function ProjectCardTags({ folders }: { folders: string[] }) {
 
   return (
     <>
-      <div className="projects-card-tags" ref={containerRef}>
+      <div className="pj-tags" ref={containerRef}>
         {folders.slice(0, visibleCount).map((f) => (
-          <span key={f} className="books-tag-chip-sm">{f}</span>
+          <span key={f} className="pj-tag">{f}</span>
         ))}
-        {hiddenCount > 0 && <span className="books-tag-chip-sm projects-card-tag-more">+{hiddenCount}</span>}
+        {hiddenCount > 0 && <span className="pj-tag pj-tag-more">+{hiddenCount}</span>}
       </div>
-      {/* Off-screen ruler: measures true chip widths regardless of what's currently visible */}
-      <div className="projects-card-tags-ruler" ref={rulerRef} aria-hidden>
+      {/* Off-screen ruler: measures true tag widths regardless of what's currently visible */}
+      <div className="pj-tags pj-tags-ruler" ref={rulerRef} aria-hidden>
         {folders.map((f) => (
-          <span key={f} data-tag-chip className="books-tag-chip-sm">{f}</span>
+          <span key={f} data-tag-chip className="pj-tag">{f}</span>
         ))}
-        <span data-tag-more className="books-tag-chip-sm projects-card-tag-more">+{folders.length}</span>
+        <span data-tag-more className="pj-tag pj-tag-more">+{folders.length}</span>
       </div>
     </>
   );

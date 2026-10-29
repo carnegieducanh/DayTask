@@ -583,7 +583,9 @@ export const en: typeof vi = {
     completedOn: (date: string) => `Completed ${date}`,
     seeMore: "See more",
     seeLess: "Show less",
-    viewAll: "View all",
+    tabFolders: "Folders",
+    sortBy: "Sort",
+    since: (date: string) => `since ${date}`,
     back: "Back",
     coverReposition: "Reposition cover image",
     coverRepositionHint: "Drag image to reposition",
@@ -595,6 +597,7 @@ export const en: typeof vi = {
     categoryCopy: {
       product: {
         pageTitle: "My Projects",
+        tabAll: "All projects",
         statusInProgress: "In progress",
         statusCompleted: "Completed",
         addItem: "Add project",
@@ -618,6 +621,7 @@ export const en: typeof vi = {
       },
       figma: {
         pageTitle: "My Figma Designs",
+        tabAll: "All designs",
         statusInProgress: "In progress",
         statusCompleted: "Completed",
         addItem: "Add project",
@@ -641,6 +645,7 @@ export const en: typeof vi = {
       },
       piano: {
         pageTitle: "My Piano Pieces",
+        tabAll: "All pieces",
         statusInProgress: "Practicing",
         statusCompleted: "Mastered",
         addItem: "Add piece",

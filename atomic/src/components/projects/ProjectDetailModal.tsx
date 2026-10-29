@@ -3,7 +3,7 @@ import { IconX, IconChevronDown, IconCheck, IconTrash, IconPencil } from '@table
 import type { Project, ProjectStatus } from '../../types';
 import { useT } from '../../i18n';
 import { formatISODate } from '../../utils/imageUtils';
-import { CATEGORY_LINK_ICON, STATUS_ICON } from './icons';
+import { CATEGORY_LINK_ICON } from './icons';
 
 interface ProjectDetailModalProps {
   project: Project;
@@ -67,69 +67,73 @@ export default function ProjectDetailModal({ project, onClose, onEdit, onDelete,
 
   return (
     <div className="books-modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onKeyDown={handleKeyDown}>
-      <div className="books-detail-modal projects-detail-modal">
-        <button ref={closeRef} className="books-detail-close" onClick={onClose}>
-          <IconX size={16} />
+      <div className="pj-detail">
+        <button ref={closeRef} className="pj-detail-close" onClick={onClose}>
+          <IconX size={15} />
         </button>
 
-        <div className="projects-detail-body">
+        <div className="pj-detail-body">
           {project.cover_image && (
-            <div className="projects-detail-cover">
+            <div className="pj-detail-cover">
               <img src={project.cover_image} alt={project.title} style={{ objectPosition: project.cover_position ?? '50% 50%' }} />
             </div>
           )}
-          <div className="projects-detail-title">{project.title}</div>
-          {project.composer && <div className="projects-detail-composer">{project.composer}</div>}
 
-          <div className="books-detail-badges">
-            <div className="books-detail-status-dropdown" ref={statusMenuRef}>
+          <div className="pj-detail-head">
+            <span className="pj-eyebrow">{t.projects.categoryLabels[project.category]}</span>
+            <h2 className="pj-detail-title">{project.title}</h2>
+            {project.composer && <span className="pj-byline">{project.composer}</span>}
+          </div>
+
+          <div className="pj-detail-status-row">
+            <div className="pj-status-dropdown" ref={statusMenuRef}>
               <button
                 type="button"
-                className={`books-detail-status-badge status-${project.status}${statusMenuOpen ? ' open' : ''}`}
+                className={`pj-status-trigger status-${project.status}${statusMenuOpen ? ' open' : ''}`}
                 onClick={() => setStatusMenuOpen((v) => !v)}
               >
-                {STATUS_ICON[project.status]}
+                <span className="pj-status-dot" />
                 {statusLabel}
-                <IconChevronDown size={12} className={`books-detail-status-chevron${statusMenuOpen ? ' open' : ''}`} />
+                <IconChevronDown size={12} className="pj-status-chevron" />
               </button>
               {statusMenuOpen && (
-                <div className="books-detail-status-menu">
+                <div className="pj-status-menu">
                   {statusOptions.map((opt) => (
                     <button
                       key={opt.id}
                       type="button"
-                      className={`books-detail-status-option${opt.id === project.status ? ' active' : ''}`}
+                      className={`pj-status-option status-${opt.id}${opt.id === project.status ? ' active' : ''}`}
                       onClick={() => handleStatusPick(opt.id)}
                     >
-                      {STATUS_ICON[opt.id]}
+                      <span className="pj-status-dot" />
                       {opt.label}
-                      {opt.id === project.status && <IconCheck size={12} className="books-detail-status-check" />}
+                      {opt.id === project.status && <IconCheck size={13} className="pj-status-check" />}
                     </button>
                   ))}
                 </div>
               )}
             </div>
-            {dateInfo && <span className="books-detail-date">{dateInfo}</span>}
+            {dateInfo && <span className="pj-detail-date">{dateInfo}</span>}
           </div>
 
           {project.folders.length > 0 && (
-            <div className="books-detail-tags">
-              {project.folders.map((f) => <span key={f} className="books-tag-chip-sm">{f}</span>)}
+            <div className="pj-tags pj-detail-tags">
+              {project.folders.map((f) => <span key={f} className="pj-tag">{f}</span>)}
             </div>
           )}
 
-          {project.notes && <div className="books-detail-notes">{project.notes}</div>}
+          {project.notes && <p className="pj-detail-notes">{project.notes}</p>}
 
           {(project.link_repo || project.link_youtube) && (
-            <div className="projects-detail-links">
+            <div className="pj-detail-links">
               {project.link_repo && (
-                <button className="projects-detail-link-btn" onClick={() => openLink(project.link_repo!)}>
+                <button className="pj-link-btn" onClick={() => openLink(project.link_repo!)}>
                   {linkIcons.primary}
                   {copy.openPrimary}
                 </button>
               )}
               {project.link_youtube && (
-                <button className="projects-detail-link-btn" onClick={() => openLink(project.link_youtube!)}>
+                <button className="pj-link-btn" onClick={() => openLink(project.link_youtube!)}>
                   {linkIcons.secondary}
                   {copy.openSecondary}
                 </button>
@@ -137,23 +141,23 @@ export default function ProjectDetailModal({ project, onClose, onEdit, onDelete,
             </div>
           )}
 
-          <div className="books-detail-meta">
+          <div className="pj-detail-added">
             {t.projects.addedOn(formatISODate(project.created_at.split(' ')[0]))}
           </div>
         </div>
 
-        <div className="books-modal-footer books-detail-footer">
-          <div className="books-modal-footer-group">
-            <button className="books-modal-btn-cancel books-detail-delete" onClick={onDelete}>
+        <div className="pj-detail-foot">
+          <div className="pj-detail-foot-group">
+            <button className="pj-text-btn danger" onClick={onDelete}>
+              <IconTrash size={14} />
               {t.projects.delete}
-              <IconTrash size={13} />
             </button>
-            <button className="books-modal-btn-cancel" onClick={onEdit}>
+            <button className="pj-text-btn" onClick={onEdit}>
+              <IconPencil size={14} />
               {t.projects.edit}
-              <IconPencil size={13} />
             </button>
           </div>
-          <button className="books-modal-btn-save" onClick={onClose}>{t.projects.done}</button>
+          <button className="pj-btn-primary" onClick={onClose}>{t.projects.done}</button>
         </div>
       </div>
     </div>

@@ -6,10 +6,8 @@ import {
   IconFileMusic,
   IconVideo,
   IconExternalLink,
-  IconClockHour4,
-  IconCircleCheck,
 } from '@tabler/icons-react';
-import type { ProjectCategory, ProjectStatus } from '../../types';
+import type { ProjectCategory } from '../../types';
 
 export function VsCodeLogoIcon({ size = 16 }: { size?: number }) {
   const uid = useId();
@@ -95,9 +93,4 @@ export const CATEGORY_LINK_ICON: Record<ProjectCategory, { primary: React.ReactN
   product: { primary: <IconBrandGithub size={14} />, secondary: <IconBrandYoutube size={14} /> },
   figma: { primary: <IconBrandFigma size={14} />, secondary: <IconExternalLink size={14} /> },
   piano: { primary: <IconFileMusic size={14} />, secondary: <IconVideo size={14} /> },
-};
-
-export const STATUS_ICON: Record<ProjectStatus, React.ReactNode> = {
-  in_progress: <IconClockHour4 size={13} />,
-  completed: <IconCircleCheck size={13} />,
 };

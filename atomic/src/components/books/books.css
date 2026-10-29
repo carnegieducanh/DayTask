@@ -146,58 +146,6 @@
   color: var(--text-primary);
 }
 
-.projects-header-title-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.projects-title-row {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  position: relative;
-}
-
-.projects-title-tab {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px 5px 0;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 1.05rem;
-  font-weight: 600;
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  cursor: pointer;
-  transition:
-    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.projects-title-tab:hover {
-  /* background: var(--bg-hover); */
-  color: var(--text-primary);
-}
-.projects-title-tab.active {
-  color: var(--text-primary);
-}
-.projects-title-tab-label {
-  padding-bottom: 7px;
-  border-bottom: 2px solid transparent;
-}
-.projects-title-indicator {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 2px;
-  background: var(--primary);
-  border-radius: 1px;
-  pointer-events: none;
-  transition:
-    transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    width 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
 .books-header-sub {
   font-size: 0.85rem;
   color: var(--text-muted);

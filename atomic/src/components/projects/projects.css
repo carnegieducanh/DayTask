@@ -1,55 +1,170 @@
-/* ── Category topbar (Product / Figma / Piano) ── */
-.projects-category-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 10px 24px 0;
-  border-bottom: 0.5px solid var(--border-1);
-  flex-shrink: 0;
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tab Dự án — phong cách editorial (danh mục có bìa, xem skill editorial-ui-style).
+   Dải chuyên mục kẻ mảnh ở trên, cột lọc trái, trang chính: header Lora + hàng tab
+   gạch chân + lưới bìa không khung. Bìa folder/dự án giữ nguyên ảnh.
+   Token --pj-* đặt trên .pj-wrap; modal chi tiết render bên trong wrapper (không
+   portal) nên vẫn nhận token.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.pj-wrap {
+  --pj-stage: #f3f1ec;
+  --pj-paper: #fffefb;
+  --pj-rule: #ddd7cb;
+  --pj-rule-soft: #e8e3d9;
+  --pj-track: #e6e1d6;
+  --pj-ink: #2a2723;
+  --pj-ink-2: #45413a;
+  --pj-muted: #6e695f;
+  --pj-seal: #a8322a;
+  --pj-brass: #86672e;
+  --pj-up: #356b45;
+  --pj-rail: var(--bg-secondary);
+  --pj-serif: "Lora", "Yu Mincho", Georgia, serif;
+  --pj-shadow: 0 1px 0 rgba(40, 32, 20, 0.04), 0 14px 28px -22px rgba(40, 32, 20, 0.5);
+  --pj-shadow-pop: 0 10px 28px -8px rgba(40, 32, 20, 0.28);
+  --pj-frame: rgba(40, 32, 20, 0.1);
+  /* Trạng thái: đang làm = đồng, hoàn thành = xanh (chấm màu + chữ mực) */
+  --pj-doing: var(--pj-brass);
+  --pj-done: var(--pj-up);
 }
 
-.projects-category-tab {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 0.88rem;
-  font-weight: 500;
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition:
-    background 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    color 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.projects-category-tab:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-.projects-category-tab.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
+[data-theme="dark"] .pj-wrap {
+  --pj-stage: #151515;
+  --pj-paper: #1d1d1c;
+  --pj-rule: #34322e;
+  --pj-rule-soft: #262523;
+  --pj-track: #2c2c2b;
+  --pj-ink: #ebe7df;
+  --pj-ink-2: #cfcac0;
+  --pj-muted: #8f8a80;
+  --pj-seal: #d76a5c;
+  --pj-brass: #c9a66a;
+  --pj-up: #86b893;
+  --pj-shadow: 0 12px 28px -22px rgba(0, 0, 0, 0.9);
+  --pj-shadow-pop: 0 10px 28px -8px rgba(0, 0, 0, 0.7);
+  --pj-frame: rgba(255, 255, 255, 0.08);
 }
 
-/* ── Tab enter animations (reuses .books-wrap layout) ── */
-.projects-sidebar {
-  animation: today-sidebar-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
-  /* Về lại 192px như .books-sidebar. Root cause của việc "co lại" không phải do
-     thiếu chỗ — box-sizing: border-box đã giữ nguyên bề rộng khung. Vấn đề là
-     thanh scroll dọc chỉ chiếm chỗ MỖI KHI xuất hiện, nên nội dung bên trong bị
-     dồn/co lại đúng lúc đó (layout shift). scrollbar-gutter: stable đặt chỗ sẵn
-     cho scrollbar vĩnh viễn, dù đang hiện hay không, nên nội dung không bao giờ
-     bị xê dịch nữa. */
-  scrollbar-gutter: stable;
+.pj-wrap .status-in_progress {
+  --pj-status-color: var(--pj-doing);
 }
-.projects-main {
+.pj-wrap .status-completed {
+  --pj-status-color: var(--pj-done);
+}
+
+/* ── Khung ── */
+.pj-wrap {
+  position: relative; /* neo .delete-toast */
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--pj-stage);
+  color: var(--pj-ink);
+}
+
+.pj-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.pj-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  container: pj / inline-size;
   animation: today-main-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
 }
+.pj-main::-webkit-scrollbar {
+  width: 4px;
+}
+.pj-main::-webkit-scrollbar-thumb {
+  background: var(--pj-rule);
+  border-radius: 2px;
+}
 
-/* ── Slide+fade when switching Product/Figma/Piano category tab ── */
-@keyframes projects-sidebar-list-in {
+.pj-page {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2.25rem 2.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Dải chuyên mục (Lập trình / Figma / Piano): tab gạch chân đè đường kẻ ── */
+.pj-sections {
+  display: flex;
+  gap: 1.75rem;
+  flex-shrink: 0;
+  padding: 0 1.75rem;
+  border-bottom: 1px solid var(--pj-rule);
+  animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.pj-section-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.75rem;
+  margin-bottom: -1px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1.5px solid transparent;
+  background: transparent;
+  color: var(--pj-ink-2);
+  font-family: var(--font);
+  font-size: 0.86rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+/* Logo màu chỉ hiện đủ màu ở chuyên mục đang mở */
+.pj-section-tab svg {
+  filter: grayscale(1);
+  opacity: 0.55;
+  transition:
+    filter 0.2s,
+    opacity 0.2s;
+}
+.pj-section-tab:hover,
+.pj-section-tab.active {
+  color: var(--pj-ink);
+}
+.pj-section-tab:hover svg,
+.pj-section-tab.active svg {
+  filter: none;
+  opacity: 1;
+}
+.pj-section-tab.active {
+  border-bottom-color: var(--pj-ink);
+}
+
+/* ── Cột lọc trái ── */
+.pj-rail {
+  width: 12.5rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  padding: 1.75rem 0.875rem 2rem 1.125rem;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  background: var(--pj-rail);
+  border-right: 0.5px solid var(--border-1);
+  animation: today-sidebar-in 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
+}
+.pj-rail::-webkit-scrollbar {
+  width: 3px;
+}
+.pj-rail::-webkit-scrollbar-thumb {
+  background: var(--pj-rule);
+  border-radius: 2px;
+}
+
+@keyframes pj-rail-list-in {
   from {
     opacity: 0;
     transform: translateX(-10px);
@@ -59,237 +174,1054 @@
     transform: translateX(0);
   }
 }
-.projects-sidebar .projects-sidebar-anim {
-  animation: projects-sidebar-list-in 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+/* Trượt lại khi đổi chuyên mục (key theo category) */
+.pj-rail-anim {
+  animation: pj-rail-list-in 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
-.projects-sidebar .projects-year-list {
-  animation: projects-sidebar-list-in 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
+.pj-year-list {
+  animation: pj-rail-list-in 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
 }
-.projects-sidebar .projects-tag-list-anim {
-  animation: projects-sidebar-list-in 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
-}
-
-/* ── "By year" collapsible list (see more / see less) ── */
-.projects-year-list.collapsible {
-  position: relative;
-  overflow: hidden;
-  transition: max-height 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.projects-year-list.collapsible::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 24px;
-  background: linear-gradient(to bottom, transparent, var(--bg-secondary));
-  pointer-events: none;
-  opacity: 1;
-  transition: opacity 0.25s ease;
-}
-.projects-year-list.collapsible.expanded::after {
-  opacity: 0;
+.pj-rail-tags-anim {
+  animation: pj-rail-list-in 0.26s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
 }
 
-.projects-year-list-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  margin: 2px 0 0 6px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--text-muted);
-  font-size: 0.78rem;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: color 0.12s;
-}
-.projects-year-list-toggle:hover {
-  color: var(--text-secondary);
-}
-.projects-year-list-chevron {
-  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.projects-year-list-chevron.open {
-  transform: rotate(180deg);
-}
-
-/* ── Sidebar tag search + scrollable filter list ── */
-.books-sb-tag-search-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  margin-bottom: 4px;
-}
-.books-sb-tag-search-icon {
-  position: absolute;
-  left: 6px;
-  color: var(--text-muted);
-  pointer-events: none;
-}
-.books-sb-tag-search {
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 0.8rem;
-  font-family: inherit;
-  background: transparent;
-  border: none;
-  border-bottom: 0.5px solid var(--border-1);
-  border-radius: 0;
-  color: var(--text-primary);
-  padding: 4px 4px 4px 22px;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.books-sb-tag-search::placeholder {
-  color: var(--text-muted);
-}
-.books-sb-tag-search:focus {
-  border-bottom-color: var(--primary);
-}
-.books-sb-tag-list {
+.pj-rail-section {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  min-width: 0;
 }
-.books-sb-tag-empty {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  padding: 5px 8px;
+
+.pj-rail-label {
+  margin-bottom: 0.5rem;
+  padding: 0 0.5rem 0.5rem;
+  border-bottom: 1px solid var(--pj-rule);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pj-muted);
 }
-.books-sb-item-name {
+
+/* Mục đang lọc = mảnh giấy viền mảnh (như sidebar lọc của Lịch); không đổi font-weight */
+.pj-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.375rem 0.5rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--pj-ink-2);
+  font-family: var(--font);
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s,
+    color 0.2s;
+}
+.pj-rail-item:hover {
+  background: var(--pj-rule-soft);
+  color: var(--pj-ink);
+}
+.pj-rail-item.active {
+  background: var(--pj-paper);
+  box-shadow: inset 0 0 0 1px var(--pj-rule);
+  color: var(--pj-ink);
+}
+
+.pj-rail-name {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-/* ── Folder grid (level 1) ── */
-.projects-folder-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(216px, 1fr));
-  gap: 18px;
+.pj-rail-year {
+  font-family: var(--pj-serif);
+  font-size: 0.94rem;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
-.projects-folder-card {
+.pj-rail-count {
+  flex-shrink: 0;
+  font-family: var(--pj-serif);
+  font-size: 0.84rem;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--pj-muted);
+}
+.pj-rail-item.active .pj-rail-count {
+  color: var(--pj-seal);
+}
+
+/* Năm: thu gọn 3 dòng, "Xem thêm" mở hết */
+.pj-year-list {
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-lg);
-  background: var(--bg-secondary);
-  border: 0.5px solid var(--border-1);
+  gap: 1px;
+}
+.pj-year-list.collapsible {
+  position: relative;
   overflow: hidden;
-  cursor: pointer;
-  transition:
-    transform 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    box-shadow 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: max-height 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
-.projects-folder-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+.pj-year-list.collapsible::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1.5rem;
+  background: linear-gradient(to bottom, transparent, var(--pj-rail));
+  pointer-events: none;
+  transition: opacity 0.25s ease;
 }
-.projects-folder-card.is-repositioning {
-  cursor: default;
-}
-.projects-folder-card.is-repositioning:hover {
-  transform: none;
-  box-shadow: none;
+.pj-year-list.collapsible.expanded::after {
+  opacity: 0;
 }
 
-.projects-folder-cover {
+.pj-rail-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  margin: 0.25rem 0 0 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pj-muted);
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.pj-rail-more:hover {
+  color: var(--pj-ink);
+}
+.pj-rail-more-chevron {
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.pj-rail-more-chevron.open {
+  transform: rotate(180deg);
+}
+
+.pj-rail-search {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border: 0;
+  border-bottom: 1px solid var(--pj-rule);
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--pj-ink);
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 0.8rem;
+  transition: border-color 0.15s;
+}
+.pj-rail-search::placeholder {
+  color: var(--pj-muted);
+}
+.pj-rail-search:focus {
+  border-bottom-color: var(--pj-ink-2);
+}
+
+.pj-rail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pj-rail-empty {
+  padding: 0.375rem 0.5rem;
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--pj-muted);
+}
+
+/* ── Header trang ── */
+.pj-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.pj-head-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.pj-eyebrow {
+  font-size: 0.69rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pj-muted);
+}
+
+/* Quay lại danh sách folder — đứng ở vị trí eyebrow */
+.pj-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  align-self: flex-start;
+  margin-left: -0.125rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pj-muted);
+  font-family: var(--font);
+  font-size: 0.69rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.pj-back:hover {
+  color: var(--pj-ink);
+}
+
+.pj-title {
+  margin: 0;
+  font-family: var(--pj-serif);
+  font-size: 2.5rem;
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--pj-ink);
+  overflow-wrap: anywhere;
+}
+
+.pj-subtitle {
+  margin: 0;
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 0.94rem;
+  color: var(--pj-muted);
+}
+
+/* Hành động chính: màu nhấn của app */
+.pj-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  height: 2.25rem;
+  padding: 0 1.125rem 0 0.875rem;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  background: var(--primary);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.pj-btn-primary:hover {
+  opacity: 0.86;
+}
+
+/* ── Hàng tab (Folder | Tất cả) + tìm kiếm / sắp xếp, chung một đường kẻ ── */
+.pj-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0 1.5rem;
+  min-height: 2.5rem;
+  margin-top: 1.75rem;
+  border-bottom: 1px solid var(--pj-rule);
+  animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
+}
+
+.pj-tabs {
+  display: flex;
+  gap: 1.375rem;
+}
+
+.pj-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 2.5rem;
+  margin-bottom: -1px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1.5px solid transparent;
+  background: transparent;
+  color: var(--pj-ink-2);
+  font-family: var(--font);
+  font-size: 0.84rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+.pj-tab:hover,
+.pj-tab.active {
+  color: var(--pj-ink);
+}
+.pj-tab.active {
+  border-bottom-color: var(--pj-ink);
+}
+
+.pj-tab-count {
+  font-family: var(--pj-serif);
+  font-size: 0.81rem;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--pj-muted);
+}
+
+.pj-tools {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  margin-left: auto;
+  min-width: 0;
+}
+
+/* Ô tìm chỉ có gạch chân khi focus, đè đường kẻ như tab */
+.pj-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 1 15rem;
+  min-width: 10rem;
+  height: 2.5rem;
+  margin-bottom: -1px;
+  border-bottom: 1.5px solid transparent;
+  color: var(--pj-muted);
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+.pj-search:focus-within {
+  color: var(--pj-ink-2);
+  border-bottom-color: var(--pj-ink-2);
+}
+.pj-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--pj-ink);
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 0.875rem;
+}
+.pj-search input::placeholder {
+  color: var(--pj-muted);
+}
+
+.pj-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--pj-muted);
+  cursor: pointer;
+}
+.pj-search-clear:hover {
+  background: var(--pj-rule-soft);
+  color: var(--pj-ink);
+}
+
+.pj-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+}
+.pj-sort-label {
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pj-muted);
+}
+.pj-sort-select {
+  padding: 0 0.125rem;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--pj-ink);
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.pj-sort-select option {
+  background: var(--pj-paper);
+  color: var(--pj-ink);
+  font-style: normal;
+}
+
+/* ── Nội dung (đổi bộ lọc → chạy lại hiệu ứng nhờ key) ── */
+.pj-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2.75rem;
+  margin-top: 2rem;
+  animation: today-main-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* Lưới bìa không khung: chữ nằm dưới bìa, hover → tờ giấy */
+.pj-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 2.25rem 1.75rem;
+}
+
+.pj-folder,
+.pj-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  min-width: 0;
+  margin: -0.625rem;
+  padding: 0.625rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.pj-folder:hover,
+.pj-card:hover {
+  background: var(--pj-paper);
+  box-shadow: var(--pj-shadow);
+}
+.pj-folder.is-repositioning,
+.pj-card.is-repositioning {
+  cursor: default;
+}
+
+/* Bìa: khung mảnh như ảnh in trên trang sách */
+.pj-cover {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: var(--bg-hover);
   overflow: hidden;
+  border-radius: 3px;
+  background: var(--pj-track);
+  outline: 1px solid var(--pj-frame);
+  outline-offset: -1px;
 }
-.projects-folder-cover img {
+.pj-cover img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   touch-action: none;
-  display: block;
 }
 
-.projects-folder-cover-placeholder {
+.pj-cover-empty {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  filter: grayscale(1);
   opacity: 0.4;
 }
 
-.projects-folder-actions {
+.pj-cover-actions {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 0.5rem;
+  right: 0.5rem;
   display: flex;
-  gap: 4px;
+  gap: 0.3rem;
   opacity: 0;
-  transition: opacity 0.12s;
+  transition: opacity 0.15s;
 }
-.projects-folder-card:hover .projects-folder-actions,
-.projects-folder-card.is-repositioning .projects-folder-actions,
-.projects-card:hover .projects-folder-actions,
-.projects-card.is-repositioning .projects-folder-actions {
+.pj-folder:hover .pj-cover-actions,
+.pj-card:hover .pj-cover-actions,
+.is-repositioning .pj-cover-actions,
+.pj-cover-actions:focus-within {
   opacity: 1;
 }
 
-.projects-folder-action-btn {
+.pj-cover-btn {
+  width: 1.75rem;
+  height: 1.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
+  padding: 0;
+  border: 1px solid var(--pj-rule);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pj-paper) 92%, transparent);
+  color: var(--pj-ink-2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
   cursor: pointer;
-  backdrop-filter: blur(2px);
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 }
-.projects-folder-action-btn:hover {
-  background: rgba(0, 0, 0, 0.75);
+.pj-cover-btn:hover {
+  background: var(--pj-paper);
+  border-color: var(--pj-muted);
+  color: var(--pj-ink);
 }
-.projects-folder-action-btn.danger:hover {
-  background: #dc3545;
+.pj-cover-btn.danger:hover {
+  border-color: var(--pj-seal);
+  color: var(--pj-seal);
 }
 
-.projects-folder-body {
-  padding: 10px 12px 12px;
+.pj-caption {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.375rem;
+  min-width: 0;
 }
 
-.projects-folder-name {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
+/* Folder: tên Lora, dòng phụ nghiêng (số dự án | cập nhật) */
+.pj-folder-name {
+  margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--pj-serif);
+  font-size: 1.19rem;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--pj-ink);
 }
 
-.projects-folder-meta {
+.pj-folder-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 0.84rem;
+  color: var(--pj-muted);
+}
+.pj-folder-meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Dự án: trạng thái (chấm màu + chữ hoa) · ngày nghiêng → tên → mô tả → tag */
+.pj-card-status {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.pj-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--pj-ink-2);
+}
+
+.pj-status-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pj-status-color, var(--pj-muted));
+}
+
+.pj-card-date {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 0.8rem;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--pj-muted);
+}
+
+.pj-card-title {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-family: var(--pj-serif);
+  font-size: 1.12rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--pj-ink);
+}
+
+.pj-byline {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pj-ink-2);
+}
+
+.pj-card-notes {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--pj-muted);
+}
+
+/* Tag (folder) dạng chữ hoa nhỏ ngăn bằng dấu chấm giữa, không viên thuốc.
+   ProjectCard đo khoảng cách bằng column-gap thật của .pj-tags. */
+.pj-tags {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  column-gap: 0.875rem;
+  overflow: hidden;
+  margin-top: auto;
+  padding-top: 0.375rem;
+}
+
+.pj-tag {
+  position: relative;
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--pj-muted);
+}
+.pj-tag + .pj-tag::before {
+  content: "·";
+  position: absolute;
+  left: -0.4375rem;
+  transform: translateX(-50%);
+  letter-spacing: 0;
+}
+.pj-tag + .pj-tag-more::before {
+  content: none;
+}
+.pj-tag-more {
+  font-family: var(--pj-serif);
+  font-size: 0.78rem;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.pj-tags-ruler {
+  position: absolute;
+  width: 0;
+  height: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ── Phân trang ── */
+.pj-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--pj-rule-soft);
+}
+
+.pj-round-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--pj-rule);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--pj-ink-2);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.pj-round-btn:hover:not(:disabled) {
+  background: var(--pj-rule-soft);
+  border-color: var(--pj-muted);
+}
+.pj-round-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.pj-pagination-label {
+  min-width: 3.5rem;
+  text-align: center;
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 0.94rem;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--pj-ink-2);
+}
+
+/* ── Trạng thái rỗng ── */
+.pj-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  margin: 0;
+  padding: 4rem 1.5rem;
+  text-align: center;
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 1.06rem;
+  color: var(--pj-muted);
+}
+.pj-empty p {
+  margin: 0;
+}
+
+/* ── Modal chi tiết dự án: tờ giấy ── */
+.pj-detail {
+  position: relative;
+  width: 100%;
+  max-width: 30rem;
+  max-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  background: var(--pj-paper);
+  border: 1px solid var(--pj-rule);
+  border-radius: 6px;
+  box-shadow: 0 24px 60px -20px rgba(20, 16, 10, 0.5);
+  color: var(--pj-ink);
+  animation: today-main-in 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.pj-detail-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--pj-rule);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pj-paper) 92%, transparent);
+  color: var(--pj-ink-2);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.pj-detail-close:hover {
+  background: var(--pj-paper);
+  border-color: var(--pj-muted);
+  color: var(--pj-ink);
+}
+
+.pj-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem 1.75rem 1.25rem;
+  overflow-y: auto;
+}
+
+.pj-detail-cover {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 3px;
+  outline: 1px solid var(--pj-frame);
+  outline-offset: -1px;
+  background: var(--pj-track);
+}
+.pj-detail-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pj-detail-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-right: 2rem;
+}
+
+.pj-detail-title {
+  margin: 0;
+  font-family: var(--pj-serif);
+  font-size: 1.62rem;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--pj-ink);
+  overflow-wrap: anywhere;
+}
+
+.pj-detail-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--pj-rule-soft);
+  border-bottom: 1px solid var(--pj-rule-soft);
+}
+
+.pj-status-dropdown {
+  position: relative;
+}
+
+.pj-status-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 1.9rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--pj-rule);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--pj-ink-2);
+  font-family: var(--font);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.pj-status-trigger:hover,
+.pj-status-trigger.open {
+  background: var(--pj-rule-soft);
+  border-color: var(--pj-muted);
+}
+.pj-status-chevron {
+  margin-left: 0.1rem;
+  transition: transform 0.2s;
+}
+.pj-status-trigger.open .pj-status-chevron {
+  transform: rotate(180deg);
+}
+
+.pj-status-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 5;
+  min-width: 11rem;
+  padding: 0.3rem;
+  background: var(--pj-paper);
+  border: 1px solid var(--pj-rule);
+  border-radius: 4px;
+  box-shadow: var(--pj-shadow-pop);
+}
+
+.pj-status-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--pj-ink-2);
+  font-family: var(--font);
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+}
+.pj-status-option:hover {
+  background: var(--pj-rule-soft);
+}
+.pj-status-option.active {
+  color: var(--pj-ink);
+}
+.pj-status-check {
+  margin-left: auto;
+  color: var(--pj-seal);
+}
+
+.pj-detail-date {
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--pj-muted);
+}
+
+.pj-detail-tags {
+  flex-wrap: wrap;
+  row-gap: 0.375rem;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.pj-detail-notes {
+  margin: 0;
+  font-family: var(--pj-serif);
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--pj-ink-2);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.pj-detail-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pj-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 2rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--pj-rule);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--pj-ink-2);
+  font-family: var(--font);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.pj-link-btn:hover {
+  background: var(--pj-rule-soft);
+  border-color: var(--pj-muted);
+  color: var(--pj-ink);
+}
+
+.pj-detail-added {
+  font-family: var(--pj-serif);
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--pj-muted);
+}
+
+.pj-detail-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  font-size: 0.74rem;
-  color: var(--text-muted);
-}
-.projects-folder-meta span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  gap: 1rem;
+  flex-shrink: 0;
+  padding: 0.875rem 1.75rem;
+  border-top: 1px solid var(--pj-rule);
 }
 
-/* ── Add/Edit Folder Modal ── */
+.pj-detail-foot-group {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: -0.6rem;
+}
+
+.pj-text-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 2.1rem;
+  padding: 0 0.6rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--pj-ink-2);
+  font-family: var(--font);
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.pj-text-btn:hover {
+  background: var(--pj-rule-soft);
+  color: var(--pj-ink);
+}
+.pj-text-btn.danger:hover {
+  background: color-mix(in srgb, var(--pj-seal) 10%, transparent);
+  color: var(--pj-seal);
+}
+
+/* ── Cửa sổ hẹp ── */
+@container pj (max-width: 46rem) {
+  .pj-page {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  .pj-grid {
+    gap: 2rem 1.25rem;
+  }
+  .pj-sort-label {
+    display: none;
+  }
+}
+
+/* ── Glass mode (nền ảnh) ── */
+html.has-bg-image .pj-wrap {
+  --pj-rail: var(--bg-glass-panel-2);
+  background: transparent;
+}
+html.has-bg-image .pj-folder:hover,
+html.has-bg-image .pj-card:hover,
+html.has-bg-image .pj-rail-item.active {
+  background: var(--bg-glass-panel);
+}
+
+/* ═══ Modal thêm/sửa folder + dự án (khung .books-modal dùng chung với Books) ═══ */
 .projects-folder-modal {
   max-width: 440px;
 }
@@ -345,53 +1277,6 @@
   font-size: 0.78rem;
 }
 
-/* ── Project card grid (level 2) ── */
-.projects-card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
-}
-
-.projects-card {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  border-radius: var(--radius-lg);
-  background: var(--bg-secondary);
-  border: 0.5px solid var(--border-1);
-  overflow: hidden;
-  cursor: pointer;
-  transition:
-    transform 0.16s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    box-shadow 0.16s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.projects-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
-}
-.projects-card.is-repositioning {
-  cursor: default;
-}
-.projects-card.is-repositioning:hover {
-  transform: none;
-  box-shadow: none;
-}
-
-.projects-card-cover {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: var(--bg-hover);
-  overflow: hidden;
-}
-.projects-card-cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  touch-action: none;
-}
-
 .projects-cover-reposition-hint {
   position: absolute;
   left: 50%;
@@ -405,217 +1290,4 @@
   white-space: nowrap;
   pointer-events: none;
   backdrop-filter: blur(2px);
-}
-
-.projects-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px 12px;
-  flex: 1;
-  min-height: 0;
-}
-
-.projects-card-head {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px 8px;
-}
-
-.projects-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 7px;
-  border-radius: 10px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-  flex-shrink: 0;
-}
-.projects-status-badge.status-in_progress {
-  background: var(--col-doing-badge);
-  color: var(--col-doing-title);
-}
-.projects-status-badge.status-completed {
-  background: var(--col-done-badge);
-  color: var(--col-done-title);
-}
-
-.projects-card-date {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.projects-card-title {
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.projects-card-composer {
-  font-size: 0.74rem;
-  color: var(--text-muted);
-  font-style: italic;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.projects-card-notes {
-  font-size: 0.76rem;
-  color: var(--text-muted);
-  line-height: 1.45;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.projects-card-tags {
-  display: flex;
-  flex-wrap: nowrap;
-  overflow: hidden;
-  gap: 4px;
-  margin-top: auto;
-}
-.projects-card-tags .books-tag-chip-sm {
-  flex-shrink: 0;
-}
-.projects-card-tag-more {
-  background: var(--bg-hover);
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-.projects-card-tags-ruler {
-  position: absolute;
-  visibility: hidden;
-  overflow: hidden;
-  width: 0;
-  height: 0;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 4px;
-  pointer-events: none;
-}
-.projects-card-tags-ruler .books-tag-chip-sm {
-  flex-shrink: 0;
-}
-
-/* ── Project Detail Modal ── */
-.projects-detail-modal {
-  max-width: 480px;
-}
-
-.projects-detail-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 28px 24px 20px;
-  overflow-y: auto;
-}
-
-.projects-detail-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.35;
-  padding-right: 20px;
-}
-
-.projects-detail-composer {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  font-style: italic;
-  margin-top: -8px;
-}
-
-.projects-detail-cover {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  background: var(--bg-hover);
-  border: 0.5px solid var(--border-1);
-}
-.projects-detail-cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.projects-detail-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.projects-detail-link-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: var(--radius-md);
-  border: 0.5px solid var(--border-1);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 0.82rem;
-  font-family: inherit;
-  cursor: pointer;
-  transition:
-    background 0.12s,
-    color 0.12s;
-}
-.projects-detail-link-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-/* ── Pagination (folder grid + project grid) ── */
-.projects-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 16px;
-}
-.projects-pagination-btn {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 0.5px solid var(--border-1);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition:
-    background 0.12s,
-    color 0.12s;
-}
-.projects-pagination-btn:hover:not(:disabled) {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-.projects-pagination-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-.projects-pagination-label {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  min-width: 3.5em;
-  text-align: center;
 }

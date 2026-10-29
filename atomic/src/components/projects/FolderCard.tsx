@@ -75,8 +75,8 @@ export default function FolderCard({
   }
 
   return (
-    <div className={`projects-folder-card${repositioning ? ' is-repositioning' : ''}`} onClick={onOpen}>
-      <div className="projects-folder-cover" ref={coverRef} onClick={handleCoverClick}>
+    <article className={`pj-folder${repositioning ? ' is-repositioning' : ''}`} onClick={onOpen}>
+      <div className="pj-cover" ref={coverRef} onClick={handleCoverClick}>
         <img
           ref={imgRef}
           src={folder.cover_image ?? defaultFolderCover(folder.name)}
@@ -90,38 +90,38 @@ export default function FolderCard({
         {repositioning ? (
           <>
             <div className="projects-cover-reposition-hint">{t.projects.coverRepositionHint}</div>
-            <div className="projects-folder-actions">
-              <button className="projects-folder-action-btn" onClick={confirmReposition} title={t.projects.done}>
-                <IconCheck size={13} />
+            <div className="pj-cover-actions">
+              <button className="pj-cover-btn" onClick={confirmReposition} title={t.projects.done}>
+                <IconCheck size={14} />
               </button>
-              <button className="projects-folder-action-btn danger" onClick={cancelReposition} title={t.projects.cancel}>
-                <IconX size={13} />
+              <button className="pj-cover-btn danger" onClick={cancelReposition} title={t.projects.cancel}>
+                <IconX size={14} />
               </button>
             </div>
           </>
         ) : (
-          <div className="projects-folder-actions">
+          <div className="pj-cover-actions">
             {folder.cover_image && (
-              <button className="projects-folder-action-btn" onClick={startReposition} title={t.projects.coverReposition}>
-                <IconArrowsMove size={13} />
+              <button className="pj-cover-btn" onClick={startReposition} title={t.projects.coverReposition}>
+                <IconArrowsMove size={14} />
               </button>
             )}
-            <button className="projects-folder-action-btn" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
-              <IconPencil size={13} />
+            <button className="pj-cover-btn" onClick={(e) => { e.stopPropagation(); onEdit(); }} title={t.projects.edit}>
+              <IconPencil size={14} />
             </button>
-            <button className="projects-folder-action-btn danger" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
-              <IconTrash size={13} />
+            <button className="pj-cover-btn danger" onClick={(e) => { e.stopPropagation(); onDelete(); }} title={t.projects.delete}>
+              <IconTrash size={14} />
             </button>
           </div>
         )}
       </div>
-      <div className="projects-folder-body">
-        <div className="projects-folder-name" title={folder.name}>{folder.name}</div>
-        <div className="projects-folder-meta">
+      <div className="pj-caption">
+        <h3 className="pj-folder-name" title={folder.name}>{folder.name}</h3>
+        <div className="pj-folder-meta">
           <span>{copy.folderCount(folder.project_count)}</span>
           {folder.last_activity && <span>{t.projects.folderUpdated(formatISODate(folder.last_activity.split(' ')[0]))}</span>}
         </div>
       </div>
-    </div>
+    </article>
   );
 }

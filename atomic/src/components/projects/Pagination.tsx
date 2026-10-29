@@ -8,24 +8,24 @@ export default function Pagination({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   if (totalPages <= 1) return null;
   return (
-    <div className="projects-pagination">
+    <nav className="pj-pagination">
       <button
         type="button"
-        className="projects-pagination-btn"
+        className="pj-round-btn"
         onClick={() => onChange(page - 1)}
         disabled={page <= 1}
       >
         <IconChevronLeft size={14} />
       </button>
-      <span className="projects-pagination-label">{page} / {totalPages}</span>
+      <span className="pj-pagination-label">{page} / {totalPages}</span>
       <button
         type="button"
-        className="projects-pagination-btn"
+        className="pj-round-btn"
         onClick={() => onChange(page + 1)}
         disabled={page >= totalPages}
       >
         <IconChevronRight size={14} />
       </button>
-    </div>
+    </nav>
   );
 }

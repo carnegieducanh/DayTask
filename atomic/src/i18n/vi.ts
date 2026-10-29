@@ -551,7 +551,9 @@ export const vi = {
     completedOn: (date: string) => `Hoàn thành ${date}`,
     seeMore: "Xem thêm",
     seeLess: "Thu gọn",
-    viewAll: "Xem tất cả",
+    tabFolders: "Folder",
+    sortBy: "Sắp xếp",
+    since: (date: string) => `từ ${date}`,
     back: "Quay lại",
     coverReposition: "Căn chỉnh vị trí ảnh",
     coverRepositionHint: "Kéo ảnh để căn chỉnh vị trí",
@@ -563,6 +565,7 @@ export const vi = {
     categoryCopy: {
       product: {
         pageTitle: "Dự án của tôi",
+        tabAll: "Tất cả dự án",
         statusInProgress: "Đang làm",
         statusCompleted: "Hoàn thành",
         addItem: "Thêm dự án",
@@ -586,6 +589,7 @@ export const vi = {
       },
       figma: {
         pageTitle: "Thiết kế Figma của tôi",
+        tabAll: "Tất cả dự án",
         statusInProgress: "Đang làm",
         statusCompleted: "Hoàn thành",
         addItem: "Thêm dự án",
@@ -609,6 +613,7 @@ export const vi = {
       },
       piano: {
         pageTitle: "Bản nhạc Piano của tôi",
+        tabAll: "Tất cả bản nhạc",
         statusInProgress: "Đang tập",
         statusCompleted: "Đã thuộc",
         addItem: "Thêm bản nhạc",
