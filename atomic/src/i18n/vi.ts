@@ -302,6 +302,7 @@ export const vi = {
     dropToUnschedule: "Thả để bỏ khỏi lịch",
     dropToDuplicateUnscheduled: "Thả để tạo bản sao chưa xếp lịch",
     deckTitle: "Chờ xếp lịch",
+    deckAll: "Tất cả",
     deckHint: "Kéo thẻ xuống dòng thời gian để xếp giờ",
     weekStats: "Tổng tuần",
     monthStats: "Tổng tháng",

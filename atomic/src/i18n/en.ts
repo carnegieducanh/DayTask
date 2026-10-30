@@ -327,6 +327,7 @@ export const en: typeof vi = {
     dropToUnschedule: "Drop to unschedule",
     dropToDuplicateUnscheduled: "Drop to create an unscheduled copy",
     deckTitle: "Unscheduled",
+    deckAll: "All",
     deckHint: "Drag a card onto the timeline to schedule it",
     weekStats: "Week total",
     monthStats: "Month total",

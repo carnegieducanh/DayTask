@@ -18,6 +18,7 @@ import {
 } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { useAppStore } from "../store/appStore";
+import { useSmoothScrollX } from "../hooks/useSmoothScroll";
 import { useT } from "../i18n";
 import type { Tab } from "../types";
 
@@ -133,6 +134,18 @@ export default function Sidebar() {
   const easeInOutCubic = (x: number) =>
     x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
 
+  // Lăn chuột lên/xuống trên hàng tab (cả vùng mũi tên) → trượt ngang, mượt như dòng thời gian
+  const navViewportRef = useRef<HTMLDivElement>(null);
+  useSmoothScrollX(navRef, navViewportRef);
+
+  // Lăn chuột giữa lúc mũi tên đang cuộn: dừng hiệu ứng mũi tên để 2 chuyển động không giành nhau
+  const stopArrowScroll = () => {
+    if (scrollAnimRef.current) {
+      cancelAnimationFrame(scrollAnimRef.current);
+      scrollAnimRef.current = null;
+    }
+  };
+
   const scrollNav = (direction: 1 | -1) => {
     const el = navRef.current;
     if (!el) return;
@@ -174,7 +187,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav tabs */}
-      <div className="sidebar-nav-viewport">
+      <div className="sidebar-nav-viewport" ref={navViewportRef} onWheel={stopArrowScroll}>
         <button
           className={`sidebar-nav-arrow sidebar-nav-arrow-left${canScrollLeft ? " visible" : ""}`}
           onClick={() => scrollNav(-1)}

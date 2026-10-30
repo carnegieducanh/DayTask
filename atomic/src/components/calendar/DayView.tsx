@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { useSmoothScroll } from "../../hooks/useSmoothScroll";
+import { useSmoothScroll, useSmoothScrollX } from "../../hooks/useSmoothScroll";
 import { format } from "date-fns";
 import { IconTag, IconTrash, IconCheck, IconCalendarMinus, IconCopy } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
@@ -33,7 +33,7 @@ const COLOR_PALETTE: string[] = [
 ];
 import { useT } from "../../i18n";
 import AddTaskModal from "../today/AddTaskModal";
-import type { Task, TaskTimeEntry } from "../../types";
+import type { Category, Task, TaskTimeEntry } from "../../types";
 
 const HOUR_HEIGHT = 72; // px per hour
 const MIN_DRAG_DURATION = 15; // minimum minutes to trigger task creation
@@ -86,6 +86,15 @@ function pickDeckSlot(clip: HTMLElement, x: number, y: number, current: number, 
   });
   if (currentDist <= DECK_SLOT_HYSTERESIS) best = current;
   return Math.max(0, Math.min(best, maxIndex));
+}
+
+// Map a slot in the (possibly category-filtered) deck grid to an insertion index in the full deck
+// order: before the visible card now in that slot, or right after the last visible card. Unfiltered,
+// visible === others and this is just `slot`.
+function fullDeckInsertIndex(others: number[], visible: number[], slot: number): number {
+  if (slot < visible.length) return others.indexOf(visible[slot]);
+  if (visible.length === 0) return others.length;
+  return others.indexOf(visible[visible.length - 1]) + 1;
 }
 
 function timeToMin(time: string): number {
@@ -259,9 +268,16 @@ export default function DayView({
   dragResizeRef.current = dragResize;
   const dragDeckTaskRef = useRef(dragDeckTask);
   dragDeckTaskRef.current = dragDeckTask;
-  // Ordered ids of the currently-rendered deck (excludes the card being dragged, if any) —
-  // synced every render below, read by the window-level handlers to compute/apply reorder.
+  // Ordered ids of the whole deck, and of the cards the active category tab shows (both exclude
+  // the card being dragged, if any) — synced every render below, read by the window-level
+  // handlers to compute/apply reorder.
   const unscheduledIdsRef = useRef<number[]>([]);
+  const deckVisibleIdsRef = useRef<number[]>([]);
+  const [deckFilter, setDeckFilter] = useState<Category | "all">("all");
+  const deckTabsRef = useRef<HTMLDivElement>(null);
+  const [deckTabsFade, setDeckTabsFade] = useState({ left: false, right: false });
+  const deckFilterRef = useRef(deckFilter);
+  deckFilterRef.current = deckFilter;
   // Direct DOM ref for the floating card — position updated without React re-render
   const floatingCardRef = useRef<HTMLDivElement | null>(null);
   // Same pattern, for a scheduled task being dragged back up toward the deck (unschedule)
@@ -314,15 +330,56 @@ export default function DayView({
 
   const layoutItems = computeLayout(scheduledTasks, taskTimeEntries, dateStr);
 
-  // The card being dragged out of the deck still counts until it is dropped, so the deck keeps
-  // its row count — and the grid its top edge, the drag's deck/timeline threshold — mid-drag.
-  const deckCount = unscheduledTasks.length + (dragDeckTask ? 1 : 0);
-  const deckRows = Math.min(DECK_MAX_ROWS, Math.ceil(deckCount / DECK_COLS));
+  // The card being dragged out of the deck still counts until it is dropped, so tab counts and the
+  // deck's row count — and with it the grid's top edge, the drag's deck/timeline threshold — hold
+  // still mid-drag.
+  const deckTasks = dragDeckTask ? [...unscheduledTasks, dragDeckTask.task] : unscheduledTasks;
+  const deckCatCounts = new Map<Category, number>();
+  deckTasks.forEach((t) => deckCatCounts.set(t.category, (deckCatCounts.get(t.category) ?? 0) + 1));
+  // One tab per category present in the deck, in the same order as the calendar's filter sidebar —
+  // tabs appear and disappear with the deck's contents.
+  const deckCats = (Object.keys(categoryColors) as Category[]).filter((c) => deckCatCounts.has(c));
+  const activeDeckCat = deckFilter !== "all" && deckCatCounts.has(deckFilter) ? deckFilter : "all";
+  const visibleDeckTasks =
+    activeDeckCat === "all" ? unscheduledTasks : unscheduledTasks.filter((t) => t.category === activeDeckCat);
+  deckVisibleIdsRef.current = visibleDeckTasks.map((t) => t.id);
+  const deckCount = deckTasks.length;
+  // Only visible cards can be dragged, so a dragged card always belongs to the active tab.
+  const deckRows = Math.min(DECK_MAX_ROWS, Math.ceil((visibleDeckTasks.length + (dragDeckTask ? 1 : 0)) / DECK_COLS));
   // While a deck card hovers over the deck, a placeholder (null) holds the slot it would drop into.
-  const deckSlots: (Task | null)[] = [...unscheduledTasks];
+  const deckSlots: (Task | null)[] = [...visibleDeckTasks];
   if (dragDeckTask && dragDeckTask.startMin === -1) {
-    deckSlots.splice(Math.min(dragDeckTask.hoverIndex, unscheduledTasks.length), 0, null);
+    deckSlots.splice(Math.min(dragDeckTask.hoverIndex, visibleDeckTasks.length), 0, null);
   }
+
+  // The active tab's category left the deck (its last card got scheduled or deleted) — fall back
+  // to "all" rather than silently re-selecting it when a card of that category shows up again.
+  useEffect(() => {
+    if (deckFilter !== "all" && activeDeckCat === "all") setDeckFilter("all");
+  }, [deckFilter, activeDeckCat]);
+
+  // Fade the tab row's edges only where tabs are clipped. Re-measured on scroll, when the row is
+  // resized (window width), and when its tabs change (a category added/removed, counts, language).
+  const deckShown = deckCount > 0 || !!dragMove?.overDeck;
+  // Vertical wheel over the tab row scrolls it sideways, eased like the timeline. The row only
+  // exists while the deck is shown, so re-attach whenever it (re)appears.
+  useSmoothScrollX(deckTabsRef, deckTabsRef, deckShown);
+  const deckTabsKey = `${deckCount}|${deckCats.map((c) => `${c}${deckCatCounts.get(c)}`).join(",")}`;
+  const updateDeckTabsFade = useCallback(() => {
+    const el = deckTabsRef.current;
+    if (!el) return;
+    const left = el.scrollLeft > 1;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+    setDeckTabsFade((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
+  }, []);
+  useLayoutEffect(updateDeckTabsFade, [deckTabsKey, t, updateDeckTabsFade]);
+  useEffect(() => {
+    const el = deckTabsRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(updateDeckTabsFade);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [deckShown, updateDeckTabsFade]);
 
   // Update current-time indicator every minute, aligned to the real clock's minute
   // boundary — a plain setInterval(60_000) drifts from mount time and can lag up to
@@ -465,7 +522,7 @@ export default function DayView({
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     // unscheduledTasks still includes this card at mousedown time (drag hasn't started
     // yet), so its index here is the card's actual slot in the deck.
-    const originalIndex = unscheduledTasks.findIndex((t) => t.id === task.id);
+    const originalIndex = visibleDeckTasks.findIndex((t) => t.id === task.id);
     setDragDeckTask({
       taskId: task.id,
       task,
@@ -575,7 +632,7 @@ export default function DayView({
           // Which deck slot this card would land in if dropped now — the grid cell nearest the cursor.
           const clip = deckCardsClipRef.current;
           const hoverIndex = clip
-            ? pickDeckSlot(clip, cursorX, cursorY, dragDeckTask.hoverIndex, unscheduledIdsRef.current.length)
+            ? pickDeckSlot(clip, cursorX, cursorY, dragDeckTask.hoverIndex, deckVisibleIdsRef.current.length)
             : dragDeckTask.hoverIndex;
           // Only call setState when transitioning from timeline → deck (startMin changes)
           // or the hover slot actually changed — cursorX/cursorY are refreshed in the same
@@ -648,6 +705,11 @@ export default function DayView({
       setDragCreate(null);
     }
     if (dragMove) {
+      // A task unscheduled into the deck while a different category tab is active would vanish
+      // from view — switch back to "all" so it shows up where it was dropped.
+      if (dragMove.overDeck && deckFilterRef.current !== "all" && deckFilterRef.current !== dragMove.task.category) {
+        setDeckFilter("all");
+      }
       if (dragMove.duplicate && dragMove.moved) {
         if (dragMove.overDeck) {
           await duplicateTask(dragMove.taskId, dateStr);
@@ -690,7 +752,7 @@ export default function DayView({
       } else if (dragDeckTask.hoverIndex !== dragDeckTask.originalIndex) {
         // Dropped back into the deck at a different slot — persist the new manual order.
         const others = unscheduledIdsRef.current;
-        const idx = Math.max(0, Math.min(dragDeckTask.hoverIndex, others.length));
+        const idx = fullDeckInsertIndex(others, deckVisibleIdsRef.current, dragDeckTask.hoverIndex);
         const newOrder = [...others.slice(0, idx), dragDeckTask.taskId, ...others.slice(idx)];
         await reorderDeckTasks(newOrder);
       }
@@ -796,7 +858,7 @@ export default function DayView({
   return (
     <div className="day-view">
       {/* Unscheduled task deck — fixed row above the scrollable grid */}
-      {(deckCount > 0 || dragMove?.overDeck) && (
+      {deckShown && (
         <div
           className={`day-deck-row${dragMove?.overDeck ? " day-deck-row-drag-target" : ""}`}
           style={{ cursor: isCardDragActive ? "var(--cursor-grabbing)" : undefined }}
@@ -806,9 +868,34 @@ export default function DayView({
           </div>
           <div className="day-deck-events-area">
             <div className="day-deck-head">
-              <div className="day-deck-heading">
-                <span className="day-deck-eyebrow">{t.calendar.deckTitle}</span>
-                <span className="day-deck-count">{deckCount}</span>
+              <span className="day-deck-eyebrow">{t.calendar.deckTitle}</span>
+              <div
+                ref={deckTabsRef}
+                className={`day-deck-tabs${deckTabsFade.left ? " fade-left" : ""}${deckTabsFade.right ? " fade-right" : ""}`}
+                onScroll={updateDeckTabsFade}
+              >
+                <button
+                  type="button"
+                  className={`day-deck-tab${activeDeckCat === "all" ? " active" : ""}`}
+                  aria-pressed={activeDeckCat === "all"}
+                  onClick={() => setDeckFilter("all")}
+                >
+                  {t.calendar.deckAll}
+                  <span className="day-deck-tab-count">{deckCount}</span>
+                </button>
+                {deckCats.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    className={`day-deck-tab${activeDeckCat === cat ? " active" : ""}`}
+                    aria-pressed={activeDeckCat === cat}
+                    onClick={() => setDeckFilter(cat)}
+                  >
+                    <span className="day-deck-tab-dot" style={{ backgroundColor: categoryColors[cat] }} />
+                    {t.cat[cat]}
+                    <span className="day-deck-tab-count">{deckCatCounts.get(cat)}</span>
+                  </button>
+                ))}
               </div>
               <span className="day-deck-hint">
                 {dragMove?.overDeck

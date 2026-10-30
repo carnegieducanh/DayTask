@@ -1543,27 +1543,23 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-  padding: 0.6rem 0.75rem 0.6rem 0.25rem;
+  gap: 0.55rem;
+  padding: 0.3rem 0.75rem 0.6rem 0.25rem;
 }
 
+/* Dòng đầu: eyebrow · hàng tab danh mục gạch chân (đè lên đường kẻ đáy) · lời nhắc nghiêng.
+   Tab do DayView sinh theo danh mục đang có trong khay — tự thêm/bớt theo dữ liệu. */
 .day-deck-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
+  align-items: center;
+  gap: 1.25rem;
   min-width: 0;
+  border-bottom: 1px solid var(--cv-rule-soft);
   user-select: none;
 }
 
-.day-deck-heading {
-  display: flex;
-  align-items: baseline;
-  gap: 0.55rem;
-  flex-shrink: 0;
-}
-
 .day-deck-eyebrow {
+  flex-shrink: 0;
   font-size: 0.64rem;
   font-weight: 600;
   letter-spacing: 0.18em;
@@ -1571,16 +1567,113 @@
   color: var(--cv-muted);
 }
 
-.day-deck-count {
-  font-family: var(--cv-serif);
-  font-size: 1rem;
-  line-height: 1;
-  color: var(--cv-seal);
-  font-variant-numeric: tabular-nums;
+/* Độ rộng vùng mờ ở 2 mép hàng tab — đăng ký kiểu <length> để transition được */
+@property --deck-fade-l {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
 }
 
-.day-deck-hint {
+@property --deck-fade-r {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+/* margin-bottom -1px đặt ở cả hàng tab, không ở từng tab: hàng tab cuộn ngang
+   (overflow-x) sẽ cắt phần gạch chân thò ra ngoài nó.
+   Mép nào còn tab bị khuất thì mờ dần — DayView bật .fade-left/.fade-right theo vị trí cuộn. */
+.day-deck-tabs {
+  display: flex;
+  gap: 1.1rem;
   min-width: 0;
+  margin-bottom: -1px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--deck-fade-l),
+    #000 calc(100% - var(--deck-fade-r)),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--deck-fade-l),
+    #000 calc(100% - var(--deck-fade-r)),
+    transparent
+  );
+  transition:
+    --deck-fade-l 0.2s ease,
+    --deck-fade-r 0.2s ease;
+}
+
+.day-deck-tabs.fade-left {
+  --deck-fade-l: 2.25rem;
+}
+
+.day-deck-tabs.fade-right {
+  --deck-fade-r: 2.25rem;
+}
+
+.day-deck-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.day-deck-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  height: 1.9rem;
+  padding: 0;
+  border: 0;
+  border-bottom: 1.5px solid transparent;
+  background: transparent;
+  color: var(--cv-ink-2);
+  font-family: var(--font);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.day-deck-tab:hover,
+.day-deck-tab.active {
+  color: var(--cv-ink);
+}
+
+.day-deck-tab.active {
+  border-bottom-color: var(--cv-ink);
+}
+
+.day-deck-tab-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.day-deck-tab-count {
+  font-family: var(--cv-serif);
+  font-size: 0.76rem;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--cv-muted);
+}
+
+.day-deck-tab.active .day-deck-tab-count {
+  color: var(--cv-seal);
+}
+
+/* Co lại trước hàng tab khi thiếu chỗ */
+.day-deck-hint {
+  flex: 0 100 auto;
+  min-width: 0;
+  margin-left: auto;
   font-family: var(--cv-serif);
   font-style: italic;
   font-size: 0.76rem;
