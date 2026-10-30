@@ -1231,11 +1231,13 @@
   justify-content: center;
   background: var(--cv-seal);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  color: #fff;
+  /* Màu giấy: theme tối ra chữ gần đen trên son nhạt (user muốn chữ tối, 2026-10-30);
+     theme sáng son đậm #a8322a nên vẫn chữ sáng cho đọc được — như .nav-badge */
+  color: var(--cv-paper);
   font-family: var(--cv-serif);
   font-size: 0.76rem;
   font-variant-numeric: lining-nums tabular-nums;
-  font-weight: 400;
+  font-weight: 700; /* Lora 700 thật (đậm nhất của Lora), nhúng ở main.tsx */
   line-height: 1.3;
   padding: 0px 7px;
   border-radius: 10px;

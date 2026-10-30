@@ -15,6 +15,9 @@
 :root {
   --primary: #125680;
   --primary-dark: #0a3d5e;
+  /* Chữ trên nút thêm dạng khối (nền --primary): luôn màu mực tối, cả theme tối
+     — không đặt lại trong [data-theme="dark"] (user chốt 2026-10-30) */
+  --on-primary-ink: #2a2723;
 
   --bg-primary: #ffffff;
   --bg-secondary: #f8f7f5;

@@ -1,6 +1,6 @@
 /* ── Top Nav Bar (was Sidebar) — phong cách editorial: măng-sét báo ──
    Nền giấy cùng tông các trang, chữ "Atomic" Lora, tab gạch chân đè lên đường
-   kẻ đáy (thay pill tô màu), số việc chờ là chữ số son nhỏ kiểu chú thích.
+   kẻ đáy (thay pill tô màu), số việc chờ là con dấu son đặc.
    Đường kẻ đáy là box-shadow inset của .sidebar (vẽ dưới nội dung) để gạch chân
    tab — cũng là box-shadow inset, nằm trong vùng cuộn ngang — phủ được lên nó. */
 .sidebar {
@@ -214,16 +214,24 @@
   height: 1em;
 }
 
-/* Số việc chờ: chữ số Lora son nhỏ, nâng lên như dấu chú thích — không viên thuốc */
+/* Số việc chờ: con dấu son đặc, chữ số Lora màu giấy — tròn khi 1 chữ số, giãn
+   ngang thành viên thuốc khi "9+" (user muốn có nền cho dễ nhìn, 2026-10-30) */
 .nav-badge {
-  position: relative;
-  top: -0.5em;
-  margin-left: -0.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.3rem;
+  margin-left: -0.1rem;
+  border-radius: 999px;
+  background: var(--nv-seal);
+  color: var(--nv-paper);
   font-family: var(--nv-serif);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  font-weight: 600;
   font-variant-numeric: lining-nums tabular-nums;
   line-height: 1;
-  color: var(--nv-seal);
 }
 
 .sidebar-footer {

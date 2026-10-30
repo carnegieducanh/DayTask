@@ -549,7 +549,7 @@
   border: 1px solid var(--primary);
   border-radius: 50%;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary-ink);
   cursor: pointer;
   transition: opacity 0.15s;
 }

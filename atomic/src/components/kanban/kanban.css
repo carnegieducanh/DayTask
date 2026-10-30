@@ -143,7 +143,7 @@
   border: 1px solid var(--primary);
   border-radius: 4px;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary-ink);
   font-family: var(--font);
   font-size: 0.84rem;
   font-weight: 600;
@@ -731,7 +731,7 @@ html.has-bg-image .yp-today {
   border-radius: var(--radius-sm);
   border: none;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary-ink);
   cursor: pointer;
   display: flex;
   align-items: center;

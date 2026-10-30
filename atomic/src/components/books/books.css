@@ -415,7 +415,7 @@
   border: 1px solid var(--primary);
   border-radius: 4px;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary-ink);
   font-family: var(--font);
   font-size: 0.84rem;
   font-weight: 600;

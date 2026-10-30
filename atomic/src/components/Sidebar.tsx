@@ -38,6 +38,7 @@ export default function Sidebar() {
   const {
     activeTab,
     tasks,
+    taskTimeEntries,
     setActiveTab,
     setSelectedDate,
     theme,
@@ -57,7 +58,10 @@ export default function Sidebar() {
     { id: "heatmap",  label: t.nav.heatmap,  icon: <IconChartDots size={16} stroke={1.75} /> },
   ];
 
-  const pendingCount = tasks.filter((t) => !t.is_done).length;
+  // Chỉ đếm task đã xếp giờ — khớp với khối "Hôm nay" của TodayView (task còn nằm trong deck không tính)
+  const pendingCount = tasks.filter(
+    (t) => !t.is_done && taskTimeEntries.some((e) => e.task_id === t.id)
+  ).length;
 
   // Ref luôn giữ giá trị activeTab mới nhất, dùng trong các effect không muốn re-subscribe mỗi lần đổi tab
   const activeTabRef = useRef(activeTab);

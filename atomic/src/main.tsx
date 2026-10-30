@@ -4,6 +4,10 @@ import ReactDOM from "react-dom/client";
 // Chỉ có 400 thường + nghiêng: Lora không có bản 300, chỗ nào ghi font-weight: 300 vẫn ra 400 như trước.
 import "@fontsource/lora/400.css";
 import "@fontsource/lora/400-italic.css";
+// 600/700 chỉ cho chữ số trong badge: 600 = số việc chờ trên navbar, 700 = nhãn giờ hiện tại
+// ở Day view — chỉ bộ latin; chữ tiếng Việt Lora đậm (nếu sau này có) sẽ cần thêm vietnamese-*.
+import "@fontsource/lora/latin-600.css";
+import "@fontsource/lora/latin-700.css";
 import App from "./App";
 import TrayPopup from "./components/TrayPopup";
 import TrayContextMenu from "./components/TrayContextMenu";
