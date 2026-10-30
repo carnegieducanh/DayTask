@@ -211,7 +211,7 @@
   font-style: italic;
   font-size: 1.25rem;
   line-height: 1;
-  color: var(--hv-muted);
+  color: var(--primary); /* đầu mục La Mã theo màu chủ đạo, đồng bộ toàn app */
 }
 
 .hv-section-title {
@@ -220,7 +220,7 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--hv-ink-2);
+  color: var(--primary);
 }
 
 .hv-period-nav {

@@ -38,11 +38,18 @@ export default function SettingsModal() {
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("general");
 
+  const TABS: { key: ActiveTab; label: string }[] = [
+    { key: "general", label: t.settings.generalTab },
+    { key: "greeting", label: t.settings.greetingTab },
+    { key: "data", label: t.settings.dataTab },
+    { key: "vocab", label: t.vocab.tabLabel },
+    { key: "background", label: t.settings.backgroundTab },
+  ];
+
   // Custom accent color picker: kept here rather than inside GeneralTab because
-  // .color-picker-popup-wrap is position:fixed and .modal has backdrop-filter —
-  // backdrop-filter establishes a containing block, so nesting the popup inside
-  // the modal's tree would clip/reposition it to the modal box instead of the
-  // viewport. It has to stay a sibling of .modal, same as in the original layout.
+  // .st-picker-wrap is position:fixed and must be laid out against the viewport,
+  // not the sheet — it stays a sibling of .st-sheet inside the overlay, same as
+  // in the original layout.
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [pickerClosing, setPickerClosing] = useState(false);
   const [customHexInput, setCustomHexInput] = useState(customAccentColor);
@@ -113,48 +120,34 @@ export default function SettingsModal() {
 
   return (
     <div className="modal-overlay" {...overlayHandlers}>
-      <div className="modal modal-settings" onClick={(e) => e.stopPropagation()}>
-        <div className="settings-head">
-          <span className="settings-head-title">{t.settings.title}</span>
-          <button className="settings-close-btn" onClick={() => setOpenSettingsModal(false)}>
-            <IconX size={13} />
+      <div className="st-sheet" role="dialog" aria-label={t.settings.title} onClick={(e) => e.stopPropagation()}>
+        <header className="st-head">
+          <div className="st-head-main">
+            <span className="st-eyebrow">Atomic · {t.settings.version(version)}</span>
+            <h2 className="st-title">{t.settings.title}</h2>
+          </div>
+          <button
+            className="st-round-btn"
+            onClick={() => setOpenSettingsModal(false)}
+            aria-label={t.settings.close}
+          >
+            <IconX size={14} stroke={1.75} />
           </button>
-        </div>
+        </header>
 
-        <div className="settings-tabs">
-          <button
-            className={`settings-tab-btn${activeTab === "general" ? " active" : ""}`}
-            onClick={() => setActiveTab("general")}
-          >
-            {t.settings.generalTab}
-          </button>
-          <button
-            className={`settings-tab-btn${activeTab === "greeting" ? " active" : ""}`}
-            onClick={() => setActiveTab("greeting")}
-          >
-            {t.settings.greetingTab}
-          </button>
-          <button
-            className={`settings-tab-btn${activeTab === "data" ? " active" : ""}`}
-            onClick={() => setActiveTab("data")}
-          >
-            {t.settings.dataTab}
-          </button>
-          <button
-            className={`settings-tab-btn${activeTab === "vocab" ? " active" : ""}`}
-            onClick={() => setActiveTab("vocab")}
-          >
-            {t.vocab.tabLabel}
-          </button>
-          <button
-            className={`settings-tab-btn${activeTab === "background" ? " active" : ""}`}
-            onClick={() => setActiveTab("background")}
-          >
-            {t.settings.backgroundTab}
-          </button>
-        </div>
+        <nav className="st-tabs">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              className={`st-tab${activeTab === tab.key ? " active" : ""}`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
 
-        <div className="settings-body" ref={bodyRef}>
+        <div className="st-body" ref={bodyRef}>
           {activeTab === "general" && (
             <GeneralTab onSwatchClick={handleSwatchClick} onCustomSwatchClick={handleCustomSwatchClick} />
           )}
@@ -163,93 +156,82 @@ export default function SettingsModal() {
           {activeTab === "vocab" && <VocabTab />}
           {activeTab === "background" && <BackgroundTab />}
         </div>
-
-        <div className="settings-version">Atomic v{version}</div>
       </div>
 
       {showCustomPicker && accentColor === "custom" && (
-        <div className={`color-picker-popup-wrap${pickerClosing ? " closing" : ""}`} onClick={closeColorPicker}>
-          <div className="color-picker-popup" onClick={(e) => e.stopPropagation()}>
-            <div className="color-picker-popup-head">
-              <span className="color-picker-popup-title">🎨 {t.settings.custom}</span>
-              <button className="color-picker-popup-close" onClick={closeColorPicker}>
-                <IconX size={13} />
+        <div className={`st-picker-wrap${pickerClosing ? " closing" : ""}`} onClick={closeColorPicker}>
+          <div className="st-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="st-picker-head">
+              <span className="st-eyebrow">{t.settings.custom}</span>
+              <button className="st-round-btn st-round-btn--sm" onClick={closeColorPicker} aria-label={t.settings.close}>
+                <IconX size={12} stroke={1.75} />
               </button>
             </div>
-            <div className="color-picker-popup-body">
-              <div className="settings-custom-picker">
-                <input
-                  type="color"
-                  className="settings-color-native"
-                  value={isValidHex(customHexInput) ? customHexInput : customAccentColor}
-                  onChange={(e) => {
-                    setCustomHexInput(e.target.value);
-                    setCustomAccentColor(e.target.value);
-                  }}
-                />
-                <input
-                  type="text"
-                  className="settings-hex-input"
-                  value={customHexInput}
-                  placeholder="#000000"
-                  maxLength={7}
-                  spellCheck={false}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setCustomHexInput(val);
-                    if (isValidHex(val)) setCustomAccentColor(val);
-                  }}
-                  onBlur={() => {
-                    if (!isValidHex(customHexInput)) setCustomHexInput(customAccentColor);
-                  }}
-                />
-                {hasLowContrast(customHexInput) && (
-                  <span className="settings-contrast-warn" title={t.settings.lowContrastWarning}>
-                    <IconAlertTriangle size={14} />
-                  </span>
-                )}
-                <button
-                  className="settings-save-color-btn"
-                  disabled={!isValidHex(customHexInput)}
-                  onClick={() => saveAccentColor(customHexInput)}
-                >
-                  {t.settings.saveColor}
-                </button>
-              </div>
-              {savedAccentColors.length > 0 && (
-                <>
-                  <div className="settings-saved-colors-row">
-                    <span className="settings-saved-label">{t.settings.savedColors}</span>
-                    <div className="settings-saved-colors">
-                      {savedAccentColors.map((hex) => (
-                        <button
-                          key={hex}
-                          className={`settings-saved-swatch${selectedSavedHex === hex ? " selected" : ""}`}
-                          title={hex}
-                          style={{ background: hex }}
-                          onClick={() => {
-                            setCustomHexInput(hex);
-                            setCustomAccentColor(hex);
-                            setSelectedSavedHex(prev => prev === hex ? null : hex);
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  {selectedSavedHex !== null && savedAccentColors.includes(selectedSavedHex) && (
-                    <div className="settings-saved-delete-row">
-                      <button
-                        className="settings-saved-delete-btn"
-                        onClick={handleDeleteSavedColor}
-                      >
-                        <IconTrash size={12} />
-                        {t.settings.deleteSavedColor}
-                      </button>
-                    </div>
-                  )}
-                </>
+            <div className="st-picker-row">
+              <input
+                type="color"
+                className="st-picker-native"
+                value={isValidHex(customHexInput) ? customHexInput : customAccentColor}
+                onChange={(e) => {
+                  setCustomHexInput(e.target.value);
+                  setCustomAccentColor(e.target.value);
+                }}
+              />
+              <input
+                type="text"
+                className="st-picker-hex"
+                value={customHexInput}
+                placeholder="#000000"
+                maxLength={7}
+                spellCheck={false}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCustomHexInput(val);
+                  if (isValidHex(val)) setCustomAccentColor(val);
+                }}
+                onBlur={() => {
+                  if (!isValidHex(customHexInput)) setCustomHexInput(customAccentColor);
+                }}
+              />
+              {hasLowContrast(customHexInput) && (
+                <span className="st-picker-warn" title={t.settings.lowContrastWarning}>
+                  <IconAlertTriangle size={14} stroke={1.75} />
+                </span>
               )}
+              <button
+                className="st-btn st-btn--sm"
+                disabled={!isValidHex(customHexInput)}
+                onClick={() => saveAccentColor(customHexInput)}
+              >
+                {t.settings.saveColor}
+              </button>
             </div>
+            {savedAccentColors.length > 0 && (
+              <div className="st-picker-saved">
+                <span className="st-label">{t.settings.savedColors}</span>
+                <div className="st-picker-swatches">
+                  {savedAccentColors.map((hex) => (
+                    <button
+                      key={hex}
+                      className={`st-swatch st-swatch--sm${selectedSavedHex === hex ? " active" : ""}`}
+                      title={hex}
+                      style={{ background: hex }}
+                      onClick={() => {
+                        setCustomHexInput(hex);
+                        setCustomAccentColor(hex);
+                        setSelectedSavedHex(prev => prev === hex ? null : hex);
+                      }}
+                    />
+                  ))}
+                </div>
+                {selectedSavedHex !== null && savedAccentColors.includes(selectedSavedHex) && (
+                  <button className="st-link st-link--danger" onClick={handleDeleteSavedColor}>
+                    <IconTrash size={12} stroke={1.75} />
+                    {t.settings.deleteSavedColor}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

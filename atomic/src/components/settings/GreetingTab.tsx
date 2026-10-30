@@ -4,6 +4,8 @@ import { useT } from "../../i18n";
 import { loadGreetings, saveGreetings, resetGreetings } from "../../store/greetingsStore";
 import type { Period, GreetingItem, GreetingsStore } from "../../store/greetingsStore";
 
+const ROMAN = ["I", "II", "III", "IV", "V"];
+
 export default function GreetingTab() {
   const t = useT();
 
@@ -138,143 +140,145 @@ export default function GreetingTab() {
   }
 
   return (
-    <div className="settings-tab-panel">
-      <div className="settings-greeting-toolbar">
-        <button className="settings-greeting-reset-btn" onClick={handleReset}>
+    <div className="st-panel">
+      <div className="st-lead">
+        <p className="st-hint">{t.settings.greetingIntro}</p>
+        <button className="st-link" onClick={handleReset}>
           {t.settings.greetingReset}
         </button>
       </div>
 
-      {PERIODS.map(({ key, label }) => {
-        const items = greetingsStore[key] ?? [];
-        const isOpen = openPeriod === key;
-        return (
-          <div key={key} className="settings-section">
-            <button
-              className="settings-row settings-tags-row"
-              onClick={() => setOpenPeriod(isOpen ? null : key)}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span className="settings-row-label" style={{ minWidth: "4.5rem" }}>
-                  {label}
-                </span>
-                <span className="settings-tag-count">{items.length}</span>
-              </div>
-              <IconChevronRight
-                size={14}
-                style={{
-                  color: "var(--text-secondary)",
-                  transition: "transform 0.2s",
-                  transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
-                  flexShrink: 0,
-                }}
-              />
-            </button>
+      <ol className="st-folds">
+        {PERIODS.map(({ key, label }, i) => {
+          const items = greetingsStore[key] ?? [];
+          const isOpen = openPeriod === key;
+          return (
+            <li key={key} className={`st-fold${isOpen ? " open" : ""}`}>
+              <button
+                className="st-fold-head"
+                aria-expanded={isOpen}
+                onClick={() => setOpenPeriod(isOpen ? null : key)}
+              >
+                <span className="st-fold-num">{ROMAN[i]}</span>
+                <span className="st-fold-label">{label}</span>
+                <span className="st-count">{items.length}</span>
+                <IconChevronRight className="st-fold-chev" size={14} stroke={1.75} />
+              </button>
 
-            <div className={`settings-tags-dropdown${isOpen ? " open" : ""}`}>
-              <div className="settings-tags-list">
-                {items.map((g) =>
-                  editingId === g.id ? (
-                    <div key={g.id} className="settings-greeting-row settings-greeting-row--editing">
-                      {g.isFixed && (
-                        <span className="settings-greeting-fixed-dot" title={t.settings.greetingFixedHint} />
-                      )}
+              <div className="st-fold-body">
+                <div className="st-fold-inner">
+                  {items.length === 0 && addingPeriod !== key && (
+                    <p className="st-hint">{t.settings.greetingNoCustom}</p>
+                  )}
+                  {items.map((g) =>
+                    editingId === g.id ? (
+                      <div key={g.id} className="st-greet is-editing">
+                        <input
+                          className="st-line-input"
+                          value={editVI}
+                          onChange={(e) => setEditVI(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleSaveEdit(key);
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                          spellCheck={false}
+                          autoFocus
+                        />
+                        <input
+                          className="st-line-input st-line-input--alt"
+                          value={editEN}
+                          onChange={(e) => setEditEN(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleSaveEdit(key);
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                          spellCheck={false}
+                        />
+                        <div className="st-actions is-visible">
+                          <button className="st-icon-btn" aria-label={t.tags.save} onClick={() => handleSaveEdit(key)}>
+                            <IconCheck size={13} stroke={1.75} />
+                          </button>
+                          <button className="st-icon-btn" aria-label={t.tags.cancel} onClick={cancelEdit}>
+                            <IconX size={13} stroke={1.75} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div key={g.id} className="st-greet">
+                        <span className="st-greet-vi">
+                          {g.isFixed && (
+                            <span className="st-fixed-mark" title={t.settings.greetingFixedHint} />
+                          )}
+                          {g.vi || "—"}
+                        </span>
+                        <span className="st-greet-en">{g.en || "—"}</span>
+                        <div className="st-actions">
+                          <button
+                            className="st-icon-btn"
+                            title={t.tags.renameTag}
+                            aria-label={t.tags.renameTag}
+                            onClick={() => handleStartEdit(g)}
+                          >
+                            <IconPencil size={13} stroke={1.75} />
+                          </button>
+                          <button
+                            className="st-icon-btn danger"
+                            title={t.tags.deleteTag}
+                            aria-label={t.tags.deleteTag}
+                            onClick={() => handleDeleteGreeting(key, g)}
+                          >
+                            <IconTrash size={13} stroke={1.75} />
+                          </button>
+                        </div>
+                      </div>
+                    ),
+                  )}
+
+                  {addingPeriod === key ? (
+                    <div className="st-greet is-editing">
                       <input
-                        className="settings-greeting-input"
-                        value={editVI}
-                        onChange={(e) => setEditVI(e.target.value)}
+                        className="st-line-input"
+                        placeholder={t.settings.greetingPlaceholderVI}
+                        value={newVI}
+                        onChange={(e) => setNewVI(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") handleSaveEdit(key);
-                          if (e.key === "Escape") cancelEdit();
+                          if (e.key === "Enter") handleAddGreeting(key);
+                          if (e.key === "Escape") cancelAdd();
                         }}
                         spellCheck={false}
                         autoFocus
                       />
                       <input
-                        className="settings-greeting-input"
-                        value={editEN}
-                        onChange={(e) => setEditEN(e.target.value)}
+                        className="st-line-input st-line-input--alt"
+                        placeholder={t.settings.greetingPlaceholderEN}
+                        value={newEN}
+                        onChange={(e) => setNewEN(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") handleSaveEdit(key);
-                          if (e.key === "Escape") cancelEdit();
+                          if (e.key === "Enter") handleAddGreeting(key);
+                          if (e.key === "Escape") cancelAdd();
                         }}
                         spellCheck={false}
                       />
-                      <button className="icon-btn" onClick={() => handleSaveEdit(key)}>
-                        <IconCheck size={14} />
-                      </button>
-                      <button className="icon-btn" onClick={cancelEdit}>
-                        <IconX size={14} />
-                      </button>
+                      <div className="st-actions is-visible">
+                        <button className="st-icon-btn" aria-label={t.tags.save} onClick={() => handleAddGreeting(key)}>
+                          <IconCheck size={13} stroke={1.75} />
+                        </button>
+                        <button className="st-icon-btn" aria-label={t.tags.cancel} onClick={cancelAdd}>
+                          <IconX size={13} stroke={1.75} />
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    <div key={g.id} className="settings-greeting-row">
-                      {g.isFixed && (
-                        <span className="settings-greeting-fixed-dot" title={t.settings.greetingFixedHint} />
-                      )}
-                      <span className="settings-greeting-vi">{g.vi || "—"}</span>
-                      <span className="settings-greeting-sep">·</span>
-                      <span className="settings-greeting-en">{g.en || "—"}</span>
-                      <button
-                        className="settings-tag-action-btn"
-                        title={t.tags.renameTag}
-                        onClick={() => handleStartEdit(g)}
-                      >
-                        <IconPencil size={12} />
-                      </button>
-                      <button
-                        className="settings-tag-action-btn settings-tag-action-delete"
-                        title={t.tags.deleteTag}
-                        onClick={() => handleDeleteGreeting(key, g)}
-                      >
-                        <IconTrash size={12} />
-                      </button>
-                    </div>
-                  ),
-                )}
-
-                {addingPeriod === key ? (
-                  <div className="settings-greeting-add-row">
-                    <input
-                      className="settings-greeting-input"
-                      placeholder={t.settings.greetingPlaceholderVI}
-                      value={newVI}
-                      onChange={(e) => setNewVI(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleAddGreeting(key);
-                        if (e.key === "Escape") cancelAdd();
-                      }}
-                      spellCheck={false}
-                      autoFocus
-                    />
-                    <input
-                      className="settings-greeting-input"
-                      placeholder={t.settings.greetingPlaceholderEN}
-                      value={newEN}
-                      onChange={(e) => setNewEN(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleAddGreeting(key);
-                        if (e.key === "Escape") cancelAdd();
-                      }}
-                      spellCheck={false}
-                    />
-                    <button className="icon-btn" onClick={() => handleAddGreeting(key)}>
-                      <IconCheck size={14} />
+                    <button className="st-add" onClick={() => startAdding(key)}>
+                      {t.settings.greetingAdd}
                     </button>
-                    <button className="icon-btn" onClick={cancelAdd}>
-                      <IconX size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <button className="settings-tag-add-btn" onClick={() => startAdding(key)}>
-                    {t.settings.greetingAdd}
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-        );
-      })}
+            </li>
+          );
+        })}
+      </ol>
 
       {showResetToast && (
         <div className="delete-toast" role="status" onClick={(e) => e.stopPropagation()}>

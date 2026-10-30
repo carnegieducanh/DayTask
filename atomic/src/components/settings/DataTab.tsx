@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { IconCheck, IconX, IconPencil, IconTrash, IconChevronRight, IconDownload, IconUpload } from "@tabler/icons-react";
+import { IconCheck, IconX, IconPencil, IconTrash, IconDownload, IconUpload } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 
@@ -17,7 +17,6 @@ export default function DataTab() {
   const [showNewTagInput, setShowNewTagInput] = useState(false);
   const [renamingTagId, setRenamingTagId] = useState<number | null>(null);
   const [renameInput, setRenameInput] = useState("");
-  const [tagSectionOpen, setTagSectionOpen] = useState(false);
 
   function handleImportClick() {
     setImportStatus("idle");
@@ -54,174 +53,149 @@ export default function DataTab() {
     }
   }
 
+  function commitNewTag() {
+    if (!newTagInput.trim()) return;
+    addTag(newTagInput.trim());
+    setNewTagInput("");
+    setShowNewTagInput(false);
+  }
+
+  function cancelNewTag() {
+    setShowNewTagInput(false);
+    setNewTagInput("");
+  }
+
+  function commitRename(id: number) {
+    if (renameInput.trim()) updateTag(id, renameInput.trim());
+    setRenamingTagId(null);
+  }
+
   return (
-    <div className="settings-tab-panel">
-      <div className="settings-section">
-        <button className="settings-row settings-tags-row" onClick={() => setTagSectionOpen((o) => !o)}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span className="settings-row-label">{t.tags.sectionTitle}</span>
-            {tags.length > 0 && <span className="settings-tag-count">{tags.length}</span>}
-          </div>
-          <IconChevronRight
-            size={14}
-            style={{
-              color: "var(--text-secondary)",
-              transition: "transform 0.2s",
-              transform: tagSectionOpen ? "rotate(90deg)" : "rotate(0deg)",
-              flexShrink: 0,
-            }}
-          />
-        </button>
-        <div className={`settings-tags-dropdown${tagSectionOpen ? " open" : ""}`}>
-          <div className="settings-tags-list">
-            {tags.length === 0 && <div className="settings-tags-empty">{t.tags.noTags}</div>}
-            {tags.map((tag) => (
-              <div key={tag.id} className="settings-tag-chip-row">
-                {renamingTagId === tag.id ? (
-                  <div className="settings-tag-chip editing">
-                    <input
-                      className="settings-tag-rename-input"
-                      value={renameInput}
-                      onChange={(e) => setRenameInput(e.target.value)}
-                      spellCheck={false}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          if (renameInput.trim()) updateTag(tag.id, renameInput.trim());
-                          setRenamingTagId(null);
-                        }
-                        if (e.key === "Escape") setRenamingTagId(null);
-                      }}
-                      autoFocus
-                    />
-                    <button
-                      className="settings-tag-action-btn"
-                      title={t.tags.save}
-                      onClick={() => {
-                        if (renameInput.trim()) updateTag(tag.id, renameInput.trim());
-                        setRenamingTagId(null);
-                      }}
-                    >
-                      <IconCheck size={12} />
+    <div className="st-panel">
+      {/* I — Thẻ tag */}
+      <section className="st-section">
+        <div className="st-section-head">
+          <span className="st-section-num">I</span>
+          <h3 className="st-section-title">{t.tags.tagLabel}</h3>
+          {tags.length > 0 && <span className="st-count">{tags.length}</span>}
+        </div>
+
+        {tags.length === 0 && !showNewTagInput && <p className="st-hint">{t.tags.noTags}</p>}
+
+        {tags.length > 0 && (
+          <ul className="st-tag-grid">
+            {tags.map((tag) =>
+              renamingTagId === tag.id ? (
+                <li key={tag.id} className="st-tag is-editing">
+                  <span className="st-dot" style={{ background: tag.color }} />
+                  <input
+                    className="st-line-input"
+                    value={renameInput}
+                    onChange={(e) => setRenameInput(e.target.value)}
+                    spellCheck={false}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitRename(tag.id);
+                      if (e.key === "Escape") setRenamingTagId(null);
+                    }}
+                    autoFocus
+                  />
+                  <div className="st-actions is-visible">
+                    <button className="st-icon-btn" title={t.tags.save} aria-label={t.tags.save} onClick={() => commitRename(tag.id)}>
+                      <IconCheck size={13} stroke={1.75} />
+                    </button>
+                    <button className="st-icon-btn" title={t.tags.cancel} aria-label={t.tags.cancel} onClick={() => setRenamingTagId(null)}>
+                      <IconX size={13} stroke={1.75} />
                     </button>
                   </div>
-                ) : (
-                  <div className="settings-tag-chip">
-                    <span className="settings-tag-name">{tag.name}</span>
+                </li>
+              ) : (
+                <li key={tag.id} className="st-tag">
+                  <span className="st-dot" style={{ background: tag.color }} />
+                  <span className="st-tag-name">{tag.name}</span>
+                  <div className="st-actions">
                     <button
-                      className="settings-tag-action-btn"
+                      className="st-icon-btn"
                       title={t.tags.renameTag}
+                      aria-label={t.tags.renameTag}
                       onClick={() => {
                         setRenamingTagId(tag.id);
                         setRenameInput(tag.name);
                       }}
                     >
-                      <IconPencil size={12} />
+                      <IconPencil size={13} stroke={1.75} />
                     </button>
                     <button
-                      className="settings-tag-action-btn settings-tag-action-delete"
+                      className="st-icon-btn danger"
                       title={t.tags.deleteTag}
+                      aria-label={t.tags.deleteTag}
                       onClick={() => softDeleteTag(tag.id)}
                     >
-                      <IconTrash size={12} />
+                      <IconTrash size={13} stroke={1.75} />
                     </button>
                   </div>
-                )}
-              </div>
-            ))}
-            {showNewTagInput ? (
-              <div className="settings-tag-new">
-                <input
-                  className="settings-tag-rename-input"
-                  value={newTagInput}
-                  onChange={(e) => setNewTagInput(e.target.value)}
-                  spellCheck={false}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      if (newTagInput.trim()) {
-                        addTag(newTagInput.trim());
-                        setNewTagInput("");
-                        setShowNewTagInput(false);
-                      }
-                    }
-                    if (e.key === "Escape") {
-                      setShowNewTagInput(false);
-                      setNewTagInput("");
-                    }
-                  }}
-                  placeholder={t.tags.addPlaceholder}
-                  autoFocus
-                />
-                <button
-                  className="icon-btn"
-                  onClick={() => {
-                    if (newTagInput.trim()) {
-                      addTag(newTagInput.trim());
-                      setNewTagInput("");
-                      setShowNewTagInput(false);
-                    }
-                  }}
-                >
-                  <IconCheck size={14} />
-                </button>
-                <button
-                  className="icon-btn"
-                  onClick={() => {
-                    setShowNewTagInput(false);
-                    setNewTagInput("");
-                  }}
-                >
-                  <IconX size={14} />
-                </button>
-              </div>
-            ) : (
-              <button className="settings-tag-add-btn" onClick={() => setShowNewTagInput(true)}>
-                {t.tags.createNew}
-              </button>
+                </li>
+              ),
             )}
+          </ul>
+        )}
+
+        {showNewTagInput ? (
+          <div className="st-new-line">
+            <input
+              className="st-line-input"
+              value={newTagInput}
+              onChange={(e) => setNewTagInput(e.target.value)}
+              spellCheck={false}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitNewTag();
+                if (e.key === "Escape") cancelNewTag();
+              }}
+              placeholder={t.tags.addPlaceholder}
+              autoFocus
+            />
+            <button className="st-icon-btn" title={t.tags.save} aria-label={t.tags.save} onClick={commitNewTag}>
+              <IconCheck size={14} stroke={1.75} />
+            </button>
+            <button className="st-icon-btn" title={t.tags.cancel} aria-label={t.tags.cancel} onClick={cancelNewTag}>
+              <IconX size={14} stroke={1.75} />
+            </button>
           </div>
+        ) : (
+          <button className="st-add" onClick={() => setShowNewTagInput(true)}>
+            {t.tags.createNew}
+          </button>
+        )}
+      </section>
+
+      {/* II — Sao lưu & khôi phục */}
+      <section className="st-section">
+        <div className="st-section-head">
+          <span className="st-section-num">II</span>
+          <h3 className="st-section-title">{t.settings.backup}</h3>
         </div>
-      </div>
 
-      <div className="settings-divider" />
-
-      <div className="settings-section">
-        <div className="settings-section-label">{t.settings.backup}</div>
-        <div className="settings-action-group">
-          <button className="settings-action-btn" onClick={handleExport} disabled={exportStatus === "loading"}>
-            <IconDownload size={14} />
+        <div className="st-btn-row">
+          <button className="st-btn" onClick={handleExport} disabled={exportStatus === "loading"}>
+            <IconDownload size={14} stroke={1.75} />
             {exportStatus === "loading" ? t.settings.exporting : t.settings.exportData}
           </button>
-          <button
-            className="settings-action-btn"
-            onClick={handleImportClick}
-            disabled={importStatus === "loading"}
-          >
-            <IconUpload size={14} />
+          <button className="st-btn" onClick={handleImportClick} disabled={importStatus === "loading"}>
+            <IconUpload size={14} stroke={1.75} />
             {importStatus === "loading" ? t.settings.importing : t.settings.importData}
           </button>
         </div>
-        <p className="settings-backup-hint">{t.settings.backupHint}</p>
-        {exportStatus === "success" && (
-          <div className="settings-backup-msg settings-backup-ok" style={{ margin: "0 16px 8px" }}>
-            {t.settings.exportSuccess}
-          </div>
-        )}
+
+        {exportStatus === "success" && <p className="st-note ok">✓ {t.settings.exportSuccess}</p>}
         {exportStatus === "error" && (
-          <div className="settings-backup-msg settings-backup-err" style={{ margin: "0 16px 8px" }}>
+          <p className="st-note err">
             {t.settings.exportError}: {exportError}
-          </div>
+          </p>
         )}
-        {importStatus === "success" && (
-          <div className="settings-backup-msg settings-backup-ok" style={{ margin: "0 16px 8px" }}>
-            {t.settings.importSuccess}
-          </div>
-        )}
-        {importStatus === "error" && (
-          <div className="settings-backup-msg settings-backup-err" style={{ margin: "0 16px 8px" }}>
-            {importError}
-          </div>
-        )}
-      </div>
+        {importStatus === "success" && <p className="st-note ok">✓ {t.settings.importSuccess}</p>}
+        {importStatus === "error" && <p className="st-note err">{importError}</p>}
+
+        <p className="st-hint">{t.settings.backupHint}</p>
+      </section>
 
       <input
         ref={fileInputRef}

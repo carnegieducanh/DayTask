@@ -38,98 +38,108 @@ export default function BackgroundTab() {
     }
   }
 
+  const pct = (v: number) => ({ "--pct": `${v}%` }) as React.CSSProperties;
+
   return (
-    <div className="settings-tab-panel">
+    <div className="st-panel">
       {!isTauri() ? (
-        <p className="settings-backup-hint" style={{ padding: "10px 16px" }}>
-          {t.settings.backgroundUnavailable}
-        </p>
+        <p className="st-empty">{t.settings.backgroundUnavailable}</p>
       ) : (
         <>
-          <div className="settings-section">
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">{t.settings.backgroundEnable}</div>
-                <div className="settings-row-sub">{t.settings.backgroundEnableDesc}</div>
+          {/* I — Ảnh nền */}
+          <section className="st-section">
+            <div className="st-section-head">
+              <span className="st-section-num">I</span>
+              <h3 className="st-section-title">{t.settings.backgroundImage}</h3>
+            </div>
+
+            <div className="st-row">
+              <div className="st-row-text">
+                <div className="st-row-label">{t.settings.backgroundEnable}</div>
+                <div className="st-row-desc">{t.settings.backgroundEnableDesc}</div>
               </div>
               <button
-                className={`settings-toggle${backgroundEnabled ? " active" : ""}`}
+                role="switch"
+                aria-checked={backgroundEnabled}
+                className={`st-toggle${backgroundEnabled ? " active" : ""}`}
                 onClick={() => setBackgroundEnabled(!backgroundEnabled)}
                 disabled={!backgroundImageUrl}
                 aria-label={t.settings.backgroundEnable}
               />
             </div>
-          </div>
 
-          <div className="settings-divider" />
-
-          <div className="settings-section">
-            <div className="settings-section-label">{t.settings.backgroundImage}</div>
-
-            <div className="settings-bg-preview-row">
-              {backgroundImageUrl && (
-                <img src={backgroundImageUrl} alt="" className="settings-bg-preview" />
-              )}
-              <div className="settings-action-group">
-                <button className="settings-action-btn" onClick={handleBgChooseClick} disabled={bgUploading}>
-                  <IconPhoto size={14} />
+            <div className="st-bg">
+              {backgroundImageUrl && <img src={backgroundImageUrl} alt="" className="st-bg-preview" />}
+              <div className="st-bg-actions">
+                <button className="st-btn" onClick={handleBgChooseClick} disabled={bgUploading}>
+                  <IconPhoto size={14} stroke={1.75} />
                   {bgUploading ? t.settings.backgroundUploading : t.settings.backgroundChoose}
                 </button>
                 {backgroundImageUrl && (
-                  <button className="settings-action-btn" onClick={openBackgroundImageFolder}>
-                    <IconFolderOpen size={14} />
+                  <button className="st-btn" onClick={openBackgroundImageFolder}>
+                    <IconFolderOpen size={14} stroke={1.75} />
                     {t.settings.backgroundOpenFolder}
                   </button>
                 )}
                 {backgroundImageUrl && (
-                  <button className="settings-action-btn" onClick={removeBackgroundImage}>
-                    <IconTrash size={14} />
+                  <button className="st-btn danger" onClick={removeBackgroundImage}>
+                    <IconTrash size={14} stroke={1.75} />
                     {t.settings.backgroundRemove}
                   </button>
                 )}
               </div>
             </div>
-          </div>
+          </section>
 
+          {/* II — Hiển thị (chỉ khi đã có ảnh) */}
           {backgroundImageUrl && (
-            <>
-              <div className="settings-divider" />
-              <div className="settings-section">
-                <div className="settings-section-label">{t.settings.backgroundOpacity}</div>
-                <div className="vocab-interval-row">
+            <section className="st-section">
+              <div className="st-section-head">
+                <span className="st-section-num">II</span>
+                <h3 className="st-section-title">{t.settings.backgroundDisplay}</h3>
+              </div>
+
+              <div className="st-row">
+                <div className="st-row-text">
+                  <div className="st-row-label">{t.settings.backgroundOpacity}</div>
+                </div>
+                <div className="st-range-wrap">
                   <input
                     type="range"
                     min={0}
                     max={100}
                     step={1}
                     value={backgroundOpacity}
-                    className="vocab-interval-slider"
+                    className="st-range"
+                    style={pct(backgroundOpacity)}
                     onChange={(e) => setBackgroundOpacity(Number(e.target.value))}
+                    aria-label={t.settings.backgroundOpacity}
                   />
-                  <span className="vocab-interval-label">{backgroundOpacity}%</span>
+                  <span className="st-range-val">{backgroundOpacity}%</span>
                 </div>
               </div>
 
-              <div className="settings-divider" />
-              <div className="settings-section">
-                <div className="settings-section-label">{t.settings.backgroundUiTransparency}</div>
-                <div className="settings-row-sub" style={{ padding: "0 16px 6px" }}>
-                  {t.settings.backgroundUiTransparencyDesc}
+              <div className="st-row">
+                <div className="st-row-text">
+                  <div className="st-row-label">{t.settings.backgroundUiTransparency}</div>
+                  <div className="st-row-desc">{t.settings.backgroundUiTransparencyDesc}</div>
                 </div>
-                <div className="vocab-interval-row">
+                <div className="st-range-wrap">
                   <input
                     type="range"
                     min={0}
                     max={100}
                     step={1}
                     value={uiTransparency}
-                    className="vocab-interval-slider"
+                    className="st-range"
+                    style={pct(uiTransparency)}
                     onChange={(e) => setUiTransparency(Number(e.target.value))}
+                    aria-label={t.settings.backgroundUiTransparency}
                   />
-                  <span className="vocab-interval-label">{uiTransparency}%</span>
+                  <span className="st-range-val">{uiTransparency}%</span>
                 </div>
               </div>
-            </>
+            </section>
           )}
         </>
       )}

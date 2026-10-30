@@ -112,167 +112,155 @@ export default function VocabTab() {
     if (pasteZoneRef.current) pasteZoneRef.current.value = "";
   }
 
+  const editKeys = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleEditVocabSave();
+    if (e.key === "Escape") setEditingVocabId(null);
+  };
+
   return (
-    <div className="settings-tab-panel">
-      <div className="settings-section">
-        <div className="settings-section-label">{t.vocab.intervalLabel}</div>
-        <div className="vocab-interval-row">
-          <input
-            type="range"
-            min={1}
-            max={60}
-            step={1}
-            value={vocabInterval}
-            className="vocab-interval-slider"
-            onChange={(e) => handleIntervalChange(Number(e.target.value))}
-          />
-          <span className="vocab-interval-label">{t.vocab.intervalUnit(vocabInterval)}</span>
+    <div className="st-panel">
+      {/* I — Thời gian đổi từ */}
+      <section className="st-section">
+        <div className="st-section-head">
+          <span className="st-section-num">I</span>
+          <h3 className="st-section-title">{t.vocab.intervalLabel}</h3>
         </div>
-      </div>
+        <div className="st-row">
+          <div className="st-row-text">
+            <div className="st-row-desc">{t.vocab.intervalDesc}</div>
+          </div>
+          <div className="st-range-wrap">
+            <input
+              type="range"
+              min={1}
+              max={60}
+              step={1}
+              value={vocabInterval}
+              className="st-range"
+              style={{ "--pct": `${((vocabInterval - 1) / 59) * 100}%` } as React.CSSProperties}
+              onChange={(e) => handleIntervalChange(Number(e.target.value))}
+              aria-label={t.vocab.intervalLabel}
+            />
+            <span className="st-range-val">{t.vocab.intervalUnit(vocabInterval)}</span>
+          </div>
+        </div>
+      </section>
 
-      <div className="settings-divider" />
-
-      <div className="settings-section">
-        <div className="settings-section-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {t.vocab.wordCol}
+      {/* II — Danh sách từ */}
+      <section className="st-section">
+        <div className="st-section-head">
+          <span className="st-section-num">II</span>
+          <h3 className="st-section-title">{t.vocab.listTitle}</h3>
+          {vocabWords.length > 0 && <span className="st-count">{vocabWords.length}</span>}
           {vocabWords.length > 0 && (
-            <span className="settings-tag-count">{vocabWords.length}</span>
-          )}
-          {vocabWords.length > 0 && (
-            <span style={{ marginLeft: "auto" }}>
+            <span className="st-section-aside">
               {confirmClearVocab ? (
                 <>
-                  <button
-                    className="vocab-clear-btn vocab-clear-btn--confirm"
-                    onClick={handleClearAllVocab}
-                  >
+                  <button className="st-link st-link--danger is-on" onClick={handleClearAllVocab}>
                     {t.vocab.clearAllConfirm}
                   </button>
-                  <button
-                    className="vocab-clear-btn"
-                    onClick={() => setConfirmClearVocab(false)}
-                    style={{ marginLeft: 4 }}
-                  >
+                  <button className="st-link" onClick={() => setConfirmClearVocab(false)}>
                     {t.toast.undo}
                   </button>
                 </>
               ) : (
-                <button
-                  className="vocab-clear-btn"
-                  onClick={() => setConfirmClearVocab(true)}
-                >
+                <button className="st-link st-link--danger" onClick={() => setConfirmClearVocab(true)}>
                   {t.vocab.clearAll}
                 </button>
               )}
             </span>
           )}
         </div>
-        <div className="vocab-table-wrap">
-          {vocabWords.length === 0 ? (
-            <div className="vocab-table-empty">{t.vocab.noWords}</div>
-          ) : (
-            <table className="vocab-table">
-              <thead>
-                <tr>
-                  <th>{t.vocab.wordCol}</th>
-                  <th>{t.vocab.ipaCol}</th>
-                  <th>{t.vocab.meaningCol}</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {vocabWords.map((w) =>
-                  editingVocabId === w.id ? (
-                    <tr key={w.id}>
-                      <td>
-                        <input
-                          className="vocab-table-edit-input"
-                          value={editVocabFields.word}
-                          onChange={(e) => setEditVocabFields((f) => ({ ...f, word: e.target.value }))}
-                          onKeyDown={(e) => { if (e.key === "Enter") handleEditVocabSave(); if (e.key === "Escape") setEditingVocabId(null); }}
-                          autoFocus
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="vocab-table-edit-input"
-                          value={editVocabFields.ipa}
-                          onChange={(e) => setEditVocabFields((f) => ({ ...f, ipa: e.target.value }))}
-                          onKeyDown={(e) => { if (e.key === "Enter") handleEditVocabSave(); if (e.key === "Escape") setEditingVocabId(null); }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="vocab-table-edit-input"
-                          value={editVocabFields.meaning}
-                          onChange={(e) => setEditVocabFields((f) => ({ ...f, meaning: e.target.value }))}
-                          onKeyDown={(e) => { if (e.key === "Enter") handleEditVocabSave(); if (e.key === "Escape") setEditingVocabId(null); }}
-                        />
-                      </td>
-                      <td>
-                        <div className="vocab-table-actions">
-                          <button
-                            className="settings-tag-action-btn"
-                            title={t.vocab.saveWord}
-                            onClick={handleEditVocabSave}
-                          >
-                            <IconCheck size={12} />
-                          </button>
-                          <button
-                            className="settings-tag-action-btn"
-                            title={t.vocab.cancelEdit}
-                            onClick={() => setEditingVocabId(null)}
-                          >
-                            <IconX size={12} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                  <tr key={w.id}>
-                    <td style={{ fontWeight: 500 }}>{w.word}</td>
-                    <td style={{ color: "var(--text-secondary)", fontFamily: "monospace", fontSize: "0.78rem" }}>
-                      {w.ipa || "—"}
-                    </td>
-                    <td>{w.meaning}</td>
-                    <td>
-                      <div className="vocab-table-actions">
-                        <button
-                          className="settings-tag-action-btn"
-                          title={t.vocab.editWord}
-                          onClick={() => handleEditVocabStart(w)}
-                        >
-                          <IconPencil size={12} />
-                        </button>
-                        <button
-                          className="settings-tag-action-btn settings-tag-action-delete"
-                          title={t.vocab.deleteWord}
-                          onClick={() => handleDeleteVocabWord(w.id)}
-                        >
-                          <IconTrash size={12} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  )
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
 
         <textarea
           ref={pasteZoneRef}
-          className="vocab-paste-zone"
+          className="st-paste"
           placeholder={t.vocab.pasteZonePlaceholder}
           onPaste={handleVocabPaste}
           rows={2}
           spellCheck={false}
         />
-        {vocabPasteSuccess > 0 && (
-          <div className="vocab-paste-success">{t.vocab.pasteSuccess(vocabPasteSuccess)}</div>
+        {vocabPasteSuccess > 0 && <p className="st-note ok">✓ {t.vocab.pasteSuccess(vocabPasteSuccess)}</p>}
+
+        {vocabWords.length === 0 ? (
+          <p className="st-empty">{t.vocab.noWords}</p>
+        ) : (
+          <table className="st-table">
+            <thead>
+              <tr>
+                <th>{t.vocab.wordCol}</th>
+                <th>{t.vocab.ipaCol}</th>
+                <th>{t.vocab.meaningCol}</th>
+                <th aria-hidden="true"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {vocabWords.map((w) =>
+                editingVocabId === w.id ? (
+                  <tr key={w.id} className="is-editing">
+                    <td>
+                      <input
+                        className="st-line-input"
+                        value={editVocabFields.word}
+                        onChange={(e) => setEditVocabFields((f) => ({ ...f, word: e.target.value }))}
+                        onKeyDown={editKeys}
+                        autoFocus
+                      />
+                    </td>
+                    <td>
+                      <input
+                        className="st-line-input st-line-input--ipa"
+                        value={editVocabFields.ipa}
+                        onChange={(e) => setEditVocabFields((f) => ({ ...f, ipa: e.target.value }))}
+                        onKeyDown={editKeys}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        className="st-line-input"
+                        value={editVocabFields.meaning}
+                        onChange={(e) => setEditVocabFields((f) => ({ ...f, meaning: e.target.value }))}
+                        onKeyDown={editKeys}
+                      />
+                    </td>
+                    <td>
+                      <div className="st-actions is-visible">
+                        <button className="st-icon-btn" title={t.vocab.saveWord} aria-label={t.vocab.saveWord} onClick={handleEditVocabSave}>
+                          <IconCheck size={13} stroke={1.75} />
+                        </button>
+                        <button className="st-icon-btn" title={t.vocab.cancelEdit} aria-label={t.vocab.cancelEdit} onClick={() => setEditingVocabId(null)}>
+                          <IconX size={13} stroke={1.75} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={w.id}>
+                    <td className="st-table-word">{w.word}</td>
+                    <td className="st-table-ipa">{w.ipa || "—"}</td>
+                    <td className="st-table-meaning">{w.meaning}</td>
+                    <td>
+                      <div className="st-actions">
+                        <button className="st-icon-btn" title={t.vocab.editWord} aria-label={t.vocab.editWord} onClick={() => handleEditVocabStart(w)}>
+                          <IconPencil size={13} stroke={1.75} />
+                        </button>
+                        <button
+                          className="st-icon-btn danger"
+                          title={t.vocab.deleteWord}
+                          aria-label={t.vocab.deleteWord}
+                          onClick={() => handleDeleteVocabWord(w.id)}
+                        >
+                          <IconTrash size={13} stroke={1.75} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </table>
         )}
-      </div>
+      </section>
 
       {pendingDeleteVocab && (
         <div className="delete-toast" role="status" onClick={(e) => e.stopPropagation()}>

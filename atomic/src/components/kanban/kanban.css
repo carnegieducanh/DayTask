@@ -286,7 +286,7 @@
   font-style: italic;
   font-size: 1.25rem;
   line-height: 1;
-  color: var(--yp-muted);
+  color: var(--primary); /* đầu mục La Mã theo màu chủ đạo, đồng bộ toàn app */
 }
 
 .kanban-col-title {
@@ -296,7 +296,7 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--yp-ink-2);
+  color: var(--primary);
 }
 
 .kanban-col-count {

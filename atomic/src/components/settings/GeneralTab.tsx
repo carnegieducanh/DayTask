@@ -1,4 +1,4 @@
-import { IconX } from "@tabler/icons-react";
+import { IconX, IconColorPicker } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
@@ -42,131 +42,139 @@ export default function GeneralTab({ onSwatchClick, onCustomSwatchClick }: Gener
   ];
 
   return (
-    <div className="settings-tab-panel">
-      <div className="settings-general-grid">
-
-        {/* Row 1 left: Language */}
-        <div className="settings-general-col settings-general-col--left">
-          <div className="settings-section">
-            <div className="settings-section-label">{t.settings.language}</div>
-            <div className="settings-row" style={{ paddingTop: "4px", paddingBottom: "10px" }}>
-              <div className="settings-seg-group">
-                {LANGUAGE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    className={`settings-seg-btn${language === opt.value ? " active" : ""}`}
-                    onClick={() => setLanguage(opt.value)}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+    <div className="st-panel">
+      {/* I — Giao diện */}
+      <section className="st-section">
+        <div className="st-section-head">
+          <span className="st-section-num">I</span>
+          <h3 className="st-section-title">{t.settings.groupAppearance}</h3>
         </div>
 
-        {/* Row 1 right: Accent Color swatches + custom picker */}
-        <div className="settings-general-col">
-          <div className="settings-section">
-            <div className="settings-section-label">{t.settings.accentColor}</div>
-            <div className="settings-row" style={{ paddingTop: "6px", paddingBottom: "12px" }}>
-              <div className="settings-accent-row">
-                {ACCENT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    className={`settings-accent-swatch${accentColor === opt.value ? " active" : ""}`}
-                    title={opt.label}
-                    style={{ background: opt.color }}
-                    onClick={() => onSwatchClick(opt.value)}
-                  />
-                ))}
-                <button
-                  className={`settings-accent-swatch settings-accent-swatch--custom${accentColor === "custom" ? " active" : ""}`}
-                  title={t.settings.custom}
-                  style={{ background: customAccentColor }}
-                  onClick={onCustomSwatchClick}
-                >
-                  🎨
-                </button>
-              </div>
-            </div>
+        <div className="st-row">
+          <div className="st-row-text">
+            <div className="st-row-label">{t.settings.language}</div>
           </div>
-        </div>
-
-        {/* Row 3 left: Font Size */}
-        <div className="settings-general-col settings-general-col--left">
-          <div className="settings-divider" />
-          <div className="settings-section">
-            <div className="settings-section-label">{t.settings.fontSize}</div>
-            <div className="settings-row" style={{ paddingTop: "4px", paddingBottom: "10px" }}>
-              <div className="settings-font-group">
-                {SCALE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    className={`settings-font-btn${uiScale === opt.value ? " active" : ""}`}
-                    onClick={() => setUiScale(opt.value)}
-                  >
-                    <span>{opt.label}</span>
-                    <span className="settings-font-pct">{opt.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Row 3 right: Autostart */}
-        <div className="settings-general-col">
-          <div className="settings-divider" />
-          <div className="settings-section">
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">{t.settings.autostart}</div>
-                <div className="settings-row-sub">{t.settings.autostartDesc}</div>
-              </div>
+          <div className="st-choices" role="radiogroup" aria-label={t.settings.language}>
+            {LANGUAGE_OPTIONS.map((opt) => (
               <button
-                className={`settings-toggle${autostart ? " active" : ""}`}
-                onClick={() => setAutostart(!autostart)}
-                aria-label={t.settings.autostart}
+                key={opt.value}
+                role="radio"
+                aria-checked={language === opt.value}
+                className={`st-choice${language === opt.value ? " active" : ""}`}
+                onClick={() => setLanguage(opt.value)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="st-row">
+          <div className="st-row-text">
+            <div className="st-row-label">{t.settings.accentColor}</div>
+            <div className="st-row-desc">{t.settings.accentColorDesc}</div>
+          </div>
+          <div className="st-swatches">
+            {ACCENT_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                className={`st-swatch${accentColor === opt.value ? " active" : ""}`}
+                title={opt.label}
+                aria-label={opt.label}
+                style={{ background: opt.color }}
+                onClick={() => onSwatchClick(opt.value)}
               />
-            </div>
+            ))}
+            <button
+              className={`st-swatch st-swatch--custom${accentColor === "custom" ? " active" : ""}`}
+              title={t.settings.custom}
+              aria-label={t.settings.custom}
+              style={{ background: customAccentColor }}
+              onClick={onCustomSwatchClick}
+            >
+              <IconColorPicker size={11} stroke={2} />
+            </button>
           </div>
         </div>
 
-        {/* Row 4 left: Birth date — tab Tầm nhìn dùng để tính tuổi */}
-        <div className="settings-general-col settings-general-col--left">
-          <div className="settings-divider" />
-          <div className="settings-section">
-            <div className="settings-row settings-birth-row">
-              <div className="settings-birth-text">
-                <div className="settings-row-label">{t.settings.birthDate}</div>
-                <div className="settings-row-sub">{t.settings.birthDateDesc}</div>
-              </div>
-              <div className="settings-birth-wrap">
-                <input
-                  type="date"
-                  className="settings-date-input"
-                  value={birthDate ?? ""}
-                  max={format(new Date(), "yyyy-MM-dd")}
-                  onChange={(e) => setBirthDate(e.target.value || null)}
-                  aria-label={t.settings.birthDate}
-                />
-                {birthDate && (
-                  <button
-                    className="settings-birth-clear"
-                    onClick={() => setBirthDate(null)}
-                    title={t.settings.clearBirthDate}
-                    aria-label={t.settings.clearBirthDate}
-                  >
-                    <IconX size={13} />
-                  </button>
-                )}
-              </div>
-            </div>
+        <div className="st-row">
+          <div className="st-row-text">
+            <div className="st-row-label">{t.settings.fontSize}</div>
+            <div className="st-row-desc">{t.settings.fontSizeDesc}</div>
+          </div>
+          <div className="st-choices" role="radiogroup" aria-label={t.settings.fontSize}>
+            {SCALE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                role="radio"
+                aria-checked={uiScale === opt.value}
+                className={`st-choice${uiScale === opt.value ? " active" : ""}`}
+                onClick={() => setUiScale(opt.value)}
+              >
+                {opt.label}
+                <span className="st-choice-num">{opt.desc}</span>
+              </button>
+            ))}
           </div>
         </div>
+      </section>
 
-      </div>
+      {/* II — Hệ thống */}
+      <section className="st-section">
+        <div className="st-section-head">
+          <span className="st-section-num">II</span>
+          <h3 className="st-section-title">{t.settings.groupSystem}</h3>
+        </div>
+
+        <div className="st-row">
+          <div className="st-row-text">
+            <div className="st-row-label">{t.settings.autostart}</div>
+            <div className="st-row-desc">{t.settings.autostartDesc}</div>
+          </div>
+          <button
+            role="switch"
+            aria-checked={autostart}
+            className={`st-toggle${autostart ? " active" : ""}`}
+            onClick={() => setAutostart(!autostart)}
+            aria-label={t.settings.autostart}
+          />
+        </div>
+      </section>
+
+      {/* III — Cá nhân: ngày sinh, tab Tầm nhìn dùng để tính tuổi */}
+      <section className="st-section">
+        <div className="st-section-head">
+          <span className="st-section-num">III</span>
+          <h3 className="st-section-title">{t.settings.groupPersonal}</h3>
+        </div>
+
+        <div className="st-row">
+          <div className="st-row-text">
+            <div className="st-row-label">{t.settings.birthDate}</div>
+            <div className="st-row-desc">{t.settings.birthDateDesc}</div>
+          </div>
+          <div className="st-date-wrap">
+            <input
+              type="date"
+              className="st-date"
+              value={birthDate ?? ""}
+              max={format(new Date(), "yyyy-MM-dd")}
+              onChange={(e) => setBirthDate(e.target.value || null)}
+              aria-label={t.settings.birthDate}
+            />
+            {birthDate && (
+              <button
+                className="st-icon-btn"
+                onClick={() => setBirthDate(null)}
+                title={t.settings.clearBirthDate}
+                aria-label={t.settings.clearBirthDate}
+              >
+                <IconX size={13} stroke={1.75} />
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
