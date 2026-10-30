@@ -1500,33 +1500,17 @@
   pointer-events: none;
 }
 
-.day-pending-count {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-family: var(--cv-serif);
-  font-style: italic;
-  font-size: 0.8rem;
-  color: var(--cv-muted);
-  user-select: none;
-  pointer-events: none;
-}
-
-.day-pending-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--cv-seal);
-  flex-shrink: 0;
-}
-
+/* ── Khay việc chờ xếp lịch (deck) ──
+   Bố cục "mục lục": dòng đầu là eyebrow + số đếm son + lời nhắc nghiêng, bên dưới là
+   lưới 3 cột thẻ màu đánh số (thẻ giữ nền màu task như block trên dòng thời gian).
+   Tối đa DECK_MAX_ROWS hàng, nhiều hơn thì cuộn — không còn mở/đóng chồng thẻ.
+   Số hàng (--deck-rows) do DayView tính, kể cả thẻ đang kéo, để khay không co giãn giữa
+   lúc kéo. Số cột phải khớp DECK_COLS trong DayView. */
 .day-deck-row {
   display: flex;
   flex-shrink: 0;
   border-bottom: 1px solid var(--cv-rule);
   background: color-mix(in srgb, var(--cv-stage) 55%, var(--cv-paper));
-  transition: height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   position: relative;
 }
 
@@ -1536,162 +1520,194 @@
   outline-offset: -3px;
 }
 
-.day-deck-drop-hint {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--cv-serif);
-  font-style: italic;
-  font-size: 0.84rem;
-  color: var(--cv-muted);
-  pointer-events: none;
-  user-select: none;
-}
-
-.day-deck-gutter-spacer {
+.day-deck-gutter {
   width: 52px;
   flex-shrink: 0;
-}
-
-.day-deck-info-strip {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 24px;
   display: flex;
-  align-items: center;
-  padding-right: 6px;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 0.55rem;
 }
 
 .day-tz-label {
-  width: 52px;
-  flex-shrink: 0;
   font-family: var(--cv-serif);
   font-style: italic;
   font-size: 0.7rem;
   color: var(--cv-muted);
   white-space: nowrap;
   user-select: none;
-  text-align: center;
 }
 
 .day-deck-events-area {
   flex: 1;
-  position: relative;
-  /* border-left: 1px solid var(--border-1); */
-  margin-top: 3px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.6rem 0.75rem 0.6rem 0.25rem;
+}
+
+.day-deck-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+  user-select: none;
+}
+
+.day-deck-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  flex-shrink: 0;
+}
+
+.day-deck-eyebrow {
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cv-muted);
+}
+
+.day-deck-count {
+  font-family: var(--cv-serif);
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--cv-seal);
+  font-variant-numeric: tabular-nums;
+}
+
+.day-deck-hint {
+  min-width: 0;
+  font-family: var(--cv-serif);
+  font-style: italic;
+  font-size: 0.76rem;
+  color: var(--cv-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .day-deck-cards-clip {
-  position: relative;
-  overflow: hidden;
+  --deck-tile-h: 2rem;
+  --deck-gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: var(--deck-tile-h);
+  gap: var(--deck-gap);
+  /* + 4px: padding nằm trong height (border-box toàn app) */
+  height: calc(var(--deck-rows) * var(--deck-tile-h) + (var(--deck-rows) - 1) * var(--deck-gap) + 4px);
+  /* Chừa 2px cho viền + bóng hover của thẻ hàng đầu không bị vùng cuộn cắt */
+  padding: 2px;
+  margin: -2px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-2) transparent;
   transition: height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.day-deck-cards-clip::-webkit-scrollbar {
-  width: 4px;
-}
-
-.day-deck-cards-clip::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.day-deck-cards-clip::-webkit-scrollbar-thumb {
-  background: var(--border-2);
-  border-radius: 2px;
+.day-deck-cards-clip:empty {
+  display: none;
 }
 
 .day-deck-card {
-  position: absolute;
-  left: 0.5%;
-  right: 0.5%;
-  height: 52px;
-  animation: deck-card-in 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-  transition:
-    top 0.42s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    filter 0.1s,
-    margin-top 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    box-shadow 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  border-radius: 4px;
-  padding: 3px 6px;
-  font-size: 0.88rem;
-  cursor: var(--cursor-grab);
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  height: var(--deck-tile-h, 2rem);
+  padding: 0 0.6rem;
   box-sizing: border-box;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  font-size: 0.82rem;
+  cursor: var(--cursor-grab);
   user-select: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  container: deck-card / inline-size;
+  /* backwards, không phải both: fill-mode both sẽ giữ transform của keyframe và chặn hiệu ứng nhấc khi hover */
+  animation: deck-card-in 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
+  transition:
+    transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.day-deck-card .day-task-title {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Nhãn danh mục: cùng kiểu .tag của block trên timeline; line-height 1 như .day-task-meta .tag */
+.day-deck-card .tag {
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* Thẻ hẹp (cửa sổ nhỏ): bỏ số thứ tự, nhường chỗ cho tên task + nhãn danh mục */
+@container deck-card (max-width: 13rem) {
+  .day-deck-card-num {
+    display: none;
+  }
 }
 
 .day-deck-card:hover {
-  filter: brightness(0.93);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 6px 14px -8px rgba(0, 0, 0, 0.45);
+}
+
+/* Đang kéo một thẻ trong khay: các thẻ khác đứng yên dưới con trỏ */
+.day-deck-cards-clip.is-sorting .day-deck-card:hover {
+  transform: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
 }
 
 .day-deck-card:active {
   cursor: var(--cursor-grabbing);
 }
 
-.day-deck-card-drop-target {
-  /* margin-top, not transform: deck-card-in's fill-mode: both permanently holds its own
-     translateY value, which wins over any transform declared here regardless of specificity.
-     margin-top sidesteps that fight entirely (the keyframes never touch it). */
-  margin-top: -6px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.32);
-}
-
-.day-deck-badge {
+.day-deck-card-num {
   flex-shrink: 0;
-  font-size: 0.75rem;
-  color: var(--cv-ink-2);
-  background: var(--cv-paper);
-  border: 1px solid var(--cv-rule);
-  border-radius: 10px;
-  padding: 1px 7px;
-  pointer-events: all;
-  user-select: none;
-  cursor: pointer;
-  transition:
-    color 0.15s,
-    background 0.15s,
-    border-color 0.15s,
-    transform 0.1s;
-  animation: deck-badge-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  font-family: var(--cv-serif);
+  font-style: italic;
+  font-size: 0.7rem;
+  color: rgba(0, 0, 0, 0.5);
+  font-variant-numeric: tabular-nums;
 }
 
-.day-deck-badge:hover {
-  color: var(--cv-ink);
-  border-color: var(--cv-muted);
+/* Ô giữ chỗ: nơi thẻ đang kéo sẽ rơi vào nếu thả ngay */
+.day-deck-slot {
+  box-sizing: border-box;
+  border: 1px dashed var(--cv-muted);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--cv-paper) 60%, transparent);
 }
 
-.day-deck-badge:active {
-  transform: scale(0.88);
+/* Thẻ bay theo con trỏ khi kéo từ khay (portal ra body) */
+.day-deck-card-floating {
+  position: fixed;
+  z-index: 9999;
+  height: 2rem;
+  pointer-events: none;
+  opacity: 0.95;
+  animation: none;
+  transform: rotate(-1.5deg) scale(1.03);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 10px 24px -6px rgba(0, 0, 0, 0.35);
 }
 
 @keyframes deck-card-in {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(-6px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes deck-badge-pop {
-  0% {
-    opacity: 0;
-    transform: scale(0.65);
-  }
-  60% {
-    transform: scale(1.1);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
   }
 }
 

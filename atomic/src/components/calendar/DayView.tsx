@@ -41,10 +41,10 @@ const DEFAULT_DURATION = 60; // default task duration in minutes for tasks witho
 const DRAG_MOVE_THRESHOLD = 4; // px before a mousedown on a task is treated as a move
 const MIN_RESIZE_DURATION = 15; // minimum minutes when resizing
 const FIXED_HEIGHT_DURATION = 25; // durations <= this render at a fixed block height instead of scaling
-const DECK_OFFSET = 28; // px each unscheduled card is offset from the one below
-const CARD_HEIGHT = 52; // px height of each deck card
-const MAX_DECK = 3; // max visible cards in deck
-const DECK_SCROLL_MAX = 9; // above this count, expanded deck gets a scrollbar
+const CARD_HEIGHT = 52; // px — floating card while a scheduled task is dragged back to the deck; also the deck-drag ghost's bottom clamp
+const DECK_COLS = 3; // deck grid columns — must match grid-template-columns of .day-deck-cards-clip
+const DECK_MAX_ROWS = 3; // deck rows shown before the grid scrolls instead of growing
+const DECK_SLOT_HYSTERESIS = 8; // px the cursor must stray from the current deck slot before the placeholder moves
 const AUTO_SCROLL_EDGE = 60; // px from the grid's top/bottom viewport edge that triggers auto-scroll
 const AUTO_SCROLL_MAX_SPEED = 18; // px per animation frame once the cursor is right at the edge
 
@@ -63,6 +63,29 @@ function computeAutoScrollSpeed(rect: DOMRect, clientY: number): number {
     return AUTO_SCROLL_MAX_SPEED * Math.min(1, 1 - distFromBottom / AUTO_SCROLL_EDGE);
   }
   return 0;
+}
+
+// Deck slot (0..maxIndex) nearest the cursor, read from the rendered grid cells (cards plus the
+// drop placeholder, each tagged data-deck-slot). Cells are uniform, so a slot's position depends
+// only on its index — moving the placeholder never moves the slot under the cursor, which keeps
+// this from flapping. The hysteresis only guards the gaps between cells, where cursor jitter
+// would otherwise toggle two neighbours.
+function pickDeckSlot(clip: HTMLElement, x: number, y: number, current: number, maxIndex: number): number {
+  let best = current;
+  let bestDist = Infinity;
+  let currentDist = Infinity;
+  clip.querySelectorAll<HTMLElement>("[data-deck-slot]").forEach((el) => {
+    const r = el.getBoundingClientRect();
+    const dist = Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
+    const slot = Number(el.dataset.deckSlot);
+    if (slot === current) currentDist = dist;
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = slot;
+    }
+  });
+  if (currentDist <= DECK_SLOT_HYSTERESIS) best = current;
+  return Math.max(0, Math.min(best, maxIndex));
 }
 
 function timeToMin(time: string): number {
@@ -222,9 +245,6 @@ export default function DayView({
   const [dragDeckTask, setDragDeckTask] = useState<DragDeckTask | null>(null);
   const [contextMenu, setContextMenu] = useState<{ taskId: number; task: Task; x: number; y: number } | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
-  const [deckExpanded, setDeckExpanded] = useState(false);
-  const [deckClosing, setDeckClosing] = useState(false);
-  const deckCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deckCardsClipRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(gridRef);
@@ -294,15 +314,15 @@ export default function DayView({
 
   const layoutItems = computeLayout(scheduledTasks, taskTimeEntries, dateStr);
 
-  const collapsedDeckCount = Math.min(MAX_DECK, unscheduledTasks.length);
-  const collapsedDeckHeight = collapsedDeckCount > 0 ? (collapsedDeckCount - 1) * DECK_OFFSET + CARD_HEIGHT / 2 : 0;
-  const expandedDeckHeight = unscheduledTasks.length > 0 ? CARD_HEIGHT + (unscheduledTasks.length - 1) * DECK_OFFSET : 0;
-  const deckHeight = deckExpanded && !deckClosing ? expandedDeckHeight : collapsedDeckHeight;
-  const hiddenCount = deckExpanded ? 0 : Math.max(0, unscheduledTasks.length - MAX_DECK);
-  const pendingCount = unscheduledTasks.length;
-  const maxScrollDeckHeight = CARD_HEIGHT + (DECK_SCROLL_MAX - 1) * DECK_OFFSET;
-  const shouldScroll = deckExpanded && !deckClosing && unscheduledTasks.length > DECK_SCROLL_MAX;
-  const displayDeckHeight = shouldScroll ? maxScrollDeckHeight : deckHeight;
+  // The card being dragged out of the deck still counts until it is dropped, so the deck keeps
+  // its row count — and the grid its top edge, the drag's deck/timeline threshold — mid-drag.
+  const deckCount = unscheduledTasks.length + (dragDeckTask ? 1 : 0);
+  const deckRows = Math.min(DECK_MAX_ROWS, Math.ceil(deckCount / DECK_COLS));
+  // While a deck card hovers over the deck, a placeholder (null) holds the slot it would drop into.
+  const deckSlots: (Task | null)[] = [...unscheduledTasks];
+  if (dragDeckTask && dragDeckTask.startMin === -1) {
+    deckSlots.splice(Math.min(dragDeckTask.hoverIndex, unscheduledTasks.length), 0, null);
+  }
 
   // Update current-time indicator every minute, aligned to the real clock's minute
   // boundary — a plain setInterval(60_000) drifts from mount time and can lag up to
@@ -552,24 +572,11 @@ export default function DayView({
             floatingCardRef.current.style.left = `${cursorX - dragDeckTask.grabOffsetX}px`;
             floatingCardRef.current.style.top = `${cursorY - dragDeckTask.grabOffsetY}px`;
           }
-          // Which deck slot this card would land in if dropped now — based on where its
-          // top-left (cursor minus grab offset) falls among the other deck cards' `top`s.
-          // Hysteresis around the raw boundary (instead of a plain Math.round) so a couple
-          // px of natural cursor jitter right at a slot edge doesn't flap the highlight back
-          // and forth every frame — each flap restarted its lift transition, which is what
-          // read as jerky/stuttery.
-          let hoverIndex = dragDeckTask.hoverIndex;
+          // Which deck slot this card would land in if dropped now — the grid cell nearest the cursor.
           const clip = deckCardsClipRef.current;
-          if (clip) {
-            const clipRect = clip.getBoundingClientRect();
-            const cardTop = cursorY - dragDeckTask.grabOffsetY - clipRect.top + clip.scrollTop;
-            const raw = cardTop / DECK_OFFSET;
-            const HOVER_HYSTERESIS = 0.3; // slot-fraction the cursor must cross past the midpoint to flip
-            let next = hoverIndex;
-            while (raw > next + 0.5 + HOVER_HYSTERESIS) next++;
-            while (raw < next - 0.5 - HOVER_HYSTERESIS) next--;
-            hoverIndex = Math.max(0, Math.min(next, unscheduledIdsRef.current.length));
-          }
+          const hoverIndex = clip
+            ? pickDeckSlot(clip, cursorX, cursorY, dragDeckTask.hoverIndex, unscheduledIdsRef.current.length)
+            : dragDeckTask.hoverIndex;
           // Only call setState when transitioning from timeline → deck (startMin changes)
           // or the hover slot actually changed — cursorX/cursorY are refreshed in the same
           // update so the floating card's React-rendered position stays in sync with the
@@ -789,81 +796,56 @@ export default function DayView({
   return (
     <div className="day-view">
       {/* Unscheduled task deck — fixed row above the scrollable grid */}
-      {(unscheduledTasks.length > 0 || dragMove?.overDeck) && (
+      {(deckCount > 0 || dragMove?.overDeck) && (
         <div
           className={`day-deck-row${dragMove?.overDeck ? " day-deck-row-drag-target" : ""}`}
-          style={{ height: displayDeckHeight + 28, cursor: isCardDragActive ? "var(--cursor-grabbing)" : undefined }}
+          style={{ cursor: isCardDragActive ? "var(--cursor-grabbing)" : undefined }}
         >
-          <div className="day-deck-gutter-spacer" />
+          <div className="day-deck-gutter">
+            <span className="day-tz-label">{tzLabel}</span>
+          </div>
           <div className="day-deck-events-area">
-            {dragMove?.overDeck && unscheduledTasks.length === 0 && (
-              <div className="day-deck-drop-hint">
-                {dragMove.duplicate ? t.calendar.dropToDuplicateUnscheduled : t.calendar.dropToUnschedule}
+            <div className="day-deck-head">
+              <div className="day-deck-heading">
+                <span className="day-deck-eyebrow">{t.calendar.deckTitle}</span>
+                <span className="day-deck-count">{deckCount}</span>
               </div>
-            )}
+              <span className="day-deck-hint">
+                {dragMove?.overDeck
+                  ? dragMove.duplicate
+                    ? t.calendar.dropToDuplicateUnscheduled
+                    : t.calendar.dropToUnschedule
+                  : t.calendar.deckHint}
+              </span>
+            </div>
             <div
               ref={deckCardsClipRef}
-              className="day-deck-cards-clip"
-              style={{ height: displayDeckHeight, overflowY: 'auto' }}
+              className={`day-deck-cards-clip${dragDeckTask ? " is-sorting" : ""}`}
+              style={{ "--deck-rows": deckRows } as React.CSSProperties}
             >
-              {unscheduledTasks.map((task, i) => {
+              {deckSlots.map((task, i) => {
+                if (!task) return <div key="placeholder" className="day-deck-slot" data-deck-slot={i} />;
                 const color = task.color ?? categoryColors[task.category];
-                // While a deck card is being dragged (and hovering over the deck, not the
-                // timeline), lift the card the dragged one would land right below — i.e. the
-                // slot just above the insertion point (hoverIndex - 1), since drop inserts
-                // before `others[hoverIndex]`. hoverIndex 0 (insert at the very top) correctly
-                // matches no card, since nothing sits above that slot.
-                const isDropTarget =
-                  dragDeckTask != null && dragDeckTask.startMin === -1 && i === dragDeckTask.hoverIndex - 1;
                 return (
                   <div
                     key={task.id}
-                    className={`day-deck-card${isDropTarget ? " day-deck-card-drop-target" : ""}`}
+                    className="day-deck-card"
+                    data-deck-slot={i}
+                    title={task.title}
                     style={{
-                      top: i * DECK_OFFSET,
-                      zIndex: i + 1,
                       backgroundColor: color,
-                      borderLeft: `3px solid ${color}`,
                       cursor: isCardDragActive ? "var(--cursor-grabbing)" : undefined,
                     }}
                     onMouseDown={(e) => handleDeckCardMouseDown(e, task)}
                     onContextMenu={(e) => handleTaskContextMenu(e, task)}
                   >
                     <div className="day-task-title">{task.title}</div>
+                    <span className={`tag tag-${task.category}`}>{t.cat[task.category]}</span>
+                    <span className="day-deck-card-num">{String(i + 1).padStart(2, "0")}</span>
                   </div>
                 );
               })}
             </div>
-          </div>
-          <div className="day-deck-info-strip">
-            <span className="day-tz-label">{tzLabel}</span>
-            {pendingCount > 0 && (
-              <div className="day-pending-count">
-                <span className="day-pending-dot" />
-                {t.calendar.pendingTasks(pendingCount)}
-              </div>
-            )}
-            {hiddenCount > 0 && (
-              <div className="day-deck-badge" onClick={() => setDeckExpanded(true)}>
-                +{hiddenCount}
-              </div>
-            )}
-            {deckExpanded && unscheduledTasks.length > MAX_DECK && (
-              <div
-                className="day-deck-badge"
-                onClick={() => {
-                  if (deckCardsClipRef.current) deckCardsClipRef.current.scrollTop = 0;
-                  if (deckCloseTimerRef.current) clearTimeout(deckCloseTimerRef.current);
-                  setDeckClosing(true);
-                  deckCloseTimerRef.current = setTimeout(() => {
-                    setDeckExpanded(false);
-                    setDeckClosing(false);
-                  }, 320);
-                }}
-              >
-                −
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -1158,30 +1140,16 @@ export default function DayView({
       {dragDeckTask && dragDeckTask.startMin === -1 && createPortal(
         <div
           ref={floatingCardRef}
+          className="day-deck-card day-deck-card-floating"
           style={{
-            position: "fixed",
             left: dragDeckTask.cursorX - dragDeckTask.grabOffsetX,
             top: dragDeckTask.cursorY - dragDeckTask.grabOffsetY,
             width: dragDeckTask.cardWidth,
-            height: CARD_HEIGHT,
-            borderRadius: 4,
-            padding: "3px 6px",
-            fontSize: "0.88rem",
-            overflow: "hidden",
-            boxSizing: "border-box",
-            userSelect: "none",
-            boxShadow: "0 6px 20px rgba(0,0,0,0.32)",
             backgroundColor: dragDeckTask.task.color ?? categoryColors[dragDeckTask.task.category],
-            borderLeft: `3px solid ${dragDeckTask.task.color ?? categoryColors[dragDeckTask.task.category]}`,
-            opacity: 0.92,
-            pointerEvents: "none",
-            // Below every deck card (which start at zIndex 1) so the lifted drop-target
-            // card visibly rises above this ghost instead of being covered by it.
-            zIndex: 0,
-            transform: "rotate(-2deg) scale(1.03)",
           }}
         >
           <div className="day-task-title">{dragDeckTask.task.title}</div>
+          <span className={`tag tag-${dragDeckTask.task.category}`}>{t.cat[dragDeckTask.task.category]}</span>
         </div>,
         document.body
       )}
