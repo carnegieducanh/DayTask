@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import "./Sidebar.css";
 import {
   IconSun,
@@ -58,6 +59,20 @@ export default function Sidebar() {
     { id: "quotes",   label: t.nav.quotes,   icon: <IconQuote size={16} stroke={1.75} /> },
     { id: "heatmap",  label: t.nav.heatmap,  icon: <IconChartDots size={16} stroke={1.75} /> },
   ];
+
+  // Đổi theme có làm mờ dần cả app (View Transitions). Trình duyệt chụp ảnh "sau" ngay khi callback
+  // chạy xong, nên phải render React đồng bộ (icon, màu heatmap tính bằng JS theo theme) và tự gắn
+  // data-theme luôn — effect ở App.tsx chạy sau thời điểm chụp. Không có API thì đổi ngay như cũ.
+  const switchTheme = () => {
+    if (!document.startViewTransition) {
+      toggleTheme();
+      return;
+    }
+    document.startViewTransition(() => {
+      flushSync(toggleTheme);
+      document.documentElement.setAttribute("data-theme", useAppStore.getState().theme);
+    });
+  };
 
   // Chỉ đếm task đã xếp giờ — khớp với khối "Hôm nay" của TodayView (task còn nằm trong deck không tính)
   const pendingCount = tasks.filter(
@@ -236,7 +251,7 @@ export default function Sidebar() {
         <button
           className="icon-btn"
           title={theme === 'light' ? t.nav.darkMode : t.nav.lightMode}
-          onClick={toggleTheme}
+          onClick={switchTheme}
         >
           {theme === 'light' ? <IconMoon size={16} stroke={1.75} /> : <IconSunHigh size={16} stroke={1.75} />}
         </button>

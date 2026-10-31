@@ -102,6 +102,12 @@
   --col-done-title: #8ed36a;
 }
 
+/* Thời gian làm mờ dần khi đổi theme sáng/tối (Sidebar.tsx gọi document.startViewTransition) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.8s;
+}
+
 /* ── Reset ── */
 *,
 *::before,
