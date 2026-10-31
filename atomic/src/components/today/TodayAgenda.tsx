@@ -3,6 +3,7 @@ import { IconCheck, IconPlus } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 import type { Task, TaskTimeEntry } from "../../types";
+import { UndoArrowIcon } from "./icons";
 import { useTickCollapse } from "./useTickCollapse";
 
 export default function TodayAgenda({
@@ -51,7 +52,12 @@ export default function TodayAgenda({
                 title={task.is_done ? t.taskCard.markUndone : t.taskCard.markDone}
               >
                 <button className="tws-block-drawer">
-                  <IconCheck size={18} strokeWidth={3} />
+                  {/* Undo arrow on done tasks, as in the week strip */}
+                  {task.is_done ? (
+                    <UndoArrowIcon size={18} />
+                  ) : (
+                    <IconCheck size={18} strokeWidth={3} />
+                  )}
                 </button>
                 <div className="tws-block-body">
                   <div className="tws-block-time">

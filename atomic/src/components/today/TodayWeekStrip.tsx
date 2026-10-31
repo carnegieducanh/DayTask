@@ -4,6 +4,7 @@ import { IconCheck } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 import type { Task, TaskTimeEntry } from "../../types";
+import { UndoArrowIcon } from "./icons";
 import { useTickCollapse } from "./useTickCollapse";
 
 const MAX_BLOCKS_PER_DAY = 3;
@@ -117,7 +118,13 @@ export default function TodayWeekStrip() {
                       }}
                       title={task.is_done ? t.taskCard.markUndone : t.taskCard.markDone}
                     >
-                      <IconCheck size={16} strokeWidth={3} />
+                      {/* Done tasks show an undo arrow — clicking un-ticks. Keyed on is_done, not
+                          `checked`, so a task being ticked still pops the check while it collapses. */}
+                      {task.is_done ? (
+                        <UndoArrowIcon size={16} />
+                      ) : (
+                        <IconCheck size={16} strokeWidth={3} />
+                      )}
                     </button>
                     <div className="tws-block-body">
                       <div className="tws-block-time">
