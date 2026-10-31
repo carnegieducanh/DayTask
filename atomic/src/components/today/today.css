@@ -390,7 +390,7 @@
 
 .today-head-vocab .vocab-widget-note .vocab-widget {
   padding: 10px 12px 10px 14px;
-  transform: rotate(-0.5deg);
+  transform: none;
   width: 100%;
   max-width: 270px;
   pointer-events: auto;

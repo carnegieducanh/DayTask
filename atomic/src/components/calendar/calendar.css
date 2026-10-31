@@ -1685,16 +1685,17 @@
 
 .day-deck-cards-clip {
   --deck-tile-h: 2rem;
-  --deck-gap: 6px;
+  --deck-gap: 0px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-auto-rows: var(--deck-tile-h);
   gap: var(--deck-gap);
-  /* + 4px: padding nằm trong height (border-box toàn app) */
-  height: calc(var(--deck-rows) * var(--deck-tile-h) + (var(--deck-rows) - 1) * var(--deck-gap) + 4px);
+  /* + 2px: chỉ tính padding-top (border-box toàn app). Không cộng padding-bottom —
+     gap 0 thì 2px đó lộ mép trên hàng kế tiếp; padding-bottom vẫn chừa khoảng thở khi cuộn hết */
+  height: calc(var(--deck-rows) * var(--deck-tile-h) + (var(--deck-rows) - 1) * var(--deck-gap) + 2px);
   /* Chừa 2px cho viền + bóng hover của thẻ hàng đầu không bị vùng cuộn cắt */
   padding: 2px;
-  margin: -2px;
+  margin: -2px -2px 0;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: thin;
@@ -1715,7 +1716,13 @@
   padding: 0 0.6rem;
   box-sizing: border-box;
   border-radius: 4px;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  /* Lưới liền (gap 0): mỗi thẻ chỉ kẻ mép trái + mép trên; cột đầu / hàng đầu bỏ (xem ngay dưới) */
+  --deck-line: rgba(0, 0, 0, 0.12);
+  --deck-line-l: 1px;
+  --deck-line-t: 1px;
+  box-shadow:
+    inset var(--deck-line-l) 0 0 var(--deck-line),
+    inset 0 var(--deck-line-t) 0 var(--deck-line);
   font-size: 0.82rem;
   cursor: var(--cursor-grab);
   user-select: none;
@@ -1725,6 +1732,15 @@
   transition:
     transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94),
     box-shadow 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Ô giữ chỗ cũng là 1 ô lưới nên nth-child đếm đúng cột/hàng */
+.day-deck-cards-clip > :nth-child(3n + 1) {
+  --deck-line-l: 0px;
+}
+
+.day-deck-cards-clip > :nth-child(-n + 3) {
+  --deck-line-t: 0px;
 }
 
 .day-deck-card .day-task-title {
@@ -1748,14 +1764,17 @@
 .day-deck-card:hover {
   transform: translateY(-1px);
   box-shadow:
-    inset 0 0 0 1px rgba(0, 0, 0, 0.12),
+    inset var(--deck-line-l) 0 0 var(--deck-line),
+    inset 0 var(--deck-line-t) 0 var(--deck-line),
     0 6px 14px -8px rgba(0, 0, 0, 0.45);
 }
 
 /* Đang kéo một thẻ trong khay: các thẻ khác đứng yên dưới con trỏ */
 .day-deck-cards-clip.is-sorting .day-deck-card:hover {
   transform: none;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    inset var(--deck-line-l) 0 0 var(--deck-line),
+    inset 0 var(--deck-line-t) 0 var(--deck-line);
 }
 
 .day-deck-card:active {
