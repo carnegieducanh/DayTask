@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react
 import { createPortal } from "react-dom";
 import { useSmoothScroll, useSmoothScrollX } from "../../hooks/useSmoothScroll";
 import { format } from "date-fns";
-import { IconTag, IconTrash, IconCheck, IconCalendarMinus, IconCopy } from "@tabler/icons-react";
+import { IconTag, IconTrash, IconCheck, IconCalendarMinus, IconCopy, IconChevronUp } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 
 const COLOR_PALETTE: string[] = [
@@ -274,6 +274,9 @@ export default function DayView({
   const unscheduledIdsRef = useRef<number[]>([]);
   const deckVisibleIdsRef = useRef<number[]>([]);
   const [deckFilter, setDeckFilter] = useState<Category | "all">("all");
+  // The deck starts folded: only its head (eyebrow + category tabs) shows. Picking a tab opens the
+  // cards of that tab; the chevron, or the open tab clicked again, folds them back up.
+  const [deckOpen, setDeckOpen] = useState(false);
   const deckTabsRef = useRef<HTMLDivElement>(null);
   const [deckTabsFade, setDeckTabsFade] = useState({ left: false, right: false });
   const deckFilterRef = useRef(deckFilter);
@@ -345,7 +348,13 @@ export default function DayView({
   deckVisibleIdsRef.current = visibleDeckTasks.map((t) => t.id);
   const deckCount = deckTasks.length;
   // Only visible cards can be dragged, so a dragged card always belongs to the active tab.
-  const deckRows = Math.min(DECK_MAX_ROWS, Math.ceil((visibleDeckTasks.length + (dragDeckTask ? 1 : 0)) / DECK_COLS));
+  const deckSlotCount = visibleDeckTasks.length + (dragDeckTask ? 1 : 0);
+  const deckRows = Math.min(DECK_MAX_ROWS, Math.ceil(deckSlotCount / DECK_COLS));
+  // The grid gets a scrollbar only when the active tab outgrows DECK_MAX_ROWS — decided from the
+  // count, not left to `overflow: auto`. While its height animates (open/fold, tab switch) the cards
+  // overflow anyway, so an auto scrollbar would flash in, or turn up only once the cards had
+  // settled, and shove them sideways. This way it is there from the first frame, or never.
+  const deckScrolls = deckSlotCount > DECK_COLS * DECK_MAX_ROWS;
   // While a deck card hovers over the deck, a placeholder (null) holds the slot it would drop into.
   const deckSlots: (Task | null)[] = [...visibleDeckTasks];
   if (dragDeckTask && dragDeckTask.startMin === -1) {
@@ -446,6 +455,15 @@ export default function DayView({
     }
     if (changed) setContextMenu((prev) => (prev ? { ...prev, x, y } : prev));
   }, [contextMenu]);
+
+  function handleDeckTabClick(cat: Category | "all") {
+    if (deckOpen && activeDeckCat === cat) {
+      setDeckOpen(false);
+      return;
+    }
+    setDeckFilter(cat);
+    setDeckOpen(true);
+  }
 
   function handleTaskContextMenu(e: React.MouseEvent, task: Task) {
     e.preventDefault();
@@ -860,7 +878,7 @@ export default function DayView({
       {/* Unscheduled task deck — fixed row above the scrollable grid */}
       {deckShown && (
         <div
-          className={`day-deck-row${dragMove?.overDeck ? " day-deck-row-drag-target" : ""}`}
+          className={`day-deck-row${deckOpen ? "" : " is-collapsed"}${dragMove?.overDeck ? " day-deck-row-drag-target" : ""}`}
           style={{ cursor: isCardDragActive ? "var(--cursor-grabbing)" : undefined }}
         >
           <div className="day-deck-gutter">
@@ -876,9 +894,9 @@ export default function DayView({
               >
                 <button
                   type="button"
-                  className={`day-deck-tab${activeDeckCat === "all" ? " active" : ""}`}
-                  aria-pressed={activeDeckCat === "all"}
-                  onClick={() => setDeckFilter("all")}
+                  className={`day-deck-tab${deckOpen && activeDeckCat === "all" ? " active" : ""}`}
+                  aria-pressed={deckOpen && activeDeckCat === "all"}
+                  onClick={() => handleDeckTabClick("all")}
                 >
                   {t.calendar.deckAll}
                   <span className="day-deck-tab-count">{deckCount}</span>
@@ -887,9 +905,9 @@ export default function DayView({
                   <button
                     key={cat}
                     type="button"
-                    className={`day-deck-tab${activeDeckCat === cat ? " active" : ""}`}
-                    aria-pressed={activeDeckCat === cat}
-                    onClick={() => setDeckFilter(cat)}
+                    className={`day-deck-tab${deckOpen && activeDeckCat === cat ? " active" : ""}`}
+                    aria-pressed={deckOpen && activeDeckCat === cat}
+                    onClick={() => handleDeckTabClick(cat)}
                   >
                     <span className="day-deck-tab-dot" style={{ backgroundColor: categoryColors[cat] }} />
                     {t.cat[cat]}
@@ -904,11 +922,24 @@ export default function DayView({
                     : t.calendar.dropToUnschedule
                   : t.calendar.deckHint}
               </span>
+              <button
+                type="button"
+                className="day-deck-toggle"
+                aria-expanded={deckOpen}
+                aria-label={deckOpen ? t.calendar.deckCollapse : t.calendar.deckExpand}
+                title={deckOpen ? t.calendar.deckCollapse : t.calendar.deckExpand}
+                onClick={() => setDeckOpen((open) => !open)}
+              >
+                <IconChevronUp size={15} stroke={1.75} />
+              </button>
             </div>
+            {/* Folded: cards stay mounted (height animates to 0) but are inert and hidden. */}
             <div
               ref={deckCardsClipRef}
-              className={`day-deck-cards-clip${dragDeckTask ? " is-sorting" : ""}`}
+              className={`day-deck-cards-clip${dragDeckTask ? " is-sorting" : ""}${deckScrolls ? " is-scrollable" : ""}`}
               style={{ "--deck-rows": deckRows } as React.CSSProperties}
+              inert={!deckOpen}
+              aria-hidden={!deckOpen}
             >
               {deckSlots.map((task, i) => {
                 if (!task) return <div key="placeholder" className="day-deck-slot" data-deck-slot={i} />;

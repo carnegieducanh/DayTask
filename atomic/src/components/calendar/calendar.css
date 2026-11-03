@@ -1545,6 +1545,27 @@
   flex-direction: column;
   gap: 0.55rem;
   padding: 0.3rem 0.75rem 0.6rem 0.25rem;
+  transition:
+    gap 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    padding 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Khay gập (mặc định): chỉ còn dòng đầu — eyebrow + tab danh mục. Bấm một tab thì mở lưới thẻ
+   của tab đó; nút mũi tên cuối dòng (hoặc bấm lại tab đang mở) thì gập lại. Lưới vẫn mount,
+   chỉ co chiều cao về 0 để có hiệu ứng. */
+.day-deck-row.is-collapsed .day-deck-events-area {
+  gap: 0;
+  padding-bottom: 0.3rem;
+}
+
+.day-deck-row.is-collapsed .day-deck-head {
+  border-bottom-color: transparent;
+}
+
+.day-deck-row.is-collapsed .day-deck-cards-clip {
+  height: 0;
+  padding-block: 0;
+  margin-top: 0;
 }
 
 /* Dòng đầu: eyebrow · hàng tab danh mục gạch chân (đè lên đường kẻ đáy) · lời nhắc nghiêng.
@@ -1556,6 +1577,7 @@
   min-width: 0;
   border-bottom: 1px solid var(--cv-rule-soft);
   user-select: none;
+  transition: border-color 0.3s;
 }
 
 .day-deck-eyebrow {
@@ -1683,6 +1705,39 @@
   text-overflow: ellipsis;
 }
 
+/* Nút gập/mở khay — cuối dòng đầu; mũi tên lên = đang mở, xoay xuống khi gập */
+.day-deck-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-right: -0.3rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cv-muted);
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+}
+
+.day-deck-toggle:hover {
+  color: var(--cv-ink);
+  background: var(--cv-rule-soft);
+}
+
+.day-deck-toggle svg {
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.day-deck-row.is-collapsed .day-deck-toggle svg {
+  transform: rotate(180deg);
+}
+
 .day-deck-cards-clip {
   --deck-tile-h: 2rem;
   --deck-gap: 0px;
@@ -1696,11 +1751,21 @@
   /* Chừa 2px cho viền + bóng hover của thẻ hàng đầu không bị vùng cuộn cắt */
   padding: 2px;
   margin: -2px -2px 0;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--border-2) transparent;
-  transition: height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition:
+    height 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    padding 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    margin 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Thanh cuộn chỉ có khi tab đang mở vượt DECK_MAX_ROWS hàng — DayView quyết theo số thẻ, không để
+   overflow:auto tự bật: trong lúc chiều cao co giãn thẻ luôn tràn, thanh cuộn auto sẽ nháy lên
+   hoặc hiện muộn sau khi thẻ đã đứng yên, đẩy thẻ co ngang. Gập khay vẫn giữ nguyên chế độ này
+   để thẻ không giãn ra giữa lúc gập. */
+.day-deck-cards-clip.is-scrollable {
+  overflow-y: scroll;
 }
 
 .day-deck-cards-clip:empty {

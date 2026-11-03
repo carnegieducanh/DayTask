@@ -338,6 +338,8 @@ export const en: typeof vi = {
     deckTitle: "Unscheduled",
     deckAll: "All",
     deckHint: "Drag a card onto the timeline to schedule it",
+    deckCollapse: "Collapse tray",
+    deckExpand: "Expand tray",
     weekStats: "Week total",
     monthStats: "Month total",
   },

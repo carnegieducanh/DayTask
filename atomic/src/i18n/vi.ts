@@ -313,6 +313,8 @@ export const vi = {
     deckTitle: "Chờ xếp lịch",
     deckAll: "Tất cả",
     deckHint: "Kéo thẻ xuống dòng thời gian để xếp giờ",
+    deckCollapse: "Thu gọn khay",
+    deckExpand: "Mở khay",
     weekStats: "Tổng tuần",
     monthStats: "Tổng tháng",
   },
