@@ -478,6 +478,15 @@ pub fn run() {
             sql: "UPDATE goals SET status = 'doing', position = position + 1000 WHERE status = 'review';",
             kind: MigrationKind::Up,
         },
+        // Lịch lặp theo thứ + giờ trong tuần, chỉ ghi trên template (repeat_daily = 1,
+        // series_id IS NULL). JSON [{"day":0-6,"start":"HH:MM"|null,"end":"HH:MM"|null}];
+        // NULL = lặp mỗi ngày, không đặt giờ (hành vi cũ của "Lặp lại hàng ngày").
+        Migration {
+            version: 32,
+            description: "add_repeat_days_to_tasks",
+            sql: "ALTER TABLE tasks ADD COLUMN repeat_days TEXT DEFAULT NULL;",
+            kind: MigrationKind::Up,
+        },
     ];
 
     #[tauri::command]

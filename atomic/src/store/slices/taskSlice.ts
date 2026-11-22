@@ -1,15 +1,153 @@
 import type { StateCreator } from 'zustand';
-import { format, subDays } from 'date-fns';
+import { addDays, format, subDays } from 'date-fns';
 import type { Task, NewTask, TaskUpdate, TaskTimeEntry, Category, CategoryColors } from '../../types';
 import {
   isTauri,
   dbGetTasks, dbAddTask, dbUpdateTask, dbDeleteTask, dbReorderDeckTasks,
-  dbGetCalendarTasks,
+  dbGetCalendarTasks, dbMaterializeRepeats,
   dbGetTimeEntries, dbGetCalendarTimeEntries, dbSaveTimeEntry, dbDeleteTimeEntry,
   dbGetTaskTagsForDate, dbSetTaskTags, dbGetCalendarTaskTags,
 } from '../mockDb';
 import { getDb } from '../db';
 import type { AppState } from '../appStore';
+import { repeatSlotOn } from '../../utils/repeatSchedule';
+
+type Db = Awaited<ReturnType<typeof getDb>>;
+
+// Cột dùng cho mọi SELECT task. Instance không có repeat_days riêng (cột chỉ ghi trên
+// template) → lấy lịch của template, để modal sửa task mở từ instance vẫn thấy đúng lịch.
+const TASK_COLUMNS = `t.id, t.title, t.description, t.category, t.date, t.is_done, t.repeat_daily,
+  t.series_id, t.repeat_end_date, t.created_at, t.color, t.deck_position,
+  COALESCE(t.repeat_days, (SELECT tpl.repeat_days FROM tasks tpl WHERE tpl.id = t.series_id)) AS repeat_days`;
+
+export interface CreatedInstance {
+  task: Task;
+  entry: TaskTimeEntry | null;
+  tagIds: number[];
+}
+
+// Chỉ cửa sổ chính được tạo instance — tránh race khi main + tray-popup cùng nạp task.
+function isMainWindow(): boolean {
+  const label = (window as unknown as { __TAURI_INTERNALS__?: { metadata?: { currentWindow?: { label?: string } } } })
+    .__TAURI_INTERNALS__?.metadata?.currentWindow?.label;
+  return !label || label === 'main';
+}
+
+/**
+ * Tạo instance còn thiếu của các chuỗi lặp cho mọi ngày trong [start, end], theo lịch
+ * của từng template: chỉ vào đúng thứ đã chọn; thứ nào có giờ thì ghi luôn time entry
+ * (task lên thẳng dòng thời gian), không giờ thì nằm ở khay "Chờ xếp lịch" như trước.
+ * scheduledOnly: chỉ xét chuỗi có lịch theo thứ — chuỗi "hằng ngày" cũ vẫn chỉ được
+ * tạo khi mở đúng ngày đó (loadTasks), không tạo trước.
+ */
+async function materializeRepeats(db: Db, start: string, end: string, scheduledOnly: boolean): Promise<CreatedInstance[]> {
+  const templates = await db.select<{
+    id: number; title: string; category: Category; date: string; created_at: string;
+    deck_position: number | null; repeat_end_date: string | null; repeat_days: string | null;
+  }[]>(
+    `SELECT id, title, category, date, created_at, deck_position, repeat_end_date, repeat_days FROM tasks
+     WHERE repeat_daily = 1 AND series_id IS NULL AND date < $2
+       AND (repeat_end_date IS NULL OR repeat_end_date >= $1)
+       ${scheduledOnly ? 'AND repeat_days IS NOT NULL' : ''}`,
+    [start, end]
+  );
+  if (!templates.length) return [];
+  const existingRows = await db.select<{ series_id: number; date: string }[]>(
+    'SELECT series_id, date FROM tasks WHERE series_id IS NOT NULL AND date >= $1 AND date <= $2',
+    [start, end]
+  );
+  const existing = new Set(existingRows.map((r) => `${r.series_id}|${r.date}`));
+  const tplTagCache = new Map<number, number[]>();
+  const created: CreatedInstance[] = [];
+
+  for (let d = new Date(start + 'T00:00:00'); ; d = addDays(d, 1)) {
+    const date = format(d, 'yyyy-MM-dd');
+    if (date > end) break;
+    for (const tpl of templates) {
+      if (tpl.date >= date) continue;
+      if (tpl.repeat_end_date && tpl.repeat_end_date < date) continue;
+      if (existing.has(`${tpl.id}|${date}`)) continue;
+      const slot = repeatSlotOn(tpl.repeat_days, date);
+      if (!slot) continue;
+
+      // deck_position lấy theo template để khay giữ thứ tự đã sắp (xem reorderDeckTasks).
+      const result = await db.execute(
+        `INSERT OR IGNORE INTO tasks (title, description, category, date, is_done, repeat_daily, series_id, created_at, deck_position)
+         VALUES ($1, NULL, $2, $3, 0, 0, $4, $5, $6)`,
+        [tpl.title, tpl.category, date, tpl.id, tpl.created_at, tpl.deck_position]
+      );
+      // Bị IGNORE (luồng khác vừa tạo cùng ngày) thì lastInsertId là id cũ — không được dùng.
+      if (!result.rowsAffected || !result.lastInsertId) continue;
+      const newId = result.lastInsertId;
+
+      await db.execute(
+        `INSERT INTO task_tags (task_id, tag_id) SELECT $1, tag_id FROM task_tags WHERE task_id = $2`,
+        [newId, tpl.id]
+      );
+      if (!tplTagCache.has(tpl.id)) {
+        const rows = await db.select<{ tag_id: number }[]>('SELECT tag_id FROM task_tags WHERE task_id = $1', [tpl.id]);
+        tplTagCache.set(tpl.id, rows.map((r) => r.tag_id));
+      }
+
+      let entry: TaskTimeEntry | null = null;
+      if (slot.start && slot.end) {
+        await db.execute(
+          'INSERT OR REPLACE INTO task_time_entries (task_id, date, start_time, end_time) VALUES ($1, $2, $3, $4)',
+          [newId, date, slot.start, slot.end]
+        );
+        entry = { task_id: newId, date, start_time: slot.start, end_time: slot.end };
+      }
+
+      created.push({
+        task: {
+          id: newId, title: tpl.title, description: null, category: tpl.category, date,
+          is_done: 0, repeat_daily: 0, series_id: tpl.id, repeat_end_date: null,
+          created_at: tpl.created_at, color: null, deck_position: tpl.deck_position,
+          repeat_days: tpl.repeat_days,
+        },
+        entry,
+        tagIds: tplTagCache.get(tpl.id) ?? [],
+      });
+    }
+  }
+  return created;
+}
+
+// Instance vừa tạo phải vào luôn cặp state calendar* (Day sidebar stats, dải tuần Today
+// đọc từ đó) — xem bài học calendar_stats_sync_bug.
+function mergeIntoCalendar(get: () => AppState, set: (partial: Partial<AppState>) => void, created: CreatedInstance[]) {
+  if (!created.length) return;
+  const ids = new Set(created.map((c) => c.task.id));
+  const calendarTaskTags = { ...get().calendarTaskTags };
+  for (const c of created) if (c.tagIds.length) calendarTaskTags[c.task.id] = [...c.tagIds];
+  set({
+    calendarTasks: [...get().calendarTasks.filter((t) => !ids.has(t.id)), ...created.map((c) => c.task)],
+    calendarTimeEntries: [
+      ...get().calendarTimeEntries.filter((e) => !ids.has(e.task_id)),
+      ...created.flatMap((c) => (c.entry ? [c.entry] : [])),
+    ],
+    calendarTaskTags,
+  });
+}
+
+// Gỡ các task đã bị xoá khỏi DB ra khỏi mọi state đang giữ chúng.
+function dropFromState(get: () => AppState, set: (partial: Partial<AppState>) => void, ids: Set<number>) {
+  if (!ids.size) return;
+  const calendarTaskTags = { ...get().calendarTaskTags };
+  const taskTags = { ...get().taskTags };
+  for (const id of ids) {
+    delete calendarTaskTags[id];
+    delete taskTags[id];
+  }
+  set({
+    tasks: get().tasks.filter((t) => !ids.has(t.id)),
+    calendarTasks: get().calendarTasks.filter((t) => !ids.has(t.id)),
+    taskTimeEntries: get().taskTimeEntries.filter((e) => !ids.has(e.task_id)),
+    calendarTimeEntries: get().calendarTimeEntries.filter((e) => !ids.has(e.task_id)),
+    calendarTaskTags,
+    taskTags,
+  });
+}
 
 export const DEFAULT_CATEGORY_COLORS: CategoryColors = {
   work:         '#7DD3FC',
@@ -30,9 +168,12 @@ export interface TaskSlice {
   calendarTaskTags: Record<number, number[]>;
   categoryColors: CategoryColors;
   pendingDeleteTask: Task | null;
+  // Tăng mỗi khi lịch lặp của 1 chuỗi đổi → nơi tạo trước instance (dải tuần Today) chạy lại.
+  repeatScheduleVersion: number;
 
   loadTasks: (date: string) => Promise<{ tasks: Task[]; taskTimeEntries: TaskTimeEntry[] }>;
   loadCalendarTasks: (startDate: string, endDate: string) => Promise<void>;
+  ensureRepeatInstances: (startDate: string, endDate: string) => Promise<void>;
   loadTimeEntries: (date: string) => Promise<void>;
   saveTimeEntry: (taskId: number, date: string, startTime: string, endTime: string) => Promise<void>;
   deleteTimeEntry: (taskId: number, date: string) => Promise<void>;
@@ -59,9 +200,11 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
   calendarTaskTags: {},
   categoryColors: { ...DEFAULT_CATEGORY_COLORS },
   pendingDeleteTask: null,
+  repeatScheduleVersion: 0,
 
   loadTasks: async (date) => {
     if (!isTauri()) {
+      mergeIntoCalendar(get, set, dbMaterializeRepeats(date, date, false));
       const tasks = dbGetTasks(date);
       const taskTimeEntries = dbGetTimeEntries(date);
       const taskTags = dbGetTaskTagsForDate(date);
@@ -70,45 +213,14 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     }
     const db = await getDb();
 
-    // Only instantiate daily templates in the main window to prevent race conditions
-    // when multiple webview windows (main + tray-popup) call loadTasks concurrently.
-    const windowLabel = (window as unknown as { __TAURI_INTERNALS__?: { metadata?: { currentWindow?: { label?: string } } } }).__TAURI_INTERNALS__?.metadata?.currentWindow?.label;
-    const isMainWindow = !windowLabel || windowLabel === 'main';
-
-    if (isMainWindow) {
-      // Lazy-create instances for active series templates that don't yet have one for this date.
-      // A template is: repeat_daily=1, series_id IS NULL, date < $date, repeat_end_date IS NULL OR >= $date.
-      // deck_position is carried over from the template so a manually-reordered deck
-      // (see reorderDeckTasks) stays in the same order on days not visited yet.
-      const templatesToInstantiate = await db.select<{ id: number; title: string; category: string; created_at: string; deck_position: number | null }[]>(
-        `SELECT t.id, t.title, t.category, t.created_at, t.deck_position FROM tasks t
-         WHERE t.repeat_daily = 1 AND t.series_id IS NULL
-           AND t.date < $1
-           AND (t.repeat_end_date IS NULL OR t.repeat_end_date >= $1)
-           AND NOT EXISTS (
-             SELECT 1 FROM tasks inst WHERE inst.series_id = t.id AND inst.date = $1
-           )`,
-        [date]
-      );
-      for (const tpl of templatesToInstantiate) {
-        const result = await db.execute(
-          `INSERT OR IGNORE INTO tasks (title, description, category, date, is_done, repeat_daily, series_id, created_at, deck_position)
-           VALUES ($1, NULL, $2, $3, 0, 0, $4, $5, $6)`,
-          [tpl.title, tpl.category, date, tpl.id, tpl.created_at, tpl.deck_position]
-        );
-        const newId = result.lastInsertId;
-        if (newId) {
-          await db.execute(
-            `INSERT INTO task_tags (task_id, tag_id) SELECT $1, tag_id FROM task_tags WHERE task_id = $2`,
-            [newId, tpl.id]
-          );
-        }
-      }
+    // Lazy-create instance của mọi chuỗi lặp (cả "hằng ngày" cũ lẫn lịch theo thứ) cho
+    // ngày này. Chỉ ở cửa sổ chính để main + tray-popup không cùng tạo.
+    if (isMainWindow()) {
+      mergeIntoCalendar(get, set, await materializeRepeats(db, date, date, false));
     }
 
     const tasks = await db.select<Task[]>(
-      `SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color, deck_position
-       FROM tasks WHERE date = $1 ORDER BY is_done ASC, created_at ASC`,
+      `SELECT ${TASK_COLUMNS} FROM tasks t WHERE t.date = $1 ORDER BY t.is_done ASC, t.created_at ASC`,
       [date]
     );
     const taskTimeEntries = await db.select<TaskTimeEntry[]>(
@@ -140,7 +252,7 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     }
     const db = await getDb();
     const tasks = await db.select<Task[]>(
-      'SELECT id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color, deck_position FROM tasks WHERE date >= $1 AND date <= $2 ORDER BY date ASC',
+      `SELECT ${TASK_COLUMNS} FROM tasks t WHERE t.date >= $1 AND t.date <= $2 ORDER BY t.date ASC`,
       [startDate, endDate]
     );
     const calendarTimeEntries = await db.select<TaskTimeEntry[]>(
@@ -159,6 +271,26 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       calendarTaskTags[row.task_id].push(row.tag_id);
     }
     set({ calendarTasks: tasks, calendarTimeEntries, calendarTaskTags });
+  },
+
+  // Tạo trước instance của chuỗi có lịch theo thứ trong khoảng đang hiển thị (dải tuần
+  // Today), để lịch tuần thấy ngay các buổi sắp tới. Chỉ từ hôm nay trở đi — ngày đã
+  // qua vẫn chỉ tạo khi mở đúng ngày đó, không đẻ task chưa xong vào quá khứ.
+  ensureRepeatInstances: async (startDate, endDate) => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const from = startDate > today ? startDate : today;
+    if (from > endDate) return;
+
+    let created: CreatedInstance[];
+    if (!isTauri()) {
+      created = dbMaterializeRepeats(from, endDate, true);
+    } else {
+      if (!isMainWindow()) return;
+      created = await materializeRepeats(await getDb(), from, endDate, true);
+    }
+    mergeIntoCalendar(get, set, created);
+    const sel = get().selectedDate;
+    if (created.some((c) => c.task.date === sel)) await get().loadTasks(sel);
   },
 
   loadTimeEntries: async (date) => {
@@ -278,11 +410,14 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
   },
 
   addTask: async (task, timeEntry, tagIds) => {
+    const repeatDays = task.repeat_daily ? (task.repeat_days ?? null) : null;
+    if (task.repeat_daily) set({ repeatScheduleVersion: get().repeatScheduleVersion + 1 });
     if (!isTauri()) {
       const newTask = dbAddTask({
         title: task.title, description: task.description ?? null, category: task.category,
         date: task.date, is_done: 0, repeat_daily: task.repeat_daily ?? 0,
         series_id: null, repeat_end_date: null, color: null, deck_position: null,
+        repeat_days: repeatDays,
       });
       if (timeEntry) dbSaveTimeEntry(newTask.id, task.date, timeEntry.startTime, timeEntry.endTime);
       if (tagIds?.length) dbSetTaskTags(newTask.id, tagIds);
@@ -291,8 +426,8 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     }
     const db = await getDb();
     const result = await db.execute(
-      `INSERT INTO tasks (title, description, category, date, repeat_daily) VALUES ($1, $2, $3, $4, $5)`,
-      [task.title, task.description ?? null, task.category, task.date, task.repeat_daily ?? 0]
+      `INSERT INTO tasks (title, description, category, date, repeat_daily, repeat_days) VALUES ($1, $2, $3, $4, $5, $6)`,
+      [task.title, task.description ?? null, task.category, task.date, task.repeat_daily ?? 0, repeatDays]
     );
     const newTaskId = result.lastInsertId;
     if (timeEntry && newTaskId) {
@@ -317,7 +452,7 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     if (!isTauri()) {
       const newTask = dbAddTask({
         title: source.title, description: source.description, category: source.category,
-        date, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, color: source.color,
+        date, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, color: source.color, repeat_days: null,
         deck_position: null,
       });
       if (timeEntry) dbSaveTimeEntry(newTask.id, date, timeEntry.startTime, timeEntry.endTime);
@@ -357,7 +492,7 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     await get().loadTasks(get().selectedDate);
     const newCalendarTask: Task = {
       id: newTaskId, title: source.title, description: source.description, category: source.category,
-      date, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, color: source.color,
+      date, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, color: source.color, repeat_days: null,
       deck_position: null, created_at: '',
     };
     set({
@@ -392,26 +527,46 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
 
     const isSeriesTask = task.repeat_daily === 1 || task.series_id != null;
     const templateId = task.series_id ?? (task.repeat_daily === 1 ? task.id : null);
+    const turningOff = updates.repeat_daily === 0 && task.repeat_daily === 1;
+    const turningOn = updates.repeat_daily === 1 && task.repeat_daily === 0 && task.series_id == null;
+    // Lịch theo thứ/giờ là của cả chuỗi (ghi lên template). Tắt lặp thì nhánh tắt tự xoá lịch.
+    const nextSchedule = updates.repeat_days ?? null;
+    const scheduleChanged = 'repeat_days' in updates && !turningOff && nextSchedule !== (task.repeat_days ?? null);
+
+    // Task đang sửa nhận updates; đổi lịch thì mọi thành viên chuỗi trong state nhận lịch mới.
+    const syncCalendarFields = () =>
+      set({
+        calendarTasks: get().calendarTasks.map((t) => {
+          const next = t.id === id ? { ...t, ...updates } : t;
+          return scheduleChanged && templateId != null && (t.id === templateId || t.series_id === templateId)
+            ? { ...next, repeat_days: nextSchedule }
+            : next;
+        }),
+      });
+    const bumpScheduleVersion = () => {
+      if (scheduleChanged || turningOn) set({ repeatScheduleVersion: get().repeatScheduleVersion + 1 });
+    };
 
     if (!isTauri()) {
-      dbUpdateTask(id, updates);
-      set({
-        tasks: dbGetTasks(get().selectedDate),
-        calendarTasks: get().calendarTasks.map((t) => (t.id === id ? { ...t, ...updates } : t)),
-      });
+      dropFromState(get, set, new Set(dbUpdateTask(id, updates)));
+      await get().loadTasks(get().selectedDate);
+      syncCalendarFields();
+      bumpScheduleVersion();
       return;
     }
 
     const db = await getDb();
 
     if (!isSeriesTask || !templateId) {
-      // Regular non-recurring task
+      // Regular non-recurring task (bật lặp lần đầu cũng đi đường này: repeat_daily +
+      // repeat_days đều là cột thật, ghi thẳng lên task — nó trở thành template).
       const fields = Object.keys(updates) as (keyof TaskUpdate)[];
       const setClauses = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
       const values = fields.map((f) => updates[f]);
       await db.execute(`UPDATE tasks SET ${setClauses} WHERE id = $1`, [id, ...values]);
       await get().loadTasks(get().selectedDate);
-      set({ calendarTasks: get().calendarTasks.map((t) => (t.id === id ? { ...t, ...updates } : t)) });
+      syncCalendarFields();
+      bumpScheduleVersion();
       return;
     }
 
@@ -437,14 +592,34 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       await db.execute(`UPDATE tasks SET ${setClauses} WHERE id = $1`, [id, ...values]);
     }
 
+    if (scheduleChanged) {
+      await db.execute('UPDATE tasks SET repeat_days = $1 WHERE id = $2', [nextSchedule, templateId]);
+      // Instance tương lai chưa xong đã được tạo theo lịch cũ (sai thứ / sai giờ) → xoá để
+      // loadTasks / ensureRepeatInstances tạo lại theo lịch mới. Hôm nay trở về trước giữ
+      // nguyên; task đang sửa cũng giữ (giờ của nó lấy từ ô Bắt đầu/Kết thúc của modal).
+      // Hoàn tác (Ctrl+Z) ghi lại lịch cũ → các buổi tương lai được tạo lại theo lịch cũ.
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const staleWhere = 'series_id = $1 AND date > $2 AND is_done = 0 AND id != $3';
+      const staleArgs = [templateId, today, id];
+      const stale = await db.select<{ id: number }[]>(`SELECT id FROM tasks WHERE ${staleWhere}`, staleArgs);
+      if (stale.length) {
+        await db.execute(`DELETE FROM task_time_entries WHERE task_id IN (SELECT id FROM tasks WHERE ${staleWhere})`, staleArgs);
+        await db.execute(`DELETE FROM task_tags WHERE task_id IN (SELECT id FROM tasks WHERE ${staleWhere})`, staleArgs);
+        await db.execute(`DELETE FROM tasks WHERE ${staleWhere}`, staleArgs);
+        dropFromState(get, set, new Set(stale.map((r) => r.id)));
+      }
+    }
+
     // Handle repeat_daily toggle
     if ('repeat_daily' in updates) {
-      if (updates.repeat_daily === 0 && task.repeat_daily === 1) {
+      if (turningOff) {
         // Turning OFF: convert template to regular task and delete all instances
+        const instances = await db.select<{ id: number }[]>('SELECT id FROM tasks WHERE series_id = $1', [templateId]);
         await db.execute('DELETE FROM task_time_entries WHERE task_id IN (SELECT id FROM tasks WHERE series_id = $1)', [templateId]);
         await db.execute('DELETE FROM task_tags WHERE task_id IN (SELECT id FROM tasks WHERE series_id = $1)', [templateId]);
         await db.execute('DELETE FROM tasks WHERE series_id = $1', [templateId]);
-        await db.execute('UPDATE tasks SET repeat_daily = 0, series_id = NULL, repeat_end_date = NULL WHERE id = $1', [templateId]);
+        await db.execute('UPDATE tasks SET repeat_daily = 0, series_id = NULL, repeat_end_date = NULL, repeat_days = NULL WHERE id = $1', [templateId]);
+        dropFromState(get, set, new Set(instances.map((r) => r.id)));
       } else if (updates.repeat_daily === 1 && task.repeat_daily === 0 && task.series_id != null) {
         // Instance: can't turn ON repeat for an instance, no-op
       } else if (updates.repeat_daily === 1 && task.repeat_daily === 0) {
@@ -457,7 +632,8 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
     }
 
     await get().loadTasks(get().selectedDate);
-    set({ calendarTasks: get().calendarTasks.map((t) => (t.id === id ? { ...t, ...updates } : t)) });
+    syncCalendarFields();
+    bumpScheduleVersion();
   },
 
   toggleTask: async (id) => {
@@ -533,16 +709,17 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
   },
 
   confirmDeleteTask: async (task) => {
-    const calendarTaskTags = { ...get().calendarTaskTags };
-    delete calendarTaskTags[task.id];
-    set({
-      pendingDeleteTask: null,
-      tasks: get().tasks.filter((t) => t.id !== task.id),
-      calendarTasks: get().calendarTasks.filter((t) => t.id !== task.id),
-      taskTimeEntries: get().taskTimeEntries.filter((e) => e.task_id !== task.id),
-      calendarTimeEntries: get().calendarTimeEntries.filter((e) => e.task_id !== task.id),
-      calendarTaskTags,
-    });
+    // Chuỗi lặp: DB xoá mọi instance từ ngày này trở đi (cả chuỗi nếu là ngày đầu), gồm
+    // các buổi tương lai đã tạo trước cho dải tuần → gỡ chúng khỏi state luôn.
+    const seriesId = task.series_id ?? (task.repeat_daily === 1 ? task.id : null);
+    const removeIds = new Set<number>([task.id]);
+    if (seriesId != null) {
+      for (const t of [...get().tasks, ...get().calendarTasks]) {
+        if (t.series_id === seriesId && t.date >= task.date) removeIds.add(t.id);
+      }
+    }
+    set({ pendingDeleteTask: null });
+    dropFromState(get, set, removeIds);
     if (!isTauri()) {
       dbDeleteTask(task.id);
       return;

@@ -16,6 +16,9 @@ export interface Task {
   created_at: string;
   color: string | null;
   deck_position: number | null;
+  // Lịch lặp theo thứ/giờ (JSON, xem utils/repeatSchedule.ts). Cột chỉ nằm trên
+  // template; khi đọc ra, instance được gán lịch của template để modal hiện đúng.
+  repeat_days: string | null;
 }
 
 export interface NewTask {
@@ -24,6 +27,7 @@ export interface NewTask {
   category: Category;
   date: string;
   repeat_daily?: number;
+  repeat_days?: string | null;
 }
 
 export interface TaskUpdate {
@@ -34,6 +38,7 @@ export interface TaskUpdate {
   repeat_daily?: number;
   repeat_end_date?: string | null;
   color?: string | null;
+  repeat_days?: string | null;
 }
 
 export interface TaskTimeEntry {

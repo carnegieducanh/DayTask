@@ -1,6 +1,7 @@
 // In-memory mock database used when running in browser (no Tauri/SQLite)
-import { format, subDays } from 'date-fns';
+import { addDays, format, subDays } from 'date-fns';
 import type { Task, Goal, DayActivity, GoalChecklistItem, TaskTimeEntry, Tag } from '../types';
+import { repeatSlotOn } from '../utils/repeatSchedule';
 
 export const isTauri = () =>
   typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -13,16 +14,16 @@ const today = format(new Date(), 'yyyy-MM-dd');
 // ---------- seed tasks ----------
 
 export const mockTasks: Task[] = [
-  { id: 1, title: 'Họp team sprint planning', description: 'Discuss sprint goals and assign tickets', category: 'work', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null },
-  { id: 2, title: 'Đọc sách 30 phút', description: 'Atomic Habits — chương 7', category: 'personal', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null },
-  { id: 3, title: 'Tập thể dục buổi sáng', description: 'Chạy bộ 5km + stretch', category: 'health', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null },
-  { id: 4, title: 'Review code pull request', description: 'PR #42 — refactor auth module', category: 'work', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null },
-  { id: 5, title: 'Gửi báo cáo tuần', description: 'Tổng kết KPI tuần, gửi cho manager', category: 'work', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null },
-  { id: 6, title: 'Viết blog post kỹ thuật', description: 'Chủ đề: Zustand vs Redux — so sánh thực tế', category: 'creative', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null },
+  { id: 1, title: 'Họp team sprint planning', description: 'Discuss sprint goals and assign tickets', category: 'work', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null, repeat_days: null },
+  { id: 2, title: 'Đọc sách 30 phút', description: 'Atomic Habits — chương 7', category: 'personal', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null, repeat_days: null },
+  { id: 3, title: 'Tập thể dục buổi sáng', description: 'Chạy bộ 5km + stretch', category: 'health', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null, repeat_days: null },
+  { id: 4, title: 'Review code pull request', description: 'PR #42 — refactor auth module', category: 'work', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null, repeat_days: null },
+  { id: 5, title: 'Gửi báo cáo tuần', description: 'Tổng kết KPI tuần, gửi cho manager', category: 'work', date: today, is_done: 1, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null, repeat_days: null },
+  { id: 6, title: 'Viết blog post kỹ thuật', description: 'Chủ đề: Zustand vs Redux — so sánh thực tế', category: 'creative', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null, repeat_days: null },
   // Template for recurring task — series_id = null means it IS the template
-  { id: 7, title: 'Thiền buổi sáng', description: 'Thở sâu + body scan 15 phút', category: 'mindfulness', date: today, is_done: 1, repeat_daily: 1, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null },
-  { id: 8, title: 'Lên kế hoạch sprint Q3', description: 'Roadmap tính năng, ước tính effort từng item', category: 'work', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null },
-  { id: 9, title: 'Học tiếng Anh 1 tiếng', description: 'Luyện nghe IELTS Listening test 3', category: 'learn', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null },
+  { id: 7, title: 'Thiền buổi sáng', description: 'Thở sâu + body scan 15 phút', category: 'mindfulness', date: today, is_done: 1, repeat_daily: 1, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null, repeat_days: null },
+  { id: 8, title: 'Lên kế hoạch sprint Q3', description: 'Roadmap tính năng, ước tính effort từng item', category: 'work', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null, repeat_days: null },
+  { id: 9, title: 'Học tiếng Anh 1 tiếng', description: 'Luyện nghe IELTS Listening test 3', category: 'learn', date: today, is_done: 0, repeat_daily: 0, series_id: null, repeat_end_date: null, created_at: today, color: null, deck_position: null, repeat_days: null },
 ];
 
 const MOCK_TIME_ENTRIES_KEY = 'mock_time_entries_v3';
@@ -72,6 +73,7 @@ for (let i = 1; i <= 90; i++) {
       created_at: dateStr,
       color: null,
       deck_position: null,
+      repeat_days: null,
     });
   }
 }
@@ -121,18 +123,30 @@ export const mockChecklist: GoalChecklistItem[] = [
 
 // ---------- in-memory ops ----------
 
-export function dbGetTasks(date: string): Task[] {
-  // Lazy-create instances for active series templates without one on this date
+// Bản trong bộ nhớ của materializeRepeats (taskSlice.ts): tạo instance còn thiếu của
+// chuỗi lặp cho [start, end] theo lịch thứ/giờ; scheduledOnly = bỏ qua chuỗi "hằng ngày" cũ.
+export function dbMaterializeRepeats(
+  start: string,
+  end: string,
+  scheduledOnly: boolean,
+): { task: Task; entry: TaskTimeEntry | null; tagIds: number[] }[] {
   const templates = mockTasks.filter(
     (t) =>
       t.repeat_daily === 1 &&
       t.series_id === null &&
-      t.date < date &&
-      (t.repeat_end_date === null || t.repeat_end_date >= date)
+      t.date < end &&
+      (t.repeat_end_date === null || t.repeat_end_date >= start) &&
+      (!scheduledOnly || t.repeat_days !== null)
   );
-  for (const tpl of templates) {
-    const hasInstance = mockTasks.some((inst) => inst.series_id === tpl.id && inst.date === date);
-    if (!hasInstance) {
+  const created: { task: Task; entry: TaskTimeEntry | null; tagIds: number[] }[] = [];
+  for (let d = new Date(start + 'T00:00:00'); ; d = addDays(d, 1)) {
+    const date = format(d, 'yyyy-MM-dd');
+    if (date > end) break;
+    for (const tpl of templates) {
+      if (tpl.date >= date || (tpl.repeat_end_date && tpl.repeat_end_date < date)) continue;
+      if (mockTasks.some((inst) => inst.series_id === tpl.id && inst.date === date)) continue;
+      const slot = repeatSlotOn(tpl.repeat_days, date);
+      if (!slot) continue;
       const instance: Task = {
         id: _nextTaskId++,
         title: tpl.title,
@@ -146,12 +160,24 @@ export function dbGetTasks(date: string): Task[] {
         created_at: tpl.created_at,
         color: null,
         deck_position: tpl.deck_position,
+        repeat_days: tpl.repeat_days,
       };
       mockTasks.push(instance);
-      const tplTags = mockTaskTags[tpl.id];
-      if (tplTags?.length) mockTaskTags[instance.id] = [...tplTags];
+      const tagIds = [...(mockTaskTags[tpl.id] ?? [])];
+      if (tagIds.length) mockTaskTags[instance.id] = [...tagIds];
+      let entry: TaskTimeEntry | null = null;
+      if (slot.start && slot.end) {
+        entry = { task_id: instance.id, date, start_time: slot.start, end_time: slot.end };
+        mockTimeEntries.push(entry);
+        persistTimeEntries();
+      }
+      created.push({ task: instance, entry: entry && { ...entry }, tagIds });
     }
   }
+  return created;
+}
+
+export function dbGetTasks(date: string): Task[] {
   return mockTasks.filter((t) => t.date === date).sort((a, b) => a.is_done - b.is_done || a.id - b.id);
 }
 
@@ -161,16 +187,42 @@ export function dbAddTask(task: Omit<Task, 'id' | 'created_at'>): Task {
   return t;
 }
 
-export function dbUpdateTask(id: number, updates: Partial<Task>): void {
+// Trả về id các instance đã bị xoá (tắt lặp, hoặc đổi lịch thứ/giờ) để store gỡ khỏi state.
+export function dbUpdateTask(id: number, updates: Partial<Task>): number[] {
   const task = mockTasks.find((t) => t.id === id);
-  if (!task) return;
+  if (!task) return [];
 
   const isSeriesTask = task.repeat_daily === 1 || task.series_id != null;
   const templateId = task.series_id ?? (task.repeat_daily === 1 ? task.id : null);
+  const removed: number[] = [];
+  const removeWhere = (pred: (t: Task) => boolean) => {
+    for (let i = mockTasks.length - 1; i >= 0; i--) {
+      const t = mockTasks[i];
+      if (!pred(t)) continue;
+      removed.push(t.id);
+      delete mockTaskTags[t.id];
+      mockTasks.splice(i, 1);
+    }
+    for (let i = mockTimeEntries.length - 1; i >= 0; i--) {
+      if (removed.includes(mockTimeEntries[i].task_id)) mockTimeEntries.splice(i, 1);
+    }
+    persistTimeEntries();
+  };
 
   if (!isSeriesTask || !templateId) {
     Object.assign(task, updates);
-    return;
+    return removed;
+  }
+
+  // Đổi lịch thứ/giờ: ghi lên template, xoá instance tương lai chưa xong để tạo lại theo lịch mới
+  const turningOff = updates.repeat_daily === 0 && task.repeat_daily === 1;
+  const nextSchedule = updates.repeat_days ?? null;
+  if ('repeat_days' in updates && !turningOff && nextSchedule !== (task.repeat_days ?? null)) {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    for (const t of mockTasks) {
+      if (t.id === templateId || t.series_id === templateId) t.repeat_days = nextSchedule;
+    }
+    removeWhere((t) => t.series_id === templateId && t.date > today && t.is_done === 0 && t.id !== id);
   }
 
   const SERIES_FIELDS = new Set(['title', 'category']);
@@ -191,23 +243,20 @@ export function dbUpdateTask(id: number, updates: Partial<Task>): void {
 
   // Handle repeat_daily toggle
   if ('repeat_daily' in updates) {
-    if (updates.repeat_daily === 0 && task.repeat_daily === 1) {
+    if (turningOff) {
       // Convert template to regular task and delete all instances
       const tpl = mockTasks.find((t) => t.id === templateId);
       if (tpl) {
         tpl.repeat_daily = 0;
         tpl.repeat_end_date = null;
+        tpl.repeat_days = null;
       }
-      for (let i = mockTasks.length - 1; i >= 0; i--) {
-        if (mockTasks[i].series_id === templateId) {
-          delete mockTaskTags[mockTasks[i].id];
-          mockTasks.splice(i, 1);
-        }
-      }
+      removeWhere((t) => t.series_id === templateId);
     } else if (updates.repeat_daily === 1 && task.repeat_daily === 0 && task.series_id == null) {
       task.repeat_daily = 1;
     }
   }
+  return removed;
 }
 
 export function dbReorderDeckTasks(orderedTaskIds: number[], date: string): void {

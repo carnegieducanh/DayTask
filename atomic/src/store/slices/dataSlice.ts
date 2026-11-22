@@ -286,10 +286,12 @@ export const createDataSlice: StateCreator<AppState, [], [], DataSlice> = (_set,
 
       for (const t of data.tasks) {
         await db.execute(
-          `INSERT INTO tasks (id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+          `INSERT INTO tasks (id, title, description, category, date, is_done, repeat_daily, series_id, repeat_end_date, created_at, color, repeat_days)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
           [t.id, t.title, t.description ?? null, t.category, t.date, t.is_done, t.repeat_daily ?? 0,
-           t.series_id ?? null, t.repeat_end_date ?? null, t.created_at, t.color ?? null]
+           t.series_id ?? null, t.repeat_end_date ?? null, t.created_at, t.color ?? null,
+           // Chỉ template giữ lịch; backup cũ không có trường này → NULL (lặp mỗi ngày như trước)
+           t.series_id == null ? (t.repeat_days ?? null) : null]
         );
       }
       for (const g of goals) {

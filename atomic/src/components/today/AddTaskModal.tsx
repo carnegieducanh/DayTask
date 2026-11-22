@@ -24,9 +24,21 @@ for (let h = 0; h < 24; h++) {
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
 import type { Task, Category } from "../../types";
+import { editorRepeatSlots, serializeRepeatDays, type RepeatSlot } from "../../utils/repeatSchedule";
+
+// Thứ tự chip thứ trong tuần: CN → T7, giống dải tuần Today và Week view tab Lịch.
+const WEEK_DAYS = [0, 1, 2, 3, 4, 5, 6];
+
+const toMinutes = (hhmm: string) => {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+};
+const fromMinutes = (total: number) =>
+  `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 
 function TimeDropdown({
   label,
+  compact,
   value,
   open,
   setOpen,
@@ -34,7 +46,9 @@ function TimeDropdown({
   dropRef,
   listRef,
 }: {
-  label: string;
+  label?: string;
+  // Bản gọn không nhãn, dùng cho từng dòng thứ trong lịch lặp
+  compact?: boolean;
   value: string;
   open: boolean;
   setOpen: (v: boolean) => void;
@@ -90,7 +104,8 @@ function TimeDropdown({
         position: "fixed",
         top: rect.bottom + 4,
         left: rect.left,
-        width: rect.width,
+        // Ô gọn hẹp hơn chữ "Không đặt giờ" → panel không co theo
+        width: Math.max(rect.width, 150),
         right: "auto",
       });
     }
@@ -118,8 +133,8 @@ function TimeDropdown({
   }
 
   return (
-    <div className="form-group" style={{ flex: 1 }}>
-      <label className="form-label">{label}</label>
+    <div className={compact ? "repeat-slot-time" : "form-group"} style={compact ? undefined : { flex: 1 }}>
+      {label && <label className="form-label">{label}</label>}
       <div className="time-dropdown" ref={dropRef}>
         <button
           ref={triggerRef}
@@ -133,7 +148,9 @@ function TimeDropdown({
           ) : (
             <IconClockOff size={14} className="time-dropdown-icon muted" />
           )}
-          <span className={`time-dropdown-value${!value ? " placeholder" : ""}`}>{value || t.taskModal.noTime}</span>
+          <span className={`time-dropdown-value${!value ? " placeholder" : ""}`}>
+            {value || (compact ? "--:--" : t.taskModal.noTime)}
+          </span>
           <IconChevronDown size={13} className="cat-dropdown-chevron" />
         </button>
         {open && (
@@ -194,6 +211,37 @@ function TimeDropdown({
           )}
       </div>
     </div>
+  );
+}
+
+// Ô giờ của 1 dòng thứ trong lịch lặp: tự giữ trạng thái mở + tự đóng khi bấm ra ngoài,
+// để modal không phải quản lý thêm 14 cặp state/ref cho 7 ngày.
+function SlotTimeField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const dropRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    const selected = listRef.current?.querySelector(".time-option.selected") as HTMLElement | null;
+    selected?.scrollIntoView({ block: "center", behavior: "smooth" });
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  return (
+    <TimeDropdown
+      compact
+      value={value}
+      open={open}
+      setOpen={setOpen}
+      onChange={onChange}
+      dropRef={dropRef}
+      listRef={listRef}
+    />
   );
 }
 
@@ -304,6 +352,9 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
   // Giờ kết thúc còn là giá trị tự điền → chạy theo giờ bắt đầu cho tới khi user tự chọn
   const endAutoRef = useRef(!editTask && !initialEndTime);
   const [repeatDaily, setRepeatDaily] = useState(false);
+  // Lịch lặp: các thứ được chọn + giờ riêng từng thứ (rỗng = không đặt giờ)
+  const [repeatSlots, setRepeatSlots] = useState<RepeatSlot[]>([]);
+  const [scheduleError, setScheduleError] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [catPanelStyle, setCatPanelStyle] = useState<React.CSSProperties>({});
   const [colorPickerFor, setColorPickerFor] = useState<Category | null>(null);
@@ -353,6 +404,9 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
 
   // Only lock the toggle for instances (series_id != null); templates can still turn off repeat
   const isSeriesInstance = !!(editTask && editTask.series_id != null);
+  // Chuỗi đã có sẵn trước khi mở modal (template hoặc instance). Khi đó ô Bắt đầu/Kết thúc
+  // chỉ là giờ của riêng ngày này, nên lịch lặp không chạy theo nó nữa.
+  const isExistingSeries = !!(editTask && (editTask.repeat_daily === 1 || editTask.series_id != null));
 
   useEffect(() => {
     if (editTask) {
@@ -360,6 +414,9 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
       setDesc(editTask.description ?? "");
       setCategory(editTask.category);
       setRepeatDaily(editTask.repeat_daily === 1 || editTask.series_id != null);
+      if (editTask.repeat_daily === 1 || editTask.series_id != null) {
+        setRepeatSlots(editorRepeatSlots(editTask.repeat_days));
+      }
       setSelectedTagIds(taskTags[editTask.id] ?? calendarTaskTags[editTask.id] ?? []);
       const entry =
         taskTimeEntries.find((e) => e.task_id === editTask.id && e.date === editTask.date) ??
@@ -426,20 +483,90 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
     return true;
   }
 
+  // Không chọn thứ nào vẫn hợp lệ: lặp mỗi ngày, không đặt giờ
+  function validateSchedule(): boolean {
+    if (!repeatDaily) return true;
+    const bad = repeatSlots.find((s) => s.start && s.end && toMinutes(s.end) <= toMinutes(s.start));
+    if (bad) {
+      setScheduleError(`${t.taskModal.repeatDowFull[bad.day]} · ${t.taskCard.timeEndBeforeStart}`);
+      return false;
+    }
+    setScheduleError("");
+    return true;
+  }
+
+  // Bật lặp: mặc định chưa chọn thứ nào = mỗi ngày, không đặt giờ (như "Lặp lại hàng ngày"
+  // trước đây). Muốn cố định thứ/giờ thì chọn chip — ngày mới chọn mang giờ của task.
+  function handleToggleRepeat() {
+    if (isSeriesInstance) return;
+    setScheduleError("");
+    setRepeatDaily(!repeatDaily);
+  }
+
+  function toggleRepeatDay(day: number) {
+    setScheduleError("");
+    setRepeatSlots((slots) => {
+      if (slots.some((s) => s.day === day)) return slots.filter((s) => s.day !== day);
+      // Ngày mới thêm lấy giờ của chuỗi (ngày đầu tiên có giờ), chưa có thì lấy giờ của task
+      const ref = slots.find((s) => s.start && s.end);
+      const start = ref?.start ?? (startTime || null);
+      const end = ref?.end ?? (endTime || null);
+      return [...slots, { day, start: start && end ? start : null, end: start && end ? end : null }].sort(
+        (a, b) => a.day - b.day,
+      );
+    });
+  }
+
+  function updateSlotTime(day: number, field: "start" | "end", value: string) {
+    setScheduleError("");
+    setRepeatSlots((slots) =>
+      slots.map((s) => {
+        if (s.day !== day) return s;
+        // Chọn "Không đặt giờ" ở ô nào cũng bỏ giờ của cả ngày → không bao giờ còn nửa vời
+        if (!value) return { ...s, start: null, end: null };
+        if (field === "end") return { ...s, end: value, start: s.start ?? fromMinutes(Math.max(toMinutes(value) - 30, 0)) };
+        // Dời giờ bắt đầu thì giữ nguyên thời lượng cũ (chặn 23:45 — task không qua nửa đêm)
+        const duration = s.start && s.end ? toMinutes(s.end) - toMinutes(s.start) : 0;
+        const shifted = Math.min(toMinutes(value) + duration, 23 * 60 + 45);
+        const end = duration > 0 && shifted > toMinutes(value) ? fromMinutes(shifted) : getDefaultEndTime(value);
+        return { ...s, start: value, end };
+      }),
+    );
+  }
+
+  // Chuỗi mới (đang thiết lập trong modal này): ngày nào còn giữ đúng giờ cũ của task
+  // thì đổi theo khi user đổi ô Bắt đầu/Kết thúc — đặt giờ sau khi bật lặp vẫn khớp.
+  function followMainTime(prevStart: string, prevEnd: string, nextStart: string, nextEnd: string) {
+    if (isExistingSeries) return;
+    const timed = !!(nextStart && nextEnd);
+    setRepeatSlots((slots) =>
+      slots.map((s) =>
+        (s.start ?? "") === prevStart && (s.end ?? "") === prevEnd
+          ? { ...s, start: timed ? nextStart : null, end: timed ? nextEnd : null }
+          : s,
+      ),
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
     if (!validateTimes()) return;
+    if (!validateSchedule()) return;
 
     const date = editTask ? editTask.date : selectedDate;
     const timeEntry = startTime && endTime ? { startTime, endTime } : undefined;
+    const scheduleJson = repeatDaily ? serializeRepeatDays(repeatSlots) : null;
 
     if (editTask) {
+      // Chỉ gửi lịch khi thực sự đổi — đổi lịch sẽ làm lại các buổi tương lai của chuỗi
+      const scheduleChanged = repeatDaily && scheduleJson !== (editTask.repeat_days ?? null);
       await updateTask(editTask.id, {
         title: title.trim(),
         description: description.trim() || null,
         category,
         repeat_daily: repeatDaily ? 1 : 0,
+        ...(scheduleChanged ? { repeat_days: scheduleJson } : {}),
       });
       await setTaskTags(editTask.id, selectedTagIds);
       if (timeEntry) {
@@ -455,6 +582,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
           category,
           date,
           repeat_daily: repeatDaily ? 1 : 0,
+          repeat_days: scheduleJson,
         },
         timeEntry,
         selectedTagIds.length ? selectedTagIds : undefined,
@@ -843,8 +971,11 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
               open={startOpen}
               setOpen={setStartOpen}
               onChange={(v) => {
-                if (endAutoRef.current) setEndTime(getDefaultEndTime(v));
-                else if (!editTask && endTime === startTime) setEndTime(v);
+                let nextEnd = endTime;
+                if (endAutoRef.current) nextEnd = getDefaultEndTime(v);
+                else if (!editTask && endTime === startTime) nextEnd = v;
+                followMainTime(startTime, endTime, v, nextEnd);
+                setEndTime(nextEnd);
                 setStartTime(v);
                 setTimeError("");
               }}
@@ -858,6 +989,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
               setOpen={setEndOpen}
               onChange={(v) => {
                 endAutoRef.current = false;
+                followMainTime(startTime, endTime, startTime, v);
                 setEndTime(v);
                 setTimeError("");
               }}
@@ -874,17 +1006,62 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                   {t.taskModal.repeatLabel}
                 </div>
                 <div className="repeat-hint">
-                  {isSeriesInstance ? t.taskModal.repeatSeriesHint : t.taskModal.repeatHint}
+                  {isSeriesInstance
+                    ? t.taskModal.repeatSeriesHint
+                    : repeatDaily && repeatSlots.length > 0 && repeatSlots.length < 7
+                      ? t.taskModal.repeatHintDays(repeatSlots.map((s) => t.taskModal.repeatDowShort[s.day]).join(", "))
+                      : t.taskModal.repeatHint}
                 </div>
               </div>
               <button
                 type="button"
                 className={`toggle-switch${repeatDaily ? " on" : ""}`}
-                onClick={() => !isSeriesInstance && setRepeatDaily((v) => !v)}
+                onClick={handleToggleRepeat}
                 aria-pressed={repeatDaily}
                 style={isSeriesInstance ? { opacity: 0.5, cursor: "default" } : undefined}
               />
             </div>
+
+            {repeatDaily && (
+              <div className="repeat-schedule">
+                <div className="repeat-days" role="group" aria-label={t.taskModal.repeatDaysLabel}>
+                  {WEEK_DAYS.map((day) => {
+                    const on = repeatSlots.some((s) => s.day === day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        className={`repeat-day-chip${on ? " on" : ""}`}
+                        aria-pressed={on}
+                        title={t.taskModal.repeatDowFull[day]}
+                        onClick={() => toggleRepeatDay(day)}
+                      >
+                        {t.taskModal.repeatDowShort[day]}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {repeatSlots.length > 0 && (
+                  <div className="repeat-slots">
+                    {repeatSlots.map((slot) => (
+                      <div key={slot.day} className="repeat-slot">
+                        <span className="repeat-slot-day">{t.taskModal.repeatDowFull[slot.day]}</span>
+                        <SlotTimeField value={slot.start ?? ""} onChange={(v) => updateSlotTime(slot.day, "start", v)} />
+                        <span className="repeat-slot-sep">–</span>
+                        <SlotTimeField value={slot.end ?? ""} onChange={(v) => updateSlotTime(slot.day, "end", v)} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {scheduleError && <div className="time-error repeat-schedule-error">{scheduleError}</div>}
+                <div className="repeat-note">
+                  {repeatSlots.length === 0 ? t.taskModal.repeatEveryDayNote : t.taskModal.repeatNoTimeNote}
+                  {isExistingSeries && ` · ${t.taskModal.repeatApplyNote}`}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="form-actions">

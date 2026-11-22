@@ -21,6 +21,8 @@ export default function TodayWeekStrip() {
     calendarTasks,
     calendarTimeEntries,
     loadCalendarTasks,
+    ensureRepeatInstances,
+    repeatScheduleVersion,
     categoryColors,
   } = useAppStore();
 
@@ -33,15 +35,26 @@ export default function TodayWeekStrip() {
 
   // Load whole year(s) like CalendarView does, so switching weeks inside the
   // same year doesn't re-query and Calendar tab's own load stays compatible.
+  // Trước đó tạo sẵn các buổi sắp tới của chuỗi lặp theo thứ trong tuần này (giờ đã đặt
+  // sẵn → hiện luôn trên dải). Chạy tuần tự: nạp calendar song song có thể SELECT trước
+  // khi instance kịp ghi rồi set() đè mất phần vừa merge.
   const loadedRange = useRef<{ start: string; end: string } | null>(null);
   useEffect(() => {
-    const loaded = loadedRange.current;
-    if (loaded && loaded.start <= startStr && loaded.end >= endStr) return;
-    const start = `${startStr.slice(0, 4)}-01-01`;
-    const end = `${endStr.slice(0, 4)}-12-31`;
-    loadedRange.current = { start, end };
-    loadCalendarTasks(start, end);
-  }, [startStr, endStr, loadCalendarTasks]);
+    let cancelled = false;
+    (async () => {
+      await ensureRepeatInstances(startStr, endStr);
+      if (cancelled) return;
+      const loaded = loadedRange.current;
+      if (loaded && loaded.start <= startStr && loaded.end >= endStr) return;
+      const start = `${startStr.slice(0, 4)}-01-01`;
+      const end = `${endStr.slice(0, 4)}-12-31`;
+      loadedRange.current = { start, end };
+      loadCalendarTasks(start, end);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [startStr, endStr, repeatScheduleVersion, ensureRepeatInstances, loadCalendarTasks]);
 
   // Calendar cache covers every day; tasks/taskTimeEntries (the loaded day)
   // override it since they're fresher and include lazily-created repeat

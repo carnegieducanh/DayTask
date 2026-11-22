@@ -46,6 +46,86 @@
   transform: translateX(18px);
 }
 
+/* ── Lịch lặp theo thứ + giờ (modal thêm/sửa task) ── */
+.repeat-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.repeat-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.repeat-day-chip {
+  height: 30px;
+  padding: 0;
+  border: 0.5px solid var(--border-2);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.repeat-day-chip:hover {
+  border-color: var(--primary);
+  color: var(--text-primary);
+}
+
+.repeat-day-chip.on {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.repeat-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.repeat-slot {
+  display: grid;
+  grid-template-columns: 5.6rem 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.repeat-slot-day {
+  font-size: 0.93rem;
+  color: var(--text-primary);
+}
+
+.repeat-slot-sep {
+  color: var(--text-secondary);
+}
+
+.repeat-slot-time .time-dropdown-trigger,
+.repeat-slot-time .time-dropdown-trigger-editing {
+  padding: 5px 9px;
+  font-size: 0.93rem;
+}
+
+.repeat-slot-time .time-inline-input {
+  font-size: 0.93rem;
+}
+
+.repeat-schedule-error {
+  margin-top: 0;
+}
+
+.repeat-note {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
 /* ══ Tab Hôm nay — phong cách editorial (cùng ngôn ngữ với Kế hoạch năm / Quotes) ══
    Nền giấy, chữ mực, Lora cho chữ đọc và con số, đường kẻ mảnh thay khung.
    Bố cục giữ nguyên như đã chốt: măng-sét (ngày + quote | lời chào | từ vựng) →
