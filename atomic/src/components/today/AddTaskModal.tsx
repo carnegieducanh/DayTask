@@ -224,6 +224,9 @@ const COLOR_PALETTE: string[] = [
   "#A3978B",
 ];
 
+// Chiều cao .cat-color-popup (4 hàng × 20px + 3 gap × 5px + padding 2×10px + viền) — để kẹp popup trong màn hình
+const COLOR_POPUP_HEIGHT = 117;
+
 function getDefaultStartTime(): string {
   const now = new Date();
   const totalMin = now.getHours() * 60 + now.getMinutes();
@@ -268,6 +271,8 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
     updateTag,
     softDeleteTag,
     setTaskTags,
+    tasks,
+    calendarTasks,
   } = useAppStore();
 
   const CATEGORIES: { value: Category; label: string; separator?: boolean }[] = [
@@ -281,11 +286,19 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
     { value: "other", label: t.cat.other, separator: true },
   ];
 
-  const taskColor = editTask?.color ?? null;
+  // editTask là bản chụp lúc mở modal (CalendarView giữ trong state) — đổi màu category trong
+  // dropdown sẽ ghi màu mới vào task trong store, nên phải đọc lại task từ store, không thì
+  // chấm màu + dấu ✓ cứ đứng yên ở màu cũ.
+  const liveTask = editTask
+    ? (tasks.find((x) => x.id === editTask.id) ?? calendarTasks.find((x) => x.id === editTask.id) ?? editTask)
+    : null;
+  const taskColor = liveTask?.color ?? null;
 
   const [title, setTitle] = useState("");
   const [description, setDesc] = useState("");
   const [category, setCategory] = useState<Category>("work");
+  // Màu đang hiển thị của 1 category trong dropdown: category đang chọn ưu tiên màu riêng của task
+  const effectiveCatColor = (c: Category) => (c === category ? (taskColor ?? categoryColors[c]) : categoryColors[c]);
   const [startTime, setStartTime] = useState(() => (editTask ? "" : (initialStartTime ?? getDefaultStartTime())));
   const [endTime, setEndTime] = useState(() => (editTask ? "" : (initialEndTime ?? getDefaultEndTime(startTime))));
   // Giờ kết thúc còn là giá trị tự điền → chạy theo giờ bắt đầu cho tới khi user tự chọn
@@ -560,12 +573,13 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                     setColorPickerFor(null);
                   }}
                 >
-                  <span className="cat-color-dot" style={{ background: taskColor ?? categoryColors[category] }} />
+                  <span className="cat-color-dot" style={{ background: effectiveCatColor(category) }} />
                   <span className="cat-dropdown-label">{CATEGORIES.find((c) => c.value === category)?.label}</span>
                   <IconChevronDown size={13} className={`cat-dropdown-chevron${dropdownOpen ? " open" : ""}`} />
                 </button>
                 {dropdownOpen &&
                   createPortal(
+                    <>
                     <div className="cat-dropdown-panel" style={catPanelStyle} ref={catPanelRef} onMouseDown={(e) => e.stopPropagation()}>
                       {CATEGORIES.map((cat) => (
                         <React.Fragment key={cat.value}>
@@ -582,15 +596,7 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                               setColorPickerFor(null);
                             }}
                           >
-                            <span
-                              className="cat-color-dot"
-                              style={{
-                                background:
-                                  cat.value === category
-                                    ? (taskColor ?? categoryColors[cat.value])
-                                    : categoryColors[cat.value],
-                              }}
-                            />
+                            <span className="cat-color-dot" style={{ background: effectiveCatColor(cat.value) }} />
                             <span>{cat.label}</span>
                           </button>
                           <button
@@ -602,7 +608,10 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                               const isOpening = colorPickerFor !== cat.value;
                               if (isOpening) {
                                 const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                                setColorPickerPos({ top: rect.top, left: rect.right + 8 });
+                                setColorPickerPos({
+                                  top: Math.max(8, Math.min(rect.top, window.innerHeight - COLOR_POPUP_HEIGHT - 8)),
+                                  left: rect.right + 8,
+                                });
                               } else {
                                 setColorPickerPos(null);
                               }
@@ -612,37 +621,40 @@ export default function AddTaskModal({ editTask, onClose, initialStartTime, init
                           >
                             <IconDotsVertical size={16} />
                           </button>
-                          {colorPickerFor === cat.value && colorPickerPos && (
-                            <div
-                              className="cat-color-popup"
-                              style={{ position: "fixed", top: colorPickerPos.top, left: colorPickerPos.left }}
-                              onMouseDown={(e) => e.stopPropagation()}
-                            >
-                              {COLOR_PALETTE.map((color) => (
-                                <button
-                                  key={color}
-                                  type="button"
-                                  className={`color-swatch${(cat.value === category ? (taskColor ?? categoryColors[cat.value]) : categoryColors[cat.value]) === color ? " color-swatch-active" : ""}`}
-                                  style={{ background: color }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateTaskColor(cat.value, color);
-                                  }}
-                                  title={color}
-                                >
-                                  {(cat.value === category
-                                    ? (taskColor ?? categoryColors[cat.value])
-                                    : categoryColors[cat.value]) === color && (
-                                    <IconCheck size={10} strokeWidth={3} color="#fff" />
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          )}
                         </div>
                         </React.Fragment>
                       ))}
-                    </div>,
+                    </div>
+                    {/* Popup màu PHẢI là sibling của panel, không lồng bên trong: .cat-dropdown-panel có
+                        backdrop-filter → tạo containing block cho position:fixed, popup sẽ bị định vị
+                        theo panel và bị overflow của panel cắt mất (không bấm được màu nào). */}
+                    {colorPickerFor && colorPickerPos && (
+                      <div
+                        className="cat-color-popup"
+                        style={{ position: "fixed", top: colorPickerPos.top, left: colorPickerPos.left }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        {COLOR_PALETTE.map((color) => {
+                          const active = effectiveCatColor(colorPickerFor) === color;
+                          return (
+                            <button
+                              key={color}
+                              type="button"
+                              className={`color-swatch${active ? " color-swatch-active" : ""}`}
+                              style={{ background: color }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateTaskColor(colorPickerFor, color);
+                              }}
+                              title={color}
+                            >
+                              {active && <IconCheck size={10} strokeWidth={3} color="#fff" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    </>,
                     document.body,
                   )}
               </div>

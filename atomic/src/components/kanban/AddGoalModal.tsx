@@ -48,6 +48,9 @@ const COLOR_PALETTE: string[] = [
   "#A3978B",
 ];
 
+// Chiều cao .cat-color-popup (4 hàng × 20px + 3 gap × 5px + padding 2×10px + viền) — để kẹp popup trong màn hình
+const COLOR_POPUP_HEIGHT = 117;
+
 interface Props {
   editGoal?: Goal | null;
   defaultStatus?: GoalStatus;
@@ -336,6 +339,7 @@ export default function AddGoalModal({
                   />
                 </button>
                 {dropdownOpen && dropdownPos && createPortal(
+                  <>
                   <div
                     className="cat-dropdown-panel"
                     ref={panelRef}
@@ -373,7 +377,10 @@ export default function AddGoalModal({
                             const isOpening = colorPickerFor !== cat.value;
                             if (isOpening) {
                               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                              setColorPickerPos({ top: rect.top, left: rect.right + 8 });
+                              setColorPickerPos({
+                                top: Math.max(8, Math.min(rect.top, window.innerHeight - COLOR_POPUP_HEIGHT - 8)),
+                                left: rect.right + 8,
+                              });
                             } else {
                               setColorPickerPos(null);
                             }
@@ -385,38 +392,42 @@ export default function AddGoalModal({
                         >
                           <IconDotsVertical size={16} />
                         </button>
-                        {colorPickerFor === cat.value && colorPickerPos && (
-                          <div
-                            className="cat-color-popup"
-                            style={{ position: 'fixed', top: colorPickerPos.top, left: colorPickerPos.left }}
-                            onMouseDown={(e) => e.stopPropagation()}
-                          >
-                            {COLOR_PALETTE.map((color) => (
-                              <button
-                                key={color}
-                                type="button"
-                                className={`color-swatch${categoryColors[cat.value] === color ? " color-swatch-active" : ""}`}
-                                style={{ background: color }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateTaskColor(cat.value, color);
-                                }}
-                                title={color}
-                              >
-                                {categoryColors[cat.value] === color && (
-                                  <IconCheck
-                                    size={10}
-                                    strokeWidth={3}
-                                    color="#fff"
-                                  />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     ))}
-                  </div>,
+                  </div>
+                  {/* Popup màu là sibling của panel, không lồng bên trong: .cat-dropdown-panel có
+                      backdrop-filter → tạo containing block cho position:fixed, popup sẽ bị định vị
+                      theo panel và bị overflow của panel cắt mất. */}
+                  {colorPickerFor && colorPickerPos && (
+                    <div
+                      className="cat-color-popup"
+                      style={{ position: 'fixed', top: colorPickerPos.top, left: colorPickerPos.left }}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      {COLOR_PALETTE.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`color-swatch${categoryColors[colorPickerFor] === color ? " color-swatch-active" : ""}`}
+                          style={{ background: color }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateTaskColor(colorPickerFor, color);
+                          }}
+                          title={color}
+                        >
+                          {categoryColors[colorPickerFor] === color && (
+                            <IconCheck
+                              size={10}
+                              strokeWidth={3}
+                              color="#fff"
+                            />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  </>,
                   document.body,
                 )}
               </div>
