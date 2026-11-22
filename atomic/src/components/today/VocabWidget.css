@@ -1,0 +1,351 @@
+/* ══ Từ vựng — kiểu "mục từ điển" (editorial) ══
+   Dùng ở 2 chỗ: măng-sét tab Hôm nay (.vw--head) và cột trái Day view tab Lịch
+   (.vw--side). Token riêng tiền tố --vw- (cùng giá trị bảng màu editorial của
+   tab Hôm nay và tab Lịch) vì widget nằm trong 2 tab khác nhau. Màu nhấn son
+   chỉ cho vạch tiến độ; không hộp lúc nghỉ, chỉ nổi tờ giấy khi rê chuột
+   (bản head). Lưu ý: đừng viết chuỗi sao-gạch trong chú thích — nó
+   đóng chú thích sớm và trình duyệt bỏ luôn rule ngay sau. */
+
+.vw {
+  --vw-paper: #fffefb;
+  --vw-rule: #ddd7cb;
+  --vw-rule-soft: #e8e3d9;
+  --vw-track: #e6e1d6;
+  --vw-ink: #2a2723;
+  --vw-ink-2: #45413a;
+  --vw-muted: #6e695f;
+  --vw-seal: #a8322a;
+  --vw-serif: "Lora", "Yu Mincho", Georgia, serif;
+  --vw-lift: 0 10px 28px -8px rgba(40, 32, 20, 0.28);
+  cursor: pointer;
+  font-weight: 400;
+  color: var(--vw-ink);
+}
+
+[data-theme="dark"] .vw {
+  --vw-paper: #1d1d1c;
+  --vw-rule: #34322e;
+  --vw-rule-soft: #262523;
+  --vw-track: #2c2c2b;
+  --vw-ink: #ebe7df;
+  --vw-ink-2: #cfcac0;
+  --vw-muted: #8f8a80;
+  --vw-seal: #d76a5c;
+  --vw-lift: 0 10px 28px -8px rgba(0, 0, 0, 0.7);
+}
+
+/* ── Dòng đầu: nhãn chữ hoa giãn cách (TODAY'S VOCABULARY) ── */
+.vw-top {
+  display: flex;
+  align-items: baseline;
+  line-height: 1.2;
+}
+
+.vw-label {
+  white-space: nowrap;
+  font-size: 0.69rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--vw-muted);
+}
+
+/* ── Nội dung (remount mỗi lần đổi từ → trượt vào) ── */
+@keyframes vw-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vw-content {
+  display: flex;
+  flex-direction: column;
+  animation: vw-word-in 0.45s ease;
+}
+
+/* Bản head chặn max-height lúc nghỉ: không cho các dòng co lại (dòng nghĩa có
+   overflow: hidden nên mặc định co được về 0) — phần thừa phải bị cắt ở đáy. */
+.vw-content > * {
+  flex-shrink: 0;
+}
+
+.vw-word-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem 0.625rem;
+  min-width: 0;
+}
+
+.vw-word {
+  font-family: var(--vw-serif);
+  font-size: 1.75rem;
+  line-height: 1.25;
+  color: var(--vw-ink);
+}
+
+.vw-ipa {
+  font-family: var(--vw-serif);
+  font-style: italic;
+  font-size: 0.94rem;
+  line-height: 1.25;
+  color: var(--vw-muted);
+}
+
+.vw-meaning {
+  margin: 0.25rem 0 0;
+  font-family: var(--vw-serif);
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--vw-ink-2);
+}
+
+.vw-en {
+  margin: 0.25rem 0 0;
+  font-family: var(--vw-serif);
+  font-style: italic;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--vw-muted);
+}
+
+/* ── Chân: vạch tiến độ + "N phút nữa đổi từ" + nút lùi/tới ── */
+.vw-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.625rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--vw-rule-soft);
+}
+
+.vw-timer {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+  font-family: var(--vw-serif);
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--vw-muted);
+}
+
+.vw-timer-text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.vw-prog {
+  position: relative;
+  flex: none;
+  width: 2.75rem;
+  height: 2px;
+  overflow: hidden;
+  background: var(--vw-track);
+}
+
+@keyframes vw-prog {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Thời lượng + độ trễ đặt inline từ VocabWidget.tsx (CycleBar) */
+.vw-prog-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--vw-seal);
+  transform-origin: left center;
+  animation-name: vw-prog;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+.vw-nav {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--vw-rule);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--vw-ink-2);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.vw-nav:hover:not(:disabled) {
+  background: var(--vw-rule-soft);
+  border-color: var(--vw-muted);
+  color: var(--vw-ink);
+}
+
+.vw-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ══ Bản head — góc phải măng-sét tab Hôm nay ══
+   Tuyệt đối trong .today-head-vocab (không làm cao header). Khung trải ra ngoài
+   cột (top/right âm đúng bằng padding) để lúc rê chuột thành tờ giấy mà chữ
+   không xê dịch. Lúc nghỉ nội dung bị chặn ở từ + 1 dòng nghĩa (max-height);
+   VocabWidget.tsx mở/thu bằng class .vw-content--open + max-height inline. */
+.vw--head {
+  position: absolute;
+  top: -0.75rem;
+  right: -1rem;
+  z-index: 10;
+  width: min(24rem, calc(100% + 1rem));
+  padding: 0.75rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  text-align: right;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* Nâng thứ tự vẽ để tờ giấy mở rộng đè lên hàng đồng hồ phía dưới.
+   .vw--lifted do VocabWidget.tsx bật/tắt (không dùng :hover — xem LIFTED_CLASS). */
+.vw--head.vw--lifted {
+  z-index: 50;
+  background: var(--vw-paper);
+  border-color: var(--vw-rule);
+  box-shadow: var(--vw-lift);
+}
+
+/* Bản lúc nghỉ (nhãn + từ + 1 dòng nghĩa) cao ≈ lời chào giữa măng-sét để
+   không làm cao header — hàng đồng hồ phải lọt màn hình đầu. */
+.vw--head .vw-top {
+  justify-content: flex-end;
+  margin-bottom: 0.25rem;
+  line-height: 1;
+}
+
+.vw--head .vw-word {
+  font-size: 1.625rem;
+}
+
+.vw--head .vw-meaning {
+  margin-top: 0.125rem;
+}
+
+.vw--head .vw-word-row {
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+}
+
+/* Lúc nghỉ giữ một dòng: phiên âm co trước, rồi mới tới từ */
+.vw--head .vw-word,
+.vw--head .vw-ipa,
+.vw--head .vw-meaning {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.vw--head .vw-word {
+  flex: 0 1 auto;
+}
+
+.vw--head .vw-ipa {
+  flex: 0 100 auto;
+}
+
+/* từ (1.625 × 1.25) + khoảng cách 0.125 + 1 dòng nghĩa (1 × 1.45) */
+.vw--head .vw-content {
+  overflow: hidden;
+  max-height: 3.62rem;
+}
+
+.vw--head .vw-content--open .vw-word-row {
+  flex-wrap: wrap;
+}
+
+.vw--head .vw-content--open .vw-word,
+.vw--head .vw-content--open .vw-ipa,
+.vw--head .vw-content--open .vw-meaning {
+  overflow: visible;
+  white-space: normal;
+}
+
+/* Glass mode: tờ giấy thành kính mờ như các thẻ khác của tab Hôm nay */
+html.has-bg-image .vw--head.vw--lifted {
+  background: var(--bg-glass-panel);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+/* ══ Bản side — cột trái Day view (216px) ══
+   Hiện đủ mọi thứ; đầu mục kẻ mảnh như cột "Danh mục" của Week/Month. */
+.vw--side .vw-top {
+  align-items: center;
+  min-height: 1.75rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--vw-rule);
+}
+
+.vw--side .vw-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--vw-ink-2);
+}
+
+.vw--side .vw-word-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.vw--side .vw-word {
+  font-size: 1.6rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.vw--side .vw-ipa {
+  font-size: 0.9rem;
+}
+
+.vw--side .vw-meaning {
+  margin-top: 0.625rem;
+  line-height: 1.55;
+}
+
+.vw--side .vw-en {
+  margin-top: 0.375rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.vw--side .vw-foot {
+  margin-top: 0.875rem;
+}
+
+.vw--side .vw-timer {
+  font-size: 0.78rem;
+}
+
+.vw--side .vw-prog {
+  width: 2.25rem;
+}

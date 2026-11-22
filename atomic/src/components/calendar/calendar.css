@@ -792,7 +792,7 @@
   min-height: 0;
 }
 
-/* ── Sidebar Day view: lịch nhỏ + thống kê ngày + note từ vựng ── */
+/* ── Sidebar Day view: lịch nhỏ + thống kê ngày + từ vựng (VocabWidget.css) ── */
 .cal-day-sidebar {
   width: 216px;
   flex-shrink: 0;
@@ -836,12 +836,6 @@
   font-size: 0.78rem;
 }
 
-.cal-day-sidebar .vocab-widget-label {
-  font-size: 0.69rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  color: var(--cv-muted);
-}
 
 /* MiniCalendar dùng chung với tab Hôm nay → chỉ chỉnh trong sidebar này (đặt
    sau rule gốc ở today.css nhờ độ ưu tiên cao hơn). Chủ nhật son như lịch giấy,

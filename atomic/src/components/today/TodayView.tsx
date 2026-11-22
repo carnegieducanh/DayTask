@@ -121,7 +121,7 @@ export default function TodayView() {
             <DailyGreeting pendingCount={pending.length} isToday={selectedDate === todayStr} />
 
             <div className="today-head-ear today-head-vocab">
-              <VocabWidget noteStyle />
+              <VocabWidget variant="head" />
             </div>
           </header>
 

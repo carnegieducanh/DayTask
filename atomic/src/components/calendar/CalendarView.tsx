@@ -265,9 +265,7 @@ export default function CalendarView() {
                   )}
                 </div>
               </div>
-              <div style={{ padding: "0 8px" }}>
-                <VocabWidget noteStyle />
-              </div>
+              <VocabWidget variant="side" />
             </div>
           </div>
         ) : (
