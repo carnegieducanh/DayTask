@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, type CSSProperties } from "react";
 import { IconCheck, IconPlus } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
 import { useT } from "../../i18n";
@@ -40,14 +40,16 @@ export default function TodayAgenda({
             const entry = entries.find((e) => e.task_id === task.id);
             const color = task.color ?? categoryColors[task.category];
             const checked = !!task.is_done || checkingIds.has(task.id);
+            // Being ticked: collapsing on its way to done (no undo preview yet).
+            const ticking = checked && !task.is_done;
             // Same block as the week strip (.tws-block); the whole block ticks,
             // the drawer click just bubbles up.
             return (
               <div
                 key={task.id}
                 ref={blockRef(task.id)}
-                className={`tws-block today-agenda-block${checked ? " done" : ""}`}
-                style={{ background: checked ? `color-mix(in srgb, ${color} 40%, transparent)` : color }}
+                className={`tws-block today-agenda-block${checked ? " done" : ""}${ticking ? " ticking" : ""}`}
+                style={{ "--tws-c": color } as CSSProperties}
                 onClick={() => handleTick(task)}
                 title={task.is_done ? t.taskCard.markUndone : t.taskCard.markDone}
               >

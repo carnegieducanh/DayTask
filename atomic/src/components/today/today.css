@@ -581,16 +581,23 @@
   gap: 4px;
 }
 
-/* Block màu dùng chữ tối, cùng quy ước với .cal-week-task-card. Block xong
-   nhạt đi bằng alpha của nền (color-mix inline), không bằng opacity, để
-   ngăn tích vẫn rõ khi hover. Khối "Hôm nay" (.today-agenda-block) dùng lại. */
+/* Block màu dùng chữ tối, cùng quy ước với .cal-week-task-card. Màu task
+   truyền vào qua --tws-c (inline). Block xong nhạt đi bằng alpha của nền,
+   không bằng opacity, để ngăn tích vẫn rõ khi hover. Khối "Hôm nay"
+   (.today-agenda-block) dùng lại. */
 .tws-block {
   display: flex;
   align-items: stretch;
   min-width: 0;
   overflow: hidden;
   border-radius: 4px;
+  background: var(--tws-c);
   color: rgba(0, 0, 0, 0.85);
+  transition: background 0.3s;
+}
+
+.tws-block.done {
+  background: color-mix(in srgb, var(--tws-c) 40%, transparent);
 }
 
 /* Cỡ chữ khớp thẻ task ở Week view tab Lịch (.cal-week-task-card) */
@@ -598,6 +605,7 @@
   flex: 1;
   min-width: 0;
   padding: 6px 8px;
+  transition: opacity 0.3s;
 }
 
 .tws-block.done .tws-block-body {
@@ -626,7 +634,8 @@
   width: 28px;
 }
 
-.tws-block.done .tws-block-drawer {
+/* Đang tích (block co lại trước khi thành xong): ngăn tối + dấu tích màu nhấn */
+.tws-block.ticking .tws-block-drawer {
   background: rgba(20, 20, 20, 0.55);
 }
 
@@ -657,13 +666,33 @@
   animation: task-drawer-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.tws-block.done:hover .tws-block-drawer svg,
-.tws-block.done:hover .tws-block-drawer:hover svg {
+.tws-block.ticking:hover .tws-block-drawer svg {
   color: var(--primary);
 }
 
 .tws-block.done .tws-block-title {
   text-decoration: line-through;
+  transition: text-decoration-color 0.3s;
+}
+
+/* Task đã xong — "xem trước" lúc bỏ tích: block hiện lại như chưa xong (đủ màu,
+   chữ rõ, mất gạch ngang); ngăn giữ kiểu của task chưa xong, chỉ khác icon.
+   Chỉ hiện khi một cú bấm sẽ bỏ tích thật: ở dải tuần là lúc rê vào ngăn (bấm
+   thân block là chọn ngày), ở khối "Hôm nay" là cả block. Bỏ qua block đang
+   tích — chuột vẫn nằm trên nó lúc co lại. */
+.tws-block.done:not(.ticking):has(.tws-block-drawer:hover),
+.today-agenda-block.done:not(.ticking):hover {
+  background: var(--tws-c);
+}
+
+.tws-block.done:not(.ticking):has(.tws-block-drawer:hover) .tws-block-body,
+.today-agenda-block.done:not(.ticking):hover .tws-block-body {
+  opacity: 1;
+}
+
+.tws-block.done:not(.ticking):has(.tws-block-drawer:hover) .tws-block-title,
+.today-agenda-block.done:not(.ticking):hover .tws-block-title {
+  text-decoration-color: transparent;
 }
 
 .tws-block-time {

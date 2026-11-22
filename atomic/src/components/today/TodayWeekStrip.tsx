@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { addDays, format, startOfWeek } from "date-fns";
 import { IconCheck } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
@@ -114,12 +114,14 @@ export default function TodayWeekStrip() {
               {shown.map(({ task, entry }) => {
                 const color = task.color ?? categoryColors[task.category];
                 const checked = !!task.is_done || checkingIds.has(task.id);
+                // Being ticked: collapsing on its way to done (no undo preview yet).
+                const ticking = checked && !task.is_done;
                 return (
                   <div
                     key={task.id}
                     ref={blockRef(task.id)}
-                    className={`tws-block${checked ? " done" : ""}`}
-                    style={{ background: checked ? `color-mix(in srgb, ${color} 40%, transparent)` : color }}
+                    className={`tws-block${checked ? " done" : ""}${ticking ? " ticking" : ""}`}
+                    style={{ "--tws-c": color } as CSSProperties}
                     title={`${entry.start_time} - ${entry.end_time}  ${task.title}`}
                   >
                     {/* Same slide-out drawer idea as TaskCard's .task-drawer */}
