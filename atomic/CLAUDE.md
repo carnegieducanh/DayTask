@@ -211,9 +211,17 @@ Thêm key mới: sửa `vi.ts` trước (là source of truth cho TypeScript type
 
 ## App Icon
 
-**Đổi toàn bộ sang thiết kế mới (2026-09-02):** Logo cũ (vector atom-rings) đã bị **thay thế hoàn toàn** ở TẤT CẢ các vị trí — navbar (`Sidebar.tsx`), favicon (`index.html`), taskbar/app icon (`src-tauri/icons/*`) — không còn tách 2 asset khác thiết kế như trước nữa. Design mới: khối gem/crystal 3D bóng, gradient tím→hồng/đỏ→cam, do user cung cấp dạng ảnh raster (`atom_logo.png`, không phải vector).
+**Thiết kế hiện tại (2026-11-23): viên gạch 3D màu đào, chữ "A\" đen** — 2 ảnh AI do user tạo, ghép theo size:
+- **≤32px = ảnh nhìn thẳng** (`_source/peach-tile-front-*`), **≥40px = ảnh nghiêng** (`_source/peach-tile-tilt-*`). Lý do: bản nghiêng ở 16–24px bị nhòe chữ + răng cưa cạnh xéo, ở ≥40px thì đẹp/có chiều sâu hơn. Lưu ý màn chính của user là 200% → taskbar dùng frame 48 = bản nghiêng; tray + title bar dùng frame 16 = bản nhìn thẳng.
+- `src-tauri/icons/`: `16x16.png`, `32x32.png` từ bản thẳng; `48`/`64`/`128`/`128@2x`/`256`/`512`/`icon.png` từ bản nghiêng; `icon.ico` = frame 16/20/24/32 bản thẳng + 40/48/64/96/128/256 bản nghiêng (frame đầu vẫn là 16).
+- `public/atom-icon.png` (navbar, hiện 40px CSS) = bản nghiêng 512; `public/favicon.png` (32px, `index.html`) = bản thẳng.
+- Ảnh AI có alpha ~253 trên mặt gạch + vệt màu rác alpha thấp ở viền → làm sạch trước khi xuất: alpha ≤24 → 0, ≥240 → 255, giữa kéo giãn tuyến tính. Fill 0.90 đều (không kéo giãn từng trục — hình vuông có chữ).
+- Xuất: skill `desktop-app-icon` (`make-icons.mjs --fill 0.9`) chạy riêng cho từng ảnh, rồi ghép 2 file `.ico` theo ngưỡng 32px (đọc từng frame PNG trong ICO, ghi lại ICO mới sắp tăng dần).
+- **Bộ icon đá quý trước đó** (taskbar + navbar/favicon) lưu nguyên ở `src-tauri/icons/_source/archive-gem-v2/`; nguồn của nó là `_source/atom-logo-source.png` + `atom-logo-master.png`.
 
-- **Nguồn:** raster PNG (không phải SVG) — `public/atom-icon.svg` đã bị **xóa**. `public/atom-icon.png` (512×512, nền trong suốt) giờ dùng cho cả favicon (`index.html`) lẫn navbar logo (`Sidebar.tsx` — `<img src="/atom-icon.png">`).
+**Thiết kế trước (2026-09-02 → 2026-11-23, đã thay):** Logo cũ (vector atom-rings) đã bị **thay thế hoàn toàn** ở TẤT CẢ các vị trí — navbar (`Sidebar.tsx`), favicon (`index.html`), taskbar/app icon (`src-tauri/icons/*`) — không còn tách 2 asset khác thiết kế như trước nữa. Design: khối gem/crystal 3D bóng, gradient tím→hồng/đỏ→cam, do user cung cấp dạng ảnh raster (`atom_logo.png`, không phải vector).
+
+- **Nguồn:** raster PNG (không phải SVG) — `public/atom-icon.svg` đã bị **xóa**. `public/atom-icon.png` (512×512, nền trong suốt) dùng cho cả favicon (`index.html`) lẫn navbar logo (`Sidebar.tsx` — `<img src="/atom-icon.png">`).
 - **Master gốc:** `src-tauri/icons/_source/atom-logo-source.png` (bản gốc user đưa, không sửa) + `atom-logo-master.png` (đã crop bbox nội dung + pad vuông transparent, fill ratio 90% theo cạnh dài). Các file `atom-icon-*.png` cũ trong `_source/` (thiết kế ring cũ) vẫn giữ lại làm lịch sử, không dùng nữa.
 - **`icon.ico`:** 10 size DPI-tier (16/20/24/32/40/48/64/96/128/256), build bằng PNG-in-ICO thủ công (không dùng `png-to-ico`) — xem [[feedback_patterns]] phần "Icon generation".
 - **Vì đây là khối đặc màu (không phải outline mảnh), fill ratio 90% + solid shape đã đủ rõ/đậm ngay ở size nhỏ (16-32px)** — không gặp lại vấn đề "mờ ở taskbar" từng tốn nhiều vòng sửa với thiết kế ring cũ (xem lịch sử bên dưới, giờ chỉ còn giá trị tham khảo nếu quay lại thiết kế outline).
