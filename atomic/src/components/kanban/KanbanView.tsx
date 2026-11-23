@@ -88,39 +88,46 @@ export default function KanbanView({ liveGoals }: Props) {
           </div>
           <p className="yp-subtitle">{t.kanban.summary(total, done)} · {yearState}</p>
         </div>
-        <button className="yp-add-btn" onClick={() => openAdd('todo')}>
+
+        {/* Thước năm thu gọn trong header: thời gian đã trôi so với tỷ lệ mục tiêu đã hoàn thành.
+            Cửa sổ hẹp thì xuống dòng cùng nút Thêm (flex-wrap). */}
+        <section className="yp-ruler" aria-label={t.kanban.yearProgress}>
+          <span />
+          <div className="yp-ruler-quarters">
+            {QUARTERS.map((q) => <span key={q}>{t.kanban.quarterHead[q]}</span>)}
+          </div>
+          <span />
+
+          <span className="yp-ruler-label">{t.kanban.timeRow}</span>
+          <div className="yp-track">
+            <span className="yp-track-fill yp-track-fill--time" style={{ width: `${timePct}%` }} />
+            <span className="yp-notch" style={{ left: '25%' }} />
+            <span className="yp-notch" style={{ left: '50%' }} />
+            <span className="yp-notch" style={{ left: '75%' }} />
+            {selectedYear === thisYear && <span className="yp-today" style={{ left: `${timePct}%` }} />}
+          </div>
+          <span className="yp-ruler-pct">{Math.round(timePct)}%</span>
+
+          <span className="yp-ruler-label">{t.kanban.goalRow}</span>
+          <div className="yp-track">
+            <span className="yp-track-fill yp-track-fill--goal" style={{ width: `${goalPct}%` }} />
+            <span className="yp-notch" style={{ left: '25%' }} />
+            <span className="yp-notch" style={{ left: '50%' }} />
+            <span className="yp-notch" style={{ left: '75%' }} />
+          </div>
+          <span className="yp-ruler-pct yp-ruler-pct--goal">{goalPct}%</span>
+        </section>
+
+        <button
+          className="yp-add-btn"
+          onClick={() => openAdd('todo')}
+          title={t.kanban.addGoal}
+          aria-label={t.kanban.addGoal}
+        >
           <IconPlus size={16} />
-          {t.kanban.addGoal}
+          <span className="yp-add-label">{t.kanban.addGoal}</span>
         </button>
       </header>
-
-      {/* Thước năm: thời gian đã trôi so với tỷ lệ mục tiêu đã hoàn thành */}
-      <section className="yp-ruler" aria-label={t.kanban.yearProgress}>
-        <span />
-        <div className="yp-ruler-quarters">
-          {QUARTERS.map((q) => <span key={q}>{t.kanban.quarterHead[q]}</span>)}
-        </div>
-        <span />
-
-        <span className="yp-ruler-label">{t.kanban.timeRow}</span>
-        <div className="yp-track">
-          <span className="yp-track-fill yp-track-fill--time" style={{ width: `${timePct}%` }} />
-          <span className="yp-notch" style={{ left: '25%' }} />
-          <span className="yp-notch" style={{ left: '50%' }} />
-          <span className="yp-notch" style={{ left: '75%' }} />
-          {selectedYear === thisYear && <span className="yp-today" style={{ left: `${timePct}%` }} />}
-        </div>
-        <span className="yp-ruler-pct">{Math.round(timePct)}%</span>
-
-        <span className="yp-ruler-label">{t.kanban.goalRow}</span>
-        <div className="yp-track">
-          <span className="yp-track-fill yp-track-fill--goal" style={{ width: `${goalPct}%` }} />
-          <span className="yp-notch" style={{ left: '25%' }} />
-          <span className="yp-notch" style={{ left: '50%' }} />
-          <span className="yp-notch" style={{ left: '75%' }} />
-        </div>
-        <span className="yp-ruler-pct yp-ruler-pct--goal">{goalPct}%</span>
-      </section>
 
       {/* Kanban board — DndContext + DragOverlay sống ở App.tsx (ngoài scale wrapper) */}
       <div className="kanban-board">

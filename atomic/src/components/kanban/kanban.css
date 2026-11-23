@@ -36,8 +36,8 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 26px 32px 0;
+  gap: 16px;
+  padding: 22px 32px 0;
   background: var(--yp-stage);
   color: var(--yp-ink);
 }
@@ -46,21 +46,21 @@
 .yp-head {
   animation: today-topbar-in 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
-.yp-ruler {
-  animation: today-main-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.04s both;
-}
 .kanban-board {
-  animation: today-main-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.08s both;
+  animation: today-main-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.06s both;
 }
 
-/* ── Header ── */
+/* ── Header ──
+   Một dải: tiêu đề | thước năm (giãn hết chỗ trống) | nút Thêm. Cửa sổ hẹp không đủ
+   chỗ cho thước (flex-basis) thì thước + nút xuống dòng thứ hai. */
 .yp-head {
+  /* container để thước + nút tự thu gọn theo bề rộng header (xem @container cuối mục) */
+  container-type: inline-size;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px 20px;
-  padding-bottom: 20px;
+  gap: 14px 2rem;
+  padding-bottom: 18px;
   border-bottom: 1px solid var(--yp-rule);
   flex-shrink: 0;
 }
@@ -68,7 +68,7 @@
 .yp-head-main {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
   min-width: 0;
 }
 
@@ -135,6 +135,7 @@
 }
 
 .yp-add-btn {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -159,14 +160,21 @@
   height: 1.15em;
 }
 
-/* ── Thước năm: Thời gian vs Mục tiêu ── */
+/* ── Thước năm (trong header): Thời gian vs Mục tiêu ──
+   Cao hết dải header để đường kẻ dọc bên trái chạy suốt, nội dung dồn xuống đáy
+   cho hàng "Mục tiêu" ngang dòng phụ và nút Thêm. */
 .yp-ruler {
+  flex: 1 1 26rem;
+  align-self: stretch;
+  min-width: 0;
   display: grid;
-  grid-template-columns: 84px minmax(0, 1fr) 48px;
-  column-gap: 18px;
-  row-gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) 2.75rem;
+  align-content: end;
   align-items: center;
-  flex-shrink: 0;
+  column-gap: 14px;
+  row-gap: 6px;
+  padding-left: 2rem;
+  border-left: 1px solid var(--yp-rule);
 }
 
 .yp-ruler-quarters {
@@ -174,17 +182,21 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .yp-ruler-quarters span {
-  padding-left: 10px;
+  padding-left: 8px;
   border-left: 1px solid var(--yp-rule);
-  font-size: 0.69rem;
+  font-size: 0.64rem;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
   color: var(--yp-muted);
 }
 
 .yp-ruler-label {
   font-size: 0.75rem;
+  white-space: nowrap;
   color: var(--yp-muted);
 }
 
@@ -233,13 +245,36 @@
 
 .yp-ruler-pct {
   font-family: var(--yp-serif);
-  font-size: 1.1rem;
+  font-size: 1rem;
+  line-height: 1.3;
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: var(--yp-ink-2);
 }
 .yp-ruler-pct--goal {
   color: var(--yp-seal);
+}
+
+/* Header hẹp (cửa sổ nhỏ / UI scale lớn): nút Thêm chỉ còn dấu + tròn (mỗi cột vẫn có nút
+   Thêm riêng), thước được phép hẹp hơn — để cả dải vẫn nằm trên một hàng. */
+@container (max-width: 60rem) {
+  .yp-add-btn {
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .yp-add-label {
+    display: none;
+  }
+  .yp-ruler {
+    flex-basis: 16rem;
+    padding-left: 1.5rem;
+  }
+  .yp-ruler-quarters span {
+    padding-left: 6px;
+    letter-spacing: 0.1em;
+  }
 }
 
 /* ── Board ──
@@ -310,10 +345,10 @@
   flex: 0 1 auto;
   min-height: 60px;
   overflow-y: auto;
-  padding: 14px 2px 12px;
+  padding: 10px 2px 10px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .kanban-empty {
@@ -331,8 +366,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin: 0 2px 18px;
-  padding: 9px 10px;
+  margin: 0 2px 14px;
+  padding: 7px 10px;
   border: 1px dashed var(--yp-rule);
   border-radius: 4px;
   background: transparent;
@@ -357,12 +392,13 @@
 }
 
 /* ── Goal Card ──
-   Nền = màu danh mục (inline), chữ luôn tối vì nền luôn là pastel ở cả hai theme. */
+   Nền = màu danh mục (inline), chữ luôn tối vì nền luôn là pastel ở cả hai theme.
+   Bố cục gọn: tiêu đề (tối đa 2 dòng) · mô tả 1 dòng · hàng chân danh mục + quý + checklist. */
 .goal-card {
   position: relative;
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 4px;
-  padding: 13px 15px 12px;
+  padding: 10px 12px 9px;
   box-shadow: var(--yp-card-shadow);
   cursor: grab;
   transition: box-shadow 0.15s;
@@ -385,22 +421,23 @@
 .goal-card-body {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 3px;
   cursor: pointer;
 }
 
 .goal-card-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
-  min-height: 20px;
 }
 
 /* Nhãn danh mục: giao diện lấy từ .tag dùng chung (App.css) để giống nhãn ở Calendar;
-   ở đây chỉ lo bố cục. line-height: 1 giống Day view để pill không cao quá. */
+   ở đây chỉ lo bố cục + thu nhỏ một chút cho vừa hàng chân. */
 .goal-cat {
+  flex: 0 1 auto;
   min-width: 0;
-  margin-right: auto;
+  padding: 2px 7px;
+  font-size: 0.72rem;
   line-height: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -416,6 +453,7 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  margin-top: 1px;
   border: 1px solid #a8322a;
   border-radius: 50%;
   color: #a8322a;
@@ -426,7 +464,7 @@
 .goal-card .goal-card-delete {
   width: 22px;
   height: 22px;
-  margin: -3px -4px -3px 0;
+  margin: 0 -4px 0 0;
   flex-shrink: 0;
   border: none;
   color: rgba(0, 0, 0, 0.6);
@@ -447,37 +485,52 @@
 }
 
 .goal-title {
+  flex: 1;
+  min-width: 0;
   font-family: var(--yp-serif);
-  font-size: 1.06rem;
+  font-size: 1rem;
   font-weight: 400;
-  line-height: 1.35;
+  line-height: 1.3;
   color: rgba(0, 0, 0, 0.88);
+  /* tiêu đề dài: tối đa 2 dòng, đủ nội dung xem trong modal sửa */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .goal-desc {
-  font-size: 0.8rem;
-  line-height: 1.5;
+  font-size: 0.78rem;
+  line-height: 1.45;
   color: rgba(0, 0, 0, 0.64);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .goal-foot {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 4px;
-  padding-top: 9px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  gap: 8px;
+  min-width: 0;
+  margin-top: 5px;
 }
 
 .goal-quarter {
+  flex-shrink: 0;
   font-family: var(--yp-serif);
   font-style: italic;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  white-space: nowrap;
   color: rgba(0, 0, 0, 0.66);
 }
 
 .goal-check {
+  flex-shrink: 0;
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 8px;

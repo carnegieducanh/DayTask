@@ -26,10 +26,12 @@ export default function GoalCardBody({ goal, actions }: Props) {
     ? t.quarter.full
     : t.kanban.quarterSpan(quarterSpan(goal.quarters, (q) => t.kanban.quarterNum[q]));
 
+  // Bố cục gọn (2026-11-23): tiêu đề lên đầu, mô tả 1 dòng, nhãn danh mục + quý + checklist
+  // gom chung một hàng chân — để cột nhiều thẻ đỡ phải cuộn.
   return (
     <>
       <div className="goal-card-top">
-        <span className="tag goal-cat">{t.cat[goal.category]}</span>
+        <div className="goal-title">{goal.title}</div>
         {actions}
         {goal.status === "done" && (
           <span className="goal-seal" title={t.kanban.completed} aria-label={t.kanban.completed}>
@@ -37,9 +39,9 @@ export default function GoalCardBody({ goal, actions }: Props) {
           </span>
         )}
       </div>
-      <div className="goal-title">{goal.title}</div>
       {goal.description && <div className="goal-desc">{goal.description}</div>}
       <div className="goal-foot">
+        <span className="tag goal-cat">{t.cat[goal.category]}</span>
         <span className="goal-quarter">{quarterLabel}</span>
         {totalItems > 0 && (
           <span className="goal-check">
