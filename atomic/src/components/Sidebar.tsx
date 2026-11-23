@@ -196,7 +196,15 @@ export default function Sidebar() {
         }}
       >
         <div className="app-logo">
-          <img src="/atom-icon.png" width="32" height="32" alt="Atomic" />
+          {/* 1x: bản 32px đã hinting cho chữ nét (src-tauri/icons/_source/make-navbar-logo-32.cjs);
+              ≥2x: ảnh 512 giữ vát 3D của chữ */}
+          <img
+            src="/atom-icon-32.png"
+            srcSet="/atom-icon-32.png 1x, /atom-icon.png 2x"
+            width="32"
+            height="32"
+            alt="Atomic"
+          />
           Atomic
         </div>
       </div>
