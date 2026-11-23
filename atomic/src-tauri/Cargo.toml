@@ -32,3 +32,8 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 window-vibrancy = "0.5"
 
+# Icon cửa sổ + tray đúng size theo DPI (src/win_icon.rs). tray-icon phải trùng version mà tauri dùng (Cargo.lock).
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_System_LibraryLoader", "Win32_UI_WindowsAndMessaging", "Win32_UI_HiDpi"] }
+tray-icon = "0.23"
+

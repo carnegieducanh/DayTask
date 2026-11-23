@@ -1,4 +1,6 @@
 mod tray;
+#[cfg(windows)]
+mod win_icon;
 
 use tauri::Manager;
 use tauri_plugin_sql::{Migration, MigrationKind};
@@ -534,6 +536,11 @@ pub fn run() {
         )
         .setup(|app| {
             tray::setup_tray(app)?;
+            // Tauri chỉ gán icon 16×16 (frame đầu của icon.ico) cho cửa sổ — nạp lại đúng size theo DPI.
+            #[cfg(windows)]
+            if let Some(w) = app.get_webview_window("main") {
+                win_icon::apply_window_icons(&w);
+            }
             let is_autolaunch = std::env::args().any(|a| a == "--autolaunch");
             if !is_autolaunch {
                 if let Some(w) = app.get_webview_window("main") {
@@ -555,6 +562,13 @@ pub fn run() {
                     if matches!(window.label(), "tray-popup" | "tray-context") =>
                 {
                     let _ = window.hide();
+                }
+                // Cửa sổ sang màn hình khác DPI → nạp lại icon đúng size.
+                #[cfg(windows)]
+                tauri::WindowEvent::ScaleFactorChanged { .. } if window.label() == "main" => {
+                    if let Some(w) = window.app_handle().get_webview_window("main") {
+                        win_icon::apply_window_icons(&w);
+                    }
                 }
                 _ => {}
             }

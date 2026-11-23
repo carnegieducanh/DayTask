@@ -55,7 +55,7 @@ pub fn setup_tray(app: &App) -> tauri::Result<()> {
         window_vibrancy::apply_acrylic(w, Some((12, 12, 15, 210))).ok();
     }
 
-    TrayIconBuilder::new()
+    let tray = TrayIconBuilder::new()
         .icon(app.default_window_icon().unwrap().clone())
         .show_menu_on_left_click(false)
         .tooltip("Atomic")
@@ -121,6 +121,12 @@ pub fn setup_tray(app: &App) -> tauri::Result<()> {
             }
         })
         .build(app)?;
+
+    // Icon mặc định là bitmap 16×16 → ở màn scale cao bị phóng to mờ; thay bằng frame đúng DPI.
+    #[cfg(windows)]
+    crate::win_icon::apply_tray_icon(&tray);
+    #[cfg(not(windows))]
+    let _ = tray;
 
     Ok(())
 }
