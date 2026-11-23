@@ -3,10 +3,11 @@ import './heatmap.css';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, addWeeks, addMonths, addDays, isToday, format } from 'date-fns';
 import { vi as viLocale } from 'date-fns/locale';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
+import { useTagColor } from '../../hooks/useTagColor';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { useAppStore } from '../../store/appStore';
 import { useT } from '../../i18n';
-import type { CategoryStat, TagStat } from '../../types';
+import type { Category, CategoryStat, TagStat } from '../../types';
 import HeatmapGrid from './HeatmapGrid';
 import TopStatsSection, { type StatItem } from './TopStatsSection';
 import { fmtMinutes, fmtHoursFloat, fmtDateRange } from './heatmapFormat';
@@ -296,19 +297,24 @@ export default function HeatmapView() {
   const mapCategory = (c: CategoryStat): StatItem => ({
     key: c.category, name: t.cat[c.category], color: categoryColors[c.category], tasks: c.tasks, days: c.days, minutes: c.minutes,
   });
+  // Màu tag = màu category chính của tag trong kỳ đang xem (thanh vẫn tô theo màu này);
+  // kỳ đó không xác định được thì dùng màu chung của tag.
+  const tagColorOf = useTagColor();
+  const colorOfTagIn = (id: number, category: Category | null) =>
+    (category && categoryColors[category]) || tagColorOf(id);
   const mapTag = (tag: TagStat): StatItem => ({
-    key: tag.name, name: tag.name, color: tag.color, tasks: tag.tasks, days: tag.days, minutes: tag.minutes,
+    key: tag.name, name: tag.name, color: colorOfTagIn(tag.id, tag.category), tasks: tag.tasks, days: tag.days, minutes: tag.minutes,
   });
 
   const weekCategoriesList     = useMemo(() => heatmapWeekCategoryStats.map(mapCategory), [heatmapWeekCategoryStats, categoryColors, t]);
   const weekCategoriesListPrev = useMemo(() => heatmapWeekCategoryStatsPrev.map(mapCategory), [heatmapWeekCategoryStatsPrev, categoryColors, t]);
-  const weekTagsList           = useMemo(() => heatmapWeekTagStats.map(mapTag), [heatmapWeekTagStats]);
-  const weekTagsListPrev       = useMemo(() => heatmapWeekTagStatsPrev.map(mapTag), [heatmapWeekTagStatsPrev]);
+  const weekTagsList           = useMemo(() => heatmapWeekTagStats.map(mapTag), [heatmapWeekTagStats, tagColorOf, categoryColors]);
+  const weekTagsListPrev       = useMemo(() => heatmapWeekTagStatsPrev.map(mapTag), [heatmapWeekTagStatsPrev, tagColorOf, categoryColors]);
 
   const monthCategoriesList     = useMemo(() => heatmapMonthCategoryStats.map(mapCategory), [heatmapMonthCategoryStats, categoryColors, t]);
   const monthCategoriesListPrev = useMemo(() => heatmapMonthCategoryStatsPrev.map(mapCategory), [heatmapMonthCategoryStatsPrev, categoryColors, t]);
-  const monthTagsList           = useMemo(() => heatmapMonthTagStats.map(mapTag), [heatmapMonthTagStats]);
-  const monthTagsListPrev       = useMemo(() => heatmapMonthTagStatsPrev.map(mapTag), [heatmapMonthTagStatsPrev]);
+  const monthTagsList           = useMemo(() => heatmapMonthTagStats.map(mapTag), [heatmapMonthTagStats, tagColorOf, categoryColors]);
+  const monthTagsListPrev       = useMemo(() => heatmapMonthTagStatsPrev.map(mapTag), [heatmapMonthTagStatsPrev, tagColorOf, categoryColors]);
 
   // ── Year charts ───────────────────────────────────────────────────────────
   const taskBars = monthlyTotals.map((count, i) => ({
@@ -482,7 +488,7 @@ export default function HeatmapView() {
                   label={t.heatmap.topTagHours}
                   value={
                     <>
-                      <i className="hv-dot" style={{ background: heatmapTopTagHours.color }} />
+                      <i className="hv-dot" style={{ background: colorOfTagIn(heatmapTopTagHours.id, heatmapTopTagHours.category) }} />
                       <span className="hv-figure-text">{heatmapTopTagHours.name}</span>
                     </>
                   }

@@ -2,6 +2,7 @@
 import { addDays, format, subDays } from 'date-fns';
 import type { Task, Goal, DayActivity, GoalChecklistItem, TaskTimeEntry, Tag } from '../types';
 import { repeatSlotOn } from '../utils/repeatSchedule';
+import type { TagCategoryRow } from '../utils/tagColor';
 
 export const isTauri = () =>
   typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -495,6 +496,30 @@ export function dbGetCalendarTaskTags(startDate: string, endDate: string): Recor
     if (taskIds.has(tid)) result[tid] = [...tagIds];
   }
   return result;
+}
+
+/** Giống query `loadTagCategories` (Tauri): đếm task theo (tag, category) để chọn màu tag. */
+export function dbGetTagCategoryRows(recentFrom: string): TagCategoryRow[] {
+  const byKey = new Map<string, TagCategoryRow>();
+  for (const [taskId, tagIds] of Object.entries(mockTaskTags)) {
+    const task = mockTasks.find((t) => t.id === Number(taskId));
+    if (!task) continue;
+    const done = task.is_done === 1 ? 1 : 0;
+    const recent = done && task.date >= recentFrom ? 1 : 0;
+    for (const tagId of tagIds) {
+      const key = `${tagId}|${task.category}`;
+      const row = byKey.get(key);
+      if (row) {
+        row.n_recent += recent;
+        row.n_done += done;
+        row.n += 1;
+        if (task.date > row.last_date) row.last_date = task.date;
+      } else {
+        byKey.set(key, { tag_id: tagId, category: task.category, n_recent: recent, n_done: done, n: 1, last_date: task.date });
+      }
+    }
+  }
+  return [...byKey.values()];
 }
 
 export function dbSetTaskTags(taskId: number, tagIds: number[]): void {

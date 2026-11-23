@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { IconX } from '@tabler/icons-react';
 import { useT } from '../../i18n';
 import { useSmoothScroll } from '../../hooks/useSmoothScroll';
+import { tagCategoriesInRange } from '../../utils/tagColor';
 import type { Category, CategoryColors, Tag, Task, TaskTimeEntry } from '../../types';
 import {
   calcRangeCategoryStats,
@@ -55,8 +56,16 @@ export default function CalendarFilterSidebar({
   const catOrder = Object.keys(categoryColors) as Category[];
   const catStats = calcRangeCategoryStats(tasks, timeEntries, startDate, endDate, categoryColors)
     .sort((a, b) => catOrder.indexOf(a.category) - catOrder.indexOf(b.category));
+  // Màu tag theo khoảng đang xem: category có nhiều task đã xong nhất trong tuần/tháng này;
+  // khoảng này chưa có task xong thì giữ màu chung (`tags` đã tô sẵn ở CalendarView).
+  // Tính 1 lần từ toàn bộ task (không theo bộ lọc) để chấm ở danh sách và ở thống kê luôn trùng màu.
+  const rangeTagCats = tagCategoriesInRange(tasks, taskTags, startDate, endDate);
+  const rangeTags = tags.map((tag) => {
+    const cat = rangeTagCats[tag.id];
+    return cat && categoryColors[cat] ? { ...tag, color: categoryColors[cat] } : tag;
+  });
   const tagOrder = new Map(tags.map((tag, i) => [tag.id, i]));
-  const tagStats = calcRangeTagStats(tasks, timeEntries, taskTags, tags, startDate, endDate)
+  const tagStats = calcRangeTagStats(tasks, timeEntries, taskTags, rangeTags, startDate, endDate)
     .sort((a, b) => (tagOrder.get(a.tagId) ?? 0) - (tagOrder.get(b.tagId) ?? 0));
   const hasFilter = activeCategories.size > 0 || activeTags.size > 0;
 
@@ -79,7 +88,7 @@ export default function CalendarFilterSidebar({
         .filter((s) => s.totalMins > 0 && s.category !== 'other')
         .map((s) => ({ label: t.cat[s.category], color: s.color, mins: s.totalMins }));
     } else if (activeTags.size > 0) {
-      const stats = calcRangeTagStats(doneFilteredTasks, timeEntries, taskTags, tags, startDate, endDate);
+      const stats = calcRangeTagStats(doneFilteredTasks, timeEntries, taskTags, rangeTags, startDate, endDate);
       breakdown = stats
         .filter((s) => s.totalMins > 0)
         .map((s) => ({ label: s.name, color: s.color, mins: s.totalMins }));

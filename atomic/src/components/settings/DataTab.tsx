@@ -1,11 +1,13 @@
 import { useRef, useState } from "react";
 import { IconCheck, IconX, IconPencil, IconTrash, IconDownload, IconUpload } from "@tabler/icons-react";
 import { useAppStore } from "../../store/appStore";
+import { useTagColor } from "../../hooks/useTagColor";
 import { useT } from "../../i18n";
 
 export default function DataTab() {
   const { tags, addTag, updateTag, softDeleteTag, exportAllData, importAllData } = useAppStore();
   const t = useT();
+  const tagColorOf = useTagColor();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [importStatus, setImportStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -87,7 +89,7 @@ export default function DataTab() {
             {tags.map((tag) =>
               renamingTagId === tag.id ? (
                 <li key={tag.id} className="st-tag is-editing">
-                  <span className="st-dot" style={{ background: tag.color }} />
+                  <span className="st-dot" style={{ background: tagColorOf(tag.id) }} />
                   <input
                     className="st-line-input"
                     value={renameInput}
@@ -110,7 +112,7 @@ export default function DataTab() {
                 </li>
               ) : (
                 <li key={tag.id} className="st-tag">
-                  <span className="st-dot" style={{ background: tag.color }} />
+                  <span className="st-dot" style={{ background: tagColorOf(tag.id) }} />
                   <span className="st-tag-name">{tag.name}</span>
                   <div className="st-actions">
                     <button

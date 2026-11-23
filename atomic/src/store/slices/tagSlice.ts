@@ -1,9 +1,13 @@
 import type { StateCreator } from 'zustand';
-import type { Tag } from '../../types';
-import { isTauri, dbGetTags, dbAddTag, dbUpdateTag, dbDeleteTag, dbGetTaskTagsForDate, dbSetTaskTags } from '../mockDb';
+import type { Category, Tag } from '../../types';
+import { isTauri, dbGetTags, dbAddTag, dbUpdateTag, dbDeleteTag, dbGetTaskTagsForDate, dbSetTaskTags, dbGetTagCategoryRows } from '../mockDb';
 import { getDb } from '../db';
 import type { AppState } from '../appStore';
+import { format, subDays } from 'date-fns';
+import { pickTagCategories, TAG_RECENT_DAYS, type TagCategoryRow } from '../../utils/tagColor';
 
+// Chỉ để điền cột `tags.color` (NOT NULL). Màu hiển thị của tag lấy theo category chính của tag —
+// xem utils/tagColor.ts + hooks/useTagColor.ts.
 const TAG_COLORS = [
   '#60A5FA', '#34D399', '#FB923C', '#A78BFA',
   '#F472B6', '#2DD4BF', '#FACC15', '#818CF8',
@@ -14,8 +18,11 @@ export interface TagSlice {
   tags: Tag[];
   taskTags: Record<number, number[]>;
   pendingDeleteTag: Tag | null;
+  /** tag id → category quyết định màu chung của tag (xem utils/tagColor.ts) */
+  tagCategories: Record<number, Category>;
 
   loadTags: () => Promise<void>;
+  loadTagCategories: () => Promise<void>;
   loadTaskTagsForDate: (date: string) => Promise<void>;
   addTag: (name: string) => Promise<number>;
   updateTag: (id: number, name: string) => Promise<void>;
@@ -30,15 +37,38 @@ export const createTagSlice: StateCreator<AppState, [], [], TagSlice> = (set, ge
   tags: [],
   taskTags: {},
   pendingDeleteTag: null,
+  tagCategories: {},
 
   loadTags: async () => {
     if (!isTauri()) {
       set({ tags: dbGetTags() });
+    } else {
+      const db = await getDb();
+      const tags = await db.select<Tag[]>('SELECT * FROM tags ORDER BY created_at ASC');
+      set({ tags });
+    }
+    await get().loadTagCategories();
+  },
+
+  loadTagCategories: async () => {
+    const recentFrom = format(subDays(new Date(), TAG_RECENT_DAYS), 'yyyy-MM-dd');
+    if (!isTauri()) {
+      set({ tagCategories: pickTagCategories(dbGetTagCategoryRows(recentFrom)) });
       return;
     }
     const db = await getDb();
-    const tags = await db.select<Tag[]>('SELECT * FROM tags ORDER BY created_at ASC');
-    set({ tags });
+    const rows = await db.select<TagCategoryRow[]>(
+      `SELECT tt.tag_id, t.category,
+         SUM(CASE WHEN t.is_done = 1 AND t.date >= $1 THEN 1 ELSE 0 END) AS n_recent,
+         SUM(CASE WHEN t.is_done = 1 THEN 1 ELSE 0 END) AS n_done,
+         COUNT(*) AS n,
+         MAX(t.date) AS last_date
+       FROM task_tags tt
+       JOIN tasks t ON t.id = tt.task_id
+       GROUP BY tt.tag_id, t.category`,
+      [recentFrom]
+    );
+    set({ tagCategories: pickTagCategories(rows) });
   },
 
   loadTaskTagsForDate: async (date) => {
@@ -154,6 +184,7 @@ export const createTagSlice: StateCreator<AppState, [], [], TagSlice> = (set, ge
     if (!isTauri()) {
       dbSetTaskTags(taskId, tagIds);
       set({ taskTags: { ...get().taskTags, [taskId]: tagIds }, calendarTaskTags: { ...get().calendarTaskTags, [taskId]: tagIds } });
+      await get().loadTagCategories();
       return;
     }
     const db = await getDb();
@@ -180,5 +211,7 @@ export const createTagSlice: StateCreator<AppState, [], [], TagSlice> = (set, ge
       taskTags: { ...get().taskTags, [taskId]: tagIds },
       calendarTaskTags: { ...get().calendarTaskTags, [taskId]: tagIds },
     });
+    // Lưu task (kể cả đổi category) luôn đi qua đây → tính lại màu tag
+    await get().loadTagCategories();
   },
 });

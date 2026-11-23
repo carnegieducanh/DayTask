@@ -102,8 +102,10 @@ export interface DayDuration {
 }
 
 export interface TagStat {
+  id: number;
   name: string;
-  color: string;
+  /** category có nhiều task đã xong nhất của tag trong kỳ → màu tag (null thì dùng màu chung, hooks/useTagColor) */
+  category: Category | null;
   tasks: number;
   days: number;
   minutes: number;

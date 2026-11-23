@@ -23,6 +23,7 @@ import MonthView from "./MonthView";
 import DayView from "./DayView";
 import CalendarFilterSidebar from "./CalendarFilterSidebar";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll";
+import { useTagColor } from "../../hooks/useTagColor";
 import MiniCalendar from "../today/MiniCalendar";
 import VocabWidget from "../today/VocabWidget";
 import DayStatsSection from "./DayStatsSection";
@@ -127,6 +128,13 @@ export default function CalendarView() {
 
   const daySidebarRef = useRef<HTMLDivElement>(null);
   useSmoothScroll(daySidebarRef);
+
+  // Tag tô theo màu category chính của nó (bộ lọc tag + thống kê theo tag ở sidebar)
+  const tagColorOf = useTagColor();
+  const displayTags = useMemo(
+    () => tags.map((tag) => ({ ...tag, color: tagColorOf(tag.id) })),
+    [tags, tagColorOf],
+  );
 
   const [view, setView] = useState<CalViewType>("day");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -274,7 +282,7 @@ export default function CalendarView() {
             filteredTasks={filteredTasks}
             timeEntries={calendarTimeEntries}
             taskTags={calendarTaskTags}
-            tags={tags}
+            tags={displayTags}
             categoryColors={categoryColors}
             startDate={visibleRange.startDate}
             endDate={visibleRange.endDate}

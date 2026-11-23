@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type Database from '@tauri-apps/plugin-sql';
-import type { DayActivity, DayDuration, TagStat, CategoryStat, MonthStat, MonthSummary } from '../../types';
+import type { Category, DayActivity, DayDuration, TagStat, CategoryStat, MonthStat, MonthSummary } from '../../types';
 import { isTauri, dbGetHeatmap, dbGetStreak } from '../mockDb';
 import { getDb } from '../db';
 import type { AppState } from '../appStore';
@@ -54,10 +54,22 @@ async function queryCategoryStats(db: Database, startDate: string, endDate: stri
   );
 }
 
+// Category chính của tag trong kỳ (task đã xong nhiều nhất, hòa thì dùng gần nhất) → màu tag trong kỳ đó.
+// `dateCond` là điều kiện trên t2.date dùng chung tham số với query ngoài.
+const tagCategoryInPeriod = (dateCond: string) => `(
+       SELECT t2.category FROM task_tags tt2
+       JOIN tasks t2 ON t2.id = tt2.task_id
+       WHERE tt2.tag_id = tg.id AND t2.is_done = 1 AND ${dateCond}
+       GROUP BY t2.category
+       ORDER BY COUNT(*) DESC, MAX(t2.date) DESC
+       LIMIT 1
+     )`;
+
 async function queryTagStats(db: Database, startDate: string, endDate: string, sortBy: SortBy): Promise<TagStat[]> {
   const orderClause = sortBy === 'minutes' ? 'ORDER BY minutes DESC, tasks DESC' : 'ORDER BY tasks DESC, minutes DESC';
   return db.select<TagStat[]>(
-    `SELECT tg.name, tg.color,
+    `SELECT tg.id, tg.name,
+       ${tagCategoryInPeriod('t2.date >= $1 AND t2.date <= $2')} as category,
        COUNT(DISTINCT t.id) as tasks,
        COUNT(DISTINCT CASE WHEN tte.end_time > tte.start_time THEN tte.date END) as days,
        COALESCE(SUM(
@@ -81,7 +93,7 @@ export interface HeatmapSlice {
   heatmap: DayActivity[];
   heatmapDurations: DayDuration[];
   heatmapMonthStats: MonthStat[];
-  heatmapTopTagHours: { name: string; color: string; minutes: number } | null;
+  heatmapTopTagHours: { id: number; name: string; category: Category | null; minutes: number } | null;
 
   // Week tier — top categories/tags this week + previous week (for comparison)
   heatmapWeekCategoryStats: CategoryStat[];
@@ -196,8 +208,9 @@ export const createHeatmapSlice: StateCreator<AppState, [], [], HeatmapSlice> = 
   loadHeatmapTopTagHours: async (yearMonthPrefix) => {
     if (!isTauri()) { set({ heatmapTopTagHours: null }); return; }
     const db = await getDb();
-    const rows = await db.select<{ name: string; color: string; minutes: number }[]>(
-      `SELECT tg.name, tg.color,
+    const rows = await db.select<{ id: number; name: string; category: Category | null; minutes: number }[]>(
+      `SELECT tg.id, tg.name,
+         ${tagCategoryInPeriod('t2.date LIKE $1')} as category,
          COALESCE(SUM(
            CASE WHEN tte.end_time > tte.start_time THEN
              (CAST(SUBSTR(tte.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(tte.end_time, 4, 2) AS INTEGER)) -

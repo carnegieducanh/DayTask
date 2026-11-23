@@ -422,6 +422,7 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       if (timeEntry) dbSaveTimeEntry(newTask.id, task.date, timeEntry.startTime, timeEntry.endTime);
       if (tagIds?.length) dbSetTaskTags(newTask.id, tagIds);
       set({ tasks: dbGetTasks(get().selectedDate), taskTimeEntries: dbGetTimeEntries(get().selectedDate), taskTags: dbGetTaskTagsForDate(get().selectedDate) });
+      if (tagIds?.length) await get().loadTagCategories();
       return;
     }
     const db = await getDb();
@@ -442,6 +443,8 @@ export const createTaskSlice: StateCreator<AppState, [], [], TaskSlice> = (set, 
       }
     }
     await get().loadTasks(get().selectedDate);
+    // Tag mới tạo trong modal chỉ có category (→ màu) sau khi gắn vào task đầu tiên
+    if (tagIds?.length) await get().loadTagCategories();
   },
 
   duplicateTask: async (sourceId, date, timeEntry) => {
