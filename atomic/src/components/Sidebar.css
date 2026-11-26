@@ -60,6 +60,16 @@
   white-space: nowrap;
 }
 
+/* Hover cả vùng logo (bấm được — về Hôm nay) → viên gạch phóng nhẹ để báo là nút.
+   Chỉ phóng ảnh, chữ "Atomic" đứng yên; 1.12 × 32px ≈ 36px, vẫn cách mép thanh 49px. */
+.app-logo img {
+  transition: transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.sidebar-header:hover .app-logo img {
+  transform: scale(1.12);
+}
+
 .sidebar-nav-viewport {
   position: relative;
   flex: 1;
