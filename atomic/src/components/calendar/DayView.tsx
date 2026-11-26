@@ -40,7 +40,7 @@ const MIN_DRAG_DURATION = 15; // minimum minutes to trigger task creation
 const DEFAULT_DURATION = 60; // default task duration in minutes for tasks without time entry
 const DRAG_MOVE_THRESHOLD = 4; // px before a mousedown on a task is treated as a move
 const MIN_RESIZE_DURATION = 15; // minimum minutes when resizing
-const FIXED_HEIGHT_DURATION = 25; // durations <= this render at a fixed block height instead of scaling
+const FIXED_HEIGHT_DURATION = 25; // shorter tasks are drawn this tall when there's room before the next task (see computeLayout)
 const CARD_HEIGHT = 52; // px — floating card while a scheduled task is dragged back to the deck; also the deck-drag ghost's bottom clamp
 const DECK_COLS = 3; // deck grid columns — must match grid-template-columns of .day-deck-cards-clip
 const DECK_MAX_ROWS = 3; // deck rows shown before the grid scrolls instead of growing
@@ -128,8 +128,8 @@ interface LayoutItem {
   entry: TaskTimeEntry | null;
   startMin: number;
   endMin: number;
+  renderEndMin: number; // where the block is drawn down to — may sit past endMin, see computeLayout
   zIndex: number;
-  hasOverlapAbove: boolean;
   overlapLevel: number;
 }
 
@@ -146,32 +146,37 @@ function computeLayout(tasks: Task[], entries: TaskTimeEntry[], date: string): L
   // Sort by startMin; use task.id as stable tiebreaker
   const sorted = [...items].sort((a, b) => a.startMin - b.startMin || a.task.id - b.task.id);
 
-  // Overlap detection uses the *rendered* end, not the raw schedule end: blocks
-  // <= FIXED_HEIGHT_DURATION are drawn taller than their real duration (see blockHeight),
-  // so two back-to-back short tasks can visually collide even though they don't overlap
-  // in the schedule. Using the inflated end here makes that case get the same
-  // horizontal-cascade treatment as a real overlap, instead of one card fully hiding another.
-  const visualEnd = (item: { startMin: number; endMin: number }) =>
-    Math.min(1440, item.startMin + Math.max(item.endMin - item.startMin, FIXED_HEIGHT_DURATION));
+  // Short tasks (< FIXED_HEIGHT_DURATION) are drawn taller than their real duration so the
+  // title + chips stay readable — but only into free space: the block stops where the next
+  // task that starts after its real end begins, and never shrinks below its real duration.
+  // Back-to-back short tasks (07:40–07:55 then 08:00–09:10) therefore sit flush, full width,
+  // instead of spilling into each other. Only a real schedule overlap reaches the cascade below.
+  const renderEnds = sorted.map((item) => {
+    let nextStart = 1440;
+    for (const other of sorted) {
+      if (other !== item && other.startMin >= item.endMin && other.startMin < nextStart) nextStart = other.startMin;
+    }
+    return Math.max(item.endMin, Math.min(item.startMin + FIXED_HEIGHT_DURATION, nextStart));
+  });
 
   // Compute overlapLevel: each task gets level = max(level of overlapping predecessors) + 1
   const levels: number[] = new Array(sorted.length).fill(0);
   for (let i = 1; i < sorted.length; i++) {
     let maxPred = -1;
     for (let j = 0; j < i; j++) {
-      if (sorted[j].startMin < visualEnd(sorted[i]) && sorted[i].startMin < visualEnd(sorted[j])) {
+      if (sorted[j].startMin < renderEnds[i] && sorted[i].startMin < renderEnds[j]) {
         maxPred = Math.max(maxPred, levels[j]);
       }
     }
     levels[i] = maxPred >= 0 ? maxPred + 1 : 0;
   }
 
-  return sorted.map((item, i) => {
-    const hasOverlapAbove = sorted
-      .slice(0, i)
-      .some((prev) => prev.startMin < visualEnd(item) && item.startMin < visualEnd(prev));
-    return { ...item, zIndex: i + 1, hasOverlapAbove, overlapLevel: levels[i] };
-  });
+  return sorted.map((item, i) => ({
+    ...item,
+    renderEndMin: renderEnds[i],
+    zIndex: i + 1,
+    overlapLevel: levels[i],
+  }));
 }
 
 interface DragCreate {
@@ -1014,13 +1019,15 @@ export default function DayView({
             const isResizing = dragResize?.taskId === item.task.id;
             const startMin = isMoving ? dragMove!.newStartMin : isResizing ? dragResize!.newStartMin : item.startMin;
             const endMin = isMoving ? dragMove!.newEndMin : isResizing ? dragResize!.newEndMin : item.endMin;
+            const isDragging = isMoving || isResizing;
             const top = minToPx(startMin);
-            const height = blockHeight(endMin - startMin);
+            // At rest the block fills only the free space computeLayout found; while it's being
+            // moved/resized it floats above everything, so the plain fixed minimum is fine.
+            const height = isDragging ? blockHeight(endMin - startMin) : minToPx(item.renderEndMin - startMin);
             const color = item.task.color ?? categoryColors[item.task.category];
             const tagIds = taskTags[item.task.id] ?? [];
             const taskTagObjects = tags.filter((t) => tagIds.includes(t.id));
 
-            const isDragging = isMoving || isResizing;
             const level = isDragging ? 0 : item.overlapLevel;
             const leftPx = level * OVERLAP_OFFSET;
 
@@ -1030,7 +1037,7 @@ export default function DayView({
                 ref={(el) => {
                   if (isMoving) movingBlockRef.current = el;
                 }}
-                className={`day-task-block${isMoving ? " dragging" : ""}${isResizing ? " resizing" : ""}`}
+                className={`day-task-block${isMoving ? " dragging" : ""}${isResizing ? " resizing" : ""}${height < 22 ? " tight" : ""}`}
                 style={{
                   // While isMoving, `top` is owned by direct DOM writes in handleWindowMouseMove
                   // (see the useLayoutEffect restore above) — omitted here so React never fights it.

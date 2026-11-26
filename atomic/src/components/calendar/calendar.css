@@ -1663,6 +1663,24 @@
   line-height: 1;
 }
 
+/* Block thấp hơn 1 dòng chữ + padding thường (VD task 15 phút nằm sát task kế tiếp →
+   chỉ được cao 18px, xem computeLayout): bỏ padding dọc, căn giữa hàng, pill mỏng lại
+   để chữ không bị cắt ở mép dưới. */
+.day-task-block.tight {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.day-task-block.tight .day-task-compact-row {
+  align-items: center;
+}
+
+.day-task-block.tight .tag,
+.day-task-block.tight .task-tag-chip {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+
 .day-task-block-pending {
   pointer-events: none;
 }
