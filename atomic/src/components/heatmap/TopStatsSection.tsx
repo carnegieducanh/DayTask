@@ -105,11 +105,16 @@ export default function TopStatsSection({
                 style={{ width: `${Math.round((statValue(stat, mode) / max) * 100)}%`, background: stat.color }}
               />
             </div>
+            {/* Số chính cùng thước đo với thứ tự + độ dài thanh: Tasks → số task, Hours → giờ */}
             <span className="tag-stat-hours">
-              {stat.minutes > 0 ? (
+              {statValue(stat, mode) > 0 ? (
                 <>
-                  <span className="tag-stat-hours-value">{fmtMins(stat.minutes)}</span>
-                  <span className="tag-stat-days-value">/{stat.days}{t.heatmap.dayUnitShort}</span>
+                  <span className="tag-stat-hours-value">
+                    {mode === 'hours' ? fmtMins(stat.minutes) : `${stat.tasks} ${t.today.taskUnit}`}
+                  </span>
+                  {stat.days > 0 && (
+                    <span className="tag-stat-days-value">/{stat.days}{t.heatmap.dayUnitShort}</span>
+                  )}
                 </>
               ) : '—'}
             </span>
