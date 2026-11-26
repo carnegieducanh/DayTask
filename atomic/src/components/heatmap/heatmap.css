@@ -199,26 +199,27 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 0.75rem;
-  min-height: 2.25rem;
-  padding-bottom: 0.625rem;
+  gap: 0.5rem 0.875rem;
+  min-height: 2.75rem;
+  padding-bottom: 0.75rem;
   border-bottom: 3px double var(--hv-rule);
 }
 
+/* Đầu mục to hơn mặc định editorial để tách rõ 3 khối Tuần / Tháng / Năm */
 .hv-section-num {
-  min-width: 2rem;
+  min-width: 2.75rem;
   font-family: var(--hv-serif);
   font-style: italic;
-  font-size: 1.25rem;
+  font-size: 2.125rem;
   line-height: 1;
   color: var(--primary); /* đầu mục La Mã theo màu chủ đạo, đồng bộ toàn app */
 }
 
 .hv-section-title {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--primary);
 }
