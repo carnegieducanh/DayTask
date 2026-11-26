@@ -299,6 +299,7 @@ export const vi = {
     day: "Ngày",
     month: "Tháng",
     week: "Tuần",
+    year: "Năm",
     allDay: "Cả ngày",
     noEvents: "Không có task nào trong khoảng này.",
     monthLabel: (m: number, y: number) => `Tháng ${m}, ${y}`,
@@ -324,6 +325,8 @@ export const vi = {
     deckExpand: "Mở khay",
     weekStats: "Tổng tuần",
     monthStats: "Tổng tháng",
+    yearStats: "Tổng năm",
+    yearDayDone: (n: number) => `${n} task đã xong`,
   },
   update: {
     title: "Có bản cập nhật mới",

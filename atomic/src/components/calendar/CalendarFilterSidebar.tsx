@@ -69,7 +69,7 @@ export default function CalendarFilterSidebar({
     .sort((a, b) => (tagOrder.get(a.tagId) ?? 0) - (tagOrder.get(b.tagId) ?? 0));
   const hasFilter = activeCategories.size > 0 || activeTags.size > 0;
 
-  const showStats = view === 'week' || view === 'month';
+  const showStats = view === 'week' || view === 'month' || view === 'year';
   // Week/Month grid only ever renders + totals completed tasks (see WeekView/MonthView
   // dayTasks filters), so these headline numbers must match by only counting done tasks —
   // otherwise scheduled-but-incomplete time entries (invisible on the grid) inflate the sidebar total.
@@ -174,7 +174,11 @@ export default function CalendarFilterSidebar({
         <div className="cal-filter-week-stats">
           <div className="cal-filter-week-total-row">
             <span className="cal-filter-section-label">
-              {view === 'week' ? t.calendar.weekStats : t.calendar.monthStats}
+              {view === 'week'
+                ? t.calendar.weekStats
+                : view === 'year'
+                ? t.calendar.yearStats
+                : t.calendar.monthStats}
             </span>
             <span className="cal-filter-week-total-value">{formatMins(displayTotal) || '–'}</span>
           </div>

@@ -13,6 +13,8 @@ import {
   subWeeks,
   addDays,
   subDays,
+  addYears,
+  subYears,
 } from "date-fns";
 import AddTaskModal from "../today/AddTaskModal";
 import { useAppStore } from "../../store/appStore";
@@ -21,6 +23,7 @@ import type { Category, Task } from "../../types";
 import WeekView from "./WeekView";
 import MonthView from "./MonthView";
 import DayView from "./DayView";
+import YearView from "./YearView";
 import CalendarFilterSidebar from "./CalendarFilterSidebar";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll";
 import { useTagColor } from "../../hooks/useTagColor";
@@ -35,7 +38,7 @@ import {
   calcWeekTotalMins,
 } from "./calendarUtils";
 
-type CalViewType = "day" | "week" | "month";
+type CalViewType = "day" | "week" | "month" | "year";
 
 const VI_DAY_NAMES = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"];
 
@@ -44,11 +47,13 @@ function CalToolbar({
   setView,
   currentDate,
   setCurrentDate,
+  onToday,
 }: {
   view: CalViewType;
   setView: (v: CalViewType) => void;
   currentDate: Date;
   setCurrentDate: (d: Date) => void;
+  onToday: () => void;
 }) {
   const t = useT();
   const language = useAppStore((s) => s.language);
@@ -64,17 +69,23 @@ function CalToolbar({
       ? language === "vi"
         ? format(currentDate, "'Tháng' M, yyyy")
         : format(currentDate, "MMMM yyyy")
+      : view === "year"
+      ? language === "vi"
+        ? format(currentDate, "'Năm' yyyy")
+        : format(currentDate, "yyyy")
       : `${format(weekStart, "d/MM")} – ${format(weekEnd, "d/MM, yyyy")}`;
 
   function handlePrev() {
     if (view === "day") setCurrentDate(subDays(currentDate, 1));
     else if (view === "month") setCurrentDate(subMonths(currentDate, 1));
+    else if (view === "year") setCurrentDate(subYears(currentDate, 1));
     else setCurrentDate(subWeeks(currentDate, 1));
   }
 
   function handleNext() {
     if (view === "day") setCurrentDate(addDays(currentDate, 1));
     else if (view === "month") setCurrentDate(addMonths(currentDate, 1));
+    else if (view === "year") setCurrentDate(addYears(currentDate, 1));
     else setCurrentDate(addWeeks(currentDate, 1));
   }
 
@@ -85,7 +96,7 @@ function CalToolbar({
       <div className="cal-head-main">
         <span className="cal-eyebrow">{t.nav.calendar}</span>
         <div className="cal-title-row">
-          <button className="cal-today-btn" onClick={() => setCurrentDate(new Date())}>
+          <button className="cal-today-btn" onClick={onToday}>
             {t.calendar.today}
           </button>
           <button className="cal-round-btn" onClick={handlePrev}>
@@ -98,7 +109,7 @@ function CalToolbar({
         </div>
       </div>
       <div className="cal-tabs">
-        {(["day", "week", "month"] as const).map((v) => (
+        {(["day", "week", "month", "year"] as const).map((v) => (
           <button
             key={v}
             className={`cal-tab${view === v ? " active" : ""}`}
@@ -123,7 +134,6 @@ export default function CalendarView() {
     tags,
     selectedDate,
     setSelectedDate,
-    setActiveTab,
   } = useAppStore();
 
   const daySidebarRef = useRef<HTMLDivElement>(null);
@@ -191,7 +201,25 @@ export default function CalendarView() {
     }
   }
 
+  // Năm (bấm ô ngày) / Tuần (bấm đầu cột ngày) → sang xem Ngày của ngày đó
+  // (đồng bộ selectedDate để DayView nạp task)
+  function openDay(dateStr: string) {
+    setCurrentDate(new Date(dateStr + "T00:00:00"));
+    setView("day");
+    if (dateStr !== selectedDate) setSelectedDate(dateStr);
+  }
+
+  // Nút "Hôm nay": ở Năm thì mở luôn view Ngày của hôm nay; view khác chỉ nhảy về kỳ chứa hôm nay
+  function goToday() {
+    if (view === "year") openDay(format(new Date(), "yyyy-MM-dd"));
+    else handleSetCurrentDate(new Date());
+  }
+
   const visibleRange = useMemo(() => {
+    if (view === "year") {
+      const y = currentDate.getFullYear();
+      return { startDate: `${y}-01-01`, endDate: `${y}-12-31` };
+    }
     if (view === "month") {
       return {
         startDate: format(startOfMonth(currentDate), "yyyy-MM-dd"),
@@ -257,6 +285,7 @@ export default function CalendarView() {
         setView={handleSetView}
         currentDate={currentDate}
         setCurrentDate={handleSetCurrentDate}
+        onToday={goToday}
       />
       <div className="cal-body">
         {view === "day" ? (
@@ -316,12 +345,23 @@ export default function CalendarView() {
               currentDate={currentDate}
               categoryColors={categoryColors}
               onTaskClick={(task) => setEditingTask(task)}
-              onDayClick={(date) => {
-                setSelectedDate(date);
-                setActiveTab("today");
-              }}
+              onDayClick={openDay}
               timeEntries={calendarTimeEntries}
               highlightDate={highlightDate ?? undefined}
+            />
+          )}
+          {view === "year" && (
+            <YearView
+              tasks={filteredTasks}
+              timeEntries={calendarTimeEntries}
+              year={currentDate.getFullYear()}
+              categoryColors={categoryColors}
+              language={language}
+              onMonthClick={(m) => {
+                setCurrentDate(new Date(currentDate.getFullYear(), m, 1));
+                setView("month");
+              }}
+              onDayClick={openDay}
             />
           )}
           {view === "day" && (

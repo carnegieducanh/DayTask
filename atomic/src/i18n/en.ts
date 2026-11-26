@@ -308,6 +308,7 @@ export const en: typeof vi = {
     day: "Day",
     month: "Month",
     week: "Week",
+    year: "Year",
     allDay: "All day",
     noEvents: "No tasks in this range.",
     monthLabel: (m: number, y: number) => {
@@ -349,6 +350,8 @@ export const en: typeof vi = {
     deckExpand: "Expand tray",
     weekStats: "Week total",
     monthStats: "Month total",
+    yearStats: "Year total",
+    yearDayDone: (n: number) => `${n} task${n === 1 ? "" : "s"} done`,
   },
   update: {
     title: "New update available",
